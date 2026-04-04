@@ -11,7 +11,9 @@ import '../my_booking/my_booking_screen.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../blocs/saved_ground/saved_ground_cubit.dart';
+import '../../blocs/location/location_cubit.dart';
 
 class MainNavScreen extends StatefulWidget {
   const MainNavScreen({super.key});
@@ -33,13 +35,18 @@ class _MainNavScreenState extends State<MainNavScreen> {
       context.read<SavedGroundCubit>().loadFavorites(user.id);
     }
 
+    // Trigger location fetch when main navbar opens
+    context.read<LocationCubit>().loadCity();
+
     // Listen for auth state changes (essential for session restoration on restart)
-    _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+    _authSubscription =
+        Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       final AuthChangeEvent event = data.event;
       final Session? session = data.session;
       final userId = session?.user.id;
 
-      print("[AUTH_SYNC] State change detected: $event. User logged in: ${userId != null}");
+      print(
+          "[AUTH_SYNC] State change detected: $event. User logged in: ${userId != null}");
 
       if (userId != null) {
         print("[AUTH_SYNC] Restoring favorites for: $userId");
@@ -67,46 +74,73 @@ class _MainNavScreenState extends State<MainNavScreen> {
     final theme = Theme.of(context);
     final onSurface = theme.colorScheme.onSurface;
 
-    return Scaffold(
-      body: screens[currentIndex],
-      bottomNavigationBar: Container(
-        height: 70,
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          boxShadow: [
-            BoxShadow(
-              blurRadius: 10,
-              color: Colors.black.withOpacity(0.1),
-            )
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _navItem(HugeIcons.strokeRoundedDiscoverCircle, "Discover", 0, onSurface),
-            _navItem(HugeIcons.strokeRoundedCalendar01, "Bookings", 1, onSurface),
-
-            /// Center Button
-            Container(
-              height: 50,
-              width: 50,
-              decoration: const BoxDecoration(
-                color: AppColors.primaryDarkGreen,
-                shape: BoxShape.circle,
+    return BlocListener<LocationCubit, LocationState>(
+        listener: (context, state) {
+          if (state.errorMessage != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.errorMessage!),
+                backgroundColor: AppColors.error,
+                action: SnackBarAction(
+                  label: 'Settings',
+                  textColor: Colors.white,
+                  onPressed: () {
+                    if (state.errorMessage!.contains('permanently')) {
+                      Geolocator.openAppSettings();
+                    } else {
+                      Geolocator.openLocationSettings();
+                    }
+                  },
+                ),
+                duration: const Duration(seconds: 5),
               ),
-              child: const HugeIcon(
-                icon: HugeIcons.strokeRoundedPlusSign,
-                color: AppColors.white,
-                size: 24,
-              ),
+            );
+          }
+        },
+        child: Scaffold(
+          body: screens[currentIndex],
+          bottomNavigationBar: Container(
+            height: 70,
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              boxShadow: [
+                BoxShadow(
+                  blurRadius: 10,
+                  color: Colors.black.withOpacity(0.1),
+                )
+              ],
             ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _navItem(HugeIcons.strokeRoundedDiscoverCircle, "Discover", 0,
+                    onSurface),
+                _navItem(HugeIcons.strokeRoundedCalendar01, "Bookings", 1,
+                    onSurface),
 
-            _navItem(HugeIcons.strokeRoundedFavourite, "Saved", 3, onSurface),
-            _navItem(HugeIcons.strokeRoundedProfile, "Profile", 4, onSurface),
-          ],
-        ),
-      ),
-    );
+                /// Center Button
+                Container(
+                  height: 50,
+                  width: 50,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primaryDarkGreen,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedPlusSign,
+                    color: AppColors.white,
+                    size: 24,
+                  ),
+                ),
+
+                _navItem(
+                    HugeIcons.strokeRoundedFavourite, "Saved", 3, onSurface),
+                _navItem(
+                    HugeIcons.strokeRoundedProfile, "Profile", 4, onSurface),
+              ],
+            ),
+          ),
+        ));
   }
 
   Widget _navItem(dynamic icon, String label, int index, Color onSurface) {

@@ -1,4 +1,5 @@
 import 'package:bloc_structure/user_booking/data/repositories/auth_repositories_impl.dart';
+import 'package:bloc_structure/user_booking/data/repositories/payment_repository.dart';
 import 'package:bloc_structure/user_booking/domain/repositories/auth_repositories.dart';
 import 'package:bloc_structure/user_booking/presentation/blocs/auth/auth_cubit.dart';
 import 'package:bloc_structure/user_booking/presentation/blocs/slot_selection/slot_selection_cubit.dart';
@@ -56,6 +57,9 @@ Future<void> init() async {
   );
   getIt.registerLazySingleton<GroundRepository>(
     () => GroundRepositoryImpl(),
+  );
+  getIt.registerLazySingleton<PaymentRepository>(
+    () => PaymentRepository(),
   );
   getIt.registerLazySingleton<FavoriteRepository>(
     () => FavoriteRepositoryImpl(getIt<SupabaseClient>()),

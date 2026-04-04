@@ -14,12 +14,13 @@ class SlotSelectionWidgets {
   static const Color kOrange = AppColors.accentOrange;
   static const Color kLightOrange = Color(0xFFFFF3EE);
 
-  // ── App Bar + Header ──────────────────────────────────────────────────────
-
   static Widget buildHeader(BuildContext context, GroundModel? ground,
       {bool isSaved = false, VoidCallback? onToggleFav}) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Container(
-      color: AppColors.surfaceLight,
+      color: colorScheme.surface,
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 8,
         left: 8,
@@ -29,10 +30,10 @@ class SlotSelectionWidgets {
       child: Row(
         children: [
           IconButton(
-            icon: const HugeIcon(
+            icon: HugeIcon(
               icon: HugeIcons.strokeRoundedArrowLeft01,
               size: 20,
-              color: AppColors.textPrimaryLight,
+              color: colorScheme.onSurface,
             ),
             onPressed: () => Navigator.pop(context),
           ),
@@ -43,28 +44,28 @@ class SlotSelectionWidgets {
                 AppText(
                   text: ground?.name ?? 'Loading Turf...',
                   align: TextAlign.left,
-                  textStyle: const TextStyle(
+                  textStyle: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimaryLight,
+                    color: colorScheme.onSurface,
                   ),
                 ),
                 const AppSizedBox(height: 2),
                 Row(
                   children: [
-                    const HugeIcon(
+                    HugeIcon(
                       icon: HugeIcons.strokeRoundedLocation01,
                       size: 12,
-                      color: AppColors.textSecondaryLight,
+                      color: colorScheme.onSurface.withOpacity(0.6),
                     ),
                     const AppSizedBox(width: 4),
                     Flexible(
                       child: AppText(
                         text: ground?.address ?? 'Loading Address...',
                         align: TextAlign.left,
-                        textStyle: const TextStyle(
+                        textStyle: TextStyle(
                           fontSize: 12,
-                          color: AppColors.textSecondaryLight,
+                          color: colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ),
                     ),
@@ -77,15 +78,15 @@ class SlotSelectionWidgets {
             icon: HugeIcon(
               icon: HugeIcons.strokeRoundedFavourite,
               size: 22,
-              color: isSaved ? AppColors.error : AppColors.textPrimaryLight,
+              color: isSaved ? AppColors.error : colorScheme.onSurface,
             ),
             onPressed: onToggleFav,
           ),
           IconButton(
-            icon: const HugeIcon(
+            icon: HugeIcon(
               icon: HugeIcons.strokeRoundedShare01,
               size: 22,
-              color: AppColors.textPrimaryLight,
+              color: colorScheme.onSurface,
             ),
             onPressed: () {},
           ),
@@ -202,9 +203,12 @@ class SlotSelectionWidgets {
   // ── Date Selector ─────────────────────────────────────────────────────────
 
   static Widget buildDateSelector(
-      List<DateItem> dates, Function(int) onSelectDate) {
+      BuildContext context, List<DateItem> dates, Function(int) onSelectDate) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Container(
-      color: AppColors.surfaceLight,
+      color: colorScheme.surface,
       margin: const EdgeInsets.only(top: 16),
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       child: Column(
@@ -212,14 +216,14 @@ class SlotSelectionWidgets {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const AppText(
+              AppText(
                 text: 'SELECT DATE',
                 align: TextAlign.left,
                 textStyle: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.2,
-                  color: AppColors.textPrimaryLight,
+                  color: colorScheme.onSurface,
                 ),
               ),
               AppText(
@@ -253,7 +257,7 @@ class SlotSelectionWidgets {
                         color: sel ? kOrange : Colors.transparent,
                         borderRadius: BorderRadius.circular(12),
                         border:
-                            sel ? null : Border.all(color: AppColors.borderLight),
+                            sel ? null : Border.all(color: theme.dividerColor),
                       ),
                       child: Column(
                         children: [
@@ -262,7 +266,7 @@ class SlotSelectionWidgets {
                             textStyle: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: sel ? AppColors.white.withOpacity(0.7) : AppColors.textSecondaryLight,
+                              color: sel ? AppColors.white.withOpacity(0.7) : colorScheme.onSurface.withOpacity(0.5),
                             ),
                           ),
                           const AppSizedBox(height: 4),
@@ -271,7 +275,7 @@ class SlotSelectionWidgets {
                             textStyle: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w800,
-                              color: sel ? AppColors.white : AppColors.textPrimaryLight,
+                              color: sel ? AppColors.white : colorScheme.onSurface,
                             ),
                           ),
                         ],
@@ -289,25 +293,29 @@ class SlotSelectionWidgets {
 
   // ── Legend ────────────────────────────────────────────────────────────────
 
-  static Widget buildLegend() {
+  static Widget buildLegend(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Container(
-      color: AppColors.surfaceLight,
+      color: colorScheme.surface,
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Row(
         children: [
-          _legendItem(color: AppColors.success, label: 'Available'),
+          _legendItem(context, color: AppColors.success, label: 'Available'),
           const AppSizedBox(width: 16),
-          _legendItem(color: AppColors.textSecondaryLight, label: 'Booked'),
+          _legendItem(context, color: colorScheme.onSurface.withOpacity(0.4), label: 'Booked'),
           const AppSizedBox(width: 16),
-          _legendItem(color: kOrange, label: 'Selected'),
+          _legendItem(context, color: kOrange, label: 'Selected'),
           const AppSizedBox(width: 16),
-          _legendItem(color: AppColors.error.withOpacity(0.5), label: 'Blocked'),
+          _legendItem(context, color: AppColors.error.withOpacity(0.5), label: 'Blocked'),
         ],
       ),
     );
   }
 
-  static Widget _legendItem({required Color color, required String label}) {
+  static Widget _legendItem(BuildContext context, {required Color color, required String label}) {
+    final theme = Theme.of(context);
     return Row(
       children: [
         Container(
@@ -318,7 +326,7 @@ class SlotSelectionWidgets {
         const AppSizedBox(width: 5),
         AppText(
             text: label,
-            textStyle: const TextStyle(fontSize: 11, color: AppColors.textSecondaryLight)),
+            textStyle: TextStyle(fontSize: 11, color: theme.colorScheme.onSurface.withOpacity(0.6))),
       ],
     );
   }
@@ -326,22 +334,25 @@ class SlotSelectionWidgets {
   // ── Slot Section ──────────────────────────────────────────────────────────
 
   static Widget buildSlotSection(
-      List<TimeSlot> slots, Function(int) onToggleSlot) {
+      BuildContext context, List<TimeSlot> slots, Function(int) onToggleSlot) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Container(
-      color: AppColors.surfaceLight,
+      color: colorScheme.surface,
       margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const AppText(
+          AppText(
             text: 'EVENING SLOTS',
             align: TextAlign.left,
             textStyle: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.2,
-              color: AppColors.textPrimaryLight,
+              color: colorScheme.onSurface,
             ),
           ),
           const AppSizedBox(height: 14),
@@ -355,7 +366,7 @@ class SlotSelectionWidgets {
               mainAxisSpacing: 12,
               childAspectRatio: 1.55,
             ),
-            itemBuilder: (ctx, i) => _buildSlotCard(slots[i], i, onToggleSlot),
+            itemBuilder: (ctx, i) => _buildSlotCard(context, slots[i], i, onToggleSlot),
           ),
         ],
       ),
@@ -363,7 +374,10 @@ class SlotSelectionWidgets {
   }
 
   static Widget _buildSlotCard(
-      TimeSlot slot, int index, Function(int) onToggleSlot) {
+      BuildContext context, TimeSlot slot, int index, Function(int) onToggleSlot) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     final bool isBooked = slot.status == SlotStatus.booked;
     final bool isSelected = slot.status == SlotStatus.selected;
     final bool isBlocked = slot.status == SlotStatus.blocked;
@@ -380,15 +394,15 @@ class SlotSelectionWidgets {
       textColor = AppColors.white.withOpacity(0.7);
       timeColor = AppColors.white;
     } else if (isBooked || isBlocked) {
-      bgColor = AppColors.bgLight;
-      borderColor = AppColors.borderLight;
-      textColor = AppColors.textSecondaryLight.withOpacity(0.5);
-      timeColor = AppColors.textSecondaryLight.withOpacity(0.5);
+      bgColor = theme.scaffoldBackgroundColor;
+      borderColor = theme.dividerColor;
+      textColor = colorScheme.onSurface.withOpacity(0.3);
+      timeColor = colorScheme.onSurface.withOpacity(0.3);
     } else {
-      bgColor = AppColors.surfaceLight;
-      borderColor = AppColors.borderLight;
-      textColor = AppColors.textSecondaryLight;
-      timeColor = AppColors.textPrimaryLight;
+      bgColor = colorScheme.surface;
+      borderColor = theme.dividerColor;
+      textColor = colorScheme.onSurface.withOpacity(0.6);
+      timeColor = colorScheme.onSurface;
     }
 
     return GestureDetector(
@@ -444,7 +458,7 @@ class SlotSelectionWidgets {
                         ? AppColors.white
                         : isAvailable
                             ? AppColors.success
-                            : AppColors.textSecondaryLight,
+                            : colorScheme.onSurface.withOpacity(0.2),
                   ),
                 ),
               ],
@@ -453,14 +467,14 @@ class SlotSelectionWidgets {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AppColors.bgLight,
+                  color: theme.scaffoldBackgroundColor,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: AppText(
                   text: 'Booked',
                   textStyle: TextStyle(
                       fontSize: 11,
-                      color: AppColors.textSecondaryLight,
+                      color: colorScheme.onSurface.withOpacity(0.4),
                       fontWeight: FontWeight.w500),
                 ),
               )
@@ -481,18 +495,20 @@ class SlotSelectionWidgets {
 
   // ── Bottom Bar ────────────────────────────────────────────────────────────
 
-  static Widget buildBottomBar(List<TimeSlot> selectedSlots,
+  static Widget buildBottomBar(BuildContext context, List<TimeSlot> selectedSlots,
       DateItem activeDate, double totalPrice, VoidCallback onConfirm) {
     if (selectedSlots.isEmpty) return const SizedBox.shrink();
 
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final firstSlot = selectedSlots.first;
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
+        color: colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: AppColors.black.withOpacity(0.10),
+            color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.3 : 0.1),
             blurRadius: 16,
             offset: const Offset(0, -4),
           )
@@ -505,22 +521,22 @@ class SlotSelectionWidgets {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const AppText(
+              AppText(
                 text: 'SELECTED SLOTS',
                 textStyle: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1,
-                  color: AppColors.textSecondaryLight,
+                  color: colorScheme.onSurface.withOpacity(0.5),
                 ),
               ),
-              const AppText(
+              AppText(
                 text: 'TOTAL PRICE',
                 textStyle: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1,
-                  color: AppColors.textSecondaryLight,
+                  color: colorScheme.onSurface.withOpacity(0.5),
                 ),
               ),
             ],
@@ -532,10 +548,10 @@ class SlotSelectionWidgets {
               AppText(
                 text:
                     '${selectedSlots.length} Slot • ${activeDate.month} ${activeDate.date}, ${firstSlot.startTime}',
-                textStyle: const TextStyle(
+                textStyle: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimaryLight,
+                  color: colorScheme.onSurface,
                 ),
               ),
               AppText(
@@ -555,6 +571,7 @@ class SlotSelectionWidgets {
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: kOrange,
+                foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
@@ -587,35 +604,37 @@ class SlotSelectionWidgets {
 
   // ── Description Section ───────────────────────────────────────────────────
 
-  static Widget buildDescriptionSection(String? description) {
+  static Widget buildDescriptionSection(BuildContext context, String? description) {
     if (description == null || description.isEmpty) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Container(
-      color: AppColors.surfaceLight,
+      color: colorScheme.surface,
       margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.all(16),
       width: double.infinity,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const AppText(
+          AppText(
             text: 'DESCRIPTION',
             align: TextAlign.left,
             textStyle: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.2,
-              color: AppColors.textPrimaryLight,
+              color: colorScheme.onSurface,
             ),
           ),
           const AppSizedBox(height: 12),
           AppText(
             text: description,
             align: TextAlign.left,
-            textStyle: const TextStyle(
+            textStyle: TextStyle(
               fontSize: 14,
               height: 1.5,
-              color: AppColors.textSecondaryLight,
+              color: colorScheme.onSurface.withOpacity(0.6),
             ),
           ),
         ],
@@ -625,39 +644,43 @@ class SlotSelectionWidgets {
 
   // ── Amenities Section ──────────────────────────────────────────────────────
 
-  static Widget buildAmenitiesSection(List<String>? amenities) {
+  static Widget buildAmenitiesSection(BuildContext context, List<String>? amenities) {
     if (amenities == null || amenities.isEmpty) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Container(
-      color: AppColors.surfaceLight,
+      color: colorScheme.surface,
       margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.all(16),
       width: double.infinity,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const AppText(
+          AppText(
             text: 'AMENITIES',
             align: TextAlign.left,
             textStyle: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.2,
-              color: AppColors.textPrimaryLight,
+              color: colorScheme.onSurface,
             ),
           ),
           const AppSizedBox(height: 16),
           Wrap(
             spacing: 12,
             runSpacing: 12,
-            children: amenities.map((a) => _amenityChip(a)).toList(),
+            children: amenities.map((a) => _amenityChip(context, a)).toList(),
           ),
         ],
       ),
     );
   }
 
-  static Widget _amenityChip(String label) {
+  static Widget _amenityChip(BuildContext context, String label) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     dynamic icon;
     switch (label.toLowerCase()) {
       case 'parking':
@@ -688,9 +711,9 @@ class SlotSelectionWidgets {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.bgLight,
+        color: theme.scaffoldBackgroundColor,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.borderLight),
+        border: Border.all(color: theme.dividerColor),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -700,10 +723,10 @@ class SlotSelectionWidgets {
           AppText(
             text: label,
             align: TextAlign.left,
-            textStyle: const TextStyle(
+            textStyle: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: AppColors.textPrimaryLight,
+              color: colorScheme.onSurface,
             ),
           ),
         ],
@@ -713,23 +736,26 @@ class SlotSelectionWidgets {
 
   // ── Address & Map Section ──────────────────────────────────────────────────
 
-  static Widget buildMapSection(GroundModel ground) {
+  static Widget buildMapSection(BuildContext context, GroundModel ground) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
-      color: AppColors.surfaceLight,
+      color: colorScheme.surface,
       margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.all(16),
       width: double.infinity,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const AppText(
+          AppText(
             text: 'LOCATION',
             align: TextAlign.left,
             textStyle: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.2,
-              color: AppColors.textPrimaryLight,
+              color: colorScheme.onSurface,
             ),
           ),
           const AppSizedBox(height: 12),
@@ -738,9 +764,9 @@ class SlotSelectionWidgets {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.bgLight,
+                color: theme.scaffoldBackgroundColor,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.borderLight),
+                border: Border.all(color: theme.dividerColor),
               ),
               child: Column(
                 children: [
@@ -766,10 +792,10 @@ class SlotSelectionWidgets {
                             AppText(
                               text: ground.address,
                               align: TextAlign.left,
-                              textStyle: const TextStyle(
+                              textStyle: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimaryLight,
+                                color: colorScheme.onSurface,
                               ),
                             ),
                             const AppSizedBox(height: 2),
@@ -785,10 +811,10 @@ class SlotSelectionWidgets {
                           ],
                         ),
                       ),
-                      const HugeIcon(
+                      HugeIcon(
                         icon: HugeIcons.strokeRoundedArrowRight01,
                         size: 18,
-                        color: AppColors.textSecondaryLight,
+                        color: colorScheme.onSurface.withOpacity(0.4),
                       ),
                     ],
                   ),

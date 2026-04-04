@@ -1,11 +1,14 @@
 import 'package:bloc_structure/common/constants/colors.dart';
 import 'package:bloc_structure/user_booking/constants/widgets/app_sizedBox.dart';
 import 'package:bloc_structure/user_booking/constants/widgets/app_text.dart';
+import 'package:bloc_structure/user_booking/data/repositories/payment_repository.dart';
 import 'package:bloc_structure/user_booking/domain/models/slot_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:bloc_structure/user_booking/presentation/blocs/saved_ground/saved_ground_cubit.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
+import '../../../di/get_it/get_it.dart';
 import '../../../constants/route_constants.dart';
 import '../../widgets/slot_selection_widgets.dart';
 import '../../../data/models/ground_model.dart';
@@ -22,6 +25,102 @@ class SlotSelectionScreen extends StatefulWidget {
 class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
   GroundModel? _ground;
   bool _isInitialized = false;
+  late Razorpay _razorpay;
+  final _paymentRepo = getIt<PaymentRepository>();
+
+  // Store these to use in success handler
+  double? _pendingAmount;
+  List<TimeSlot>? _pendingSlots;
+  DateTime? _pendingDate;
+
+  @override
+  void initState() {
+    super.initState();
+    _razorpay = Razorpay();
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
+    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+  }
+
+  @override
+  void dispose() {
+    _razorpay.clear();
+    super.dispose();
+  }
+
+  void _handlePaymentSuccess(PaymentSuccessResponse response) async {
+    debugPrint('--- RAZORPAY PAYMENT SUCCESS ---');
+    debugPrint('Payment ID: ${response.paymentId}');
+    debugPrint('Order ID: ${response.orderId}');
+    debugPrint('Signature: ${response.signature}');
+
+    // Show loading
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Verifying Payment...')),
+    );
+
+    try {
+      debugPrint('Calling verifyPayment Edge Function...');
+      final isValid = await _paymentRepo.verifyPayment(
+        orderId: response.orderId!,
+        paymentId: response.paymentId!,
+        signature: response.signature!,
+      );
+      debugPrint('Verification Result: $isValid');
+
+      if (isValid && _ground != null && _pendingDate != null) {
+        debugPrint('Saving booking to database...');
+        // Save to DB
+        await _paymentRepo.saveBooking(
+          groundId: _ground!.id,
+          slotTime: _pendingDate!,
+          amount: (_pendingAmount! * 100).toInt(),
+          orderId: response.orderId!,
+          paymentId: response.paymentId!,
+          signature: response.signature!,
+        );
+        debugPrint('Booking saved successfully!');
+
+        if (!mounted) return;
+        Navigator.pushReplacementNamed(
+            context, AppRoutes.bookingConfirmationScreen);
+      } else {
+        debugPrint('Invalid verification or missing internal state');
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Payment verification failed!'),
+              backgroundColor: Colors.red),
+        );
+      }
+    } catch (e) {
+      debugPrint('Verification Handler Error: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Error saving booking: $e'),
+            backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  void _handlePaymentError(PaymentFailureResponse response) {
+    debugPrint('--- RAZORPAY PAYMENT FAILED ---');
+    debugPrint('Error Code: ${response.code}');
+    debugPrint('Error Message: ${response.message}');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Payment Failed: ${response.message}'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  void _handleExternalWallet(ExternalWalletResponse response) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('External Wallet: ${response.walletName}')),
+    );
+  }
 
   @override
   void didChangeDependencies() {
@@ -43,29 +142,74 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
     }
   }
 
-  void _onConfirmBooking(
-      double totalPrice, dynamic activeDate, dynamic selectedSlots) {
-    if (selectedSlots.isEmpty) return;
+  void _onConfirmBooking(double totalPrice, dynamic activeDate,
+      List<TimeSlot> selectedSlots) async {
+    debugPrint('--- USER TAPPED CONFIRM BOOKING ---');
+    debugPrint('Total Price: $totalPrice');
+    debugPrint('Slots Count: ${selectedSlots.length}');
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: AppText(
-          text: 'Booking confirmed for ${selectedSlots.length} slot(s)!',
-          textStyle: const TextStyle(color: AppColors.white),
-        ),
-        backgroundColor: AppColors.accentOrange,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
+    if (selectedSlots.isEmpty || _ground == null) {
+      debugPrint('Error: No slots selected or ground missing');
+      return;
+    }
+
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+          child: CircularProgressIndicator(color: AppColors.accentOrange)),
     );
-    Navigator.pushReplacementNamed(
-        context, AppRoutes.bookingConfirmationScreen);
+
+    try {
+      debugPrint('Calling create-order Edge Function...');
+      final orderData = await _paymentRepo.createOrder(totalPrice.toInt());
+      debugPrint('Order Data Received: $orderData');
+      
+      final orderId = orderData['id'];
+
+      _pendingAmount = totalPrice;
+      _pendingSlots = selectedSlots;
+
+      final now = DateTime.now();
+      _pendingDate = DateTime(now.year, now.month, activeDate.date);
+      if (_pendingDate!.isBefore(DateTime(now.year, now.month, now.day))) {
+        _pendingDate = DateTime(now.year, now.month + 1, activeDate.date);
+      }
+      debugPrint('Pending Date Calculated: $_pendingDate');
+
+      if (!mounted) return;
+      Navigator.pop(context);
+
+      var options = {
+        'key': 'rzp_test_SZQGlX68eXuGzw',
+        'amount': totalPrice * 100,
+        'name': 'TurfPro Booking',
+        'description': '${_ground!.name} - ${selectedSlots.length} slot(s)',
+        'order_id': orderId,
+        'prefill': {'contact': '9999999999', 'email': 'test@test.com'},
+        'external': {
+          'wallets': ['paytm']
+        }
+      };
+
+      debugPrint('Opening Razorpay Modal for Order ID: $orderId');
+      _razorpay.open(options);
+    } catch (e) {
+      debugPrint('Confirmation Flow Error: $e');
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Booking Error: $e'), backgroundColor: Colors.red),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgLight,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: BlocBuilder<SlotSelectionCubit, SlotSelectionState>(
         builder: (context, state) {
           final selectedSlots = state.slots
@@ -108,8 +252,8 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                         );
                       }),
                       SlotSelectionWidgets.buildTurfImage(_ground),
-                      SlotSelectionWidgets.buildDateSelector(state.dates,
-                          (index) {
+                      SlotSelectionWidgets.buildDateSelector(
+                          context, state.dates, (index) {
                         if (_ground != null) {
                           context.read<SlotSelectionCubit>().selectDate(
                                 index,
@@ -121,11 +265,11 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                         }
                       }),
                       SlotSelectionWidgets.buildDescriptionSection(
-                          _ground?.description),
+                          context, _ground?.description),
                       SlotSelectionWidgets.buildAmenitiesSection(
-                          _ground?.amenities),
+                          context, _ground?.amenities),
                       if (_ground != null)
-                        SlotSelectionWidgets.buildMapSection(_ground!),
+                        SlotSelectionWidgets.buildMapSection(context, _ground!),
                       if (state.isLoading)
                         const Padding(
                           padding: EdgeInsets.all(32.0),
@@ -140,9 +284,9 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                           child: AppText(text: state.errorMessage!),
                         ))
                       else ...[
-                        SlotSelectionWidgets.buildLegend(),
-                        SlotSelectionWidgets.buildSlotSection(state.slots,
-                            (index) {
+                        SlotSelectionWidgets.buildLegend(context),
+                        SlotSelectionWidgets.buildSlotSection(
+                            context, state.slots, (index) {
                           context.read<SlotSelectionCubit>().toggleSlot(index);
                         }),
                         const AppSizedBox(height: 20),
@@ -152,6 +296,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                 ),
               ),
               SlotSelectionWidgets.buildBottomBar(
+                context,
                 selectedSlots,
                 activeDate,
                 totalPrice,

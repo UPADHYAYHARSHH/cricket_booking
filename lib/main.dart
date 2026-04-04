@@ -69,7 +69,7 @@ void main() async {
           create: (_) => di.getIt<GroundCubit>(),
         ),
         BlocProvider<LocationCubit>(
-          create: (_) => di.getIt<LocationCubit>()..loadCity(),
+          create: (_) => di.getIt<LocationCubit>(),
         ),
         BlocProvider<SavedGroundCubit>(
           create: (_) => di.getIt<SavedGroundCubit>(),
@@ -106,3 +106,5 @@ void main() async {
     ),
   );
 }
+// api key- rzp_test_SZQGlX68eXuGzw
+// secret key GumrVkR1ylb4jG2dnLdmz2e8

@@ -18,26 +18,25 @@ Future<UserLocation> getCurrentLocation() async {
   bool serviceEnabled;
   LocationPermission permission;
 
-  // 1. Check if device location services (GPS) are enabled.
-  serviceEnabled = await Geolocator.isLocationServiceEnabled();
-  if (!serviceEnabled) {
-    return Future.error('Location services are disabled.');
-  }
-
-  // 2. Check current permission level.
+  // 1. Check current permission level.
   permission = await Geolocator.checkPermission();
   if (permission == LocationPermission.denied) {
-    // 3. Request permission from user if denied.
+    // 2. Request permission from user if denied.
     permission = await Geolocator.requestPermission();
     if (permission == LocationPermission.denied) {
-      return Future.error('Location permissions are denied');
+      return Future.error('PERMISSION_DENIED');
     }
   }
 
-  // 4. Handle permanent permission denial (requires manual app settings change).
+  // 3. Handle permanent permission denial.
   if (permission == LocationPermission.deniedForever) {
-    return Future.error(
-        'Location permissions are permanently denied, we cannot request permissions.');
+    return Future.error('PERMISSION_PERMANENTLY_DENIED');
+  }
+
+  // 4. Check if device location services (GPS) are enabled.
+  serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  if (!serviceEnabled) {
+    return Future.error('SERVICE_DISABLED');
   }
 
   // 5. Fetch device's absolute coordinates.
