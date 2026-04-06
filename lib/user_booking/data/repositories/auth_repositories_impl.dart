@@ -29,8 +29,7 @@ class AuthRepositoryImpl implements AuthRepository {
       print("SUPABASE AUTH ERROR:");
       print("Message: ${e.message}");
       print("StatusCode: ${e.statusCode}");
-
-      throw Exception(e.message);
+      rethrow;
     } catch (e, st) {
       // 🔥 Network / CORS / unknown error
       print("GENERAL ERROR:");

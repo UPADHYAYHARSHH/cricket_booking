@@ -40,24 +40,24 @@ class LocationState {
 
 class LocationCubit extends Cubit<LocationState> {
   final UserRepository repo;
-  Timer? _locationTimer;
+  // Timer? _locationTimer;
 
   LocationCubit(this.repo) : super(LocationState()) {
-    _startPeriodicUpdate();
+    // _startPeriodicUpdate();
   }
 
-  void _startPeriodicUpdate() {
-    _locationTimer?.cancel();
-    // Update every 5 minutes as requested
-    _locationTimer = Timer.periodic(const Duration(minutes: 5), (_) {
-      print("[LOCATION_CUBIT] Periodic update triggered...");
-      loadCity();
-    });
-  }
+  // void _startPeriodicUpdate() {
+  //   _locationTimer?.cancel();
+  //   // Update every 5 minutes as requested
+  //   _locationTimer = Timer.periodic(const Duration(minutes: 5), (_) {
+  //     print("[LOCATION_CUBIT] Periodic update triggered...");
+  //     loadCity();
+  //   });
+  // }
 
   @override
   Future<void> close() {
-    _locationTimer?.cancel();
+    // _locationTimer?.cancel();
     return super.close();
   }
 

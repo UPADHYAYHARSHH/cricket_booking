@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:bloc_structure/common/constants/colors.dart';
 import '../../constants/widgets/app_sizedBox.dart';
 import '../../constants/widgets/app_text.dart';
@@ -75,10 +76,16 @@ class SlotSelectionWidgets {
             ),
           ),
           IconButton(
-            icon: HugeIcon(
+            icon: isSaved
+          ? const Icon(
+              Icons.favorite,
+              size: 22,
+              color: AppColors.error,
+            )
+          : HugeIcon(
               icon: HugeIcons.strokeRoundedFavourite,
               size: 22,
-              color: isSaved ? AppColors.error : colorScheme.onSurface,
+              color: colorScheme.onSurface,
             ),
             onPressed: onToggleFav,
           ),
@@ -628,15 +635,7 @@ class SlotSelectionWidgets {
             ),
           ),
           const AppSizedBox(height: 12),
-          AppText(
-            text: description,
-            align: TextAlign.left,
-            textStyle: TextStyle(
-              fontSize: 14,
-              height: 1.5,
-              color: colorScheme.onSurface.withOpacity(0.6),
-            ),
-          ),
+          _ExpandableDescription(description: description),
         ],
       ),
     );
@@ -905,5 +904,85 @@ class SlotSelectionWidgets {
     } else {
       throw 'Could not launch $googleUrl';
     }
+  }
+}
+
+class _ExpandableDescription extends StatefulWidget {
+  final String description;
+  const _ExpandableDescription({required this.description});
+
+  @override
+  State<_ExpandableDescription> createState() => _ExpandableDescriptionState();
+}
+
+class _ExpandableDescriptionState extends State<_ExpandableDescription> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        LayoutBuilder(builder: (context, constraints) {
+          final span = TextSpan(
+            text: widget.description,
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.5,
+              color: colorScheme.onSurface.withOpacity(0.6),
+            ),
+          );
+          
+          final tp = TextPainter(
+            text: span,
+            maxLines: 3,
+            textDirection: ui.TextDirection.ltr,
+          );
+          tp.layout(maxWidth: constraints.maxWidth);
+
+          if (!tp.didExceedMaxLines) {
+            return AppText(
+              text: widget.description,
+              align: TextAlign.left,
+              textStyle: TextStyle(
+                fontSize: 14,
+                height: 1.5,
+                color: colorScheme.onSurface.withOpacity(0.6),
+              ),
+            );
+          }
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.description,
+                maxLines: _isExpanded ? null : 3,
+                overflow: _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 14,
+                  height: 1.5,
+                  color: colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+              const AppSizedBox(height: 4),
+              GestureDetector(
+                onTap: () => setState(() => _isExpanded = !_isExpanded),
+                child: AppText(
+                  text: _isExpanded ? "See Less" : "See More",
+                  textStyle: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.accentOrange,
+                  ),
+                ),
+              ),
+            ],
+          );
+        }),
+      ],
+    );
   }
 }

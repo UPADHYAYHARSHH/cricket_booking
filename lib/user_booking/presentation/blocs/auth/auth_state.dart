@@ -4,10 +4,9 @@ class AuthInitial extends AuthState {}
 
 class AuthLoading extends AuthState {}
 
-class OTPCodeSent extends AuthState {
-  final String verificationId;
-
-  OTPCodeSent(this.verificationId);
+class AuthOtpRequired extends AuthState {
+  final String email;
+  AuthOtpRequired(this.email);
 }
 
 class AuthSuccess extends AuthState {}

@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:bloc_structure/user_booking/presentation/blocs/auth/auth_cubit.dart';
+import 'package:bloc_structure/user_booking/presentation/blocs/auth/auth_state.dart';
+import 'package:bloc_structure/utils/toast_util.dart';
 import '../../../constants/route_constants.dart';
 import '../../../constants/widgets/app_button.dart';
 import '../../../constants/widgets/app_sizedBox.dart';
@@ -12,7 +16,8 @@ class OtpScreen extends StatefulWidget {
 }
 
 class _OtpScreenState extends State<OtpScreen> {
-  final List<TextEditingController> _controllers = List.generate(4, (index) => TextEditingController());
+  final List<TextEditingController> _controllers =
+      List.generate(4, (index) => TextEditingController());
 
   final List<FocusNode> _focusNodes = List.generate(4, (index) => FocusNode());
 
@@ -46,92 +51,118 @@ class _OtpScreenState extends State<OtpScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xffECECEC),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              /// Back Button
-              IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new),
-                onPressed: () => Navigator.pop(context),
-              ),
+    final email = ModalRoute.of(context)?.settings.arguments as String? ?? "";
 
-              const AppSizedBox(height: 20),
+    return BlocListener<AuthCubit, AuthState>(
+      listener: (context, state) {
+        if (state is AuthSuccess) {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.nav,
+            (route) => false,
+          );
+        }
 
-              /// Title
-              const AppText(
-                text: "Verify OTP",
-                size: 26,
-                weight: FontWeight.w700,
-              ),
+        if (state is AuthError) {
+          ToastUtil.show(message: state.message, type: ToastType.error);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xffECECEC),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                /// Back Button
+                IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new),
+                  onPressed: () => Navigator.pop(context),
+                ),
 
-              const AppSizedBox(height: 6),
+                const AppSizedBox(height: 20),
 
-              const AppText(
-                text: "Enter the 4-digit code sent to +91 98XXX XX000",
-                size: 14,
-                color: Colors.grey,
-                align: TextAlign.left,
-              ),
+                /// Title
+                const AppText(
+                  text: "Verify Email",
+                  size: 26,
+                  weight: FontWeight.w700,
+                ),
 
-              const AppSizedBox(height: 40),
+                const AppSizedBox(height: 6),
 
-              /// OTP Fields
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _otpBox(0),
-                  _otpBox(1),
-                  _otpBox(2),
-                  _otpBox(3),
-                ],
-              ),
+                AppText(
+                  text: "Enter the 4-digit code sent to $email",
+                  size: 14,
+                  color: Colors.grey,
+                  align: TextAlign.left,
+                ),
 
-              const AppSizedBox(height: 40),
+                const AppSizedBox(height: 40),
 
-              /// Verify Button
-              AppButton(
-                title: "Verify & Continue",
-                onTap: () {
-                  Navigator.pushReplacementNamed(context, AppRoutes.nav);
-                },
-              ),
-
-              const AppSizedBox(height: 30),
-
-              /// Resend Text
-              Center(
-                child: Column(
+                /// OTP Fields
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const AppText(
-                      text: "Didn't receive the code?",
-                      size: 13,
-                      color: Colors.grey,
-                    ),
-                    const AppSizedBox(height: 8),
-                    GestureDetector(
-                      onTap: () {},
-                      child: const AppText(
-                        text: "Resend OTP",
-                        size: 14,
-                        weight: FontWeight.w600,
-                        color: Colors.green,
-                      ),
-                    ),
-                    const AppSizedBox(height: 6),
-                    const AppText(
-                      text: "(00:30)",
-                      size: 12,
-                      color: Colors.grey,
-                    ),
+                    _otpBox(0),
+                    _otpBox(1),
+                    _otpBox(2),
+                    _otpBox(3),
                   ],
                 ),
-              )
-            ],
+
+                const AppSizedBox(height: 40),
+
+                /// Verify Button
+                AppButton(
+                  title: "Verify & Continue",
+                  onTap: () {
+                    final otpCode = _controllers.map((c) => c.text).join();
+                    if (otpCode.length < 4) {
+                      ToastUtil.show(
+                        message: "Please enter the full 4-digit code",
+                        type: ToastType.warning,
+                      );
+                      return;
+                    }
+
+                    context.read<AuthCubit>().verifyOtp(email, otpCode);
+                  },
+                ),
+
+                const AppSizedBox(height: 30),
+
+                /// Resend Text
+                Center(
+                  child: Column(
+                    children: [
+                      const AppText(
+                        text: "Didn't receive the code?",
+                        size: 13,
+                        color: Colors.grey,
+                      ),
+                      const AppSizedBox(height: 8),
+                      GestureDetector(
+                        onTap: () {},
+                        child: const AppText(
+                          text: "Resend OTP",
+                          size: 14,
+                          weight: FontWeight.w600,
+                          color: Colors.green,
+                        ),
+                      ),
+                      const AppSizedBox(height: 6),
+                      const AppText(
+                        text: "(00:30)",
+                        size: 12,
+                        color: Colors.grey,
+                      ),
+                    ],
+                  ),
+                )
+              ],
+            ),
           ),
         ),
       ),

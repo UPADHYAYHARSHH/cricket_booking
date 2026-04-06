@@ -1,4 +1,4 @@
-package com.example.box_cricket_new
+package com.boxcricket.booking
 
 import io.flutter.embedding.android.FlutterActivity
 

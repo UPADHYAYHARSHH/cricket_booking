@@ -13,6 +13,7 @@ import '../../../constants/route_constants.dart';
 import '../../widgets/slot_selection_widgets.dart';
 import '../../../data/models/ground_model.dart';
 import '../../blocs/slot_selection/slot_selection_cubit.dart';
+import 'package:bloc_structure/user_booking/domain/models/booking_arguments.dart';
 import '../../blocs/slot_selection/slot_selection_state.dart';
 
 class SlotSelectionScreen extends StatefulWidget {
@@ -54,9 +55,30 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
     debugPrint('Order ID: ${response.orderId}');
     debugPrint('Signature: ${response.signature}');
 
-    // Show loading
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Verifying Payment...')),
+    // Show persistent loading overlay
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => PopScope(
+        canPop: false,
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(color: AppColors.primaryDarkGreen),
+                AppSizedBox(height: 16),
+                AppText(text: "Verifying your booking..."),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
 
     try {
@@ -82,36 +104,65 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
         debugPrint('Booking saved successfully!');
 
         if (!mounted) return;
+        Navigator.pop(context); // Pop loading dialog
+
         Navigator.pushReplacementNamed(
-            context, AppRoutes.bookingConfirmationScreen);
+          context,
+          AppRoutes.bookingConfirmationScreen,
+          arguments: BookingSuccessArguments(
+            ground: _ground!,
+            date: _pendingDate!,
+            selectedSlots: _pendingSlots ?? [],
+            orderId: response.orderId!,
+            totalPrice: _pendingAmount!,
+          ),
+        );
       } else {
         debugPrint('Invalid verification or missing internal state');
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Payment verification failed!'),
-              backgroundColor: Colors.red),
+        Navigator.pop(context); // Pop loading dialog
+
+        Navigator.pushNamed(
+          context,
+          AppRoutes.paymentFailedScreen,
+          arguments: BookingFailureArguments(
+            errorMessage: "Payment verification failed. Please contact support.",
+            onRetry: () => _retryPayment(),
+          ),
         );
       }
     } catch (e) {
       debugPrint('Verification Handler Error: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Error saving booking: $e'),
-            backgroundColor: Colors.red),
+      Navigator.pop(context); // Pop loading dialog
+
+      Navigator.pushNamed(
+        context,
+        AppRoutes.paymentFailedScreen,
+        arguments: BookingFailureArguments(
+          errorMessage: "Error saving your booking: $e",
+          onRetry: () => _retryPayment(),
+        ),
       );
     }
+  }
+
+  void _retryPayment() {
+    if (_pendingAmount == null || _pendingDate == null || _pendingSlots == null) return;
+    _onConfirmBooking(_pendingAmount!, null, _pendingSlots!, fromRetry: true);
   }
 
   void _handlePaymentError(PaymentFailureResponse response) {
     debugPrint('--- RAZORPAY PAYMENT FAILED ---');
     debugPrint('Error Code: ${response.code}');
     debugPrint('Error Message: ${response.message}');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Payment Failed: ${response.message}'),
-        backgroundColor: Colors.red,
+
+    Navigator.pushNamed(
+      context,
+      AppRoutes.paymentFailedScreen,
+      arguments: BookingFailureArguments(
+        errorMessage: response.message ?? "Payment was cancelled or failed.",
+        onRetry: () => _retryPayment(),
       ),
     );
   }
@@ -143,7 +194,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
   }
 
   void _onConfirmBooking(double totalPrice, dynamic activeDate,
-      List<TimeSlot> selectedSlots) async {
+      List<TimeSlot> selectedSlots, {bool fromRetry = false}) async {
     debugPrint('--- USER TAPPED CONFIRM BOOKING ---');
     debugPrint('Total Price: $totalPrice');
     debugPrint('Slots Count: ${selectedSlots.length}');
@@ -171,12 +222,14 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
       _pendingAmount = totalPrice;
       _pendingSlots = selectedSlots;
 
-      final now = DateTime.now();
-      _pendingDate = DateTime(now.year, now.month, activeDate.date);
-      if (_pendingDate!.isBefore(DateTime(now.year, now.month, now.day))) {
-        _pendingDate = DateTime(now.year, now.month + 1, activeDate.date);
+      if (!fromRetry) {
+        final now = DateTime.now();
+        _pendingDate = DateTime(now.year, now.month, activeDate.date);
+        if (_pendingDate!.isBefore(DateTime(now.year, now.month, now.day))) {
+          _pendingDate = DateTime(now.year, now.month + 1, activeDate.date);
+        }
       }
-      debugPrint('Pending Date Calculated: $_pendingDate');
+      debugPrint('Pending Date: $_pendingDate');
 
       if (!mounted) return;
       Navigator.pop(context);
@@ -264,12 +317,6 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                               );
                         }
                       }),
-                      SlotSelectionWidgets.buildDescriptionSection(
-                          context, _ground?.description),
-                      SlotSelectionWidgets.buildAmenitiesSection(
-                          context, _ground?.amenities),
-                      if (_ground != null)
-                        SlotSelectionWidgets.buildMapSection(context, _ground!),
                       if (state.isLoading)
                         const Padding(
                           padding: EdgeInsets.all(32.0),
@@ -291,6 +338,12 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                         }),
                         const AppSizedBox(height: 20),
                       ],
+                      SlotSelectionWidgets.buildDescriptionSection(
+                          context, _ground?.description),
+                      SlotSelectionWidgets.buildAmenitiesSection(
+                          context, _ground?.amenities),
+                      if (_ground != null)
+                        SlotSelectionWidgets.buildMapSection(context, _ground!),
                     ],
                   ),
                 ),

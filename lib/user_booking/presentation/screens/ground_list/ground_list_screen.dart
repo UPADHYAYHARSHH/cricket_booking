@@ -10,8 +10,9 @@ import '../../../constants/widgets/app_text.dart';
 import '../../blocs/location/location_cubit.dart';
 import '../../blocs/ground/ground_cubit.dart';
 import '../../blocs/ground/ground_state.dart';
-import 'widgets/ground_card.dart';
+import 'package:bloc_structure/user_booking/presentation/widgets/ground_card.dart';
 import 'widgets/ground_skeleton.dart';
+import 'package:bloc_structure/user_booking/constants/route_constants.dart';
 
 class GroundListScreen extends StatefulWidget {
   const GroundListScreen({super.key});
@@ -98,7 +99,10 @@ class _GroundListScreenState extends State<GroundListScreen> {
                     const AppSizedBox(width: 4),
                     HugeIcon(
                       icon: HugeIcons.strokeRoundedArrowDown01,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.5),
                       size: 20,
                     ),
                   ],
@@ -121,32 +125,47 @@ class _GroundListScreenState extends State<GroundListScreen> {
         body: Column(
           children: [
             /// 🔍 SEARCH
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Builder(builder: (context) {
-                return TextField(
-                  controller: _searchController,
-                  onChanged: (value) {
-                    context.read<GroundCubit>().searchGrounds(value);
-                  },
-                  decoration: InputDecoration(
-                    hintText: "Search nearby grounds...",
-                    hintStyle: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                    ),
-                    prefixIcon: HugeIcon(
-                      icon: HugeIcons.strokeRoundedSearch01,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                    ),
-                    filled: true,
-                    fillColor: Theme.of(context).cardColor,
-                    border: OutlineInputBorder(
+            GestureDetector(
+              onTap: () {
+                Navigator.pushNamed(context, AppRoutes.search);
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Hero(
+                  tag: 'search_bar',
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(30),
-                      borderSide: BorderSide.none,
+                    ),
+                    child: Row(
+                      children: [
+                        HugeIcon(
+                          icon: HugeIcons.strokeRoundedSearch01,
+                          size: 18,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.4),
+                        ),
+                        const AppSizedBox(width: 10),
+                        AppText(
+                          text: "Search nearby grounds...",
+                          textStyle: TextStyle(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.4),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                );
-              }),
+                ),
+              ),
             ),
 
             /// 🎯 FILTERS
@@ -161,26 +180,14 @@ class _GroundListScreenState extends State<GroundListScreen> {
 
                   return Row(
                     children: [
-                      _filterChip(
-                          context,
-                          "Near Me",
-                          GroundFilter.nearMe,
-                          activeFilter == GroundFilter.nearMe,
-                          locationState),
+                      _filterChip(context, "Near Me", GroundFilter.nearMe,
+                          activeFilter == GroundFilter.nearMe, locationState),
                       const AppSizedBox(width: 10),
-                      _filterChip(
-                          context,
-                          "Top Rated",
-                          GroundFilter.topRated,
-                          activeFilter == GroundFilter.topRated,
-                          locationState),
+                      _filterChip(context, "Top Rated", GroundFilter.topRated,
+                          activeFilter == GroundFilter.topRated, locationState),
                       const AppSizedBox(width: 10),
-                      _filterChip(
-                          context,
-                          "Open Now",
-                          GroundFilter.openNow,
-                          activeFilter == GroundFilter.openNow,
-                          locationState),
+                      _filterChip(context, "Open Now", GroundFilter.openNow,
+                          activeFilter == GroundFilter.openNow, locationState),
                     ],
                   );
                 },
@@ -210,17 +217,30 @@ class _GroundListScreenState extends State<GroundListScreen> {
                       );
                     }
 
-                    return ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: state.grounds.length,
-                      itemBuilder: (context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: GroundCard(
-                            ground: state.grounds[index],
-                          ),
-                        );
+                    return RefreshIndicator(
+                      onRefresh: () async {
+                        final locationState =
+                            context.read<LocationCubit>().state;
+                        await context.read<GroundCubit>().getGrounds(
+                              city: locationState.city,
+                              userLat: locationState.latitude,
+                              userLng: locationState.longitude,
+                            );
                       },
+                      color: AppColors.primaryDarkGreen,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        itemCount: state.grounds.length,
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: GroundCard(
+                              ground: state.grounds[index],
+                            ),
+                          );
+                        },
+                      ),
                     );
                   }
 
@@ -261,9 +281,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
           color: active ? AppColors.primaryDarkGreen : theme.cardColor,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: active
-                ? Colors.transparent
-                : onSurface.withOpacity(0.1),
+            color: active ? Colors.transparent : onSurface.withOpacity(0.1),
           ),
         ),
         child: AppText(

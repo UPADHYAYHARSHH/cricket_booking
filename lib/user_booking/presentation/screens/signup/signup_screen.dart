@@ -10,14 +10,14 @@ import '../../../constants/widgets/app_button.dart';
 import '../../../constants/widgets/app_sizedBox.dart';
 import '../../../constants/widgets/app_text.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
@@ -73,8 +73,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return BlocListener<AuthCubit, AuthState>(
         listener: (context, state) {
-          if (state is AuthSuccess) {
-            Navigator.pushReplacementNamed(context, AppRoutes.nav);
+          if (state is AuthOtpRequired) {
+            Navigator.pushNamed(
+              context,
+              AppRoutes.otp,
+              arguments: state.email,
+            );
           }
 
           /// ERROR
@@ -131,7 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           /// Title
                           const AppText(
-                            text: "Welcome Back!",
+                            text: "Create Account",
                             size: 26,
                             weight: FontWeight.w700,
                             textStyle: AppTextTheme.black17,
@@ -140,14 +144,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           const AppSizedBox(height: 6),
 
                           const AppText(
-                            text: "Login with your email & password",
+                            text: "Sign up to start booking turfs",
                             size: 14,
                             color: Colors.grey,
                           ),
 
                           const AppSizedBox(height: 30),
 
-                          /// Login Card
+                          /// Signup Card
                           Container(
                             padding: const EdgeInsets.all(22),
                             decoration: BoxDecoration(
@@ -216,7 +220,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   controller: passwordController,
                                   obscureText: isPasswordHidden,
                                   textInputAction: TextInputAction.done,
-                                  autofillHints: const [AutofillHints.password],
+                                  autofillHints: const [
+                                    AutofillHints.newPassword
+                                  ],
                                   style: TextStyle(
                                       color: Theme.of(context)
                                           .colorScheme
@@ -254,13 +260,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
                                 const AppSizedBox(height: 30),
 
-                                /// Login Button
+                                /// Signup Button
                                 AppButton(
-                                  title: "Login",
+                                  title: "Sign Up",
                                   isLoading: isLoading,
                                   onTap: () {
                                     if (_validateFields()) {
-                                      context.read<AuthCubit>().loginWithEmail(
+                                      context.read<AuthCubit>().signUpWithEmail(
                                             email: emailController.text.trim(),
                                             password:
                                                 passwordController.text.trim(),
@@ -271,21 +277,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
                                 const AppSizedBox(height: 20),
 
-                                /// Go to Signup
+                                /// Back to Login
                                 Center(
                                   child: GestureDetector(
                                     onTap: () {
-                                      Navigator.pushNamed(
-                                          context, AppRoutes.signUp);
+                                      Navigator.pop(context);
                                     },
                                     child: RichText(
                                       text: const TextSpan(
-                                        text: "Don't have an account? ",
+                                        text: "Already have an account? ",
                                         style: TextStyle(
                                             color: Colors.grey, fontSize: 13),
                                         children: [
                                           TextSpan(
-                                            text: "Sign Up",
+                                            text: "Login",
                                             style: TextStyle(
                                               color: Colors.green,
                                               fontWeight: FontWeight.bold,

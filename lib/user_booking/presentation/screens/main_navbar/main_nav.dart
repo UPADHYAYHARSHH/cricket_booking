@@ -24,11 +24,13 @@ class MainNavScreen extends StatefulWidget {
 
 class _MainNavScreenState extends State<MainNavScreen> {
   int currentIndex = 0;
+  late final PageController _pageController;
   late final StreamSubscription<AuthState> _authSubscription;
 
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: 0);
 
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null) {
@@ -53,18 +55,40 @@ class _MainNavScreenState extends State<MainNavScreen> {
         context.read<SavedGroundCubit>().loadFavorites(userId);
       }
     });
+
+    // Check for initial index in arguments
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is int) {
+        setState(() {
+          currentIndex = args;
+        });
+        _pageController.jumpToPage(_mapNavbarToPage(args));
+      }
+    });
+  }
+
+  int _mapNavbarToPage(int navbarIndex) {
+    if (navbarIndex < 2) return navbarIndex;
+    if (navbarIndex > 2) return navbarIndex - 1;
+    return 0; // Default for plus button which shouldn't happen here
+  }
+
+  int _mapPageToNavbar(int pageIndex) {
+    if (pageIndex < 2) return pageIndex;
+    return pageIndex + 1;
   }
 
   @override
   void dispose() {
     _authSubscription.cancel();
+    _pageController.dispose();
     super.dispose();
   }
 
-  final List<Widget> screens = [
+  final List<Widget> pages = [
     const GroundListScreen(),
     const MyBookingsScreen(),
-    const SizedBox(), // center add button
     const SavedGroundsScreen(),
     const ProfileScreen(),
   ];
@@ -98,7 +122,15 @@ class _MainNavScreenState extends State<MainNavScreen> {
           }
         },
         child: Scaffold(
-          body: screens[currentIndex],
+          body: PageView(
+            controller: _pageController,
+            onPageChanged: (index) {
+              setState(() {
+                currentIndex = _mapPageToNavbar(index);
+              });
+            },
+            children: pages,
+          ),
           bottomNavigationBar: Container(
             height: 70,
             decoration: BoxDecoration(
@@ -145,14 +177,23 @@ class _MainNavScreenState extends State<MainNavScreen> {
 
   Widget _navItem(dynamic icon, String label, int index, Color onSurface) {
     final bool isActive = currentIndex == index;
-    final Color activeColor = AppColors.primaryDarkGreen;
+    const Color activeColor = AppColors.primaryDarkGreen;
     final Color inactiveColor = onSurface.withOpacity(0.4);
 
     return GestureDetector(
       onTap: () {
+        if (index == 2) {
+          // Plus button not part of swipe
+          return;
+        }
         setState(() {
           currentIndex = index;
         });
+        _pageController.animateToPage(
+          _mapNavbarToPage(index),
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
       },
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

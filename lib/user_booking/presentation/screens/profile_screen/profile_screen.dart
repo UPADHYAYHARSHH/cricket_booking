@@ -1,4 +1,6 @@
 import 'package:bloc_structure/common/constants/colors.dart';
+import 'package:bloc_structure/user_booking/presentation/blocs/auth/auth_cubit.dart';
+import 'package:bloc_structure/user_booking/presentation/blocs/auth/auth_state.dart';
 import 'package:bloc_structure/user_booking/presentation/blocs/theme/theme_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -15,24 +17,35 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-          child: Column(
-            children: [
-              _buildAvatar(),
-              const SizedBox(height: 14),
-              _buildNameSection(context),
-              const SizedBox(height: 20),
-              _buildStatsRow(context),
-              const SizedBox(height: 28),
-              _buildMenuList(context),
-              const SizedBox(height: 24),
-              _buildProBanner(),
-              const SizedBox(height: 16),
-            ],
+    return BlocListener<AuthCubit, AuthState>(
+      listener: (context, state) {
+        if (state is AuthInitial) {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.login,
+            (route) => false,
+          );
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            child: Column(
+              children: [
+                _buildAvatar(),
+                const SizedBox(height: 14),
+                _buildNameSection(context),
+                const SizedBox(height: 20),
+                _buildStatsRow(context),
+                const SizedBox(height: 28),
+                _buildMenuList(context),
+                const SizedBox(height: 24),
+                _buildProBanner(),
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
         ),
       ),
@@ -168,7 +181,7 @@ class ProfileScreen extends StatelessWidget {
         trailing: Switch(
           value: isDark,
           onChanged: (_) => themeCubit.toggleTheme(),
-          activeColor: AppColors.accentOrange,
+          activeThumbColor: AppColors.accentOrange,
         ),
       ),
       _MenuItem(
@@ -198,6 +211,9 @@ class ProfileScreen extends StatelessWidget {
         iconBg: const Color(0xFFFFEBEE).withOpacity(isDark ? 0.1 : 1),
         iconColor: const Color(0xFFD32F2F),
         isLogout: true,
+        onTap: () {
+          context.read<AuthCubit>().logout();
+        },
       ),
     ];
 

@@ -9,7 +9,10 @@ import 'package:bloc_structure/user_booking/presentation/screens/main_navbar/mai
 import 'package:bloc_structure/user_booking/presentation/screens/my_booking/my_booking_screen.dart';
 import 'package:bloc_structure/user_booking/presentation/screens/otp/otp_screen.dart';
 import 'package:bloc_structure/user_booking/presentation/screens/profile_screen/edit_profile.dart';
+import 'package:bloc_structure/user_booking/presentation/screens/payment_status/payment_failed_screen.dart';
 import 'package:bloc_structure/user_booking/presentation/screens/slot_selection/slot_slection.dart';
+import 'package:bloc_structure/user_booking/presentation/screens/signup/signup_screen.dart';
+import 'package:bloc_structure/user_booking/presentation/screens/search/search_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -89,12 +92,15 @@ void main() async {
             routes: {
               "/": (context) => const SplashScreen(),
               "/login": (context) => const LoginScreen(),
+              "/signup": (context) => const SignUpScreen(),
               "/otp": (context) => const OtpScreen(),
               "/nav": (context) => const MainNavScreen(),
+              "/search": (context) => const SearchScreen(),
               "/slotSelection": (context) => const SlotSelectionScreen(),
               "/bookingConfirmationScreen": (context) =>
                   const BookingConfirmationScreen(),
               "/myBookingScreen": (context) => const MyBookingsScreen(),
+              "/paymentFailedScreen": (context) => const PaymentFailedScreen(),
               "/editProfileScreen": (context) => BlocProvider(
                     create: (_) => di.getIt<ProfileCubit>(),
                     child: const EditProfileScreen(),

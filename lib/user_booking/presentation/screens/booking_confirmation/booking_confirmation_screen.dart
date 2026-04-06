@@ -1,3 +1,4 @@
+import 'package:bloc_structure/user_booking/domain/models/booking_arguments.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 
@@ -6,11 +7,24 @@ import '../../../constants/text_theme.dart';
 import '../../../constants/widgets/app_sizedBox.dart';
 import '../../../constants/widgets/app_text.dart';
 
+import 'package:intl/intl.dart';
+
 class BookingConfirmationScreen extends StatelessWidget {
   const BookingConfirmationScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final args =
+        ModalRoute.of(context)!.settings.arguments as BookingSuccessArguments;
+    final ground = args.ground;
+    final date = args.date;
+    final slots = args.selectedSlots;
+    final orderId = args.orderId;
+    final totalPrice = args.totalPrice;
+
+    final timeRange = slots.isEmpty
+        ? "No slots selected"
+        : "${slots.first.startTime} - ${slots.last.endTime}";
     return Scaffold(
       backgroundColor: AppColors.surfaceLight,
       appBar: AppBar(
@@ -77,11 +91,16 @@ class BookingConfirmationScreen extends StatelessWidget {
 
               const AppSizedBox(height: 24),
 
-              const _VenueCard(),
+              _VenueCard(ground: ground),
 
               const AppSizedBox(height: 20),
 
-              const _BookingDetailsCard(),
+              _BookingDetailsCard(
+                date: date,
+                timeRange: timeRange,
+                orderId: orderId,
+                totalPrice: totalPrice,
+              ),
 
               const AppSizedBox(height: 24),
 
@@ -111,7 +130,11 @@ class BookingConfirmationScreen extends StatelessWidget {
 
               /// BACK TO HOME
               ElevatedButton(
-                onPressed: () {},
+                onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/nav',
+                  (route) => false,
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryDarkGreen,
                   foregroundColor: AppColors.white,
@@ -134,7 +157,12 @@ class BookingConfirmationScreen extends StatelessWidget {
 
               /// VIEW BOOKINGS
               TextButton(
-                onPressed: () {},
+                onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/nav',
+                  (route) => false,
+                  arguments: 1, // Go to bookings tab
+                ),
                 child: AppText(
                   text: "View My Bookings",
                   textStyle: AppTextTheme.black13.copyWith(
@@ -154,7 +182,8 @@ class BookingConfirmationScreen extends StatelessWidget {
 }
 
 class _VenueCard extends StatelessWidget {
-  const _VenueCard();
+  final dynamic ground;
+  const _VenueCard({required this.ground});
 
   @override
   Widget build(BuildContext context) {
@@ -167,7 +196,10 @@ class _VenueCard extends StatelessWidget {
             width: double.infinity,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [AppColors.primaryDarkGreen, AppColors.primaryLightGreen],
+                colors: [
+                  AppColors.primaryDarkGreen,
+                  AppColors.primaryLightGreen
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -195,7 +227,7 @@ class _VenueCard extends StatelessWidget {
             bottom: 12,
             left: 12,
             child: AppText(
-              text: "The Lords Turf - Pitch A",
+              text: ground.name,
               textStyle: AppTextTheme.white15.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -208,7 +240,17 @@ class _VenueCard extends StatelessWidget {
 }
 
 class _BookingDetailsCard extends StatelessWidget {
-  const _BookingDetailsCard();
+  final DateTime date;
+  final String timeRange;
+  final String orderId;
+  final double totalPrice;
+
+  const _BookingDetailsCard({
+    required this.date,
+    required this.timeRange,
+    required this.orderId,
+    required this.totalPrice,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -219,36 +261,36 @@ class _BookingDetailsCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.borderLight),
       ),
-      child: const Column(
+      child: Column(
         children: [
           _DetailRow(
             icon: Icons.calendar_today_rounded,
             label: "DATE",
-            value: "Saturday, 25th Nov 2023",
+            value: DateFormat('EEEE, d MMM yyyy').format(date),
           ),
-          Divider(),
+          const Divider(),
           _DetailRow(
             icon: Icons.access_time_rounded,
             label: "TIME SLOT",
-            value: "07:00 PM - 08:00 PM",
+            value: timeRange,
           ),
-          Divider(),
+          const Divider(),
           _DetailRow(
             label: "Order ID",
-            value: "#BC-99218",
+            value: "#$orderId",
             isSmall: true,
           ),
-          AppSizedBox(height: 8),
+          const AppSizedBox(height: 8),
           _DetailRow(
             label: "Amount Paid",
-            value: "₹1,200.00",
+            value: "₹${totalPrice.toStringAsFixed(0)}",
             isSmall: true,
             valueBold: true,
           ),
-          AppSizedBox(height: 8),
-          _DetailRow(
+          const AppSizedBox(height: 8),
+          const _DetailRow(
             label: "Payment Method",
-            value: "UPI Success",
+            value: "Razorpay Success",
             isSmall: true,
             valueColor: AppColors.success,
           ),
