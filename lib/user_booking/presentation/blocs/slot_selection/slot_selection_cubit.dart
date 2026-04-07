@@ -110,4 +110,8 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
 
     emit(state.copyWith(slots: slots));
   }
+
+  void changePeriod(String period) {
+    emit(state.copyWith(selectedPeriod: period));
+  }
 }

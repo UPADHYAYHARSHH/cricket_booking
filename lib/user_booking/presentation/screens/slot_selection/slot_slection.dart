@@ -259,6 +259,25 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
     }
   }
 
+  String _getSlotPeriod(String time) {
+    try {
+      // time is in format "HH:MM AM/PM"
+      final parts = time.split(' ');
+      final hm = parts[0].split(':');
+      var hour = int.parse(hm[0]);
+      final ampm = parts[1].toUpperCase();
+
+      if (ampm == 'PM' && hour != 12) hour += 12;
+      if (ampm == 'AM' && hour == 12) hour = 0;
+
+      if (hour < 12) return 'Morning';
+      if (hour < 18) return 'Evening';
+      return 'Night';
+    } catch (e) {
+      return 'Morning';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -274,36 +293,36 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
 
           return Column(
             children: [
+              BlocBuilder<SavedGroundCubit, SavedGroundState>(
+                  builder: (context, state) {
+                final isSaved = _ground != null &&
+                    state.favoriteIds.contains(_ground!.id);
+                return SlotSelectionWidgets.buildHeader(
+                  context,
+                  _ground,
+                  isSaved: isSaved,
+                  onToggleFav: () {
+                    final user =
+                        Supabase.instance.client.auth.currentUser;
+                    if (user != null && _ground != null) {
+                      context
+                          .read<SavedGroundCubit>()
+                          .toggleFavorite(user.id, _ground!.id);
+                    } else if (user == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: AppText(
+                                text: "Please login to save grounds")),
+                      );
+                    }
+                  },
+                );
+              }),
               Expanded(
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      BlocBuilder<SavedGroundCubit, SavedGroundState>(
-                          builder: (context, state) {
-                        final isSaved = _ground != null &&
-                            state.favoriteIds.contains(_ground!.id);
-                        return SlotSelectionWidgets.buildHeader(
-                          context,
-                          _ground,
-                          isSaved: isSaved,
-                          onToggleFav: () {
-                            final user =
-                                Supabase.instance.client.auth.currentUser;
-                            if (user != null && _ground != null) {
-                              context
-                                  .read<SavedGroundCubit>()
-                                  .toggleFavorite(user.id, _ground!.id);
-                            } else if (user == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: AppText(
-                                        text: "Please login to save grounds")),
-                              );
-                            }
-                          },
-                        );
-                      }),
                       SlotSelectionWidgets.buildTurfImage(_ground),
                       SlotSelectionWidgets.buildDateSelector(
                           context, state.dates, (index) {
@@ -317,6 +336,11 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                               );
                         }
                       }),
+                      SlotSelectionWidgets.buildPeriodFilter(
+                        context,
+                        state.selectedPeriod,
+                        (p) => context.read<SlotSelectionCubit>().changePeriod(p),
+                      ),
                       if (state.isLoading)
                         const Padding(
                           padding: EdgeInsets.all(32.0),
@@ -332,9 +356,27 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                         ))
                       else ...[
                         SlotSelectionWidgets.buildLegend(context),
-                        SlotSelectionWidgets.buildSlotSection(
-                            context, state.slots, (index) {
-                          context.read<SlotSelectionCubit>().toggleSlot(index);
+                        Builder(builder: (context) {
+                          // Filter slots based on period
+                          final filteredWithOriginalIndex = state.slots
+                              .asMap()
+                              .entries
+                              .where((entry) {
+                            final slot = entry.value;
+                            final period = _getSlotPeriod(slot.startTime);
+                            return period == state.selectedPeriod;
+                          }).toList();
+
+                          final filteredSlots = filteredWithOriginalIndex
+                              .map((e) => e.value)
+                              .toList();
+
+                          return SlotSelectionWidgets.buildSlotSection(
+                              context, filteredSlots, (indexInFiltered) {
+                            // Find the original index to toggle correct slot
+                            final originalIndex = filteredWithOriginalIndex[indexInFiltered].key;
+                            context.read<SlotSelectionCubit>().toggleSlot(originalIndex);
+                          });
                         }),
                         const AppSizedBox(height: 20),
                       ],

@@ -3,12 +3,12 @@ import 'package:bloc_structure/common/constants/colors.dart';
 import '../../constants/widgets/app_sizedBox.dart';
 import '../../constants/widgets/app_text.dart';
 import 'package:bloc_structure/user_booking/data/models/ground_model.dart';
-import 'package:bloc_structure/user_booking/presentation/widgets/pitch_painter.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../constants/widgets/app_network_image.dart';
 import '../../domain/models/slot_models.dart';
 
 class SlotSelectionWidgets {
@@ -110,7 +110,6 @@ class SlotSelectionWidgets {
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        color: const Color(0xFF4A7C59),
         boxShadow: [
           BoxShadow(
             color: AppColors.black.withOpacity(0.12),
@@ -121,29 +120,30 @@ class SlotSelectionWidgets {
       ),
       child: Stack(
         children: [
-          // Grass texture overlay
+          // Real Ground Image
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFF2D5A3D),
-                    Color(0xFF4A7C59),
-                    Color(0xFF3A6B47),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
+            child: AppNetworkImage(
+              imageUrl: (ground?.imageUrl != null && ground!.imageUrl.isNotEmpty)
+                  ? ground.imageUrl
+                  : "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e",
+              height: 175,
+              width: double.infinity,
+              fit: BoxFit.cover,
             ),
           ),
-          // Pitch lines
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: CustomPaint(
-              size: const Size(double.infinity, 175),
-              painter: PitchPainter(),
+          // Dark overlay for better text contrast if needed
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  Colors.black.withOpacity(0.4),
+                ],
+              ),
             ),
           ),
           // Badges
@@ -298,42 +298,111 @@ class SlotSelectionWidgets {
     );
   }
 
+  // ── Period Filter ─────────────────────────────────────────────────────────
+  static Widget buildPeriodFilter(
+      BuildContext context, String selectedPeriod, Function(String) onSelect) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final periods = ['Morning', 'Evening', 'Night'];
+
+    return Container(
+      color: colorScheme.surface,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF121212) : const Color(0xFFF5F7FA),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: periods.map((p) {
+            final isSel = p == selectedPeriod;
+            return Expanded(
+              child: GestureDetector(
+                onTap: () => onSelect(p),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isSel ? colorScheme.surface : Colors.transparent,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: isSel
+                        ? [
+                            BoxShadow(
+                              color:
+                                  Colors.black.withOpacity(isDark ? 0.3 : 0.08),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            )
+                          ]
+                        : [],
+                  ),
+                  child: Center(
+                    child: AppText(
+                      text: p,
+                      textStyle: TextStyle(
+                        fontSize: 14,
+                        fontWeight: isSel ? FontWeight.w700 : FontWeight.w600,
+                        color: isSel
+                            ? (isDark
+                                ? const Color(0xFF81C784)
+                                : const Color(0xFF4A7C59))
+                            : colorScheme.onSurface.withOpacity(0.4),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
   // ── Legend ────────────────────────────────────────────────────────────────
 
   static Widget buildLegend(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     return Container(
       color: colorScheme.surface,
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _legendItem(context, color: AppColors.success, label: 'Available'),
-          const AppSizedBox(width: 16),
-          _legendItem(context, color: colorScheme.onSurface.withOpacity(0.4), label: 'Booked'),
-          const AppSizedBox(width: 16),
-          _legendItem(context, color: kOrange, label: 'Selected'),
-          const AppSizedBox(width: 16),
-          _legendItem(context, color: AppColors.error.withOpacity(0.5), label: 'Blocked'),
+          _legendItem(context, color: const Color(0xFF00C897), label: 'AVAILABLE'),
+          _legendItem(context, color: const Color(0xFFFF5252), label: 'BOOKED'),
+          _legendItem(context, color: const Color(0xFFFFD600), label: 'ADVANCE'),
+          _legendItem(context, color: const Color(0xFFFF9800), label: 'SELECTED'),
         ],
       ),
     );
   }
 
-  static Widget _legendItem(BuildContext context, {required Color color, required String label}) {
+  static Widget _legendItem(BuildContext context,
+      {required Color color, required String label}) {
     final theme = Theme.of(context);
     return Row(
       children: [
         Container(
-          width: 9,
-          height: 9,
+          width: 10,
+          height: 10,
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
-        const AppSizedBox(width: 5),
+        const AppSizedBox(width: 6),
         AppText(
-            text: label,
-            textStyle: TextStyle(fontSize: 11, color: theme.colorScheme.onSurface.withOpacity(0.6))),
+          text: label,
+          textStyle: TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.5,
+            color: theme.colorScheme.onSurface.withOpacity(0.5),
+          ),
+        ),
       ],
     );
   }
@@ -352,17 +421,7 @@ class SlotSelectionWidgets {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppText(
-            text: 'EVENING SLOTS',
-            align: TextAlign.left,
-            textStyle: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.2,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          const AppSizedBox(height: 14),
+          // Remove the explicit title here as we have tabs now
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -380,36 +439,44 @@ class SlotSelectionWidgets {
     );
   }
 
-  static Widget _buildSlotCard(
-      BuildContext context, TimeSlot slot, int index, Function(int) onToggleSlot) {
+  static Widget _buildSlotCard(BuildContext context, TimeSlot slot, int index,
+      Function(int) onToggleSlot) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     final bool isBooked = slot.status == SlotStatus.booked;
     final bool isSelected = slot.status == SlotStatus.selected;
-    final bool isBlocked = slot.status == SlotStatus.blocked;
+    final bool isAdvance = slot.status == SlotStatus.advance;
     final bool isAvailable = slot.status == SlotStatus.available;
 
-    Color bgColor;
     Color borderColor;
-    Color textColor;
-    Color timeColor;
+    Color timeColor = colorScheme.onSurface;
+    Color subColor = colorScheme.onSurface.withOpacity(0.4);
+    Color priceColor = const Color(0xFF4A7C59);
+    IconData? statusIcon;
+    Color? iconColor;
 
     if (isSelected) {
-      bgColor = kOrange;
-      borderColor = kOrange;
-      textColor = AppColors.white.withOpacity(0.7);
-      timeColor = AppColors.white;
-    } else if (isBooked || isBlocked) {
-      bgColor = theme.scaffoldBackgroundColor;
-      borderColor = theme.dividerColor;
-      textColor = colorScheme.onSurface.withOpacity(0.3);
+      borderColor = const Color(0xFFFF9800);
+      statusIcon = Icons.radio_button_checked;
+      iconColor = const Color(0xFFFF9800);
+      priceColor = const Color(0xFFFF9800);
+    } else if (isBooked) {
+      borderColor = Colors.transparent;
       timeColor = colorScheme.onSurface.withOpacity(0.3);
+      subColor = colorScheme.onSurface.withOpacity(0.2);
+      priceColor = colorScheme.onSurface.withOpacity(0.2);
+      statusIcon = Icons.block;
+      iconColor = colorScheme.onSurface.withOpacity(0.3);
+    } else if (isAdvance) {
+      borderColor = const Color(0xFFFFD600);
+      statusIcon = Icons.info;
+      iconColor = const Color(0xFFFFD600);
     } else {
-      bgColor = colorScheme.surface;
-      borderColor = theme.dividerColor;
-      textColor = colorScheme.onSurface.withOpacity(0.6);
-      timeColor = colorScheme.onSurface;
+      // Available
+      borderColor = const Color(0xFF00C897).withOpacity(0.15);
+      statusIcon = Icons.check_circle;
+      iconColor = const Color(0xFF00C897);
     }
 
     return GestureDetector(
@@ -417,83 +484,84 @@ class SlotSelectionWidgets {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: borderColor, width: 1.5),
+          color: isBooked ? const Color(0xFFF5F5F5) : colorScheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+              color: isBooked ? Colors.transparent : borderColor, width: 2),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                      color: kOrange.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3))
+                    color: const Color(0xFFFF9800).withOpacity(0.2),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  )
                 ]
-              : [],
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  )
+                ],
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        padding: const EdgeInsets.all(16),
+        child: Stack(
           children: [
-            Row(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                AppText(
+                  text: slot.startTime.split(' ')[0], // Just show HH:MM
+                  textStyle: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: timeColor,
+                  ),
+                ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     AppText(
-                      text: slot.startTime,
+                      text: '1 Hour Slot',
                       textStyle: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: timeColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: subColor,
                       ),
                     ),
-                    const AppSizedBox(height: 1),
-                    AppText(
-                      text: slot.endTime,
-                      textStyle: TextStyle(fontSize: 11, color: textColor),
-                    ),
+                    const AppSizedBox(height: 8),
+                    if (isBooked)
+                      AppText(
+                        text: 'Unavailable',
+                        textStyle: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: subColor,
+                        ),
+                      )
+                    else
+                      AppText(
+                        text: '₹${slot.price.toStringAsFixed(2)}',
+                        textStyle: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: priceColor,
+                        ),
+                      ),
                   ],
-                ),
-                // Status dot
-                Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isSelected
-                        ? AppColors.white
-                        : isAvailable
-                            ? AppColors.success
-                            : colorScheme.onSurface.withOpacity(0.2),
-                  ),
                 ),
               ],
             ),
-            if (isBooked)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: theme.scaffoldBackgroundColor,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: AppText(
-                  text: 'Booked',
-                  textStyle: TextStyle(
-                      fontSize: 11,
-                      color: colorScheme.onSurface.withOpacity(0.4),
-                      fontWeight: FontWeight.w500),
-                ),
-              )
-            else
-              AppText(
-                text: '₹${slot.price.toStringAsFixed(0)}',
-                textStyle: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: isSelected ? AppColors.white : kOrange,
-                ),
+            Positioned(
+              top: 0,
+              right: 0,
+              child: Icon(
+                statusIcon,
+                size: 18,
+                color: iconColor,
               ),
+            ),
           ],
         ),
       ),

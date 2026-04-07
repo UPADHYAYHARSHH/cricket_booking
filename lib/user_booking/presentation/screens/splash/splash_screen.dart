@@ -22,7 +22,6 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   late AnimationController _logoController;
   late AnimationController _textController;
   late AnimationController _progressController;
-  late AnimationController _spinnerController;
 
   late Animation<double> _logoScale;
   late Animation<double> _logoOpacity;
@@ -105,11 +104,6 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
         }
       });
     });
-
-    _spinnerController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat();
   }
 
   Future<void> _startSequence() async {
@@ -128,7 +122,6 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     _logoController.dispose();
     _textController.dispose();
     _progressController.dispose();
-    _spinnerController.dispose();
     super.dispose();
   }
 
@@ -196,18 +189,6 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
                         const AppSizedBox(height: 60),
 
-                        /// LOADING
-                        RotationTransition(
-                          turns: _spinnerController,
-                          child: const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
-                            ),
-                          ),
-                        ),
 
                         const AppSizedBox(height: 20),
 
