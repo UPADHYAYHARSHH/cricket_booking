@@ -119,6 +119,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   }
 
   Widget _buildBookingList() {
+    final theme = Theme.of(context);
     return BlocBuilder<BookingCubit, BookingState>(
       builder: (context, state) {
         if (state is BookingLoading) {
@@ -140,16 +141,46 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
           }).toList();
 
           if (bookings.isEmpty) {
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.calendar_today_outlined, size: 56, color: Theme.of(context).dividerColor),
-                AppSizedBox(height: 12),
-                AppText(
-                  text: "No bookings yet",
-                  textStyle: AppTextTheme.grey13,
-                ),
-              ],
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surface,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.calendar_today_outlined,
+                      size: 64,
+                      color: AppColors.primaryDarkGreen.withOpacity(0.3),
+                    ),
+                  ),
+                  const AppSizedBox(height: 24),
+                  AppText(
+                    text: "No bookings yet",
+                    textStyle: AppTextTheme.black18.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.onSurface.withOpacity(0.8),
+                    ),
+                  ),
+                  const AppSizedBox(height: 8),
+                  AppText(
+                    text: "Your upcoming matches will appear here",
+                    textStyle: AppTextTheme.grey13.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.5),
+                    ),
+                  ),
+                ],
+              ),
             );
           }
 
@@ -209,15 +240,61 @@ class _BookingCard extends StatelessWidget {
       children: [
         ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-          child: Image.network(
-            booking.ground?.imageUrl ?? '',
-            height: 150,
-            width: double.infinity,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(
-              height: 150,
-              color: Colors.grey.shade200,
-              child: const Icon(Icons.image_not_supported),
+          child: Hero(
+            tag: 'booking_${booking.id}',
+            child: Image.network(
+              booking.ground?.imageUrl ?? '',
+              height: 160,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                height: 160,
+                width: double.infinity,
+                color: Colors.grey.shade100,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.sports_cricket_outlined, size: 40, color: Colors.grey.shade400),
+                    const AppSizedBox(height: 8),
+                    AppText(
+                      text: "PowerPlay Arena",
+                      textStyle: AppTextTheme.grey12.copyWith(color: Colors.grey.shade500),
+                    ),
+                  ],
+                ),
+              ),
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  height: 160,
+                  width: double.infinity,
+                  color: Colors.grey.shade100,
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                          : null,
+                      strokeWidth: 2,
+                      color: AppColors.primaryDarkGreen,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        // Gradient overlay for better text readability if needed later
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  Colors.black.withOpacity(0.05),
+                ],
+              ),
             ),
           ),
         ),
@@ -225,17 +302,37 @@ class _BookingCard extends StatelessWidget {
           top: 12,
           right: 12,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: AppColors.accentOrange,
+              color: booking.status.toLowerCase() == 'paid' 
+                  ? AppColors.primaryDarkGreen 
+                  : AppColors.accentOrange,
               borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            child: AppText(
-              text: booking.status.toUpperCase(),
-              textStyle: AppTextTheme.white10.copyWith(
-                fontWeight: FontWeight.w700,
-                letterSpacing: .5,
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  booking.status.toLowerCase() == 'paid' ? Icons.check_circle : Icons.pending_actions,
+                  size: 12,
+                  color: Colors.white,
+                ),
+                const AppSizedBox(width: 4),
+                AppText(
+                  text: booking.status.toUpperCase(),
+                  textStyle: AppTextTheme.white10.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: .8,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -244,12 +341,13 @@ class _BookingCard extends StatelessWidget {
   }
 
   Widget _buildInfo() {
-    final title = booking.ground?.name ?? "Unknown Venue";
+    final title = booking.ground?.name ?? "PowerPlay Arena";
     final timeStr = DateFormat('EEE, d MMM • hh:mm a').format(booking.slotTime);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Expanded(
             child: Column(
@@ -257,37 +355,56 @@ class _BookingCard extends StatelessWidget {
               children: [
                 AppText(
                   text: title,
-                  textStyle: AppTextTheme.black14.copyWith(
+                  textStyle: AppTextTheme.black18.copyWith(
                     fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
                   ),
                 ),
-                const AppSizedBox(height: 6),
-                Row(
-                  children: [
-                    const Icon(Icons.calendar_today_outlined, size: 13, color: AppColors.textSecondaryLight),
-                    const AppSizedBox(width: 5),
-                    Expanded(
-                      child: AppText(
+                const AppSizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryDarkGreen.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.calendar_today_rounded, size: 14, color: AppColors.primaryDarkGreen),
+                      const AppSizedBox(width: 8),
+                      AppText(
                         text: timeStr,
-                        textStyle: AppTextTheme.grey12,
+                        textStyle: AppTextTheme.black13.copyWith(
+                          color: AppColors.primaryDarkGreen,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
+          const AppSizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
               AppText(
-                text: "PRICE",
-                textStyle: AppTextTheme.grey12.copyWith(fontSize: 10),
+                text: "AMOUNT PAID",
+                textStyle: AppTextTheme.grey12.copyWith(
+                  fontSize: 10, 
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
               ),
+              const AppSizedBox(height: 2),
               AppText(
                 text: "₹${booking.amount.toStringAsFixed(0)}",
-                textStyle: AppTextTheme.black16.copyWith(
-                  fontWeight: FontWeight.w700,
+                textStyle: AppTextTheme.black18.copyWith(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.primaryDarkGreen,
                 ),
               ),
             ],
@@ -299,8 +416,11 @@ class _BookingCard extends StatelessWidget {
 
   Widget _buildActions(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: _viewTicketButton(context),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: SizedBox(
+        width: double.infinity,
+        child: _viewTicketButton(context),
+      ),
     );
   }
 
@@ -330,9 +450,10 @@ class _BookingCard extends StatelessWidget {
         );
       },
       style: OutlinedButton.styleFrom(
-        side: const BorderSide(color: AppColors.primaryDarkGreen, width: 1.5),
+        side: BorderSide(color: AppColors.primaryDarkGreen.withOpacity(0.5), width: 1.5),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
         ),
       ),
       child: AppText(

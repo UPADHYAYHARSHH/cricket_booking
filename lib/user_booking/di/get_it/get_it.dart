@@ -53,7 +53,7 @@ Future<void> init() async {
   );
 
   getIt.registerFactory(
-    () => ProfileCubit(getIt<UpsertUserProfile>()),
+    () => ProfileCubit(getIt<UpsertUserProfile>(), getIt<UserRepository>()),
   );
   getIt.registerFactory(
     () => LocationCubit(getIt<UserRepository>()),

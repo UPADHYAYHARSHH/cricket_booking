@@ -10,11 +10,21 @@ class BookingRepository {
 
     final response = await _supabase
         .from('bookings')
-        .select('*, grounds(*)')
+        .select('*, grounds(*, ground_images(image_url))')
         .eq('user_id', user.id)
         .order('slot_time', ascending: false);
 
     final List data = response as List;
-    return data.map((json) => BookingModel.fromJson(json)).toList();
+    return data.map((json) {
+      // Extract ground image if available
+      if (json['grounds'] != null) {
+        final groundData = json['grounds'] as Map<String, dynamic>;
+        final images = groundData['ground_images'] as List?;
+        if (images != null && images.isNotEmpty) {
+          groundData['imageUrl'] = images[0]['image_url'];
+        }
+      }
+      return BookingModel.fromJson(json);
+    }).toList();
   }
 }

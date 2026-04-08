@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 abstract class UserRepository {
@@ -5,9 +6,11 @@ abstract class UserRepository {
     required String name,
     required String gender,
     required DateTime? dob,
+    String? photoUrl,
   });
 
-  /// ✅ ADD THESE TWO METHODS
+  Future<Map<String, dynamic>?> fetchUserProfile();
+  Future<String?> uploadProfileImage(File imageFile);
   Future<String?> getUserCity();
   Future<void> updateUserCity(String city);
 }
@@ -22,6 +25,7 @@ class UserRepositoryImpl implements UserRepository {
     required String name,
     required String gender,
     required DateTime? dob,
+    String? photoUrl,
   }) async {
     final user = supabase.auth.currentUser;
 
@@ -29,14 +33,48 @@ class UserRepositoryImpl implements UserRepository {
       throw Exception("User not logged in");
     }
 
-    await supabase.from('users').upsert({
+    final data = {
       'id': user.id,
       'name': name,
-      'email': user.email, // ✅ always from auth
+      'email': user.email,
       'gender': gender,
       'dob': dob?.toIso8601String(),
       'updated_at': DateTime.now().toIso8601String(),
-    });
+    };
+
+    if (photoUrl != null) {
+      data['photo_url'] = photoUrl;
+    }
+
+    await supabase.from('users').upsert(data);
+  }
+
+  @override
+  Future<Map<String, dynamic>?> fetchUserProfile() async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return null;
+
+    final response = await supabase
+        .from('users')
+        .select()
+        .eq('id', user.id)
+        .maybeSingle();
+    
+    return response;
+  }
+
+  @override
+  Future<String?> uploadProfileImage(File imageFile) async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return null;
+
+    final fileName = '${user.id}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final path = 'profile_images/$fileName';
+
+    await supabase.storage.from('avatars').upload(path, imageFile);
+
+    final String publicUrl = supabase.storage.from('avatars').getPublicUrl(path);
+    return publicUrl;
   }
 
   /// FETCH PERSISTED CITY FROM SUPABASE USERS TABLE

@@ -63,21 +63,12 @@ class _MainNavScreenState extends State<MainNavScreen> {
         setState(() {
           currentIndex = args;
         });
-        _pageController.jumpToPage(_mapNavbarToPage(args));
+        _pageController.jumpToPage(args);
       }
     });
   }
 
-  int _mapNavbarToPage(int navbarIndex) {
-    if (navbarIndex < 2) return navbarIndex;
-    if (navbarIndex > 2) return navbarIndex - 1;
-    return 0; // Default for plus button which shouldn't happen here
-  }
-
-  int _mapPageToNavbar(int pageIndex) {
-    if (pageIndex < 2) return pageIndex;
-    return pageIndex + 1;
-  }
+  int _mapNavbarToPage(int navbarIndex) => navbarIndex;
 
   @override
   void dispose() {
@@ -126,7 +117,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
             controller: _pageController,
             onPageChanged: (index) {
               setState(() {
-                currentIndex = _mapPageToNavbar(index);
+                currentIndex = index;
               });
             },
             children: pages,
@@ -149,26 +140,10 @@ class _MainNavScreenState extends State<MainNavScreen> {
                     onSurface),
                 _navItem(HugeIcons.strokeRoundedCalendar01, "Bookings", 1,
                     onSurface),
-
-                /// Center Button
-                Container(
-                  height: 50,
-                  width: 50,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primaryDarkGreen,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const HugeIcon(
-                    icon: HugeIcons.strokeRoundedPlusSign,
-                    color: AppColors.white,
-                    size: 24,
-                  ),
-                ),
-
                 _navItem(
-                    HugeIcons.strokeRoundedFavourite, "Saved", 3, onSurface),
+                    HugeIcons.strokeRoundedFavourite, "Saved", 2, onSurface),
                 _navItem(
-                    HugeIcons.strokeRoundedProfile, "Profile", 4, onSurface),
+                    HugeIcons.strokeRoundedProfile, "Profile", 3, onSurface),
               ],
             ),
           ),
@@ -182,15 +157,11 @@ class _MainNavScreenState extends State<MainNavScreen> {
 
     return GestureDetector(
       onTap: () {
-        if (index == 2) {
-          // Plus button not part of swipe
-          return;
-        }
         setState(() {
           currentIndex = index;
         });
         _pageController.animateToPage(
-          _mapNavbarToPage(index),
+          index,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
         );
