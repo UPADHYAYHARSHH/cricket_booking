@@ -14,8 +14,30 @@ class BookingConfirmationScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final args =
-        ModalRoute.of(context)!.settings.arguments as BookingSuccessArguments;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
+    final rawArgs = ModalRoute.of(context)!.settings.arguments;
+    if (rawArgs == null || rawArgs is! BookingSuccessArguments) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              const AppSizedBox(height: 16),
+              const AppText(text: "Booking information missing"),
+              TextButton(
+                onPressed: () => Navigator.pushNamedAndRemoveUntil(context, '/nav', (r) => false),
+                child: const Text("Go to Home"),
+              )
+            ],
+          ),
+        ),
+      );
+    }
+
+    final args = rawArgs;
     final ground = args.ground;
     final date = args.date;
     final slots = args.selectedSlots;
@@ -25,16 +47,17 @@ class BookingConfirmationScreen extends StatelessWidget {
     final timeRange = slots.isEmpty
         ? "No slots selected"
         : "${slots.first.startTime} - ${slots.last.endTime}";
+
     return Scaffold(
-      backgroundColor: AppColors.surfaceLight,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.surfaceLight,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios,
-            color: AppColors.textPrimaryLight,
+            color: colorScheme.onSurface,
             size: 20,
           ),
           onPressed: () => Navigator.pop(context),
@@ -42,54 +65,57 @@ class BookingConfirmationScreen extends StatelessWidget {
         title: AppText(
           text: "Booking Status",
           textStyle: AppTextTheme.black16.copyWith(
-            color: AppColors.textPrimaryLight,
-            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
       body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
             children: [
-              const AppSizedBox(height: 24),
+              const AppSizedBox(height: 12),
 
               /// SUCCESS ICON
               AppSizedBox(
-                height: 120,
-                width: 120,
+                height: 140,
+                width: 140,
                 child: Lottie.asset(
-                  'assets/animations/success.json',
+                  'assets/animations/Success.json', // Fixed case-sensitivity
                   repeat: false,
                 ),
               ),
 
-              const AppSizedBox(height: 16),
+              const AppSizedBox(height: 8),
 
               /// TITLE
               AppText(
                 text: "Slot Booked\nSuccessfully!",
                 align: TextAlign.center,
                 textStyle: AppTextTheme.black18.copyWith(
-                  fontWeight: FontWeight.w700,
-                  height: 1.25,
-                  color: AppColors.textPrimaryLight,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  height: 1.2,
+                  color: colorScheme.onSurface,
                 ),
               ),
 
-              const AppSizedBox(height: 8),
+              const AppSizedBox(height: 12),
 
               /// SUBTITLE
               AppText(
-                text: "Get ready to hit some sixes! Your pitch is ready.",
+                text: "Get ready to hit some sixes! Your pitch is ready for action.",
                 align: TextAlign.center,
                 textStyle: AppTextTheme.grey13.copyWith(
-                  color: AppColors.textSecondaryLight,
-                  height: 1.4,
+                  color: colorScheme.onSurface.withOpacity(0.6),
+                  height: 1.5,
+                  fontSize: 14,
                 ),
               ),
 
-              const AppSizedBox(height: 24),
+              const AppSizedBox(height: 32),
 
               _VenueCard(ground: ground),
 
@@ -102,31 +128,7 @@ class BookingConfirmationScreen extends StatelessWidget {
                 totalPrice: totalPrice,
               ),
 
-              const AppSizedBox(height: 24),
-
-              /// DOWNLOAD RECEIPT
-              OutlinedButton.icon(
-                onPressed: () {},
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.success,
-                  side: const BorderSide(color: AppColors.success, width: 1.5),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  minimumSize: const Size(double.infinity, 48),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                icon: const Icon(Icons.download_rounded, size: 18),
-                label: AppText(
-                  text: "Download Receipt",
-                  textStyle: AppTextTheme.black14.copyWith(
-                    color: AppColors.success,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-
-              const AppSizedBox(height: 12),
+              const AppSizedBox(height: 32),
 
               /// BACK TO HOME
               ElevatedButton(
@@ -139,21 +141,23 @@ class BookingConfirmationScreen extends StatelessWidget {
                   backgroundColor: AppColors.primaryDarkGreen,
                   foregroundColor: AppColors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  minimumSize: const Size(double.infinity, 52),
-                  elevation: 0,
+                  minimumSize: const Size(double.infinity, 56),
+                  elevation: 4,
+                  shadowColor: AppColors.primaryDarkGreen.withOpacity(0.3),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
                 child: AppText(
                   text: "Back to Home",
                   textStyle: AppTextTheme.white15.copyWith(
                     fontWeight: FontWeight.w700,
+                    fontSize: 16,
                   ),
                 ),
               ),
 
-              const AppSizedBox(height: 12),
+              const AppSizedBox(height: 16),
 
               /// VIEW BOOKINGS
               TextButton(
@@ -166,13 +170,14 @@ class BookingConfirmationScreen extends StatelessWidget {
                 child: AppText(
                   text: "View My Bookings",
                   textStyle: AppTextTheme.black13.copyWith(
-                    color: AppColors.textSecondaryLight,
-                    decoration: TextDecoration.underline,
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
                   ),
                 ),
               ),
 
-              const AppSizedBox(height: 24),
+              const AppSizedBox(height: 32),
             ],
           ),
         ),
@@ -187,50 +192,105 @@ class _VenueCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
-      child: Stack(
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.3 : 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            height: 140,
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.primaryDarkGreen,
-                  AppColors.primaryLightGreen
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-          ),
-          Positioned(
-            top: 12,
-            left: 12,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.success,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: AppText(
-                text: "CONFIRMED",
-                textStyle: AppTextTheme.white10.copyWith(
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: .8,
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            child: Stack(
+              children: [
+                SizedBox(
+                  height: 160,
+                  width: double.infinity,
+                  child: Image.network(
+                    ground.imageUrl ?? "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e",
+                    fit: BoxFit.cover,
+                  ),
                 ),
-              ),
+                Container(
+                  height: 160,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.7),
+                      ],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.success,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.check_circle, color: Colors.white, size: 14),
+                        const AppSizedBox(width: 4),
+                        AppText(
+                          text: "CONFIRMED",
+                          textStyle: AppTextTheme.white10.copyWith(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: .5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 12,
+                  left: 16,
+                  child: AppText(
+                    text: ground.name,
+                    textStyle: AppTextTheme.white15.copyWith(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          Positioned(
-            bottom: 12,
-            left: 12,
-            child: AppText(
-              text: ground.name,
-              textStyle: AppTextTheme.white15.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(Icons.location_on, color: colorScheme.primary, size: 16),
+                const AppSizedBox(width: 6),
+                Expanded(
+                  child: AppText(
+                    text: ground.address ?? "Location details available in ticket",
+                    maxLines: 1,
+                    textStyle: AppTextTheme.grey12.copyWith(
+                      color: colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -254,12 +314,15 @@ class _BookingDetailsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderLight),
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.5)),
       ),
       child: Column(
         children: [
@@ -268,31 +331,34 @@ class _BookingDetailsCard extends StatelessWidget {
             label: "DATE",
             value: DateFormat('EEEE, d MMM yyyy').format(date),
           ),
-          const Divider(),
+          const AppSizedBox(height: 16),
           _DetailRow(
             icon: Icons.access_time_rounded,
             label: "TIME SLOT",
             value: timeRange,
           ),
-          const Divider(),
+          const AppSizedBox(height: 20),
+          Divider(color: colorScheme.outlineVariant.withOpacity(0.5)),
+          const AppSizedBox(height: 20),
           _DetailRow(
-            label: "Order ID",
+            label: "Booking ID",
             value: "#$orderId",
             isSmall: true,
           ),
-          const AppSizedBox(height: 8),
+          const AppSizedBox(height: 12),
           _DetailRow(
-            label: "Amount Paid",
+            label: "Total Amount",
             value: "₹${totalPrice.toStringAsFixed(0)}",
             isSmall: true,
             valueBold: true,
           ),
-          const AppSizedBox(height: 8),
-          const _DetailRow(
-            label: "Payment Method",
-            value: "Razorpay Success",
+          const AppSizedBox(height: 12),
+          _DetailRow(
+            label: "Payment Status",
+            value: "PAID",
             isSmall: true,
             valueColor: AppColors.success,
+            valueBold: true,
           ),
         ],
       ),
@@ -319,33 +385,40 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     if (!isSmall) {
       return Row(
         children: [
           if (icon != null)
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppColors.primaryLightGreen.withValues(alpha: .15),
-                borderRadius: BorderRadius.circular(8),
+                color: colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: AppColors.primaryDarkGreen, size: 18),
+              child: Icon(icon, color: colorScheme.primary, size: 20),
             ),
-          const AppSizedBox(width: 12),
+          const AppSizedBox(width: 14),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               AppText(
                 text: label,
                 textStyle: AppTextTheme.grey12.copyWith(
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                  fontSize: 10,
+                  color: colorScheme.onSurface.withOpacity(0.5),
                 ),
               ),
-              const AppSizedBox(height: 2),
+              const AppSizedBox(height: 4),
               AppText(
                 text: value,
                 textStyle: AppTextTheme.black14.copyWith(
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
+                  color: colorScheme.onSurface,
                 ),
               ),
             ],
@@ -359,13 +432,17 @@ class _DetailRow extends StatelessWidget {
       children: [
         AppText(
           text: label,
-          textStyle: AppTextTheme.grey12,
+          textStyle: AppTextTheme.grey12.copyWith(
+            color: colorScheme.onSurface.withOpacity(0.6),
+            fontWeight: FontWeight.w500,
+          ),
         ),
         AppText(
           text: value,
           textStyle: AppTextTheme.black12.copyWith(
-            color: valueColor ?? AppColors.textPrimaryLight,
-            fontWeight: valueBold ? FontWeight.w700 : FontWeight.w500,
+            color: valueColor ?? colorScheme.onSurface,
+            fontWeight: valueBold ? FontWeight.w800 : FontWeight.w600,
+            fontSize: 13,
           ),
         ),
       ],

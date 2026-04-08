@@ -14,13 +14,27 @@ import 'package:bloc_structure/user_booking/constants/widgets/app_network_image.
 import 'package:bloc_structure/user_booking/constants/widgets/app_text.dart';
 import 'package:bloc_structure/user_booking/data/models/ground_model.dart';
 
-class GroundCard extends StatelessWidget {
+class GroundCard extends StatefulWidget {
   final GroundModel ground;
 
   const GroundCard({
     super.key,
     required this.ground,
   });
+
+  @override
+  State<GroundCard> createState() => _GroundCardState();
+}
+
+class _GroundCardState extends State<GroundCard> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +48,7 @@ class GroundCard extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             blurRadius: 10,
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.2 : 0.06),
             offset: const Offset(0, 4),
           )
         ],
@@ -42,44 +56,86 @@ class GroundCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildImageStack(context),
+          _buildImageSlider(context),
           _buildInfo(context, onSurface),
         ],
       ),
     );
   }
 
-  Widget _buildImageStack(BuildContext context) {
+  Widget _buildImageSlider(BuildContext context) {
+    final displayImages = widget.ground.images.isNotEmpty 
+        ? widget.ground.images 
+        : [widget.ground.imageUrl.isNotEmpty ? widget.ground.imageUrl : "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e"];
+
     return Stack(
       children: [
-        ClipRRect(
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(18),
-          ),
-          child: AppNetworkImage(
-            imageUrl: ground.imageUrl.isNotEmpty
-                ? ground.imageUrl
-                : "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e",
-            height: 160,
-            width: double.infinity,
-            fit: BoxFit.cover,
+        SizedBox(
+          height: 160,
+          child: ClipRRect(
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(18),
+            ),
+            child: PageView.builder(
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentPage = index;
+                });
+              },
+              itemCount: displayImages.length,
+              itemBuilder: (context, index) {
+                return AppNetworkImage(
+                  imageUrl: displayImages[index],
+                  height: 160,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                );
+              },
+            ),
           ),
         ),
         
+        // Custom Dot Indicator
+        if (displayImages.length > 1)
+          Positioned(
+            bottom: 12,
+            right: 0,
+            left: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                displayImages.length,
+                (index) => AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  height: 6,
+                  width: _currentPage == index ? 16 : 6,
+                  decoration: BoxDecoration(
+                    color: _currentPage == index 
+                        ? AppColors.white 
+                        : AppColors.white.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
         // Favorite Button
         Positioned(
           top: 12,
           right: 12,
           child: BlocBuilder<SavedGroundCubit, SavedGroundState>(
             builder: (context, state) {
-              final isSaved = state.favoriteIds.contains(ground.id);
+              final isSaved = state.favoriteIds.contains(widget.ground.id);
               return GestureDetector(
                 onTap: () {
                   final user = Supabase.instance.client.auth.currentUser;
                   if (user != null) {
                     context
                         .read<SavedGroundCubit>()
-                        .toggleFavorite(user.id, ground.id);
+                        .toggleFavorite(user.id, widget.ground.id);
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -126,8 +182,8 @@ class GroundCard extends StatelessWidget {
                 final distance = _calculateDistance(
                   state.latitude!,
                   state.longitude!,
-                  ground.latitude,
-                  ground.longitude,
+                  widget.ground.latitude,
+                  widget.ground.longitude,
                 );
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -174,7 +230,7 @@ class GroundCard extends StatelessWidget {
             children: [
               Expanded(
                 child: AppText(
-                  text: ground.name,
+                  text: widget.ground.name,
                   textStyle: AppTextTheme.black16.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -198,7 +254,7 @@ class GroundCard extends StatelessWidget {
                     ),
                     const AppSizedBox(width: 4),
                     AppText(
-                      text: ground.rating.toString(),
+                      text: widget.ground.rating.toString(),
                       textStyle: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
@@ -224,7 +280,7 @@ class GroundCard extends StatelessWidget {
               const AppSizedBox(width: 4),
               Expanded(
                 child: AppText(
-                  text: ground.address,
+                  text: widget.ground.address,
                   textStyle: AppTextTheme.black12.copyWith(
                     color: onSurface.withOpacity(0.5),
                   ),
@@ -249,7 +305,7 @@ class GroundCard extends StatelessWidget {
                     ),
                   ),
                   AppText(
-                    text: "₹${ground.pricePerHour}/hr",
+                    text: "₹${widget.ground.pricePerHour}/hr",
                     textStyle: AppTextTheme.black18.copyWith(
                       fontWeight: FontWeight.w800,
                       color: AppColors.primaryDarkGreen,
@@ -264,7 +320,7 @@ class GroundCard extends StatelessWidget {
                   Navigator.pushNamed(
                     context,
                     AppRoutes.slotSelection,
-                    arguments: ground,
+                    arguments: widget.ground,
                   );
                 },
                 style: ElevatedButton.styleFrom(

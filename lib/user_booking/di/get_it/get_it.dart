@@ -1,5 +1,8 @@
 import 'package:bloc_structure/user_booking/data/repositories/auth_repositories_impl.dart';
+import 'package:bloc_structure/user_booking/data/services/analytics_service.dart';
 import 'package:bloc_structure/user_booking/data/repositories/payment_repository.dart';
+import 'package:bloc_structure/user_booking/data/repositories/booking_repository.dart';
+import 'package:bloc_structure/user_booking/presentation/blocs/booking/booking_cubit.dart';
 import 'package:bloc_structure/user_booking/domain/repositories/auth_repositories.dart';
 import 'package:bloc_structure/user_booking/presentation/blocs/auth/auth_cubit.dart';
 import 'package:bloc_structure/user_booking/presentation/blocs/slot_selection/slot_selection_cubit.dart';
@@ -61,11 +64,17 @@ Future<void> init() async {
   getIt.registerLazySingleton<PaymentRepository>(
     () => PaymentRepository(),
   );
+  getIt.registerLazySingleton<BookingRepository>(
+    () => BookingRepository(),
+  );
+  getIt.registerFactory(
+    () => BookingCubit(getIt<BookingRepository>(), getIt<AnalyticsService>()),
+  );
   getIt.registerLazySingleton<FavoriteRepository>(
     () => FavoriteRepositoryImpl(getIt<SupabaseClient>()),
   );
   getIt.registerLazySingleton<GroundCubit>(
-    () => GroundCubit(getIt<GroundRepository>()),
+    () => GroundCubit(getIt<GroundRepository>(), getIt<AnalyticsService>()),
   );
   getIt.registerLazySingleton<SavedGroundCubit>(
     () => SavedGroundCubit(getIt<FavoriteRepository>()),
@@ -73,4 +82,7 @@ Future<void> init() async {
   getIt.registerLazySingleton<ThemeCubit>(
     () => ThemeCubit(),
   );
+
+  /// Services
+  getIt.registerLazySingleton<AnalyticsService>(() => AnalyticsService());
 }

@@ -87,4 +87,58 @@ class PaymentRepository {
     await _supabase.from('bookings').insert(bookingData);
     debugPrint('PaymentRepository: saveBooking completed');
   }
+
+  /// SAVE DIRECT BOOKING (BYPASS PAYMENT)
+  Future<void> saveDirectBooking({
+    required String groundId,
+    required DateTime date,
+    required List<String> slotStartTimes,
+    required int amount,
+  }) async {
+    debugPrint('PaymentRepository: saveDirectBooking called - Ground: $groundId, Date: $date, Amount: $amount');
+    final user = _supabase.auth.currentUser;
+    if (user == null) {
+      debugPrint('PaymentRepository: Error - User not authenticated');
+      throw Exception('User not authenticated');
+    }
+
+    try {
+      // 1. Create Booking Record
+      final bookingData = {
+        'user_id': user.id,
+        'ground_id': groundId,
+        'slot_time': date.toIso8601String(),
+        'amount': amount,
+        'status': 'confirmed',
+      };
+
+      debugPrint('PaymentRepository: Inserting into bookings... Data: $bookingData');
+      await _supabase.from('bookings').insert(bookingData);
+      debugPrint('PaymentRepository: Booking record created successfully');
+
+      // 2. Block Slots in Database
+      final formattedDate = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+      debugPrint('PaymentRepository: Blocking ${slotStartTimes.length} slots for date: $formattedDate');
+
+      for (final startTime in slotStartTimes) {
+        debugPrint('PaymentRepository: Upserting slot: $startTime');
+        await _supabase.from('slots').upsert({
+          'ground_id': groundId,
+          'date': formattedDate,
+          'start_time': startTime,
+          'status': 'booked',
+          'price': (amount / slotStartTimes.length).toInt(),
+        }, onConflict: 'ground_id, date, start_time');
+        debugPrint('PaymentRepository: Slot $startTime upsert completed');
+      }
+
+      debugPrint('PaymentRepository: saveDirectBooking FULLY completed');
+    } catch (e) {
+      debugPrint('PaymentRepository: EXCEPTION in saveDirectBooking: $e');
+      if (e is PostgrestException) {
+        debugPrint('Postgrest Details - Message: ${e.message}, Code: ${e.code}, Hint: ${e.hint}');
+      }
+      rethrow;
+    }
+  }
 }

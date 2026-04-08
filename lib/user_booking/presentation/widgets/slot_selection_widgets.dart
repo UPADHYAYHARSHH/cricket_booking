@@ -19,7 +19,7 @@ class SlotSelectionWidgets {
       {bool isSaved = false, VoidCallback? onToggleFav}) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     return Container(
       color: colorScheme.surface,
       padding: EdgeInsets.only(
@@ -77,16 +77,16 @@ class SlotSelectionWidgets {
           ),
           IconButton(
             icon: isSaved
-          ? const Icon(
-              Icons.favorite,
-              size: 22,
-              color: AppColors.error,
-            )
-          : HugeIcon(
-              icon: HugeIcons.strokeRoundedFavourite,
-              size: 22,
-              color: colorScheme.onSurface,
-            ),
+                ? const Icon(
+                    Icons.favorite,
+                    size: 22,
+                    color: AppColors.error,
+                  )
+                : HugeIcon(
+                    icon: HugeIcons.strokeRoundedFavourite,
+                    size: 22,
+                    color: colorScheme.onSurface,
+                  ),
             onPressed: onToggleFav,
           ),
           IconButton(
@@ -124,7 +124,8 @@ class SlotSelectionWidgets {
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: AppNetworkImage(
-              imageUrl: (ground?.imageUrl != null && ground!.imageUrl.isNotEmpty)
+              imageUrl: (ground?.imageUrl != null &&
+                      ground!.imageUrl.isNotEmpty)
                   ? ground.imageUrl
                   : "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e",
               height: 175,
@@ -213,7 +214,7 @@ class SlotSelectionWidgets {
       BuildContext context, List<DateItem> dates, Function(int) onSelectDate) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     return Container(
       color: colorScheme.surface,
       margin: const EdgeInsets.only(top: 16),
@@ -273,7 +274,9 @@ class SlotSelectionWidgets {
                             textStyle: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: sel ? AppColors.white.withOpacity(0.7) : colorScheme.onSurface.withOpacity(0.5),
+                              color: sel
+                                  ? AppColors.white.withOpacity(0.7)
+                                  : colorScheme.onSurface.withOpacity(0.5),
                             ),
                           ),
                           const AppSizedBox(height: 4),
@@ -282,7 +285,8 @@ class SlotSelectionWidgets {
                             textStyle: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w800,
-                              color: sel ? AppColors.white : colorScheme.onSurface,
+                              color:
+                                  sel ? AppColors.white : colorScheme.onSurface,
                             ),
                           ),
                         ],
@@ -364,24 +368,24 @@ class SlotSelectionWidgets {
 
   // ── Legend ────────────────────────────────────────────────────────────────
 
-  static Widget buildLegend(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+  // static Widget buildLegend(BuildContext context) {
+  //   final theme = Theme.of(context);
+  //   final colorScheme = theme.colorScheme;
 
-    return Container(
-      color: colorScheme.surface,
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _legendItem(context, color: const Color(0xFF00C897), label: 'AVAILABLE'),
-          _legendItem(context, color: const Color(0xFFFF5252), label: 'BOOKED'),
-          _legendItem(context, color: const Color(0xFFFFD600), label: 'ADVANCE'),
-          _legendItem(context, color: const Color(0xFFFF9800), label: 'SELECTED'),
-        ],
-      ),
-    );
-  }
+  //   return Container(
+  //     color: colorScheme.surface,
+  //     padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+  //     child: Row(
+  //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //       children: [
+  //         _legendItem(context, color: const Color(0xFF00C897), label: 'AVAILABLE'),
+  //         _legendItem(context, color: const Color(0xFFFF5252), label: 'BOOKED'),
+  //         _legendItem(context, color: const Color(0xFFFFD600), label: 'ADVANCE'),
+  //         _legendItem(context, color: const Color(0xFFFF9800), label: 'SELECTED'),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   static Widget _legendItem(BuildContext context,
       {required Color color, required String label}) {
@@ -413,7 +417,7 @@ class SlotSelectionWidgets {
       BuildContext context, List<TimeSlot> slots, Function(int) onToggleSlot) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     return Container(
       color: colorScheme.surface,
       margin: const EdgeInsets.only(top: 12),
@@ -432,7 +436,8 @@ class SlotSelectionWidgets {
               mainAxisSpacing: 12,
               childAspectRatio: 1.55,
             ),
-            itemBuilder: (ctx, i) => _buildSlotCard(context, slots[i], i, onToggleSlot),
+            itemBuilder: (ctx, i) =>
+                _buildSlotCard(context, slots[i], i, onToggleSlot),
           ),
         ],
       ),
@@ -484,7 +489,9 @@ class SlotSelectionWidgets {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          color: isBooked ? const Color(0xFFF5F5F5) : colorScheme.surface,
+          color: isBooked
+              ? colorScheme.onSurface.withOpacity(0.08)
+              : colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
               color: isBooked ? Colors.transparent : borderColor, width: 2),
@@ -533,7 +540,7 @@ class SlotSelectionWidgets {
                     const AppSizedBox(height: 8),
                     if (isBooked)
                       AppText(
-                        text: 'Unavailable',
+                        text: 'Booked',
                         textStyle: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
@@ -570,8 +577,12 @@ class SlotSelectionWidgets {
 
   // ── Bottom Bar ────────────────────────────────────────────────────────────
 
-  static Widget buildBottomBar(BuildContext context, List<TimeSlot> selectedSlots,
-      DateItem activeDate, double totalPrice, VoidCallback onConfirm) {
+  static Widget buildBottomBar(
+      BuildContext context,
+      List<TimeSlot> selectedSlots,
+      DateItem activeDate,
+      double totalPrice,
+      VoidCallback onConfirm) {
     if (selectedSlots.isEmpty) return const SizedBox.shrink();
 
     final theme = Theme.of(context);
@@ -583,7 +594,8 @@ class SlotSelectionWidgets {
         color: colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.3 : 0.1),
+            color: Colors.black
+                .withOpacity(theme.brightness == Brightness.dark ? 0.3 : 0.1),
             blurRadius: 16,
             offset: const Offset(0, -4),
           )
@@ -679,8 +691,10 @@ class SlotSelectionWidgets {
 
   // ── Description Section ───────────────────────────────────────────────────
 
-  static Widget buildDescriptionSection(BuildContext context, String? description) {
-    if (description == null || description.isEmpty) return const SizedBox.shrink();
+  static Widget buildDescriptionSection(
+      BuildContext context, String? description) {
+    if (description == null || description.isEmpty)
+      return const SizedBox.shrink();
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -711,7 +725,8 @@ class SlotSelectionWidgets {
 
   // ── Amenities Section ──────────────────────────────────────────────────────
 
-  static Widget buildAmenitiesSection(BuildContext context, List<String>? amenities) {
+  static Widget buildAmenitiesSection(
+      BuildContext context, List<String>? amenities) {
     if (amenities == null || amenities.isEmpty) return const SizedBox.shrink();
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -887,74 +902,78 @@ class SlotSelectionWidgets {
                   ),
                   const AppSizedBox(height: 12),
                   // Static Map Placeholder (Styled to look like a map)
-                    SizedBox(
-                      height: 160,
-                      child: Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: GoogleMap(
-                              initialCameraPosition: CameraPosition(
-                                target: LatLng(ground.latitude, ground.longitude),
-                                zoom: 15,
-                              ),
-                              markers: {
-                                Marker(
-                                  markerId: const MarkerId('ground'),
-                                  position: LatLng(ground.latitude, ground.longitude),
-                                ),
-                              },
-                              zoomControlsEnabled: false,
-                              myLocationButtonEnabled: false,
-                              liteModeEnabled: true, // IMPORTANT for performance in lists/scrolls
+                  SizedBox(
+                    height: 160,
+                    child: Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: GoogleMap(
+                            initialCameraPosition: CameraPosition(
+                              target: LatLng(ground.latitude, ground.longitude),
+                              zoom: 15,
                             ),
+                            markers: {
+                              Marker(
+                                markerId: const MarkerId('ground'),
+                                position:
+                                    LatLng(ground.latitude, ground.longitude),
+                              ),
+                            },
+                            zoomControlsEnabled: false,
+                            myLocationButtonEnabled: false,
+                            liteModeEnabled:
+                                true, // IMPORTANT for performance in lists/scrolls
                           ),
+                        ),
 
-                          /// Overlay Button (Open in Maps)
-                          Positioned.fill(
-                            child: Center(
-                              child: GestureDetector(
-                                onTap: () => _openMap(ground.latitude, ground.longitude),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.white,
-                                    borderRadius: BorderRadius.circular(20),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: AppColors.black.withOpacity(0.15),
-                                        blurRadius: 10,
-                                        offset: const Offset(0, 4),
-                                      )
-                                    ],
-                                  ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      HugeIcon(
-                                        icon: HugeIcons.strokeRoundedLocation01,
-                                        size: 16,
-                                        color: kOrange,
+                        /// Overlay Button (Open in Maps)
+                        Positioned.fill(
+                          child: Center(
+                            child: GestureDetector(
+                              onTap: () =>
+                                  _openMap(ground.latitude, ground.longitude),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.black.withOpacity(0.15),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    )
+                                  ],
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    HugeIcon(
+                                      icon: HugeIcons.strokeRoundedLocation01,
+                                      size: 16,
+                                      color: kOrange,
+                                    ),
+                                    AppSizedBox(width: 8),
+                                    AppText(
+                                      text: 'Open in Maps',
+                                      align: TextAlign.left,
+                                      textStyle: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.textPrimaryLight,
                                       ),
-                                      AppSizedBox(width: 8),
-                                      AppText(
-                                        text: 'Open in Maps',
-                                        align: TextAlign.left,
-                                        textStyle: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w700,
-                                          color: AppColors.textPrimaryLight,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
+                  ),
                 ],
               ),
             ),
@@ -965,7 +984,8 @@ class SlotSelectionWidgets {
   }
 
   static Future<void> _openMap(double lat, double lng) async {
-    final String googleUrl = 'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
+    final String googleUrl =
+        'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
     final Uri url = Uri.parse(googleUrl);
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
@@ -1002,7 +1022,7 @@ class _ExpandableDescriptionState extends State<_ExpandableDescription> {
               color: colorScheme.onSurface.withOpacity(0.6),
             ),
           );
-          
+
           final tp = TextPainter(
             text: span,
             maxLines: 3,
@@ -1028,7 +1048,8 @@ class _ExpandableDescriptionState extends State<_ExpandableDescription> {
               Text(
                 widget.description,
                 maxLines: _isExpanded ? null : 3,
-                overflow: _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                overflow:
+                    _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 14,
                   height: 1.5,

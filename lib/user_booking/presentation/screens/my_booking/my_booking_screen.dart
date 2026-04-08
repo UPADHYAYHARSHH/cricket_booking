@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
+import 'dart:math';
 
 import '../../../../common/constants/colors.dart';
 import '../../../constants/text_theme.dart';
 import '../../../constants/widgets/app_sizedBox.dart';
 import '../../../constants/widgets/app_text.dart';
-import 'dart:math';
+import '../../blocs/booking/booking_cubit.dart';
+import '../../blocs/booking/booking_state.dart';
+import '../../../data/models/booking_model.dart';
 
-import 'package:flutter/services.dart';
+
 
 class MyBookingsScreen extends StatefulWidget {
   const MyBookingsScreen({super.key});
@@ -18,31 +24,17 @@ class MyBookingsScreen extends StatefulWidget {
 class _MyBookingsScreenState extends State<MyBookingsScreen> {
   int _selectedTab = 0;
 
-  final List<_BookingModel> _upcomingBookings = [
-    const _BookingModel(
-      venueName: "Lord's Arena",
-      pitchName: "Pitch 1",
-      dateTime: "Sat, 24 Oct • 06:00 PM - 08:00 PM",
-      price: 45.00,
-      status: "CONFIRMED",
-      imageUrl: "https://images.unsplash.com/photo-1531415074968-036ba1b575da?w=600&q=80",
-      needsPayment: true,
-    ),
-    const _BookingModel(
-      venueName: "The Pavilion Box",
-      pitchName: "",
-      dateTime: "Sun, 25 Oct • 10:00 AM - 12:00 PM",
-      price: 38.00,
-      status: "CONFIRMED",
-      imageUrl: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=600&q=80",
-      needsPayment: false,
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    context.read<BookingCubit>().getBookings();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: AppColors.surfaceLight,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,18 +62,20 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       ),
     );
   }
-
   Widget _buildTabBar() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
         height: 44,
         decoration: BoxDecoration(
-          color: AppColors.white,
+          color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(.06),
+              color: Colors.black.withOpacity(isDark ? 0.3 : 0.06),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -98,6 +92,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   }
 
   Widget _tabItem(String label, int index) {
+    final theme = Theme.of(context);
     final isSelected = _selectedTab == index;
 
     return Expanded(
@@ -114,7 +109,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
           child: AppText(
             text: label,
             textStyle: AppTextTheme.black13.copyWith(
-              color: isSelected ? AppColors.white : AppColors.textSecondaryLight,
+              color: isSelected ? AppColors.white : theme.colorScheme.onSurface.withOpacity(0.6),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -124,45 +119,74 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   }
 
   Widget _buildBookingList() {
-    final bookings = _selectedTab == 0 ? _upcomingBookings : <_BookingModel>[];
+    return BlocBuilder<BookingCubit, BookingState>(
+      builder: (context, state) {
+        if (state is BookingLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    if (bookings.isEmpty) {
-      return const Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.calendar_today_outlined, size: 56, color: AppColors.borderLight),
-          AppSizedBox(height: 12),
-          AppText(
-            text: "No bookings yet",
-            textStyle: AppTextTheme.grey13,
-          ),
-        ],
-      );
-    }
+        if (state is BookingError) {
+          return Center(child: AppText(text: state.message, textStyle: AppTextTheme.grey13));
+        }
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: bookings.length,
-      itemBuilder: (_, i) => _BookingCard(booking: bookings[i]),
+        if (state is BookingLoaded) {
+          final now = DateTime.now();
+          final bookings = state.bookings.where((b) {
+            if (_selectedTab == 0) {
+              return b.slotTime.isAfter(now);
+            } else {
+              return b.slotTime.isBefore(now);
+            }
+          }).toList();
+
+          if (bookings.isEmpty) {
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.calendar_today_outlined, size: 56, color: Theme.of(context).dividerColor),
+                AppSizedBox(height: 12),
+                AppText(
+                  text: "No bookings yet",
+                  textStyle: AppTextTheme.grey13,
+                ),
+              ],
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: () => context.read<BookingCubit>().getBookings(),
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: bookings.length,
+              itemBuilder: (_, i) => _BookingCard(booking: bookings[i]),
+            ),
+          );
+        }
+
+        return const SizedBox();
+      },
     );
   }
 }
 
 class _BookingCard extends StatelessWidget {
-  final _BookingModel booking;
+  final BookingModel booking;
 
   const _BookingCard({required this.booking});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(.07),
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.07),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -186,10 +210,15 @@ class _BookingCard extends StatelessWidget {
         ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
           child: Image.network(
-            booking.imageUrl,
+            booking.ground?.imageUrl ?? '',
             height: 150,
             width: double.infinity,
             fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(
+              height: 150,
+              color: Colors.grey.shade200,
+              child: const Icon(Icons.image_not_supported),
+            ),
           ),
         ),
         Positioned(
@@ -202,7 +231,7 @@ class _BookingCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
             ),
             child: AppText(
-              text: booking.status,
+              text: booking.status.toUpperCase(),
               textStyle: AppTextTheme.white10.copyWith(
                 fontWeight: FontWeight.w700,
                 letterSpacing: .5,
@@ -215,7 +244,8 @@ class _BookingCard extends StatelessWidget {
   }
 
   Widget _buildInfo() {
-    final title = booking.pitchName.isNotEmpty ? "${booking.venueName} - ${booking.pitchName}" : booking.venueName;
+    final title = booking.ground?.name ?? "Unknown Venue";
+    final timeStr = DateFormat('EEE, d MMM • hh:mm a').format(booking.slotTime);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
@@ -238,7 +268,7 @@ class _BookingCard extends StatelessWidget {
                     const AppSizedBox(width: 5),
                     Expanded(
                       child: AppText(
-                        text: booking.dateTime,
+                        text: timeStr,
                         textStyle: AppTextTheme.grey12,
                       ),
                     ),
@@ -255,7 +285,7 @@ class _BookingCard extends StatelessWidget {
                 textStyle: AppTextTheme.grey12.copyWith(fontSize: 10),
               ),
               AppText(
-                text: "₹${booking.price.toStringAsFixed(2)}",
+                text: "₹${booking.amount.toStringAsFixed(0)}",
                 textStyle: AppTextTheme.black16.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -270,36 +300,30 @@ class _BookingCard extends StatelessWidget {
   Widget _buildActions(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: booking.needsPayment
-          ? Row(
-              children: [
-                Expanded(child: _viewTicketButton(context)),
-                const AppSizedBox(width: 10),
-                Expanded(child: _paymentButton()),
-              ],
-            )
-          : _viewTicketButton(context),
+      child: _viewTicketButton(context),
     );
   }
 
   Widget _viewTicketButton(BuildContext context) {
     return OutlinedButton(
       onPressed: () {
+        final userName = "User"; // Generic for now or fetch from Supabase if needed
+
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => ViewTicketScreen(
               ticket: TicketModel(
-                bookingId: "CB-20241024-001",
-                venueName: booking.venueName,
-                pitchName: booking.pitchName,
-                date: "Sat, 24 Oct 2024",
-                time: "06:00 PM - 08:00 PM",
-                bookedBy: "Harsh Shah",
-                location: "Ahmedabad, Gujarat",
-                price: booking.price,
-                imageUrl: booking.imageUrl,
-                isPaid: !booking.needsPayment,
+                bookingId: booking.razorpayOrderId,
+                venueName: booking.ground?.name ?? "Venue",
+                pitchName: "Pitch", // Slot info not fully captured in booking table yet
+                date: DateFormat('EEE, d MMM yyyy').format(booking.slotTime),
+                time: DateFormat('hh:mm a').format(booking.slotTime),
+                bookedBy: userName,
+                location: booking.ground?.address ?? "Location",
+                price: booking.amount,
+                imageUrl: booking.ground?.imageUrl ?? "",
+                isPaid: booking.status == 'paid',
               ),
             ),
           ),
@@ -320,60 +344,23 @@ class _BookingCard extends StatelessWidget {
       ),
     );
   }
-
-  Widget _paymentButton() {
-    return ElevatedButton.icon(
-      onPressed: () {},
-      icon: const Icon(Icons.credit_card, size: 16),
-      label: AppText(
-        text: "Complete\nPayment",
-        textStyle: AppTextTheme.white12.copyWith(height: 1.3),
-        align: TextAlign.center,
-      ),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.accentOrange,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
-    );
-  }
 }
 
-class _BookingModel {
-  final String venueName;
-  final String pitchName;
-  final String dateTime;
-  final double price;
-  final String status;
-  final String imageUrl;
-  final bool needsPayment;
-
-  const _BookingModel({
-    required this.venueName,
-    required this.pitchName,
-    required this.dateTime,
-    required this.price,
-    required this.status,
-    required this.imageUrl,
-    required this.needsPayment,
-  });
-}
+// Removing local _BookingModel in favor of the real BookingModel
+// Removing local _paymentButton since payments are handled elsewhere now
 
 class ViewTicketScreen extends StatelessWidget {
   final TicketModel ticket;
 
   const ViewTicketScreen({super.key, required this.ticket});
 
-  static const Color _primaryGreen = Color(0xFF2D6A2D);
-  static const Color _lightGreen = Color(0xFFE8F5E9);
-  static const Color _orange = Color(0xFFFF6B1A);
-  static const Color _bg = Color(0xFFF2F2F2);
-
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -382,24 +369,22 @@ class ViewTicketScreen extends StatelessWidget {
           child: Container(
             margin: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.colorScheme.surface,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
               ],
             ),
-            child: const Icon(Icons.arrow_back_ios_new, size: 16, color: Colors.black87),
+            child: Icon(Icons.arrow_back_ios_new, size: 16, color: theme.colorScheme.onSurface),
           ),
         ),
-        title: const Text(
-          "My Ticket",
-          style: TextStyle(
-            color: Colors.black87,
-            fontSize: 18,
+        title: AppText(
+          text: "My Ticket",
+          textStyle: AppTextTheme.black18.copyWith(
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -419,17 +404,17 @@ class ViewTicketScreen extends StatelessWidget {
               margin: const EdgeInsets.all(10),
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.colorScheme.surface,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
                 ],
               ),
-              child: const Icon(Icons.share_outlined, size: 16, color: Colors.black87),
+              child: Icon(Icons.share_outlined, size: 16, color: theme.colorScheme.onSurface),
             ),
           ),
         ],
@@ -472,7 +457,7 @@ class ViewTicketScreen extends StatelessWidget {
           ),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: _primaryGreen,
+          backgroundColor: AppColors.primaryDarkGreen,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
@@ -489,26 +474,23 @@ class _TicketCard extends StatelessWidget {
   final TicketModel ticket;
 
   const _TicketCard({required this.ticket});
-
-  static const Color _primaryGreen = Color(0xFF2D6A2D);
-  static const Color _orange = Color(0xFFFF6B1A);
-
-  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Column(
       children: [
         // ── Top half ──
         Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: Column(
             children: [
               _buildVenueImage(),
-              _buildVenueInfo(),
-              _buildDividerRow(),
-              _buildDetailsGrid(),
+              _buildVenueInfo(context),
+              _buildDividerRow(context),
+              _buildDetailsGrid(context),
             ],
           ),
         ),
@@ -518,9 +500,9 @@ class _TicketCard extends StatelessWidget {
 
         // ── Bottom half ──
         Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
           ),
           child: Column(
             children: [
@@ -578,7 +560,7 @@ class _TicketCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
             decoration: BoxDecoration(
-              color: ticket.isPaid ? _primaryGreen : _orange,
+              color: ticket.isPaid ? AppColors.primaryDarkGreen : AppColors.accentOrange,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -610,7 +592,7 @@ class _TicketCard extends StatelessWidget {
           child: Text(
             "# ${ticket.bookingId}",
             style: const TextStyle(
-              color: Colors.white70,
+              color: Colors.white,
               fontSize: 12,
               fontWeight: FontWeight.w500,
               letterSpacing: 0.5,
@@ -621,7 +603,10 @@ class _TicketCard extends StatelessWidget {
     );
   }
 
-  Widget _buildVenueInfo() {
+  Widget _buildVenueInfo(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
       child: Row(
@@ -629,31 +614,26 @@ class _TicketCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFFE8F5E9),
+              color: AppColors.primaryDarkGreen.withOpacity(isDark ? 0.2 : 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.sports_cricket, color: _primaryGreen, size: 22),
+            child: const Icon(Icons.sports_cricket, color: AppColors.primaryDarkGreen, size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  ticket.venueName,
-                  style: const TextStyle(
-                    fontSize: 17,
+                AppText(
+                  text: ticket.venueName,
+                  textStyle: AppTextTheme.black17.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  ticket.pitchName,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey.shade500,
-                  ),
+                AppText(
+                  text: ticket.pitchName,
+                  textStyle: AppTextTheme.grey13,
                 ),
               ],
             ),
@@ -661,21 +641,18 @@ class _TicketCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                "PRICE",
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.grey.shade400,
+              AppText(
+                text: "PRICE",
+                textStyle: AppTextTheme.grey11.copyWith(
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.8,
                 ),
               ),
-              Text(
-                "₹${ticket.price.toStringAsFixed(0)}",
-                style: const TextStyle(
+              AppText(
+                text: "₹${ticket.price.toStringAsFixed(0)}",
+                textStyle: AppTextTheme.black18.copyWith(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
                 ),
               ),
             ],
@@ -685,14 +662,14 @@ class _TicketCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDividerRow() {
+  Widget _buildDividerRow(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Divider(color: Colors.grey.shade100, thickness: 1.5),
+      child: Divider(color: Theme.of(context).dividerColor.withOpacity(0.5), thickness: 1.5),
     );
   }
 
-  Widget _buildDetailsGrid() {
+  Widget _buildDetailsGrid(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
       child: Column(
@@ -753,12 +730,10 @@ class _TicketCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
       child: Column(
         children: [
-          Text(
-            "Scan at Venue",
-            style: TextStyle(
-              fontSize: 13,
+          AppText(
+            text: "Scan at Venue",
+            textStyle: AppTextTheme.grey13.copyWith(
               fontWeight: FontWeight.w600,
-              color: Colors.grey.shade500,
               letterSpacing: 0.5,
             ),
           ),
@@ -766,28 +741,23 @@ class _TicketCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              border: Border.all(color: const Color(0xFF2D6A2D).withOpacity(0.18), width: 2),
+              border: Border.all(color: AppColors.primaryDarkGreen.withOpacity(0.18), width: 2),
               borderRadius: BorderRadius.circular(16),
             ),
             child: _QrCodePainter(data: ticket.bookingId),
           ),
           const SizedBox(height: 14),
-          Text(
-            ticket.bookingId,
-            style: TextStyle(
-              fontSize: 14,
+          AppText(
+            text: ticket.bookingId,
+            textStyle: AppTextTheme.black14.copyWith(
               fontWeight: FontWeight.w700,
-              color: Colors.grey.shade700,
               letterSpacing: 2,
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            "Show this QR at the venue entrance",
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey.shade400,
-            ),
+          AppText(
+            text: "Show this QR at the venue entrance",
+            textStyle: AppTextTheme.grey11,
           ),
         ],
       ),
@@ -812,40 +782,36 @@ class _DetailTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       width: fullWidth ? double.infinity : null,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F8),
+        color: theme.brightness == Brightness.dark 
+            ? theme.colorScheme.surface.withOpacity(0.5) 
+            : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.dividerColor.withOpacity(isDark ? 0.1 : 0.05)),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: const Color(0xFF2D6A2D)),
-          const SizedBox(width: 8),
+          Icon(icon, size: 18, color: AppColors.primaryDarkGreen),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Colors.grey.shade400,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
+                AppText(
+                  text: label,
+                  textStyle: AppTextTheme.grey11,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Colors.black87,
-                    fontWeight: FontWeight.w600,
+                AppText(
+                  text: value,
+                  textStyle: AppTextTheme.black12.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -861,11 +827,12 @@ class _DetailTile extends StatelessWidget {
 class _TearLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
-      color: Colors.white,
+      color: theme.colorScheme.surface,
       child: Row(
         children: [
-          _semiCircle(isLeft: true),
+          _semiCircle(context, isLeft: true),
           Expanded(
             child: LayoutBuilder(
               builder: (_, constraints) {
@@ -877,25 +844,25 @@ class _TearLine extends StatelessWidget {
                     (_) => Container(
                       width: 5,
                       height: 1.5,
-                      color: Colors.grey.shade300,
+                      color: theme.dividerColor.withOpacity(0.2),
                     ),
                   ),
                 );
               },
             ),
           ),
-          _semiCircle(isLeft: false),
+          _semiCircle(context, isLeft: false),
         ],
       ),
     );
   }
 
-  Widget _semiCircle({required bool isLeft}) {
+  Widget _semiCircle(BuildContext context, {required bool isLeft}) {
     return Container(
       width: 18,
       height: 36,
       decoration: BoxDecoration(
-        color: const Color(0xFFF2F2F2),
+        color: Theme.of(context).scaffoldBackgroundColor,
         borderRadius: isLeft
             ? const BorderRadius.only(
                 topRight: Radius.circular(18),
@@ -919,21 +886,26 @@ class _QrCodePainter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return CustomPaint(
       size: const Size(160, 160),
-      painter: _QrPainter(seed: data.hashCode),
+      painter: _QrPainter(
+        seed: data.hashCode,
+        color: theme.colorScheme.onSurface,
+      ),
     );
   }
 }
 
 class _QrPainter extends CustomPainter {
   final int seed;
+  final Color color;
 
-  _QrPainter({required this.seed});
+  _QrPainter({required this.seed, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = const Color(0xFF1A1A1A);
+    final paint = Paint()..color = color;
     final rng = Random(seed);
     final cellSize = size.width / 21;
 

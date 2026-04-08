@@ -2,11 +2,13 @@ import 'package:bloc_structure/user_booking/domain/models/slot_models.dart';
 import 'package:bloc_structure/user_booking/domain/repositories/slot_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'dart:async';
 
 import 'slot_selection_state.dart';
 
 class SlotSelectionCubit extends Cubit<SlotSelectionState> {
   final SlotRepository repository;
+  StreamSubscription<List<TimeSlot>>? _slotsSubscription;
 
   SlotSelectionCubit(this.repository)
       : super(
@@ -30,25 +32,59 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
     });
   }
 
-  Future<void> loadSlots(String groundId, DateTime date, {String? openingTime, String? closingTime, double pricePerSlot = 0}) async {
-    emit(state.copyWith(isLoading: true, errorMessage: null, groundId: groundId, selectedDate: date));
+  Future<void> loadSlots(String groundId, DateTime date,
+      {String? openingTime, String? closingTime, double pricePerSlot = 0}) async {
+    emit(state.copyWith(
+        isLoading: true,
+        errorMessage: null,
+        groundId: groundId,
+        selectedDate: date));
 
-    try {
-      var slots = await repository.fetchSlotsForGround(groundId, date);
+    // Cancel existing subscription if any
+    await _slotsSubscription?.cancel();
 
-      if (slots.isEmpty && openingTime != null && closingTime != null) {
-        // Generate slots if none found
-        slots = _generateSlots(openingTime, closingTime, pricePerSlot);
-      }
+    // Start listening to real-time updates
+    _slotsSubscription = repository.getSlotsStream(groundId, date).listen(
+      (dbSlots) {
+        List<TimeSlot> mergedSlots = [];
 
-      emit(state.copyWith(slots: slots, isLoading: false));
-    } catch (e) {
-      emit(state.copyWith(isLoading: false, errorMessage: e.toString()));
-    }
+        if (openingTime != null && closingTime != null) {
+          // 1. Generate all possible slots for the day
+          mergedSlots = _generateSlots(openingTime, closingTime, pricePerSlot);
+
+          // 2. Overlay booked slots from DB
+          for (var dbSlot in dbSlots) {
+            final index = mergedSlots
+                .indexWhere((s) => s.startTime == dbSlot.startTime);
+            if (index != -1) {
+              mergedSlots[index] = dbSlot;
+            } else {
+              mergedSlots.add(dbSlot); // Fallback
+            }
+          }
+
+          // 3. Sort merged slots by time
+          mergedSlots.sort((a, b) => a.startTime.compareTo(b.startTime));
+        } else {
+          mergedSlots = dbSlots;
+        }
+
+        emit(state.copyWith(slots: mergedSlots, isLoading: false));
+      },
+      onError: (error) {
+        emit(state.copyWith(isLoading: false, errorMessage: error.toString()));
+      },
+    );
   }
 
   List<TimeSlot> _generateSlots(String open, String close, double price) {
     List<TimeSlot> generated = [];
+    final now = DateTime.now();
+    final isToday = state.selectedDate != null &&
+        state.selectedDate!.year == now.year &&
+        state.selectedDate!.month == now.month &&
+        state.selectedDate!.day == now.day;
+
     try {
       final openHour = int.parse(open.split(':')[0]);
       var closeHour = int.parse(close.split(':')[0]);
@@ -64,11 +100,20 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
         final startStr = _formatHour(startH);
         final endStr = _formatHour(endH);
 
+        // Determine if slot has already passed
+        bool isPast = false;
+        if (isToday) {
+          // If the slot's hour is before the current hour, it's past
+          if (startH < now.hour) {
+            isPast = true;
+          }
+        }
+
         generated.add(TimeSlot(
           startTime: startStr,
           endTime: endStr,
           price: price,
-          status: SlotStatus.available,
+          status: isPast ? SlotStatus.booked : SlotStatus.available,
         ));
       }
     } catch (e) {
@@ -113,5 +158,11 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
 
   void changePeriod(String period) {
     emit(state.copyWith(selectedPeriod: period));
+  }
+
+  @override
+  Future<void> close() {
+    _slotsSubscription?.cancel();
+    return super.close();
   }
 }

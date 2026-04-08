@@ -8,12 +8,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:bloc_structure/user_booking/presentation/blocs/saved_ground/saved_ground_cubit.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
-import '../../../di/get_it/get_it.dart';
-import '../../../constants/route_constants.dart';
-import '../../widgets/slot_selection_widgets.dart';
-import '../../../data/models/ground_model.dart';
-import '../../blocs/slot_selection/slot_selection_cubit.dart';
+import 'package:bloc_structure/user_booking/di/get_it/get_it.dart';
+import 'package:bloc_structure/user_booking/constants/route_constants.dart';
+import 'package:bloc_structure/user_booking/presentation/widgets/slot_selection_widgets.dart';
+import 'package:bloc_structure/user_booking/data/models/ground_model.dart';
+import 'package:bloc_structure/user_booking/presentation/blocs/slot_selection/slot_selection_cubit.dart';
 import 'package:bloc_structure/user_booking/domain/models/booking_arguments.dart';
+import 'package:bloc_structure/user_booking/data/services/analytics_service.dart';
 import '../../blocs/slot_selection/slot_selection_state.dart';
 
 class SlotSelectionScreen extends StatefulWidget {
@@ -106,6 +107,13 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
         if (!mounted) return;
         Navigator.pop(context); // Pop loading dialog
 
+        // Log successful booking
+        getIt<AnalyticsService>().logBookingSuccess(
+          bookingId: response.orderId!,
+          amount: _pendingAmount!,
+          groundName: _ground!.name,
+        );
+
         Navigator.pushReplacementNamed(
           context,
           AppRoutes.bookingConfirmationScreen,
@@ -126,7 +134,8 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
           context,
           AppRoutes.paymentFailedScreen,
           arguments: BookingFailureArguments(
-            errorMessage: "Payment verification failed. Please contact support.",
+            errorMessage:
+                "Payment verification failed. Please contact support.",
             onRetry: () => _retryPayment(),
           ),
         );
@@ -148,7 +157,8 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
   }
 
   void _retryPayment() {
-    if (_pendingAmount == null || _pendingDate == null || _pendingSlots == null) return;
+    if (_pendingAmount == null || _pendingDate == null || _pendingSlots == null)
+      return;
     _onConfirmBooking(_pendingAmount!, null, _pendingSlots!, fromRetry: true);
   }
 
@@ -156,6 +166,11 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
     debugPrint('--- RAZORPAY PAYMENT FAILED ---');
     debugPrint('Error Code: ${response.code}');
     debugPrint('Error Message: ${response.message}');
+
+    // Log payment failure
+    getIt<AnalyticsService>().logBookingFailure(
+      error: response.message ?? "Payment was cancelled or failed",
+    );
 
     Navigator.pushNamed(
       context,
@@ -180,6 +195,11 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
       final args = ModalRoute.of(context)?.settings.arguments;
       if (args is GroundModel) {
         _ground = args;
+        // Log ground view
+        getIt<AnalyticsService>().logGroundView(
+          groundId: _ground!.id,
+          groundName: _ground!.name,
+        );
         // Initial load for today
         context.read<SlotSelectionCubit>().loadSlots(
               _ground!.id,
@@ -193,8 +213,9 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
     }
   }
 
-  void _onConfirmBooking(double totalPrice, dynamic activeDate,
-      List<TimeSlot> selectedSlots, {bool fromRetry = false}) async {
+  void _onConfirmBooking(
+      double totalPrice, dynamic activeDate, List<TimeSlot> selectedSlots,
+      {bool fromRetry = false}) async {
     debugPrint('--- USER TAPPED CONFIRM BOOKING ---');
     debugPrint('Total Price: $totalPrice');
     debugPrint('Slots Count: ${selectedSlots.length}');
@@ -213,12 +234,6 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
     );
 
     try {
-      debugPrint('Calling create-order Edge Function...');
-      final orderData = await _paymentRepo.createOrder(totalPrice.toInt());
-      debugPrint('Order Data Received: $orderData');
-      
-      final orderId = orderData['id'];
-
       _pendingAmount = totalPrice;
       _pendingSlots = selectedSlots;
 
@@ -229,43 +244,82 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
           _pendingDate = DateTime(now.year, now.month + 1, activeDate.date);
         }
       }
-      debugPrint('Pending Date: $_pendingDate');
+      debugPrint('Step 1: Pending Date calculated - $_pendingDate');
+
+      // 1. Save Direct Booking and Block Slots
+      debugPrint('Step 2: Saving Direct Booking to Supabase...');
+      await _paymentRepo.saveDirectBooking(
+        groundId: _ground!.id,
+        date: _pendingDate!,
+        slotStartTimes: selectedSlots.map((s) => s.startTime).toList(),
+        amount: totalPrice.toInt(),
+      );
+      debugPrint('Step 3: Supabase Booking & Slot updates completed');
+
+      // 2. Log successful booking (Wrapped in try-catch to avoid blocking UI)
+      try {
+        debugPrint('Step 4: Logging Analytics...');
+        getIt<AnalyticsService>().logBookingSuccess(
+          bookingId: 'DIRECT_${DateTime.now().millisecondsSinceEpoch}',
+          amount: totalPrice,
+          groundName: _ground!.name,
+        );
+        debugPrint('Step 5: Analytics logged');
+      } catch (analyticsError) {
+        debugPrint('Non-critical Error in Analytics: $analyticsError');
+      }
 
       if (!mounted) return;
-      Navigator.pop(context);
+      debugPrint('Step 6: Closing loading dialog');
+      Navigator.pop(context); // Pop loading dialog
 
-      var options = {
-        'key': 'rzp_test_SZQGlX68eXuGzw',
-        'amount': totalPrice * 100,
-        'name': 'TurfPro Booking',
-        'description': '${_ground!.name} - ${selectedSlots.length} slot(s)',
-        'order_id': orderId,
-        'prefill': {'contact': '9999999999', 'email': 'test@test.com'},
-        'external': {
-          'wallets': ['paytm']
-        }
-      };
+      // 3. Navigate to Success Screen
+      debugPrint('Step 7: Navigating to Success Screen...');
+      final successArgs = BookingSuccessArguments(
+        ground: _ground!,
+        date: _pendingDate!,
+        selectedSlots: selectedSlots,
+        orderId: 'DIRECT_${DateTime.now().millisecondsSinceEpoch}',
+        totalPrice: totalPrice,
+      );
 
-      debugPrint('Opening Razorpay Modal for Order ID: $orderId');
-      _razorpay.open(options);
+      Navigator.pushReplacementNamed(
+        context,
+        AppRoutes.bookingConfirmationScreen,
+        arguments: successArgs,
+      );
+      debugPrint('Step 8: Navigation call completed');
     } catch (e) {
-      debugPrint('Confirmation Flow Error: $e');
+      debugPrint('CRITICAL ERROR in _onConfirmBooking: $e');
       if (!mounted) return;
-      Navigator.pop(context);
+      
+      // Ensure dialog is closed even on error
+      try { Navigator.pop(context); } catch (_) {}
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text('Booking Error: $e'), backgroundColor: Colors.red),
+          content: Text('Booking Error: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
       );
+      
+      // Log failure (Now correctly inside the catch block)
+      getIt<AnalyticsService>().logBookingFailure(error: e.toString());
     }
   }
 
-  String _getSlotPeriod(String time) {
+  String _getSlotPeriod(String? time) {
+    if (time == null || time.isEmpty) return 'Morning';
     try {
-      // time is in format "HH:MM AM/PM"
-      final parts = time.split(' ');
-      final hm = parts[0].split(':');
-      var hour = int.parse(hm[0]);
-      final ampm = parts[1].toUpperCase();
+      final timeParts = time.split(' ');
+      if (timeParts.isEmpty) return 'Morning';
+
+      final timeH = timeParts[0].split(':');
+      if (timeH.isEmpty) return 'Morning';
+
+      int hour = int.parse(timeH[0]);
+      final ampm = timeParts.length > 1 ? timeParts[1].toUpperCase() : 'AM';
 
       if (ampm == 'PM' && hour != 12) hour += 12;
       if (ampm == 'AM' && hour == 12) hour = 0;
@@ -295,15 +349,14 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
             children: [
               BlocBuilder<SavedGroundCubit, SavedGroundState>(
                   builder: (context, state) {
-                final isSaved = _ground != null &&
-                    state.favoriteIds.contains(_ground!.id);
+                final isSaved =
+                    _ground != null && state.favoriteIds.contains(_ground!.id);
                 return SlotSelectionWidgets.buildHeader(
                   context,
                   _ground,
                   isSaved: isSaved,
                   onToggleFav: () {
-                    final user =
-                        Supabase.instance.client.auth.currentUser;
+                    final user = Supabase.instance.client.auth.currentUser;
                     if (user != null && _ground != null) {
                       context
                           .read<SavedGroundCubit>()
@@ -311,8 +364,8 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                     } else if (user == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                            content: AppText(
-                                text: "Please login to save grounds")),
+                            content:
+                                AppText(text: "Please login to save grounds")),
                       );
                     }
                   },
@@ -339,7 +392,8 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                       SlotSelectionWidgets.buildPeriodFilter(
                         context,
                         state.selectedPeriod,
-                        (p) => context.read<SlotSelectionCubit>().changePeriod(p),
+                        (p) =>
+                            context.read<SlotSelectionCubit>().changePeriod(p),
                       ),
                       if (state.isLoading)
                         const Padding(
@@ -355,13 +409,11 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                           child: AppText(text: state.errorMessage!),
                         ))
                       else ...[
-                        SlotSelectionWidgets.buildLegend(context),
+                        // SlotSelectionWidgets.buildLegend(context),
                         Builder(builder: (context) {
                           // Filter slots based on period
-                          final filteredWithOriginalIndex = state.slots
-                              .asMap()
-                              .entries
-                              .where((entry) {
+                          final filteredWithOriginalIndex =
+                              state.slots.asMap().entries.where((entry) {
                             final slot = entry.value;
                             final period = _getSlotPeriod(slot.startTime);
                             return period == state.selectedPeriod;
@@ -374,8 +426,11 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                           return SlotSelectionWidgets.buildSlotSection(
                               context, filteredSlots, (indexInFiltered) {
                             // Find the original index to toggle correct slot
-                            final originalIndex = filteredWithOriginalIndex[indexInFiltered].key;
-                            context.read<SlotSelectionCubit>().toggleSlot(originalIndex);
+                            final originalIndex =
+                                filteredWithOriginalIndex[indexInFiltered].key;
+                            context
+                                .read<SlotSelectionCubit>()
+                                .toggleSlot(originalIndex);
                           });
                         }),
                         const AppSizedBox(height: 20),

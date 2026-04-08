@@ -3,12 +3,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../domain/repositories/ground_repository.dart';
 import '../../../data/models/ground_model.dart';
+import '../../../data/services/analytics_service.dart';
 import 'ground_state.dart';
 
 class GroundCubit extends Cubit<GroundState> {
   final GroundRepository repository;
+  final AnalyticsService analytics;
 
-  GroundCubit(this.repository) : super(GroundInitial());
+  GroundCubit(this.repository, this.analytics) : super(GroundInitial());
 
   Future<void> getGrounds({String? city, double? userLat, double? userLng}) async {
     emit(GroundLoading());
@@ -30,6 +32,9 @@ class GroundCubit extends Cubit<GroundState> {
           return distA.compareTo(distB);
         });
       }
+
+      // Log success event (optional: could also log result count)
+      analytics.logGroundView(groundId: 'all', groundName: 'Fetch List');
 
       emit(GroundLoaded(grounds, grounds, activeFilter: GroundFilter.nearMe));
     } catch (e) {

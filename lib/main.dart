@@ -1,3 +1,4 @@
+import 'package:bloc_structure/firebase_options.dart';
 import 'package:bloc_structure/user_booking/di/get_it/get_it.dart' as di;
 import 'package:bloc_structure/user_booking/presentation/blocs/auth/auth_cubit.dart';
 import 'package:bloc_structure/user_booking/presentation/blocs/profile/profile_cubit.dart';
@@ -13,6 +14,9 @@ import 'package:bloc_structure/user_booking/presentation/screens/payment_status/
 import 'package:bloc_structure/user_booking/presentation/screens/slot_selection/slot_slection.dart';
 import 'package:bloc_structure/user_booking/presentation/screens/signup/signup_screen.dart';
 import 'package:bloc_structure/user_booking/presentation/screens/search/search_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:bloc_structure/common/utils/app_bloc_observer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -26,10 +30,26 @@ import 'package:bloc_structure/user_booking/presentation/blocs/ground/ground_cub
 import 'user_booking/presentation/blocs/location/location_cubit.dart';
 import 'user_booking/presentation/blocs/saved_ground/saved_ground_cubit.dart';
 import 'package:bloc_structure/user_booking/presentation/blocs/theme/theme_cubit.dart';
+import 'package:bloc_structure/user_booking/presentation/blocs/booking/booking_cubit.dart';
 import 'package:bloc_structure/common/constants/colors.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // Pass all uncaught "fatal" errors from the framework to Crashlytics
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+
+  // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
+
+  Bloc.observer = AppBlocObserver();
 
   await Supabase.initialize(
     url: 'https://qcybnzopffyzmpiaxwbc.supabase.co',
@@ -79,6 +99,9 @@ void main() async {
         ),
         BlocProvider<ThemeCubit>(
           create: (_) => di.getIt<ThemeCubit>(),
+        ),
+        BlocProvider<BookingCubit>(
+          create: (_) => di.getIt<BookingCubit>(),
         ),
       ],
       child: BlocBuilder<ThemeCubit, ThemeState>(
