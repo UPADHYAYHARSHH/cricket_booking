@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:bloc_structure/common/constants/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -19,10 +20,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String _selectedGender = 'Male';
   DateTime? _selectedDate;
   String? _photoUrl;
-
-  static const _primaryGreen = Color(0xFF2D6A4F);
-  static const _bgColor = Color(0xFFF5F5F5);
-  static const _borderColor = Color(0xFFE0E0E0);
 
   final List<String> _genders = ['Male', 'Female', 'Other'];
 
@@ -56,7 +53,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return BlocProvider(
       create: (_) => getIt<ProfileCubit>()..loadProfile(),
       child: BlocConsumer<ProfileCubit, ProfileState>(
-        listenWhen: (prev, curr) => prev.isSuccess != curr.isSuccess || curr.error != null,
+        listenWhen: (prev, curr) =>
+            prev.isSuccess != curr.isSuccess || curr.error != null,
         listener: (context, state) {
           if (state.isSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -72,8 +70,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           }
         },
         builder: (context, state) {
+          final theme = Theme.of(context);
+          final colorScheme = theme.colorScheme;
+          final isDark = theme.brightness == Brightness.dark;
+
           if (state.isLoading && state.name == null) {
-            return const Scaffold(body: Center(child: CircularProgressIndicator()));
+            return const Scaffold(
+                body: Center(child: CircularProgressIndicator()));
           }
 
           // Initialize values from state if they are null
@@ -85,40 +88,50 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           }
 
           return Scaffold(
-            backgroundColor: _bgColor,
+            backgroundColor: theme.scaffoldBackgroundColor,
             appBar: AppBar(
-              backgroundColor: _bgColor,
+              backgroundColor: theme.scaffoldBackgroundColor,
               elevation: 0,
+              centerTitle: true,
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.black),
+                icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
                 onPressed: () => Navigator.pop(context),
               ),
-              title: const Text(
+              title: Text(
                 'Edit Profile',
                 style: TextStyle(
-                  color: _primaryGreen,
-                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
             body: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Column(
                 children: [
                   _buildAvatar(context, state),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 32),
                   TextField(
                     controller: _nameController,
+                    style: TextStyle(color: colorScheme.onSurface),
                     decoration: InputDecoration(
                       labelText: 'Full Name',
-                      hintText: 'Enter name',
+                      labelStyle: TextStyle(
+                          color: colorScheme.onSurface.withOpacity(0.6)),
+                      hintText: 'Enter your name',
+                      filled: true,
+                      fillColor: theme.cardColor,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: _primaryGreen, width: 2),
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(
+                            color: AppColors.primaryDarkGreen, width: 2),
                       ),
+                      prefixIcon: Icon(Icons.person_outline,
+                          color: colorScheme.primary),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -128,12 +141,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       "Gender",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade700,
+                        fontSize: 14,
+                        color: colorScheme.onSurface.withOpacity(0.7),
                       ),
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _genderSelector(),
+                  _buildGenderSelector(theme),
                   const SizedBox(height: 24),
                   Align(
                     alignment: Alignment.centerLeft,
@@ -141,27 +155,35 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       "Date of Birth",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade700,
+                        fontSize: 14,
+                        color: colorScheme.onSurface.withOpacity(0.7),
                       ),
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _datePicker(),
-                  const SizedBox(height: 40),
+                  _buildDatePicker(theme),
+                  const SizedBox(height: 48),
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: 56,
                     child: ElevatedButton(
-                      onPressed: state.isLoading ? null : () => _saveChanges(context),
+                      onPressed:
+                          state.isLoading ? null : () => _saveChanges(context),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _primaryGreen,
+                        backgroundColor: AppColors.primaryDarkGreen,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      child: state.isLoading 
-                          ? const CircularProgressIndicator(color: Colors.white) 
-                          : const Text("Save Changes", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      child: state.isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text(
+                              "Save Changes",
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
                     ),
                   )
                 ],
@@ -209,7 +231,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: const BoxDecoration(
-                  color: _primaryGreen,
+                  color: AppColors.primaryDarkGreen,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -240,25 +262,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  Widget _genderSelector() {
+  Widget _buildGenderSelector(ThemeData theme) {
     return Wrap(
-      spacing: 10,
+      spacing: 12,
       children: _genders.map((gender) {
         final isSelected = _selectedGender == gender;
 
         return GestureDetector(
           onTap: () => setState(() => _selectedGender = gender),
-          child: Container(
-            padding: const EdgeInsets.all(10),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             decoration: BoxDecoration(
-              color: isSelected ? _primaryGreen : Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: isSelected ? _primaryGreen : _borderColor),
+              color: isSelected ? AppColors.primaryDarkGreen : theme.cardColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected
+                    ? AppColors.primaryDarkGreen
+                    : theme.dividerColor,
+                width: 1.5,
+              ),
             ),
             child: Text(
               gender,
               style: TextStyle(
-                color: isSelected ? Colors.white : Colors.black,
+                color: isSelected ? Colors.white : theme.colorScheme.onSurface,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
           ),
@@ -267,23 +296,34 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _datePicker() {
-    final formatted = _selectedDate != null ? DateFormat('dd/MM/yyyy').format(_selectedDate!) : 'Select date';
+  Widget _buildDatePicker(ThemeData theme) {
+    final formatted = _selectedDate != null
+        ? DateFormat('dd MMM, yyyy').format(_selectedDate!)
+        : 'Select date';
 
     return GestureDetector(
       onTap: _pickDate,
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: _borderColor),
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: theme.dividerColor, width: 1.5),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(formatted),
-            const Icon(Icons.calendar_today),
+            Text(
+              formatted,
+              style: TextStyle(
+                color: _selectedDate != null
+                    ? theme.colorScheme.onSurface
+                    : theme.colorScheme.onSurface.withOpacity(0.5),
+                fontSize: 15,
+              ),
+            ),
+            Icon(Icons.calendar_today_outlined,
+                size: 20, color: theme.colorScheme.primary),
           ],
         ),
       ),
