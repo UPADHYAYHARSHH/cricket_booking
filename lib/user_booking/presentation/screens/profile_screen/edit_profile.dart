@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:bloc_structure/common/constants/colors.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +18,8 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _nameController;
+  late TextEditingController _usernameController;
+  Timer? _debounce;
   String _selectedGender = 'Male';
   DateTime? _selectedDate;
   String? _photoUrl;
@@ -27,11 +30,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController();
+    _usernameController = TextEditingController();
   }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _usernameController.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
 
@@ -72,7 +78,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         builder: (context, state) {
           final theme = Theme.of(context);
           final colorScheme = theme.colorScheme;
-          final isDark = theme.brightness == Brightness.dark;
 
           if (state.isLoading && state.name == null) {
             return const Scaffold(
@@ -82,6 +87,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           // Initialize values from state if they are null
           if (_nameController.text.isEmpty && state.name != null) {
             _nameController.text = state.name!;
+            _usernameController.text = state.username ?? '';
             _selectedGender = state.gender ?? 'Male';
             _selectedDate = state.dob;
             _photoUrl = state.photoUrl;
@@ -135,6 +141,41 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
+
+                  /// USERNAME FIELD
+                  TextField(
+                    controller: _usernameController,
+                    style: TextStyle(color: colorScheme.onSurface),
+                    onChanged: (value) {
+                      if (_debounce?.isActive ?? false) _debounce!.cancel();
+                      _debounce = Timer(const Duration(milliseconds: 500), () {
+                        context
+                            .read<ProfileCubit>()
+                            .checkUsernameAvailability(value.trim());
+                      });
+                    },
+                    decoration: InputDecoration(
+                      labelText: 'Username',
+                      labelStyle: TextStyle(
+                          color: colorScheme.onSurface.withOpacity(0.6)),
+                      hintText: 'Unique username',
+                      filled: true,
+                      fillColor: theme.cardColor,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(
+                            color: AppColors.primaryDarkGreen, width: 2),
+                      ),
+                      prefixIcon: Icon(Icons.alternate_email,
+                          color: colorScheme.primary),
+                      suffixIcon: _buildUsernameStatus(state),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
@@ -167,8 +208,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     width: double.infinity,
                     height: 56,
                     child: ElevatedButton(
-                      onPressed:
-                          state.isLoading ? null : () => _saveChanges(context),
+                      onPressed: state.isLoading ||
+                              (state.isUsernameAvailable == false &&
+                                  _usernameController.text.trim() !=
+                                      state.username)
+                          ? null
+                          : () => _saveChanges(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryDarkGreen,
                         foregroundColor: Colors.white,
@@ -333,8 +378,34 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void _saveChanges(BuildContext context) {
     context.read<ProfileCubit>().saveProfile(
           name: _nameController.text.trim(),
+          username: _usernameController.text.trim(),
           gender: _selectedGender,
           dob: _selectedDate,
         );
+  }
+
+  Widget? _buildUsernameStatus(ProfileState state) {
+    if (_usernameController.text.isEmpty) return null;
+
+    // If it's the current username, it's "available"
+    if (_usernameController.text.trim() == state.username) {
+      return const Icon(Icons.check_circle, color: Colors.green, size: 20);
+    }
+
+    if (state.lastCheckedUsername != _usernameController.text.trim()) {
+      return const Padding(
+        padding: EdgeInsets.all(12.0),
+        child: SizedBox(
+            width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+      );
+    }
+
+    if (state.isUsernameAvailable == true) {
+      return const Icon(Icons.check_circle, color: Colors.green, size: 20);
+    } else if (state.isUsernameAvailable == false) {
+      return const Icon(Icons.error, color: Colors.red, size: 20);
+    }
+
+    return null;
   }
 }

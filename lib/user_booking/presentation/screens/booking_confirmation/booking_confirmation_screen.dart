@@ -1,7 +1,8 @@
 import 'package:bloc_structure/user_booking/domain/models/booking_arguments.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
-
+import '../../../constants/route_constants.dart';
+import 'package:hugeicons/hugeicons.dart';
 import '../../../../common/constants/colors.dart';
 import '../../../constants/text_theme.dart';
 import '../../../constants/widgets/app_sizedBox.dart';
@@ -16,7 +17,7 @@ class BookingConfirmationScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     final rawArgs = ModalRoute.of(context)!.settings.arguments;
     if (rawArgs == null || rawArgs is! BookingSuccessArguments) {
       return Scaffold(
@@ -28,7 +29,8 @@ class BookingConfirmationScreen extends StatelessWidget {
               const AppSizedBox(height: 16),
               const AppText(text: "Booking information missing"),
               TextButton(
-                onPressed: () => Navigator.pushNamedAndRemoveUntil(context, '/nav', (r) => false),
+                onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                    context, '/nav', (r) => false),
                 child: const Text("Go to Home"),
               )
             ],
@@ -106,7 +108,8 @@ class BookingConfirmationScreen extends StatelessWidget {
 
               /// SUBTITLE
               AppText(
-                text: "Get ready to hit some sixes! Your pitch is ready for action.",
+                text:
+                    "Get ready to hit some sixes! Your pitch is ready for action.",
                 align: TextAlign.center,
                 textStyle: AppTextTheme.grey13.copyWith(
                   color: colorScheme.onSurface.withOpacity(0.6),
@@ -159,6 +162,44 @@ class BookingConfirmationScreen extends StatelessWidget {
 
               const AppSizedBox(height: 16),
 
+              /// SPLIT BILL
+              OutlinedButton(
+                onPressed: () => Navigator.pushNamed(
+                  context,
+                  AppRoutes.splitSetup,
+                  arguments: args,
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(
+                      color: AppColors.primaryDarkGreen, width: 2),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  minimumSize: const Size(double.infinity, 56),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const HugeIcon(
+                        icon: HugeIcons.strokeRoundedUserGroup,
+                        color: AppColors.primaryDarkGreen,
+                        size: 20),
+                    const AppSizedBox(width: 8),
+                    AppText(
+                      text: "Split Bill with Teammates",
+                      textStyle: AppTextTheme.black15.copyWith(
+                        color: AppColors.primaryDarkGreen,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const AppSizedBox(height: 16),
+
               /// VIEW BOOKINGS
               TextButton(
                 onPressed: () => Navigator.pushNamedAndRemoveUntil(
@@ -202,7 +243,8 @@ class _VenueCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.3 : 0.08),
+            color: Colors.black
+                .withOpacity(theme.brightness == Brightness.dark ? 0.3 : 0.08),
             blurRadius: 20,
             offset: const Offset(0, 8),
           )
@@ -219,7 +261,8 @@ class _VenueCard extends StatelessWidget {
                   height: 160,
                   width: double.infinity,
                   child: Image.network(
-                    ground.imageUrl ?? "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e",
+                    ground.imageUrl ??
+                        "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e",
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -240,7 +283,8 @@ class _VenueCard extends StatelessWidget {
                   top: 12,
                   right: 12,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: AppColors.success,
                       borderRadius: BorderRadius.circular(20),
@@ -248,7 +292,8 @@ class _VenueCard extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.check_circle, color: Colors.white, size: 14),
+                        const Icon(Icons.check_circle,
+                            color: Colors.white, size: 14),
                         const AppSizedBox(width: 4),
                         AppText(
                           text: "CONFIRMED",
@@ -283,7 +328,8 @@ class _VenueCard extends StatelessWidget {
                 const AppSizedBox(width: 6),
                 Expanded(
                   child: AppText(
-                    text: ground.address ?? "Location details available in ticket",
+                    text: ground.address ??
+                        "Location details available in ticket",
                     maxLines: 1,
                     textStyle: AppTextTheme.grey12.copyWith(
                       color: colorScheme.onSurface.withOpacity(0.6),

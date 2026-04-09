@@ -14,6 +14,11 @@ import 'package:bloc_structure/user_booking/presentation/screens/payment_status/
 import 'package:bloc_structure/user_booking/presentation/screens/slot_selection/slot_slection.dart';
 import 'package:bloc_structure/user_booking/presentation/screens/signup/signup_screen.dart';
 import 'package:bloc_structure/user_booking/presentation/screens/search/search_screen.dart';
+import 'package:bloc_structure/user_booking/presentation/screens/split_payment/split_setup_screen.dart';
+import 'package:bloc_structure/user_booking/presentation/screens/split_payment/split_share_screen.dart';
+import 'package:bloc_structure/user_booking/presentation/screens/split_payment/split_overview_screen.dart';
+import 'package:bloc_structure/user_booking/presentation/blocs/split_payment/split_cubit.dart';
+import 'package:bloc_structure/user_booking/constants/route_constants.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:bloc_structure/common/utils/app_bloc_observer.dart';
@@ -103,6 +108,9 @@ void main() async {
         BlocProvider<BookingCubit>(
           create: (_) => di.getIt<BookingCubit>(),
         ),
+        BlocProvider<SplitPaymentCubit>(
+          create: (_) => di.getIt<SplitPaymentCubit>(),
+        ),
       ],
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, state) {
@@ -124,10 +132,13 @@ void main() async {
                   const BookingConfirmationScreen(),
               "/myBookingScreen": (context) => const MyBookingsScreen(),
               "/paymentFailedScreen": (context) => const PaymentFailedScreen(),
-              "/editProfileScreen": (context) => BlocProvider(
+              AppRoutes.editProfileScreen: (context) => BlocProvider(
                     create: (_) => di.getIt<ProfileCubit>(),
                     child: const EditProfileScreen(),
                   ),
+              AppRoutes.splitSetup: (context) => const SplitSetupScreen(),
+              AppRoutes.splitShare: (context) => const SplitShareScreen(),
+              AppRoutes.splitOverview: (context) => const SplitOverviewScreen(),
             },
           );
         },

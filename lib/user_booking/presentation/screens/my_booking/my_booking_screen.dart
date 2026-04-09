@@ -1,3 +1,5 @@
+import 'package:bloc_structure/user_booking/data/models/ground_model.dart';
+import 'package:bloc_structure/user_booking/domain/models/booking_arguments.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,11 +10,12 @@ import '../../../../common/constants/colors.dart';
 import '../../../constants/text_theme.dart';
 import '../../../constants/widgets/app_sizedBox.dart';
 import '../../../constants/widgets/app_text.dart';
+import 'package:hugeicons/hugeicons.dart';
+import '../../../constants/route_constants.dart';
+
 import '../../blocs/booking/booking_cubit.dart';
 import '../../blocs/booking/booking_state.dart';
 import '../../../data/models/booking_model.dart';
-
-
 
 class MyBookingsScreen extends StatefulWidget {
   const MyBookingsScreen({super.key});
@@ -62,10 +65,11 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       ),
     );
   }
+
   Widget _buildTabBar() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
@@ -109,7 +113,9 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
           child: AppText(
             text: label,
             textStyle: AppTextTheme.black13.copyWith(
-              color: isSelected ? AppColors.white : theme.colorScheme.onSurface.withOpacity(0.6),
+              color: isSelected
+                  ? AppColors.white
+                  : theme.colorScheme.onSurface.withOpacity(0.6),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -127,7 +133,9 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
         }
 
         if (state is BookingError) {
-          return Center(child: AppText(text: state.message, textStyle: AppTextTheme.grey13));
+          return Center(
+              child:
+                  AppText(text: state.message, textStyle: AppTextTheme.grey13));
         }
 
         if (state is BookingLoaded) {
@@ -254,11 +262,13 @@ class _BookingCard extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.sports_cricket_outlined, size: 40, color: Colors.grey.shade400),
+                    Icon(Icons.sports_cricket_outlined,
+                        size: 40, color: Colors.grey.shade400),
                     const AppSizedBox(height: 8),
                     AppText(
                       text: "PowerPlay Arena",
-                      textStyle: AppTextTheme.grey12.copyWith(color: Colors.grey.shade500),
+                      textStyle: AppTextTheme.grey12
+                          .copyWith(color: Colors.grey.shade500),
                     ),
                   ],
                 ),
@@ -272,7 +282,8 @@ class _BookingCard extends StatelessWidget {
                   child: Center(
                     child: CircularProgressIndicator(
                       value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                          ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
                           : null,
                       strokeWidth: 2,
                       color: AppColors.primaryDarkGreen,
@@ -304,8 +315,8 @@ class _BookingCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: booking.status.toLowerCase() == 'paid' 
-                  ? AppColors.primaryDarkGreen 
+              color: booking.status.toLowerCase() == 'paid'
+                  ? AppColors.primaryDarkGreen
                   : AppColors.accentOrange,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
@@ -320,7 +331,9 @@ class _BookingCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  booking.status.toLowerCase() == 'paid' ? Icons.check_circle : Icons.pending_actions,
+                  booking.status.toLowerCase() == 'paid'
+                      ? Icons.check_circle
+                      : Icons.pending_actions,
                   size: 12,
                   color: Colors.white,
                 ),
@@ -362,7 +375,8 @@ class _BookingCard extends StatelessWidget {
                 ),
                 const AppSizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: AppColors.primaryDarkGreen.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(8),
@@ -370,7 +384,8 @@ class _BookingCard extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.calendar_today_rounded, size: 14, color: AppColors.primaryDarkGreen),
+                      const Icon(Icons.calendar_today_rounded,
+                          size: 14, color: AppColors.primaryDarkGreen),
                       const AppSizedBox(width: 8),
                       AppText(
                         text: timeStr,
@@ -393,7 +408,7 @@ class _BookingCard extends StatelessWidget {
               AppText(
                 text: "AMOUNT PAID",
                 textStyle: AppTextTheme.grey12.copyWith(
-                  fontSize: 10, 
+                  fontSize: 10,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.5,
                 ),
@@ -427,7 +442,8 @@ class _BookingCard extends StatelessWidget {
   Widget _viewTicketButton(BuildContext context) {
     return OutlinedButton(
       onPressed: () {
-        final userName = "User"; // Generic for now or fetch from Supabase if needed
+        final userName =
+            "User"; // Generic for now or fetch from Supabase if needed
 
         Navigator.push(
           context,
@@ -436,7 +452,8 @@ class _BookingCard extends StatelessWidget {
               ticket: TicketModel(
                 bookingId: booking.razorpayOrderId,
                 venueName: booking.ground?.name ?? "Venue",
-                pitchName: "Pitch", // Slot info not fully captured in booking table yet
+                pitchName:
+                    "Pitch", // Slot info not fully captured in booking table yet
                 date: DateFormat('EEE, d MMM yyyy').format(booking.slotTime),
                 time: DateFormat('hh:mm a').format(booking.slotTime),
                 bookedBy: userName,
@@ -450,7 +467,8 @@ class _BookingCard extends StatelessWidget {
         );
       },
       style: OutlinedButton.styleFrom(
-        side: BorderSide(color: AppColors.primaryDarkGreen.withOpacity(0.5), width: 1.5),
+        side: BorderSide(
+            color: AppColors.primaryDarkGreen.withOpacity(0.5), width: 1.5),
         padding: const EdgeInsets.symmetric(vertical: 12),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -479,7 +497,7 @@ class ViewTicketScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
@@ -500,7 +518,8 @@ class ViewTicketScreen extends StatelessWidget {
                 ),
               ],
             ),
-            child: Icon(Icons.arrow_back_ios_new, size: 16, color: theme.colorScheme.onSurface),
+            child: Icon(Icons.arrow_back_ios_new,
+                size: 16, color: theme.colorScheme.onSurface),
           ),
         ),
         title: AppText(
@@ -535,7 +554,8 @@ class ViewTicketScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Icon(Icons.share_outlined, size: 16, color: theme.colorScheme.onSurface),
+              child: Icon(Icons.share_outlined,
+                  size: 16, color: theme.colorScheme.onSurface),
             ),
           ),
         ],
@@ -547,6 +567,8 @@ class ViewTicketScreen extends StatelessWidget {
             _TicketCard(ticket: ticket),
             const SizedBox(height: 24),
             _buildDownloadButton(context),
+            const SizedBox(height: 12),
+            _buildSplitButton(context),
             const SizedBox(height: 32),
           ],
         ),
@@ -587,6 +609,51 @@ class ViewTicketScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildSplitButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: OutlinedButton.icon(
+        onPressed: () {
+          // Find original ground and create arguments
+          Navigator.pushNamed(
+            context,
+            AppRoutes.splitSetup,
+            arguments: BookingSuccessArguments(
+              ground: GroundModel.fromJson({
+                'id': '', // Minimal fields for setup display
+                'name': ticket.venueName,
+                'imageUrl': ticket.imageUrl,
+              }),
+              date: DateFormat('EEE, d MMM yyyy').parse(ticket.date),
+              selectedSlots: [],
+              orderId: ticket.bookingId ?? '',
+              totalPrice: ticket.price.toDouble(),
+            ),
+          );
+        },
+        icon: const HugeIcon(
+            icon: HugeIcons.strokeRoundedUserGroup,
+            color: AppColors.primaryDarkGreen,
+            size: 20),
+        label: const Text(
+          "Split Bill with Teammates",
+          style: TextStyle(
+            color: AppColors.primaryDarkGreen,
+            fontWeight: FontWeight.w700,
+            fontSize: 15,
+          ),
+        ),
+        style: OutlinedButton.styleFrom(
+          side: const BorderSide(color: AppColors.primaryDarkGreen, width: 1.5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 // ─── Ticket Card ──────────────────────────────────────────────────────────────
@@ -597,7 +664,7 @@ class _TicketCard extends StatelessWidget {
   const _TicketCard({required this.ticket});
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Column(
       children: [
         // ── Top half ──
@@ -623,7 +690,8 @@ class _TicketCard extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
             color: theme.colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+            borderRadius:
+                const BorderRadius.vertical(bottom: Radius.circular(20)),
           ),
           child: Column(
             children: [
@@ -650,9 +718,11 @@ class _TicketCard extends StatelessWidget {
               height: 160,
               decoration: BoxDecoration(
                 color: Colors.grey.shade200,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(20)),
               ),
-              child: const Icon(Icons.sports_cricket, size: 56, color: Colors.grey),
+              child: const Icon(Icons.sports_cricket,
+                  size: 56, color: Colors.grey),
             ),
           ),
         ),
@@ -681,7 +751,9 @@ class _TicketCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
             decoration: BoxDecoration(
-              color: ticket.isPaid ? AppColors.primaryDarkGreen : AppColors.accentOrange,
+              color: ticket.isPaid
+                  ? AppColors.primaryDarkGreen
+                  : AppColors.accentOrange,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -738,7 +810,8 @@ class _TicketCard extends StatelessWidget {
               color: AppColors.primaryDarkGreen.withOpacity(isDark ? 0.2 : 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.sports_cricket, color: AppColors.primaryDarkGreen, size: 22),
+            child: const Icon(Icons.sports_cricket,
+                color: AppColors.primaryDarkGreen, size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -786,7 +859,9 @@ class _TicketCard extends StatelessWidget {
   Widget _buildDividerRow(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Divider(color: Theme.of(context).dividerColor.withOpacity(0.5), thickness: 1.5),
+      child: Divider(
+          color: Theme.of(context).dividerColor.withOpacity(0.5),
+          thickness: 1.5),
     );
   }
 
@@ -862,7 +937,9 @@ class _TicketCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              border: Border.all(color: AppColors.primaryDarkGreen.withOpacity(0.18), width: 2),
+              border: Border.all(
+                  color: AppColors.primaryDarkGreen.withOpacity(0.18),
+                  width: 2),
               borderRadius: BorderRadius.circular(16),
             ),
             child: _QrCodePainter(data: ticket.bookingId),
@@ -910,11 +987,12 @@ class _DetailTile extends StatelessWidget {
       width: fullWidth ? double.infinity : null,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: theme.brightness == Brightness.dark 
-            ? theme.colorScheme.surface.withOpacity(0.5) 
+        color: theme.brightness == Brightness.dark
+            ? theme.colorScheme.surface.withOpacity(0.5)
             : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.dividerColor.withOpacity(isDark ? 0.1 : 0.05)),
+        border: Border.all(
+            color: theme.dividerColor.withOpacity(isDark ? 0.1 : 0.05)),
       ),
       child: Row(
         children: [
@@ -1058,7 +1136,9 @@ class _QrPainter extends CustomPainter {
   }
 
   bool _isFinderPattern(int row, int col) {
-    return (row < 8 && col < 8) || (row < 8 && col >= 13) || (row >= 13 && col < 8);
+    return (row < 8 && col < 8) ||
+        (row < 8 && col >= 13) ||
+        (row >= 13 && col < 8);
   }
 
   bool _finderPatternCell(int row, int col) {

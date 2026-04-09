@@ -148,11 +148,11 @@ class ProfileScreen extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          state.gender ?? "User",
+          state.username != null ? "@${state.username}" : "User",
           style: TextStyle(
-            fontSize: 13,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            fontWeight: FontWeight.w500,
+            fontSize: 14,
+            color: AppColors.primaryDarkGreen,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
@@ -211,6 +211,14 @@ class ProfileScreen extends StatelessWidget {
           onChanged: (_) => themeCubit.toggleTheme(),
           activeThumbColor: AppColors.accentOrange,
         ),
+      ),
+      _MenuItem(
+        icon: Icons.receipt_long_outlined,
+        label: "Split Bill History",
+        iconBg: const Color(0xFFFFF3E0).withOpacity(isDark ? 0.1 : 1),
+        iconColor: Colors.orange.shade800,
+        isLogout: false,
+        onTap: () => Navigator.pushNamed(context, AppRoutes.splitHistory),
       ),
       _MenuItem(
         icon: Icons.help_outline_rounded,

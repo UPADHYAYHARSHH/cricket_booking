@@ -6,6 +6,7 @@ import 'package:bloc_structure/user_booking/presentation/blocs/booking/booking_c
 import 'package:bloc_structure/user_booking/domain/repositories/auth_repositories.dart';
 import 'package:bloc_structure/user_booking/presentation/blocs/auth/auth_cubit.dart';
 import 'package:bloc_structure/user_booking/presentation/blocs/slot_selection/slot_selection_cubit.dart';
+import 'package:bloc_structure/user_booking/presentation/blocs/split_history/split_history_cubit.dart';
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:bloc_structure/user_booking/data/repositories/ground_repository_impl.dart';
@@ -22,6 +23,11 @@ import '../../presentation/blocs/splash/splash_cubit.dart';
 import 'package:bloc_structure/user_booking/data/repositories/favorite_repository.dart';
 import 'package:bloc_structure/user_booking/presentation/blocs/saved_ground/saved_ground_cubit.dart';
 import 'package:bloc_structure/user_booking/presentation/blocs/theme/theme_cubit.dart';
+import 'package:bloc_structure/user_booking/data/repositories/split_payment_repository.dart';
+import 'package:bloc_structure/user_booking/presentation/blocs/split_payment/split_cubit.dart';
+import 'package:bloc_structure/user_booking/presentation/blocs/user_search/user_search_cubit.dart';
+import 'package:bloc_structure/user_booking/data/repositories/notification_repository.dart';
+import 'package:bloc_structure/user_booking/presentation/blocs/notification/notification_cubit.dart';
 
 final getIt = GetIt.instance;
 
@@ -73,6 +79,12 @@ Future<void> init() async {
   getIt.registerLazySingleton<FavoriteRepository>(
     () => FavoriteRepositoryImpl(getIt<SupabaseClient>()),
   );
+  getIt.registerLazySingleton<SplitPaymentRepository>(
+    () => SplitPaymentRepository(),
+  );
+  getIt.registerLazySingleton<NotificationRepository>(
+    () => NotificationRepository(),
+  );
   getIt.registerLazySingleton<GroundCubit>(
     () => GroundCubit(getIt<GroundRepository>(), getIt<AnalyticsService>()),
   );
@@ -81,6 +93,19 @@ Future<void> init() async {
   );
   getIt.registerLazySingleton<ThemeCubit>(
     () => ThemeCubit(),
+  );
+  getIt.registerFactory(
+    () => SplitPaymentCubit(getIt<SplitPaymentRepository>()),
+  );
+  getIt.registerLazySingleton(
+    () => UserSearchCubit(getIt<UserRepository>()),
+  );
+  getIt.registerFactory(
+    () => NotificationCubit(getIt<NotificationRepository>()),
+  );
+
+  getIt.registerFactory(
+    () => SplitHistoryCubit(getIt<SplitPaymentRepository>()),
   );
 
   /// Services

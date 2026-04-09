@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../domain/repositories/ground_repository.dart';
 import '../../../data/models/ground_model.dart';
 import '../../../data/services/analytics_service.dart';
+import 'package:bloc_structure/user_booking/domain/models/filter_criteria.dart';
 import 'ground_state.dart';
 
 class GroundCubit extends Cubit<GroundState> {
@@ -24,7 +25,9 @@ class GroundCubit extends Cubit<GroundState> {
         grounds = grounds.where((g) => g.city.toLowerCase().contains(cityName)).toList();
       }
 
-      // Initial filter: Near Me (sort by distance)
+      final criteria = FilterCriteria();
+      
+      // Initial sort: Near Me
       if (userLat != null && userLng != null) {
         grounds.sort((a, b) {
           final distA = _calculateDistance(userLat, userLng, a.latitude, a.longitude);
@@ -33,23 +36,38 @@ class GroundCubit extends Cubit<GroundState> {
         });
       }
 
-      // Log success event (optional: could also log result count)
       analytics.logGroundView(groundId: 'all', groundName: 'Fetch List');
 
-      emit(GroundLoaded(grounds, grounds, activeFilter: GroundFilter.nearMe));
+      emit(GroundLoaded(grounds, grounds, criteria: criteria));
     } catch (e) {
       emit(GroundError(e.toString()));
     }
   }
 
-  /// CHANGE FILTER
-  void changeFilter(GroundFilter filter, {double? userLat, double? userLng}) {
+  /// APPLY FILTERS
+  void applyFilters(FilterCriteria criteria, {double? userLat, double? userLng}) {
     final currentState = state;
     if (currentState is GroundLoaded) {
       List<GroundModel> filteredList = List.from(currentState.allGrounds);
 
-      switch (filter) {
-        case GroundFilter.nearMe:
+      // 1. Filter by Price
+      filteredList = filteredList.where((g) => 
+        g.pricePerHour >= criteria.minPrice && 
+        g.pricePerHour <= criteria.maxPrice
+      ).toList();
+
+      // 2. Filter by Amenities
+      if (criteria.selectedAmenities.isNotEmpty) {
+        filteredList = filteredList.where((g) {
+          return criteria.selectedAmenities.every((amenity) => 
+            g.amenities.any((ga) => ga.toLowerCase() == amenity.toLowerCase())
+          );
+        }).toList();
+      }
+
+      // 3. Sort
+      switch (criteria.sortBy) {
+        case SortBy.nearMe:
           if (userLat != null && userLng != null) {
             filteredList.sort((a, b) {
               final distA = _calculateDistance(userLat, userLng, a.latitude, a.longitude);
@@ -58,15 +76,18 @@ class GroundCubit extends Cubit<GroundState> {
             });
           }
           break;
-        case GroundFilter.topRated:
+        case SortBy.topRated:
           filteredList.sort((a, b) => b.rating.compareTo(a.rating));
           break;
-        case GroundFilter.openNow:
-          filteredList = filteredList.where((ground) => _isOpen(ground.openingTime, ground.closingTime)).toList();
+        case SortBy.priceLowToHigh:
+          filteredList.sort((a, b) => a.pricePerHour.compareTo(b.pricePerHour));
+          break;
+        case SortBy.priceHighToLow:
+          filteredList.sort((a, b) => b.pricePerHour.compareTo(a.pricePerHour));
           break;
       }
 
-      emit(GroundLoaded(filteredList, currentState.allGrounds, activeFilter: filter));
+      emit(GroundLoaded(filteredList, currentState.allGrounds, criteria: criteria));
     }
   }
 
@@ -75,7 +96,7 @@ class GroundCubit extends Cubit<GroundState> {
     final currentState = state;
     if (currentState is GroundLoaded) {
       if (query.isEmpty) {
-        emit(GroundLoaded(currentState.allGrounds, currentState.allGrounds, activeFilter: currentState.activeFilter));
+        emit(GroundLoaded(currentState.allGrounds, currentState.allGrounds, criteria: currentState.criteria));
         return;
       }
 
@@ -87,7 +108,7 @@ class GroundCubit extends Cubit<GroundState> {
         return name.contains(searchLower) || address.contains(searchLower);
       }).toList();
 
-      emit(GroundLoaded(filteredList, currentState.allGrounds, activeFilter: currentState.activeFilter));
+      emit(GroundLoaded(filteredList, currentState.allGrounds, criteria: currentState.criteria));
     }
   }
 

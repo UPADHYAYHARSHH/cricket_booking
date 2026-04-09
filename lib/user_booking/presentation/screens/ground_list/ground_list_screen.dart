@@ -12,7 +12,10 @@ import '../../blocs/ground/ground_cubit.dart';
 import '../../blocs/ground/ground_state.dart';
 import 'package:bloc_structure/user_booking/presentation/widgets/ground_card.dart';
 import 'widgets/ground_skeleton.dart';
+import '../../blocs/notification/notification_cubit.dart';
 import 'package:bloc_structure/user_booking/constants/route_constants.dart';
+import 'package:bloc_structure/user_booking/domain/models/filter_criteria.dart';
+import 'widgets/filter_bottom_sheet.dart';
 
 class GroundListScreen extends StatefulWidget {
   const GroundListScreen({super.key});
@@ -111,12 +114,40 @@ class _GroundListScreenState extends State<GroundListScreen> {
             },
           ),
           actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: HugeIcon(
-                icon: HugeIcons.strokeRoundedNotification01,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
+            BlocBuilder<NotificationCubit, NotificationState>(
+              builder: (context, state) {
+                final bool hasUnread = state.unreadCount > 0;
+                
+                return Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: GestureDetector(
+                    onTap: () => Navigator.pushNamed(context, AppRoutes.notification),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        HugeIcon(
+                          icon: HugeIcons.strokeRoundedNotification01,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        if (hasUnread)
+                          Positioned(
+                            right: 0,
+                            top: 15,
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 1.5),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              },
             )
           ],
         ),
@@ -124,75 +155,109 @@ class _GroundListScreenState extends State<GroundListScreen> {
         /// BODY
         body: Column(
           children: [
-            /// 🔍 SEARCH
-            GestureDetector(
-              onTap: () {
-                Navigator.pushNamed(context, AppRoutes.search);
-              },
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Hero(
-                  tag: 'search_bar',
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: Row(
-                      children: [
-                        HugeIcon(
-                          icon: HugeIcons.strokeRoundedSearch01,
-                          size: 18,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.4),
-                        ),
-                        const AppSizedBox(width: 10),
-                        AppText(
-                          text: "Search nearby grounds...",
-                          textStyle: TextStyle(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.4),
-                            fontSize: 14,
+            /// 🔍 SEARCH & FILTER
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.pushNamed(context, AppRoutes.search);
+                      },
+                      child: Hero(
+                        tag: 'search_bar',
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).cardColor,
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          child: Row(
+                            children: [
+                              HugeIcon(
+                                icon: HugeIcons.strokeRoundedSearch01,
+                                size: 18,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.4),
+                              ),
+                              const AppSizedBox(width: 10),
+                              AppText(
+                                text: "Search nearby grounds...",
+                                textStyle: TextStyle(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withOpacity(0.4),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
+                   const AppSizedBox(width: 12),
+                   BlocBuilder<GroundCubit, GroundState>(
+                    builder: (context, state) {
+                      final bool hasFilters = state is GroundLoaded && !state.criteria.isDefault;
+                      
+                      return GestureDetector(
+                        onTap: () {
+                          if (state is GroundLoaded) {
+                            _showFilterSheet(context, state);
+                          }
+                        },
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryDarkGreen,
+                                borderRadius: BorderRadius.circular(15),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primaryDarkGreen.withOpacity(0.3),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: const HugeIcon(
+                                icon: HugeIcons.strokeRoundedFilterHorizontal,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                            if (hasFilters)
+                              Positioned(
+                                top: -2,
+                                right: -2,
+                                child: Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 2),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
 
-            /// 🎯 FILTERS
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: BlocBuilder<GroundCubit, GroundState>(
-                builder: (context, state) {
-                  final activeFilter = state is GroundLoaded
-                      ? state.activeFilter
-                      : GroundFilter.nearMe;
-                  final locationState = context.read<LocationCubit>().state;
 
-                  return Row(
-                    children: [
-                      _filterChip(context, "Near Me", GroundFilter.nearMe,
-                          activeFilter == GroundFilter.nearMe, locationState),
-                      const AppSizedBox(width: 10),
-                      _filterChip(context, "Top Rated", GroundFilter.topRated,
-                          activeFilter == GroundFilter.topRated, locationState),
-                      const AppSizedBox(width: 10),
-                      _filterChip(context, "Open Now", GroundFilter.openNow,
-                          activeFilter == GroundFilter.openNow, locationState),
-                    ],
-                  );
-                },
-              ),
-            ),
 
             const AppSizedBox(height: 10),
 
@@ -261,36 +326,22 @@ class _GroundListScreenState extends State<GroundListScreen> {
     );
   }
 
-  /// 🎯 FILTER CHIP
-  Widget _filterChip(BuildContext context, String text, GroundFilter filter,
-      bool active, LocationState locationState) {
-    final theme = Theme.of(context);
-    final onSurface = theme.colorScheme.onSurface;
 
-    return GestureDetector(
-      onTap: () {
-        context.read<GroundCubit>().changeFilter(
-              filter,
-              userLat: locationState.latitude,
-              userLng: locationState.longitude,
-            );
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: active ? AppColors.primaryDarkGreen : theme.cardColor,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: active ? Colors.transparent : onSurface.withOpacity(0.1),
-          ),
-        ),
-        child: AppText(
-          text: text,
-          textStyle: TextStyle(
-            color: active ? Colors.white : onSurface.withOpacity(0.7),
-            fontWeight: active ? FontWeight.bold : FontWeight.w500,
-          ),
-        ),
+  void _showFilterSheet(BuildContext context, GroundLoaded state) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => FilterBottomSheet(
+        initialCriteria: state.criteria,
+        onApply: (criteria) {
+          final locationState = context.read<LocationCubit>().state;
+          context.read<GroundCubit>().applyFilters(
+                criteria,
+                userLat: locationState.latitude,
+                userLng: locationState.longitude,
+              );
+        },
       ),
     );
   }

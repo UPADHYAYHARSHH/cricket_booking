@@ -10,4 +10,9 @@ class AppRoutes {
   static const myBookingScreen = "/myBookingScreen";
   static const editProfileScreen = "/editProfileScreen";
   static const paymentFailedScreen = "/paymentFailedScreen";
+  static const splitSetup = "/splitSetup";
+  static const splitShare = "/splitShare";
+  static const splitOverview = "/splitOverview";
+  static const splitHistory = "/splitHistory";
+  static const notification = "/notification";
 }

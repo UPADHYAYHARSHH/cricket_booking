@@ -7,12 +7,15 @@ abstract class UserRepository {
     required String gender,
     required DateTime? dob,
     String? photoUrl,
+    String? username,
   });
 
   Future<Map<String, dynamic>?> fetchUserProfile();
   Future<String?> uploadProfileImage(File imageFile);
   Future<String?> getUserCity();
   Future<void> updateUserCity(String city);
+  Future<bool> isUsernameAvailable(String username);
+  Future<List<Map<String, dynamic>>> searchUsersByUsername(String query);
 }
 
 class UserRepositoryImpl implements UserRepository {
@@ -26,6 +29,7 @@ class UserRepositoryImpl implements UserRepository {
     required String gender,
     required DateTime? dob,
     String? photoUrl,
+    String? username,
   }) async {
     final user = supabase.auth.currentUser;
 
@@ -44,6 +48,10 @@ class UserRepositoryImpl implements UserRepository {
 
     if (photoUrl != null) {
       data['photo_url'] = photoUrl;
+    }
+
+    if (username != null) {
+      data['username'] = username;
     }
 
     await supabase.from('users').upsert(data);
@@ -98,5 +106,30 @@ class UserRepositoryImpl implements UserRepository {
       'id': user.id,
       'city': city,
     });
+  }
+
+  @override
+  Future<bool> isUsernameAvailable(String username) async {
+    final response = await supabase
+        .from('users')
+        .select('id')
+        .eq('username', username)
+        .maybeSingle();
+    return response == null;
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> searchUsersByUsername(String query) async {
+    print("[DEBUG] UserRepository: Executing Supabase search for username: '%$query%'");
+    // Removed photo_url to prevent crash if column is missing. 
+    // You should add the column via SQL to see photos.
+    final response = await supabase
+        .from('users')
+        .select('id, name, username') 
+        .ilike('username', '%$query%')
+        .limit(20);
+    print("[DEBUG] UserRepository: Supabase Response Type: ${response.runtimeType}");
+    print("[DEBUG] UserRepository: Supabase Raw Result: $response");
+    return List<Map<String, dynamic>>.from(response);
   }
 }

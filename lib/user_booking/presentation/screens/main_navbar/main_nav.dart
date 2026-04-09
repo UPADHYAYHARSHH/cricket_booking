@@ -14,6 +14,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../blocs/saved_ground/saved_ground_cubit.dart';
 import '../../blocs/location/location_cubit.dart';
+import '../../blocs/notification/notification_cubit.dart';
+import '../../../di/get_it/get_it.dart';
 
 class MainNavScreen extends StatefulWidget {
   const MainNavScreen({super.key});
@@ -50,7 +52,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
       print(
           "[AUTH_SYNC] State change detected: $event. User logged in: ${userId != null}");
 
-      if (userId != null) {
+      if (userId != null && mounted) {
         print("[AUTH_SYNC] Restoring favorites for: $userId");
         context.read<SavedGroundCubit>().loadFavorites(userId);
       }
@@ -68,7 +70,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
     });
   }
 
-  int _mapNavbarToPage(int navbarIndex) => navbarIndex;
+  // Removed unused _mapNavbarToPage
 
   @override
   void dispose() {
@@ -89,7 +91,11 @@ class _MainNavScreenState extends State<MainNavScreen> {
     final theme = Theme.of(context);
     final onSurface = theme.colorScheme.onSurface;
 
-    return BlocListener<LocationCubit, LocationState>(
+    return BlocProvider(
+      create: (context) => getIt<NotificationCubit>()..fetchNotifications(),
+      child: BlocBuilder<NotificationCubit, NotificationState>(
+        builder: (context, notificationState) {
+          return BlocListener<LocationCubit, LocationState>(
         listener: (context, state) {
           if (state.errorMessage != null) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -137,7 +143,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _navItem(HugeIcons.strokeRoundedDiscoverCircle, "Discover", 0,
-                    onSurface),
+                    onSurface, showBadge: notificationState.unreadCount > 0),
                 _navItem(HugeIcons.strokeRoundedCalendar01, "Bookings", 1,
                     onSurface),
                 _navItem(
@@ -147,13 +153,17 @@ class _MainNavScreenState extends State<MainNavScreen> {
               ],
             ),
           ),
-        ));
+        ),
+      );
+    },
+   ),
+  );
   }
 
-  Widget _navItem(dynamic icon, String label, int index, Color onSurface) {
+  Widget _navItem(dynamic icon, String label, int index, Color onSurface, {bool showBadge = false}) {
     final bool isActive = currentIndex == index;
     const Color activeColor = AppColors.primaryDarkGreen;
-    final Color inactiveColor = onSurface.withOpacity(0.4);
+    final Color inactiveColor = onSurface.withValues(alpha: 0.4);
 
     return GestureDetector(
       onTap: () {
@@ -169,9 +179,27 @@ class _MainNavScreenState extends State<MainNavScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          HugeIcon(
-            icon: icon,
-            color: isActive ? activeColor : inactiveColor,
+          Stack(
+            children: [
+              HugeIcon(
+                icon: icon,
+                color: isActive ? activeColor : inactiveColor,
+              ),
+              if (showBadge)
+                Positioned(
+                  right: -2,
+                  top: -2,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 4),
           AppText(

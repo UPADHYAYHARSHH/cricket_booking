@@ -10,12 +10,14 @@ class UpsertUserProfile {
     required String gender,
     required DateTime? dob,
     String? photoUrl,
+    String? username,
   }) {
     return repository.upsertUser(
       name: name,
       gender: gender,
       dob: dob,
       photoUrl: photoUrl,
+      username: username,
     );
   }
 }
