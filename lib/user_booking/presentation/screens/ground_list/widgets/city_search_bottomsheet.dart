@@ -55,7 +55,7 @@ class _CitySearchBottomSheetState extends State<CitySearchBottomSheet> {
         "&key=AIzaSyAMODBdO75JmBy6yW-rIYHQyuwpc34nsh4";
 
     final response = await http.get(Uri.parse(url));
-
+    print('response===>$response');
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       final predictions = data['predictions'] as List;
@@ -160,15 +160,22 @@ class _CitySearchBottomSheetState extends State<CitySearchBottomSheet> {
               child: TextField(
                 controller: controller,
                 onChanged: onSearch,
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                style:
+                    TextStyle(color: Theme.of(context).colorScheme.onSurface),
                 decoration: InputDecoration(
                   hintText: "Search city...",
                   hintStyle: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.4),
                   ),
                   prefixIcon: HugeIcon(
                     icon: HugeIcons.strokeRoundedSearch01,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.4),
                   ),
                   filled: true,
                   fillColor: Theme.of(context).scaffoldBackgroundColor,

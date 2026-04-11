@@ -1,6 +1,6 @@
-import 'dart:io';
 import 'package:bloc_structure/user_booking/data/repositories/user_repository_impl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../domain/usecases/upsert_user_profile.dart';
 
 class ProfileState {
@@ -132,10 +132,11 @@ class ProfileCubit extends Cubit<ProfileState> {
     }
   }
 
-  Future<void> uploadImage(File file) async {
+  Future<void> uploadImage(XFile file) async {
     emit(state.copyWith(isLoading: true, error: null));
     try {
-      final url = await userRepository.uploadProfileImage(file);
+      final bytes = await file.readAsBytes();
+      final url = await userRepository.uploadProfileImage(bytes);
       if (url != null) {
         await saveProfile(
           name: state.name ?? '',

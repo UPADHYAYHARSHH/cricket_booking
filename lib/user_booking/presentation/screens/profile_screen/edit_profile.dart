@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:bloc_structure/common/constants/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 
 import '../../../di/get_it/get_it.dart';
 import '../../blocs/profile/profile_cubit.dart';
@@ -302,8 +302,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Future<void> _pickImage(BuildContext context) async {
     final picker = ImagePicker();
     final image = await picker.pickImage(source: ImageSource.gallery);
+    
     if (image != null && context.mounted) {
-      context.read<ProfileCubit>().uploadImage(File(image.path));
+      final croppedFile = await ImageCropper().cropImage(
+        sourcePath: image.path,
+        aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Crop Profile Picture',
+            toolbarColor: AppColors.primaryDarkGreen,
+            toolbarWidgetColor: Colors.white,
+            lockAspectRatio: true,
+          ),
+          IOSUiSettings(
+            title: 'Crop Profile Picture',
+            aspectRatioLockEnabled: true,
+            resetAspectRatioEnabled: false,
+          ),
+        ],
+      );
+
+      if (croppedFile != null && context.mounted) {
+        context.read<ProfileCubit>().uploadImage(XFile(croppedFile.path));
+      }
     }
   }
 

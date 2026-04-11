@@ -8,7 +8,6 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../../constants/route_constants.dart';
 
-import 'dart:io';
 import 'package:bloc_structure/user_booking/presentation/blocs/profile/profile_cubit.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:bloc_structure/user_booking/di/get_it/get_it.dart';
@@ -131,7 +130,7 @@ class ProfileScreen extends StatelessWidget {
     final picker = ImagePicker();
     final image = await picker.pickImage(source: ImageSource.gallery);
     if (image != null && context.mounted) {
-      context.read<ProfileCubit>().uploadImage(File(image.path));
+      context.read<ProfileCubit>().uploadImage(image);
     }
   }
 

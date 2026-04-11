@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 abstract class UserRepository {
@@ -11,7 +12,7 @@ abstract class UserRepository {
   });
 
   Future<Map<String, dynamic>?> fetchUserProfile();
-  Future<String?> uploadProfileImage(File imageFile);
+  Future<String?> uploadProfileImage(Uint8List imageBytes);
   Future<String?> getUserCity();
   Future<void> updateUserCity(String city);
   Future<bool> isUsernameAvailable(String username);
@@ -54,7 +55,18 @@ class UserRepositoryImpl implements UserRepository {
       data['username'] = username;
     }
 
-    await supabase.from('users').upsert(data);
+    try {
+      await supabase.from('users').upsert(data);
+    } catch (e) {
+      // Fallback in case "photo_url" column does not exist yet.
+      if (photoUrl != null && e.toString().contains('photo_url')) {
+        print("Warning: photo_url column missing, falling back to without it.");
+        data.remove('photo_url');
+        await supabase.from('users').upsert(data);
+      } else {
+        rethrow;
+      }
+    }
   }
 
   @override
@@ -72,17 +84,27 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
-  Future<String?> uploadProfileImage(File imageFile) async {
+  Future<String?> uploadProfileImage(Uint8List imageBytes) async {
     final user = supabase.auth.currentUser;
     if (user == null) return null;
 
     final fileName = '${user.id}_${DateTime.now().millisecondsSinceEpoch}.jpg';
     final path = 'profile_images/$fileName';
 
-    await supabase.storage.from('avatars').upload(path, imageFile);
+    try {
+      await supabase.storage.from('avatars').uploadBinary(
+        path,
+        imageBytes,
+        fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true),
+      );
 
-    final String publicUrl = supabase.storage.from('avatars').getPublicUrl(path);
-    return publicUrl;
+      final String publicUrl = supabase.storage.from('avatars').getPublicUrl(path);
+      // Ensure url is returning with a cache buster if it's updated rapidly
+      return "$publicUrl?t=${DateTime.now().millisecondsSinceEpoch}";
+    } catch (e) {
+      print("Storage Upload Error: $e");
+      throw Exception("Failed to upload image. Make sure 'avatars' bucket exists and RLS allows it.");
+    }
   }
 
   /// FETCH PERSISTED CITY FROM SUPABASE USERS TABLE

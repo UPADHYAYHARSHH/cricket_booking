@@ -178,15 +178,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                   keyboardType: TextInputType.emailAddress,
                                   textInputAction: TextInputAction.next,
                                   autofillHints: const [AutofillHints.email],
-                                  style: TextStyle(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface),
+                                  style: const TextStyle(color: Colors.black87),
                                   decoration: InputDecoration(
                                     hintText: "example@email.com",
+                                    hintStyle: const TextStyle(color: Colors.black38),
                                     errorText: emailError,
                                     prefixIcon: const Icon(Icons.email_outlined,
-                                        size: 18),
+                                        size: 18, color: Colors.black54),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(10),
                                       borderSide: BorderSide(
@@ -217,15 +215,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                   obscureText: isPasswordHidden,
                                   textInputAction: TextInputAction.done,
                                   autofillHints: const [AutofillHints.password],
-                                  style: TextStyle(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface),
+                                  style: const TextStyle(color: Colors.black87),
                                   decoration: InputDecoration(
                                     hintText: "Enter password",
+                                    hintStyle: const TextStyle(color: Colors.black38),
                                     errorText: passwordError,
                                     prefixIcon: const Icon(Icons.lock_outlined,
-                                        size: 18),
+                                        size: 18, color: Colors.black54),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(10),
                                       borderSide: BorderSide(
@@ -242,6 +238,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                             ? Icons.visibility_off
                                             : Icons.visibility,
                                         size: 20,
+                                        color: Colors.black54,
                                       ),
                                       onPressed: () {
                                         setState(() {
