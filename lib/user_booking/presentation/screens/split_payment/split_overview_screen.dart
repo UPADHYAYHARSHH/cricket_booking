@@ -1,8 +1,6 @@
 import 'package:bloc_structure/user_booking/constants/route_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hugeicons/hugeicons.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../common/constants/colors.dart';
 
@@ -19,14 +17,11 @@ class SplitOverviewScreen extends StatefulWidget {
 }
 
 class _SplitOverviewScreenState extends State<SplitOverviewScreen> {
-  String? _bookingId;
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final args = ModalRoute.of(context)?.settings.arguments;
     if (args is String) {
-      _bookingId = args;
       context.read<SplitPaymentCubit>().loadSplitOverview(args);
     }
   }
@@ -120,7 +115,7 @@ class _SplitOverviewScreenState extends State<SplitOverviewScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryDarkGreen.withOpacity(0.3),
+            color: AppColors.primaryDarkGreen.withValues(alpha: 0.3),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -155,7 +150,7 @@ class _SplitOverviewScreenState extends State<SplitOverviewScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: AppText(
@@ -172,7 +167,7 @@ class _SplitOverviewScreenState extends State<SplitOverviewScreen> {
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 8,
-              backgroundColor: Colors.white.withOpacity(0.1),
+              backgroundColor: Colors.white.withValues(alpha: 0.1),
               valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
             ),
           ),
@@ -196,7 +191,7 @@ class _SplitOverviewScreenState extends State<SplitOverviewScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
             color: member.isReceived
-                ? AppColors.primaryDarkGreen.withOpacity(0.2)
+                ? AppColors.primaryDarkGreen.withValues(alpha: 0.2)
                 : Colors.transparent),
       ),
       child: Row(
@@ -220,7 +215,7 @@ class _SplitOverviewScreenState extends State<SplitOverviewScreen> {
                 ),
                 AppText(
                   text: "₹${member.amount.toStringAsFixed(0)}",
-                  textStyle: TextStyle(
+                  textStyle: const TextStyle(
                       color: AppColors.primaryDarkGreen,
                       fontWeight: FontWeight.w600),
                 ),
@@ -292,7 +287,7 @@ class _SplitOverviewScreenState extends State<SplitOverviewScreen> {
         color: Theme.of(context).cardColor,
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, -5))
         ],

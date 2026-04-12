@@ -10,6 +10,7 @@ import '../../../constants/route_constants.dart';
 
 import 'package:bloc_structure/user_booking/presentation/blocs/profile/profile_cubit.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:bloc_structure/user_booking/di/get_it/get_it.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -78,7 +79,7 @@ class ProfileScreen extends StatelessWidget {
             border: Border.all(color: Colors.white, width: 3),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.12),
+                color: Colors.black.withValues(alpha: 0.12),
                 blurRadius: 14,
                 offset: const Offset(0, 4),
               ),
@@ -129,8 +130,29 @@ class ProfileScreen extends StatelessWidget {
   Future<void> _pickImage(BuildContext context) async {
     final picker = ImagePicker();
     final image = await picker.pickImage(source: ImageSource.gallery);
+
     if (image != null && context.mounted) {
-      context.read<ProfileCubit>().uploadImage(image);
+      final croppedFile = await ImageCropper().cropImage(
+        sourcePath: image.path,
+        aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Crop Profile Picture',
+            toolbarColor: AppColors.primaryDarkGreen,
+            toolbarWidgetColor: Colors.white,
+            lockAspectRatio: true,
+          ),
+          IOSUiSettings(
+            title: 'Crop Profile Picture',
+            aspectRatioLockEnabled: true,
+            resetAspectRatioEnabled: false,
+          ),
+        ],
+      );
+
+      if (croppedFile != null && context.mounted) {
+        context.read<ProfileCubit>().uploadImage(XFile(croppedFile.path));
+      }
     }
   }
 
@@ -148,30 +170,10 @@ class ProfileScreen extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           state.username != null ? "@${state.username}" : "User",
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 14,
             color: AppColors.primaryDarkGreen,
             fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatsRow(BuildContext context) {
-    return const Row(
-      children: [
-        Expanded(
-          child: _StatCard(
-            value: "42",
-            label: "MATCHES\nPLAYED",
-          ),
-        ),
-        SizedBox(width: 14),
-        Expanded(
-          child: _StatCard(
-            value: "12",
-            label: "MVPS\nWON",
           ),
         ),
       ],
@@ -186,7 +188,7 @@ class ProfileScreen extends StatelessWidget {
       _MenuItem(
         icon: Icons.person_outline_rounded,
         label: "Edit Profile",
-        iconBg: const Color(0xFFE8F5E9).withOpacity(isDark ? 0.1 : 1),
+        iconBg: const Color(0xFFE8F5E9).withValues(alpha: isDark ? 0.1 : 1),
         iconColor: isDark ? AppColors.primaryLightGreen : _primaryGreen,
         isLogout: false,
         onTap: () async {
@@ -214,7 +216,7 @@ class ProfileScreen extends StatelessWidget {
       _MenuItem(
         icon: Icons.receipt_long_outlined,
         label: "Split Bill History",
-        iconBg: const Color(0xFFFFF3E0).withOpacity(isDark ? 0.1 : 1),
+        iconBg: const Color(0xFFFFF3E0).withValues(alpha: isDark ? 0.1 : 1),
         iconColor: Colors.orange.shade800,
         isLogout: false,
         onTap: () => Navigator.pushNamed(context, AppRoutes.splitHistory),
@@ -222,14 +224,14 @@ class ProfileScreen extends StatelessWidget {
       _MenuItem(
         icon: Icons.help_outline_rounded,
         label: "Help & Support",
-        iconBg: const Color(0xFFF3E5F5).withOpacity(isDark ? 0.1 : 1),
+        iconBg: const Color(0xFFF3E5F5).withValues(alpha: isDark ? 0.1 : 1),
         iconColor: const Color(0xFF7B1FA2),
         isLogout: false,
       ),
       _MenuItem(
         icon: Icons.logout_rounded,
         label: "Logout",
-        iconBg: const Color(0xFFFFEBEE).withOpacity(isDark ? 0.1 : 1),
+        iconBg: const Color(0xFFFFEBEE).withValues(alpha: isDark ? 0.1 : 1),
         iconColor: const Color(0xFFD32F2F),
         isLogout: true,
         onTap: () {
@@ -244,7 +246,7 @@ class ProfileScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -257,7 +259,7 @@ class ProfileScreen extends StatelessWidget {
         separatorBuilder: (_, __) => Divider(
           height: 1,
           indent: 58,
-          color: Theme.of(context).dividerColor.withOpacity(0.5),
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
         ),
         itemBuilder: (context, index) {
           final item = menuItems[index];
@@ -290,7 +292,7 @@ class ProfileScreen extends StatelessWidget {
           Text(
             "Unlock priority bookings, exclusive\ntournaments, and 15% discount on all turfs.",
             style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
+              color: Colors.white.withValues(alpha: 0.6),
               fontSize: 12,
               height: 1.5,
             ),
@@ -325,55 +327,6 @@ class ProfileScreen extends StatelessWidget {
 }
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
-
-class _StatCard extends StatelessWidget {
-  final String value;
-  final String label;
-
-  const _StatCard({required this.value, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 18),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-              letterSpacing: 0.8,
-              height: 1.4,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 // ─── Menu Tile ────────────────────────────────────────────────────────────────
 
@@ -420,7 +373,10 @@ class _MenuTile extends StatelessWidget {
               Icon(
                 Icons.chevron_right_rounded,
                 size: 20,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.2),
               ),
           ],
         ),

@@ -22,7 +22,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Timer? _debounce;
   String _selectedGender = 'Male';
   DateTime? _selectedDate;
-  String? _photoUrl;
 
   final List<String> _genders = ['Male', 'Female', 'Other'];
 
@@ -90,7 +89,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             _usernameController.text = state.username ?? '';
             _selectedGender = state.gender ?? 'Male';
             _selectedDate = state.dob;
-            _photoUrl = state.photoUrl;
           }
 
           return Scaffold(
@@ -123,7 +121,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     decoration: InputDecoration(
                       labelText: 'Full Name',
                       labelStyle: TextStyle(
-                          color: colorScheme.onSurface.withOpacity(0.6)),
+                          color: colorScheme.onSurface.withValues(alpha: 0.6)),
                       hintText: 'Enter your name',
                       filled: true,
                       fillColor: theme.cardColor,
@@ -157,7 +155,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     decoration: InputDecoration(
                       labelText: 'Username',
                       labelStyle: TextStyle(
-                          color: colorScheme.onSurface.withOpacity(0.6)),
+                          color: colorScheme.onSurface.withValues(alpha: 0.6)),
                       hintText: 'Unique username',
                       filled: true,
                       fillColor: theme.cardColor,
@@ -183,7 +181,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
-                        color: colorScheme.onSurface.withOpacity(0.7),
+                        color: colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                   ),
@@ -197,7 +195,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
-                        color: colorScheme.onSurface.withOpacity(0.7),
+                        color: colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                   ),
@@ -252,7 +250,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               border: Border.all(color: Colors.white, width: 4),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 ),
@@ -302,7 +300,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Future<void> _pickImage(BuildContext context) async {
     final picker = ImagePicker();
     final image = await picker.pickImage(source: ImageSource.gallery);
-    
+
     if (image != null && context.mounted) {
       final croppedFile = await ImageCropper().cropImage(
         sourcePath: image.path,
@@ -384,7 +382,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               style: TextStyle(
                 color: _selectedDate != null
                     ? theme.colorScheme.onSurface
-                    : theme.colorScheme.onSurface.withOpacity(0.5),
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.5),
                 fontSize: 15,
               ),
             ),
@@ -417,7 +415,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       return const Padding(
         padding: EdgeInsets.all(12.0),
         child: SizedBox(
-            width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(strokeWidth: 2)),
       );
     }
 

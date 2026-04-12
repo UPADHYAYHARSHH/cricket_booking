@@ -10,7 +10,6 @@ import 'package:bloc_structure/user_booking/presentation/blocs/user_search/user_
 import 'package:bloc_structure/user_booking/presentation/widgets/user_card.dart';
 import 'package:bloc_structure/user_booking/di/get_it/get_it.dart';
 
-import '../../../constants/route_constants.dart';
 import '../../../constants/widgets/app_text.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -107,12 +106,12 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                 ),
               ),
-              bottom: TabBar(
+              bottom: const TabBar(
                 indicatorColor: Colors.green,
                 labelColor: Colors.green,
                 unselectedLabelColor: Colors.grey,
                 indicatorWeight: 3,
-                tabs: const [
+                tabs: [
                   Tab(text: "Grounds"),
                   Tab(text: "Players"),
                 ],

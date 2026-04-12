@@ -3,6 +3,7 @@ import 'package:bloc_structure/common/constants/colors.dart';
 import 'package:bloc_structure/user_booking/constants/widgets/app_sizedBox.dart';
 import 'package:bloc_structure/user_booking/presentation/blocs/location/location_cubit.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -96,6 +97,25 @@ class _GroundCardState extends State<GroundCard> {
           ),
         ),
         
+        // Smooth dark gradient overlay for text/badges readability
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  Colors.black.withOpacity(0.1),
+                  Colors.black.withOpacity(0.6),
+                ],
+                stops: const [0.0, 0.5, 1.0],
+              ),
+            ),
+          ),
+        ),
+
         // Custom Dot Indicator
         if (displayImages.length > 1)
           Positioned(
@@ -131,6 +151,7 @@ class _GroundCardState extends State<GroundCard> {
               final isSaved = state.favoriteIds.contains(widget.ground.id);
               return GestureDetector(
                 onTap: () {
+                  HapticFeedback.lightImpact();
                   final user = Supabase.instance.client.auth.currentUser;
                   if (user != null) {
                     context

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'dart:math';
+import 'package:shimmer/shimmer.dart';
 
 import '../../../../common/constants/colors.dart';
 import '../../../constants/text_theme.dart';
@@ -79,7 +80,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.3 : 0.06),
+              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -275,19 +276,13 @@ class _BookingCard extends StatelessWidget {
               ),
               loadingBuilder: (context, child, loadingProgress) {
                 if (loadingProgress == null) return child;
-                return Container(
+                return SizedBox(
                   height: 160,
                   width: double.infinity,
-                  color: Colors.grey.shade100,
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded /
-                              loadingProgress.expectedTotalBytes!
-                          : null,
-                      strokeWidth: 2,
-                      color: AppColors.primaryDarkGreen,
-                    ),
+                  child: Shimmer.fromColors(
+                    baseColor: Colors.grey.shade300,
+                    highlightColor: Colors.grey.shade100,
+                    child: Container(color: Colors.white),
                   ),
                 );
               },
@@ -430,11 +425,18 @@ class _BookingCard extends StatelessWidget {
   }
 
   Widget _buildActions(BuildContext context) {
+    final isPast = booking.slotTime.isBefore(DateTime.now());
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: SizedBox(
-        width: double.infinity,
-        child: _viewTicketButton(context),
+      child: Row(
+        children: [
+          Expanded(child: _viewTicketButton(context)),
+          if (isPast) ...[
+            const SizedBox(width: 12),
+            Expanded(child: _rebookButton(context)),
+          ],
+        ],
       ),
     );
   }
@@ -442,7 +444,7 @@ class _BookingCard extends StatelessWidget {
   Widget _viewTicketButton(BuildContext context) {
     return OutlinedButton(
       onPressed: () {
-        final userName =
+        const userName =
             "User"; // Generic for now or fetch from Supabase if needed
 
         Navigator.push(
@@ -478,6 +480,39 @@ class _BookingCard extends StatelessWidget {
         text: "View Ticket",
         textStyle: AppTextTheme.black13.copyWith(
           color: AppColors.primaryDarkGreen,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget _rebookButton(BuildContext context) {
+    return ElevatedButton(
+      onPressed: () {
+        if (booking.ground != null) {
+          Navigator.pushNamed(
+            context,
+            AppRoutes.slotSelection,
+            arguments: booking.ground,
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Cannot rebook: Ground details missing.")),
+          );
+        }
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primaryDarkGreen,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      child: AppText(
+        text: "Rebook",
+        textStyle: AppTextTheme.black13.copyWith(
+          color: Colors.white,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -628,7 +663,7 @@ class ViewTicketScreen extends StatelessWidget {
               }),
               date: DateFormat('EEE, d MMM yyyy').parse(ticket.date),
               selectedSlots: [],
-              orderId: ticket.bookingId ?? '',
+              orderId: ticket.bookingId,
               totalPrice: ticket.price.toDouble(),
             ),
           );
@@ -662,6 +697,7 @@ class _TicketCard extends StatelessWidget {
   final TicketModel ticket;
 
   const _TicketCard({required this.ticket});
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
@@ -714,6 +750,23 @@ class _TicketCard extends StatelessWidget {
             height: 160,
             width: double.infinity,
             fit: BoxFit.cover,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return SizedBox(
+                height: 160,
+                width: double.infinity,
+                child: Shimmer.fromColors(
+                  baseColor: Colors.grey.shade300,
+                  highlightColor: Colors.grey.shade100,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                    ),
+                  ),
+                ),
+              );
+            },
             errorBuilder: (_, __, ___) => Container(
               height: 160,
               decoration: BoxDecoration(
@@ -953,7 +1006,7 @@ class _TicketCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          AppText(
+          const AppText(
             text: "Show this QR at the venue entrance",
             textStyle: AppTextTheme.grey11,
           ),

@@ -88,12 +88,12 @@ class _SavedGroundsScreenState extends State<SavedGroundsScreen> {
             size: 64,
             color: AppColors.borderLight,
           ),
-          const AppSizedBox(height: 16),
+          AppSizedBox(height: 16),
           AppText(
             text: "No Saved Grounds Yet",
             textStyle: AppTextTheme.black18,
           ),
-          const AppSizedBox(height: 8),
+          AppSizedBox(height: 8),
           AppText(
             text: "Tap the heart icon on any ground to save it here.",
             textStyle: AppTextTheme.black14,

@@ -494,7 +494,8 @@ class SlotSelectionWidgets {
               : colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-              color: isBooked ? Colors.transparent : borderColor, width: 2),
+              color: isBooked ? Colors.transparent : borderColor,
+              width: 2),
           boxShadow: isSelected
               ? [
                   BoxShadow(
@@ -693,8 +694,9 @@ class SlotSelectionWidgets {
 
   static Widget buildDescriptionSection(
       BuildContext context, String? description) {
-    if (description == null || description.isEmpty)
+    if (description == null || description.isEmpty) {
       return const SizedBox.shrink();
+    }
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 

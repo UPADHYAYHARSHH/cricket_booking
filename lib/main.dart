@@ -6,6 +6,7 @@ import 'package:bloc_structure/user_booking/presentation/blocs/slot_selection/sl
 import 'package:bloc_structure/user_booking/presentation/blocs/splash/splash_cubit.dart';
 import 'package:bloc_structure/user_booking/presentation/screens/booking_confirmation/booking_confirmation_screen.dart';
 import 'package:bloc_structure/user_booking/presentation/screens/login/login_screen.dart';
+import 'package:bloc_structure/user_booking/presentation/screens/login/forgot_password_screen.dart';
 import 'package:bloc_structure/user_booking/presentation/screens/main_navbar/main_nav.dart';
 import 'package:bloc_structure/user_booking/presentation/screens/my_booking/my_booking_screen.dart';
 import 'package:bloc_structure/user_booking/presentation/screens/otp/otp_screen.dart';
@@ -139,6 +140,7 @@ void main() async {
               AppRoutes.splitSetup: (context) => const SplitSetupScreen(),
               AppRoutes.splitShare: (context) => const SplitShareScreen(),
               AppRoutes.splitOverview: (context) => const SplitOverviewScreen(),
+              AppRoutes.forgotPassword: (context) => const ForgotPasswordScreen(),
             },
           );
         },

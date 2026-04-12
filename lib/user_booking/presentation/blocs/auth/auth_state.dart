@@ -11,6 +11,15 @@ class AuthOtpRequired extends AuthState {
 
 class AuthSuccess extends AuthState {}
 
+class AuthPasswordResetEmailSent extends AuthState {
+  final String email;
+  AuthPasswordResetEmailSent(this.email);
+}
+
+class AuthPasswordResetOtpVerified extends AuthState {}
+
+class AuthPasswordUpdated extends AuthState {}
+
 class AuthError extends AuthState {
   final String message;
 

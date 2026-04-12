@@ -46,35 +46,46 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
     // Start listening to real-time updates
     _slotsSubscription = repository.getSlotsStream(groundId, date).listen(
       (dbSlots) {
-        List<TimeSlot> mergedSlots = [];
-
-        if (openingTime != null && closingTime != null) {
-          // 1. Generate all possible slots for the day
-          mergedSlots = _generateSlots(openingTime, closingTime, pricePerSlot);
-
-          // 2. Overlay booked slots from DB
-          for (var dbSlot in dbSlots) {
-            final index = mergedSlots
-                .indexWhere((s) => s.startTime == dbSlot.startTime);
-            if (index != -1) {
-              mergedSlots[index] = dbSlot;
-            } else {
-              mergedSlots.add(dbSlot); // Fallback
-            }
-          }
-
-          // 3. Sort merged slots by time
-          mergedSlots.sort((a, b) => a.startTime.compareTo(b.startTime));
-        } else {
-          mergedSlots = dbSlots;
-        }
-
-        emit(state.copyWith(slots: mergedSlots, isLoading: false));
+        _processAndEmitSlots(dbSlots, openingTime, closingTime, pricePerSlot);
       },
-      onError: (error) {
-        emit(state.copyWith(isLoading: false, errorMessage: error.toString()));
+      onError: (error) async {
+        print('Realtime stream error: $error. Falling back to static fetch...');
+        try {
+          final dbSlots = await repository.fetchSlotsForGround(groundId, date);
+          _processAndEmitSlots(dbSlots, openingTime, closingTime, pricePerSlot);
+        } catch (e) {
+          emit(state.copyWith(isLoading: false, errorMessage: e.toString()));
+        }
       },
     );
+  }
+
+  void _processAndEmitSlots(List<TimeSlot> dbSlots, String? openingTime, String? closingTime, double pricePerSlot) {
+    List<TimeSlot> mergedSlots = [];
+
+    if (openingTime != null && closingTime != null) {
+      // 1. Generate all possible slots for the day
+      mergedSlots = _generateSlots(openingTime, closingTime, pricePerSlot);
+
+      // 2. Overlay booked slots from DB
+      for (var dbSlot in dbSlots) {
+        final index = mergedSlots
+            .indexWhere((s) => s.startTime == dbSlot.startTime);
+        if (index != -1) {
+          mergedSlots[index] = dbSlot;
+        } else {
+          mergedSlots.add(dbSlot); // Fallback
+        }
+      }
+
+      // 3. Sort merged slots by time
+      mergedSlots.sort((a, b) => a.startTime.compareTo(b.startTime));
+    } else {
+      mergedSlots = dbSlots;
+    }
+
+    // Set errorMessage to null when successfully emitting slots to clear any previous errors
+    emit(state.copyWith(slots: mergedSlots, isLoading: false, errorMessage: null));
   }
 
   List<TimeSlot> _generateSlots(String open, String close, double price) {

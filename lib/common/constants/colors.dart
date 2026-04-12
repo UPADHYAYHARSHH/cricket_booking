@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
   // --- BRAND COLORS (Consistent in both themes) ---
@@ -36,6 +37,10 @@ class AppColors {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
+      textTheme: GoogleFonts.outfitTextTheme().apply(
+        bodyColor: textPrimaryLight,
+        displayColor: textPrimaryLight,
+      ),
       primaryColor: primaryDarkGreen,
       scaffoldBackgroundColor: bgLight,
       colorScheme: const ColorScheme.light(
@@ -61,6 +66,10 @@ class AppColors {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
+      textTheme: GoogleFonts.outfitTextTheme().apply(
+        bodyColor: textPrimaryDark,
+        displayColor: textPrimaryDark,
+      ),
       primaryColor: primaryDarkGreen,
       scaffoldBackgroundColor: bgDark,
       colorScheme: const ColorScheme.dark(

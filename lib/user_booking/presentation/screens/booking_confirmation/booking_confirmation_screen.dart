@@ -9,6 +9,8 @@ import '../../../constants/widgets/app_sizedBox.dart';
 import '../../../constants/widgets/app_text.dart';
 
 import 'package:intl/intl.dart';
+import 'package:add_2_calendar/add_2_calendar.dart';
+import 'package:shimmer/shimmer.dart';
 
 class BookingConfirmationScreen extends StatelessWidget {
   const BookingConfirmationScreen({super.key});
@@ -200,6 +202,77 @@ class BookingConfirmationScreen extends StatelessWidget {
 
               const AppSizedBox(height: 16),
 
+              /// ADD TO CALENDAR
+              OutlinedButton(
+                onPressed: () {
+                  DateTime eventStart = date;
+                  DateTime eventEnd = date.add(const Duration(hours: 1));
+
+                  if (slots.isNotEmpty) {
+                    try {
+                      final startParts = slots.first.startTime.split(':');
+                      eventStart = DateTime(
+                        date.year,
+                        date.month,
+                        date.day,
+                        int.parse(startParts[0]),
+                        int.parse(startParts[1]),
+                      );
+                      
+                      final endParts = slots.last.endTime.split(':');
+                      eventEnd = DateTime(
+                        date.year,
+                        date.month,
+                        date.day,
+                        int.parse(endParts[0]),
+                        int.parse(endParts[1]),
+                      );
+                    } catch (e) {
+                      // Fallback
+                    }
+                  }
+
+                  final Event event = Event(
+                    title: 'Box Cricket Booking: ${ground.name}',
+                    description: 'Your turf booking is confirmed! Order ID: #$orderId',
+                    location: ground.address ?? 'Box Cricket Arena',
+                    startDate: eventStart,
+                    endDate: eventEnd,
+                  );
+                  
+                  Add2Calendar.addEvent2Cal(event);
+                },
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(
+                      color: Colors.blueAccent, width: 2),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  minimumSize: const Size(double.infinity, 56),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const HugeIcon(
+                        icon: HugeIcons.strokeRoundedCalendar01,
+                        color: Colors.blueAccent,
+                        size: 20),
+                    const AppSizedBox(width: 8),
+                    AppText(
+                      text: "Add to Calendar",
+                      textStyle: AppTextTheme.black15.copyWith(
+                        color: Colors.blueAccent,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const AppSizedBox(height: 16),
+
               /// VIEW BOOKINGS
               TextButton(
                 onPressed: () => Navigator.pushNamedAndRemoveUntil(
@@ -264,6 +337,29 @@ class _VenueCard extends StatelessWidget {
                     ground.imageUrl ??
                         "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e",
                     fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return SizedBox(
+                        height: 160,
+                        width: double.infinity,
+                        child: Shimmer.fromColors(
+                          baseColor: Colors.grey.shade300,
+                          highlightColor: Colors.grey.shade100,
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    errorBuilder: (_, __, ___) => Container(
+                      color: Colors.grey.shade200,
+                      child: const Center(
+                        child: Icon(Icons.sports_cricket, size: 40, color: Colors.grey),
+                      ),
+                    ),
                   ),
                 ),
                 Container(
@@ -399,7 +495,7 @@ class _BookingDetailsCard extends StatelessWidget {
             valueBold: true,
           ),
           const AppSizedBox(height: 12),
-          _DetailRow(
+          const _DetailRow(
             label: "Payment Status",
             value: "PAID",
             isSmall: true,

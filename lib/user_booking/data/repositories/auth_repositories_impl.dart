@@ -57,6 +57,35 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<void> sendPasswordResetEmail(String email) async {
+    await supabase.auth.resetPasswordForEmail(email);
+  }
+
+  @override
+  Future<void> verifyPasswordResetOtp(String email, String token) async {
+    final response = await supabase.auth.verifyOTP(
+      email: email,
+      token: token,
+      type: OtpType.recovery,
+    );
+    
+    if (response.user == null) {
+      throw const AuthException('Invalid or expired OTP');
+    }
+  }
+
+  @override
+  Future<void> updatePassword(String newPassword) async {
+    final response = await supabase.auth.updateUser(
+      UserAttributes(password: newPassword),
+    );
+    
+    if (response.user == null) {
+      throw const AuthException('Failed to update password');
+    }
+  }
+
+  @override
   Future<void> logout() async {
     await supabase.auth.signOut();
   }

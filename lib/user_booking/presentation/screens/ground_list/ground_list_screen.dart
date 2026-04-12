@@ -4,6 +4,8 @@ import 'package:bloc_structure/user_booking/presentation/screens/ground_list/wid
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:lottie/lottie.dart';
 
 import '../../../constants/widgets/app_text.dart';
 
@@ -14,7 +16,6 @@ import 'package:bloc_structure/user_booking/presentation/widgets/ground_card.dar
 import 'widgets/ground_skeleton.dart';
 import '../../blocs/notification/notification_cubit.dart';
 import 'package:bloc_structure/user_booking/constants/route_constants.dart';
-import 'package:bloc_structure/user_booking/domain/models/filter_criteria.dart';
 import 'widgets/filter_bottom_sheet.dart';
 
 class GroundListScreen extends StatefulWidget {
@@ -277,8 +278,51 @@ class _GroundListScreenState extends State<GroundListScreen> {
                   /// ✅ Data Loaded
                   if (state is GroundLoaded) {
                     if (state.grounds.isEmpty) {
-                      return const Center(
-                        child: AppText(text: "No grounds found"),
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              child: Lottie.network(
+                                'https://Assets1.lottiefiles.com/packages/lf20_cwA7Cn.json', // Stable fallback url if the host one expires
+                                height: 180,
+                                width: 180,
+                                fit: BoxFit.contain,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    padding: const EdgeInsets.all(24),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const HugeIcon(
+                                      icon: HugeIcons.strokeRoundedSearch01,
+                                      size: 48,
+                                      color: AppColors.primaryDarkGreen,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ).animate().scale(delay: 200.ms, duration: 400.ms, curve: Curves.easeOutBack),
+                            const AppSizedBox(height: 16),
+                            AppText(
+                              text: "No Grounds Found",
+                              textStyle: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ).animate().fadeIn(delay: 400.ms),
+                            const AppSizedBox(height: 8),
+                            AppText(
+                              text: "Try adjusting your filters or location",
+                              textStyle: TextStyle(
+                                fontSize: 13,
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                              ),
+                            ).animate().fadeIn(delay: 500.ms),
+                          ],
+                        ),
                       );
                     }
 
@@ -302,7 +346,9 @@ class _GroundListScreenState extends State<GroundListScreen> {
                             padding: const EdgeInsets.only(bottom: 16),
                             child: GroundCard(
                               ground: state.grounds[index],
-                            ),
+                            ).animate()
+                             .fadeIn(duration: 400.ms, delay: (index * 50).ms)
+                             .slideY(begin: 0.05, end: 0, duration: 400.ms, curve: Curves.easeOutQuad),
                           );
                         },
                       ),

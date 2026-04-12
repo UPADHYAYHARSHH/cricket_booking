@@ -236,9 +236,9 @@ class _SplitHistoryCard extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                Row(
+                const Row(
                   children: [
-                    const AppText(
+                    AppText(
                       text: "View Details",
                       textStyle: TextStyle(
                         fontSize: 12,
@@ -246,7 +246,7 @@ class _SplitHistoryCard extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const Icon(
+                    Icon(
                       Icons.chevron_right,
                       size: 16,
                       color: AppColors.primaryDarkGreen,

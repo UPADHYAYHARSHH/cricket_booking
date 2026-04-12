@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 enum SplitStatus { pending, settled }
 
 class SplitRequestModel {
@@ -33,8 +31,12 @@ class SplitRequestModel {
       totalAmount: (json['total_amount'] as num).toDouble(),
       upiId: json['upi_id'],
       qrCodeUrl: json['qr_code_url'],
-      status: json['status'] == 'settled' ? SplitStatus.settled : SplitStatus.pending,
-      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
+      status: json['status'] == 'settled'
+          ? SplitStatus.settled
+          : SplitStatus.pending,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : null,
       members: (json['split_members'] as List?)
               ?.map((m) => SplitMemberModel.fromJson(m))
               .toList() ??

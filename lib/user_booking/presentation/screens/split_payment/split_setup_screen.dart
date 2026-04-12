@@ -16,7 +16,6 @@ import '../../../constants/widgets/app_text.dart';
 import '../../blocs/split_payment/split_state.dart';
 import '../../blocs/user_search/user_search_cubit.dart';
 import '../../../di/get_it/get_it.dart';
-import '../../widgets/user_card.dart';
 
 class SplitSetupScreen extends StatefulWidget {
   const SplitSetupScreen({super.key});

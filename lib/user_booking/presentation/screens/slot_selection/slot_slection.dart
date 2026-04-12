@@ -4,6 +4,7 @@ import 'package:bloc_structure/user_booking/constants/widgets/app_text.dart';
 import 'package:bloc_structure/user_booking/data/repositories/payment_repository.dart';
 import 'package:bloc_structure/user_booking/domain/models/slot_models.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:bloc_structure/user_booking/presentation/blocs/saved_ground/saved_ground_cubit.dart';
@@ -157,8 +158,9 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
   }
 
   void _retryPayment() {
-    if (_pendingAmount == null || _pendingDate == null || _pendingSlots == null)
+    if (_pendingAmount == null || _pendingDate == null || _pendingSlots == null) {
       return;
+    }
     _onConfirmBooking(_pendingAmount!, null, _pendingSlots!, fromRetry: true);
   }
 
@@ -216,6 +218,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
   void _onConfirmBooking(
       double totalPrice, dynamic activeDate, List<TimeSlot> selectedSlots,
       {bool fromRetry = false}) async {
+    HapticFeedback.mediumImpact();
     debugPrint('--- USER TAPPED CONFIRM BOOKING ---');
     debugPrint('Total Price: $totalPrice');
     debugPrint('Slots Count: ${selectedSlots.length}');
@@ -428,6 +431,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                             // Find the original index to toggle correct slot
                             final originalIndex =
                                 filteredWithOriginalIndex[indexInFiltered].key;
+                            HapticFeedback.lightImpact();
                             context
                                 .read<SlotSelectionCubit>()
                                 .toggleSlot(originalIndex);

@@ -11,17 +11,17 @@ class NotificationInitial extends NotificationState {
 }
 
 class NotificationLoading extends NotificationState {
-  NotificationLoading({int unreadCount = 0}) : super(unreadCount: unreadCount);
+  NotificationLoading({super.unreadCount});
 }
 
 class NotificationLoaded extends NotificationState {
   final List<NotificationModel> notifications;
-  NotificationLoaded(this.notifications, {int unreadCount = 0}) : super(unreadCount: unreadCount);
+  NotificationLoaded(this.notifications, {super.unreadCount});
 }
 
 class NotificationError extends NotificationState {
   final String message;
-  NotificationError(this.message, {int unreadCount = 0}) : super(unreadCount: unreadCount);
+  NotificationError(this.message, {super.unreadCount});
 }
 
 class NotificationCubit extends Cubit<NotificationState> {

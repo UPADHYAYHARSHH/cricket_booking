@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
 
 class AppNetworkImage extends StatelessWidget {
   final String imageUrl;
@@ -39,8 +40,12 @@ class AppNetworkImage extends StatelessWidget {
         return SizedBox(
           height: height,
           width: width,
-          child: const Center(
-            child: CircularProgressIndicator(strokeWidth: 2),
+          child: Shimmer.fromColors(
+            baseColor: Colors.grey.shade300,
+            highlightColor: Colors.grey.shade100,
+            child: Container(
+              color: Colors.white,
+            ),
           ),
         );
       },

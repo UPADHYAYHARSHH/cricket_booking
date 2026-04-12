@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart' as http;
@@ -46,30 +47,37 @@ class _CitySearchBottomSheetState extends State<CitySearchBottomSheet> {
 
   Timer? _debounce;
 
-  /// FETCH CITIES FROM GOOGLE PLACES API
+  /// FETCH CITIES FROM OPEN-METEO GEOCODING API (Free)
   Future<List<String>> searchCities(String query) async {
-    final url = "https://maps.googleapis.com/maps/api/place/autocomplete/json"
-        "?input=$query"
-        "&types=(cities)"
-        "&components=country:in"
-        "&key=AIzaSyAMODBdO75JmBy6yW-rIYHQyuwpc34nsh4";
+    final url = "https://geocoding-api.open-meteo.com/v1/search"
+        "?name=$query"
+        "&count=10"
+        "&language=en"
+        "&format=json";
 
     final response = await http.get(Uri.parse(url));
-    print('response===>$response');
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      final predictions = data['predictions'] as List;
+      final results = data['results'] as List?;
 
-      return predictions.map((e) {
-        final mainText = e['structured_formatting']['main_text'] as String;
-        final secondaryText =
-            e['structured_formatting']['secondary_text'] as String? ?? "";
+      if (results == null) return [];
 
-        // Extract only the state/area (usually the first part of secondary_text)
-        final state = secondaryText.split(',').first.trim();
-
-        return state.isNotEmpty ? "$mainText, $state" : mainText;
-      }).toList();
+      final List<String> cityStrings = [];
+      for (var e in results) {
+        if (e['country_code'] == 'IN') { // Only India
+          final cityName = e['name'] as String? ?? "";
+          final stateName = e['admin1'] as String? ?? "";
+          
+          final formatString = stateName.isNotEmpty && stateName != cityName 
+              ? "$cityName, $stateName" 
+              : cityName;
+              
+          if (!cityStrings.contains(formatString) && formatString.isNotEmpty) {
+            cityStrings.add(formatString);
+          }
+        }
+      }
+      return cityStrings;
     } else {
       throw Exception("Failed to fetch cities");
     }
@@ -128,79 +136,82 @@ class _CitySearchBottomSheetState extends State<CitySearchBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        height: 500,
-        child: Column(
-          children: [
-            const AppSizedBox(height: 10),
-
-            /// Drag Handle
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Theme.of(context).dividerColor.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(10),
-              ),
+    return BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor.withOpacity(0.85),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(24)),
             ),
+            height: 500,
+            child: Column(
+              children: [
+                const AppSizedBox(height: 10),
 
-            const AppSizedBox(height: 16),
-
-            /// Search Field
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: TextField(
-                controller: controller,
-                onChanged: onSearch,
-                style:
-                    TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                decoration: InputDecoration(
-                  hintText: "Search city...",
-                  hintStyle: TextStyle(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.4),
-                  ),
-                  prefixIcon: HugeIcon(
-                    icon: HugeIcons.strokeRoundedSearch01,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.4),
-                  ),
-                  filled: true,
-                  fillColor: Theme.of(context).scaffoldBackgroundColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide.none,
+                /// Drag Handle
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).dividerColor.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-              ),
+
+                const AppSizedBox(height: 16),
+
+                /// Search Field
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: TextField(
+                    controller: controller,
+                    onChanged: onSearch,
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface),
+                    decoration: InputDecoration(
+                      hintText: "Search city...",
+                      hintStyle: TextStyle(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.4),
+                      ),
+                      prefixIcon: HugeIcon(
+                        icon: HugeIcons.strokeRoundedSearch01,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.4),
+                      ),
+                      filled: true,
+                      fillColor: Theme.of(context).scaffoldBackgroundColor,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const AppSizedBox(height: 16),
+
+                /// Content
+                Expanded(
+                  child: isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : (controller.text.isEmpty
+                          ? _buildHistory()
+                          : _buildResults()),
+                )
+              ],
             ),
-
-            const AppSizedBox(height: 16),
-
-            /// Content
-            Expanded(
-              child: isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : (controller.text.isEmpty
-                      ? _buildHistory()
-                      : _buildResults()),
-            )
-          ],
-        ),
-      ),
-    );
+          ),
+        ));
   }
 
   Widget _buildHistory() {
