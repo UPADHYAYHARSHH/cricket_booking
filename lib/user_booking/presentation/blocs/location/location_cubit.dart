@@ -94,52 +94,78 @@ class LocationCubit extends Cubit<LocationState> {
   }
 
   /// INITIALIZE CITY FROM DATABASE OR CURRENT POSITION
-  Future<void> loadCity() async {
-    // Only show loading if we don't have a city yet (initial load)
-    if (state.city == null) {
-      emit(state.copyWith(isLoading: true));
-    }
-    
-    print("[LOCATION_CUBIT] Initializing/Refreshing City...");
-
-    try {
-      print("[LOCATION_CUBIT] Fetching precise location...");
-      final userLoc = await getCurrentLocation();
-      print("[LOCATION_CUBIT] Precise Location: ${userLoc.city} (${userLoc.latitude}, ${userLoc.longitude})");
-
-      emit(state.copyWith(
-        city: userLoc.city,
-        latitude: userLoc.latitude,
-        longitude: userLoc.longitude,
-        isLoading: false,
-        errorMessage: null,
-      ));
-      
-      // Update database if changed significantly
-      await repo.updateUserCity(userLoc.city);
-    } catch (e) {
-      print("[LOCATION_CUBIT] GPS Error: $e. Falling back to stored city.");
-      
-      String? errorMsg;
-      if (e.toString().contains('PERMISSION_DENIED')) {
-        errorMsg = 'Location permission is required for distance calculation.';
-      } else if (e.toString().contains('PERMISSION_PERMANENTLY_DENIED')) {
-        errorMsg = 'Location permission is permanently denied. Please enable it in app settings.';
-      } else if (e.toString().contains('SERVICE_DISABLED')) {
-        errorMsg = 'Location service is disabled. Please turn on GPS.';
-      }
-
-      final storedCity = await repo.getUserCity();
-      if (storedCity != null) {
-        await setCity(storedCity); // setCity clears error inside itself if not careful
-      } else {
-        emit(state.copyWith(city: "Select Location", isLoading: false));
-      }
-      
-      // Emit error separately after fallback if exists
-      if (errorMsg != null) {
-        emit(state.copyWith(errorMessage: errorMsg, isLoading: false));
-      }
-    }
+ Future<void> loadCity({bool forceRefresh = false}) async {
+  if (state.city == null) {
+    emit(state.copyWith(isLoading: true));
   }
+
+  print("[LOCATION_CUBIT] Loading city...");
+
+  try {
+    /// STEP 1: Check stored city FIRST
+    final storedCity = await repo.getUserCity();
+
+    if (storedCity != null && !forceRefresh) {
+      print("[LOCATION_CUBIT] Using stored city: $storedCity");
+
+      // Optionally geocode to get lat/lng
+      try {
+        List<Location> locations = await locationFromAddress(storedCity);
+        if (locations.isNotEmpty) {
+          emit(state.copyWith(
+            city: storedCity,
+            latitude: locations.first.latitude,
+            longitude: locations.first.longitude,
+            isLoading: false,
+            errorMessage: null,
+          ));
+        } else {
+          emit(state.copyWith(
+            city: storedCity,
+            isLoading: false,
+          ));
+        }
+      } catch (_) {
+        emit(state.copyWith(
+          city: storedCity,
+          isLoading: false,
+        ));
+      }
+
+      return; // 🚀 STOP here (no GPS call)
+    }
+
+    /// STEP 2: Fetch from GPS if no stored city
+    print("[LOCATION_CUBIT] Fetching GPS location...");
+    final userLoc = await getCurrentLocation();
+
+    emit(state.copyWith(
+      city: userLoc.city,
+      latitude: userLoc.latitude,
+      longitude: userLoc.longitude,
+      isLoading: false,
+      errorMessage: null,
+    ));
+
+    await repo.updateUserCity(userLoc.city);
+
+  } catch (e) {
+    print("[LOCATION_CUBIT] ERROR: $e");
+
+    String? errorMsg;
+    if (e.toString().contains('PERMISSION_DENIED')) {
+      errorMsg = 'Location permission is required.';
+    } else if (e.toString().contains('PERMISSION_PERMANENTLY_DENIED')) {
+      errorMsg = 'Enable location from settings.';
+    } else if (e.toString().contains('SERVICE_DISABLED')) {
+      errorMsg = 'Turn on GPS.';
+    }
+
+    emit(state.copyWith(
+      isLoading: false,
+      errorMessage: errorMsg,
+      city: state.city ?? "Select Location",
+    ));
+  }
+}
 }

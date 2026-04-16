@@ -1,26 +1,69 @@
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart'; // Add for kIsWeb
+import 'package:add_2_calendar/add_2_calendar.dart';
+import 'package:bloc_structure/common/constants/colors.dart';
+import 'package:bloc_structure/user_booking/constants/route_constants.dart';
+import 'package:bloc_structure/user_booking/constants/text_theme.dart';
+import 'package:bloc_structure/user_booking/constants/widgets/app_sizedBox.dart';
+import 'package:bloc_structure/user_booking/constants/widgets/app_text.dart';
 import 'package:bloc_structure/user_booking/domain/models/booking_arguments.dart';
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
-import '../../../constants/route_constants.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:hugeicons/hugeicons.dart';
-import '../../../../common/constants/colors.dart';
-import '../../../constants/text_theme.dart';
-import '../../../constants/widgets/app_sizedBox.dart';
-import '../../../constants/widgets/app_text.dart';
-
 import 'package:intl/intl.dart';
-import 'package:add_2_calendar/add_2_calendar.dart';
+import 'package:lottie/lottie.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:file_picker/file_picker.dart';
+import 'package:printing/printing.dart'; // Already here, good for Web sharing
+import 'package:bloc_structure/utils/toast_util.dart';
+import 'package:bloc_structure/utils/file_save_helper.dart'; // Add our new helper
+import 'package:bloc_structure/utils/ticket_util.dart'; // Add TicketUtil
 
-class BookingConfirmationScreen extends StatelessWidget {
+class BookingConfirmationScreen extends StatefulWidget {
   const BookingConfirmationScreen({super.key});
+
+  @override
+  State<BookingConfirmationScreen> createState() => _BookingConfirmationScreenState();
+}
+
+class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
+  bool _isSaving = false;
+
+  Future<void> _captureAndSave(
+    String groundName,
+    String groundAddress,
+    String groundImageUrl,
+    DateTime date,
+    String timeRange,
+    String orderId,
+    double totalPrice,
+  ) async {
+    await TicketUtil.downloadTicket(
+      context,
+      groundName: groundName,
+      groundAddress: groundAddress,
+      groundImageUrl: groundImageUrl,
+      date: date,
+      timeRange: timeRange,
+      orderId: orderId,
+      totalPrice: totalPrice,
+      onLoadingStarted: () => setState(() => _isSaving = true),
+      onLoadingFinished: () {
+        if (mounted) setState(() => _isSaving = false);
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final rawArgs = ModalRoute.of(context)?.settings.arguments;
 
-    final rawArgs = ModalRoute.of(context)!.settings.arguments;
     if (rawArgs == null || rawArgs is! BookingSuccessArguments) {
       return Scaffold(
         body: Center(
@@ -31,8 +74,7 @@ class BookingConfirmationScreen extends StatelessWidget {
               const AppSizedBox(height: 16),
               const AppText(text: "Booking information missing"),
               TextButton(
-                onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                    context, '/nav', (r) => false),
+                onPressed: () => Navigator.pushNamedAndRemoveUntil(context, '/nav', (r) => false),
                 child: const Text("Go to Home"),
               )
             ],
@@ -48,9 +90,7 @@ class BookingConfirmationScreen extends StatelessWidget {
     final orderId = args.orderId;
     final totalPrice = args.totalPrice;
 
-    final timeRange = slots.isEmpty
-        ? "No slots selected"
-        : "${slots.first.startTime} - ${slots.last.endTime}";
+    final timeRange = slots.isEmpty ? "No slots selected" : "${slots.first.startTime} - ${slots.last.endTime}";
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -87,7 +127,7 @@ class BookingConfirmationScreen extends StatelessWidget {
                 height: 140,
                 width: 140,
                 child: Lottie.asset(
-                  'assets/animations/Success.json', // Fixed case-sensitivity
+                  'assets/animations/Success.json',
                   repeat: false,
                 ),
               ),
@@ -110,8 +150,7 @@ class BookingConfirmationScreen extends StatelessWidget {
 
               /// SUBTITLE
               AppText(
-                text:
-                    "Get ready to hit some sixes! Your pitch is ready for action.",
+                text: "Get ready to hit some sixes! Your pitch is ready for action.",
                 align: TextAlign.center,
                 textStyle: AppTextTheme.grey13.copyWith(
                   color: colorScheme.onSurface.withOpacity(0.6),
@@ -123,9 +162,7 @@ class BookingConfirmationScreen extends StatelessWidget {
               const AppSizedBox(height: 32),
 
               _VenueCard(ground: ground),
-
               const AppSizedBox(height: 20),
-
               _BookingDetailsCard(
                 date: date,
                 timeRange: timeRange,
@@ -135,75 +172,50 @@ class BookingConfirmationScreen extends StatelessWidget {
 
               const AppSizedBox(height: 32),
 
-              /// BACK TO HOME
-              ElevatedButton(
-                onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  '/nav',
-                  (route) => false,
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryDarkGreen,
-                  foregroundColor: AppColors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  minimumSize: const Size(double.infinity, 56),
-                  elevation: 4,
-                  shadowColor: AppColors.primaryDarkGreen.withOpacity(0.3),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: AppText(
-                  text: "Back to Home",
-                  textStyle: AppTextTheme.white15.copyWith(
+              /// DOWNLOAD TICKET
+              ElevatedButton.icon(
+                onPressed: _isSaving
+                    ? null
+                    : () => _captureAndSave(
+                          ground.name ?? 'Box Cricket Arena',
+                          ground.address ?? 'Ahmedabad, Gujarat',
+                          ground.imageUrl ??
+                              'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e',
+                          date,
+                          timeRange,
+                          orderId,
+                          totalPrice,
+                        ),
+                icon: _isSaving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2),
+                      )
+                    : const Icon(Icons.download_rounded, color: Colors.white),
+                label: AppText(
+                  text: _isSaving ? "Generating PDF..." : "Download Ticket",
+                  textStyle: const TextStyle(
+                    color: Colors.white,
                     fontWeight: FontWeight.w700,
                     fontSize: 16,
                   ),
                 ),
-              ),
-
-              const AppSizedBox(height: 16),
-
-              /// SPLIT BILL
-              OutlinedButton(
-                onPressed: () => Navigator.pushNamed(
-                  context,
-                  AppRoutes.splitSetup,
-                  arguments: args,
-                ),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(
-                      color: AppColors.primaryDarkGreen, width: 2),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryDarkGreen,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   minimumSize: const Size(double.infinity, 56),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const HugeIcon(
-                        icon: HugeIcons.strokeRoundedUserGroup,
-                        color: AppColors.primaryDarkGreen,
-                        size: 20),
-                    const AppSizedBox(width: 8),
-                    AppText(
-                      text: "Split Bill with Teammates",
-                      textStyle: AppTextTheme.black15.copyWith(
-                        color: AppColors.primaryDarkGreen,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
                 ),
               ),
 
               const AppSizedBox(height: 16),
 
               /// ADD TO CALENDAR
-              OutlinedButton(
+              OutlinedButton.icon(
                 onPressed: () {
                   DateTime eventStart = date;
                   DateTime eventEnd = date.add(const Duration(hours: 1));
@@ -218,7 +230,7 @@ class BookingConfirmationScreen extends StatelessWidget {
                         int.parse(startParts[0]),
                         int.parse(startParts[1]),
                       );
-                      
+
                       final endParts = slots.last.endTime.split(':');
                       eventEnd = DateTime(
                         date.year,
@@ -227,9 +239,7 @@ class BookingConfirmationScreen extends StatelessWidget {
                         int.parse(endParts[0]),
                         int.parse(endParts[1]),
                       );
-                    } catch (e) {
-                      // Fallback
-                    }
+                    } catch (e) {}
                   }
 
                   final Event event = Event(
@@ -239,50 +249,39 @@ class BookingConfirmationScreen extends StatelessWidget {
                     startDate: eventStart,
                     endDate: eventEnd,
                   );
-                  
+
                   Add2Calendar.addEvent2Cal(event);
                 },
+                icon: const HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: Colors.blueAccent, size: 20),
+                label: const AppText(
+                  text: "Add to Calendar",
+                  textStyle: TextStyle(
+                    color: Colors.blueAccent,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                  ),
+                ),
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(
-                      color: Colors.blueAccent, width: 2),
+                  side: const BorderSide(color: Colors.blueAccent, width: 2),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   minimumSize: const Size(double.infinity, 56),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const HugeIcon(
-                        icon: HugeIcons.strokeRoundedCalendar01,
-                        color: Colors.blueAccent,
-                        size: 20),
-                    const AppSizedBox(width: 8),
-                    AppText(
-                      text: "Add to Calendar",
-                      textStyle: AppTextTheme.black15.copyWith(
-                        color: Colors.blueAccent,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
               ),
 
               const AppSizedBox(height: 16),
 
-              /// VIEW BOOKINGS
+              /// BACK TO HOME
               TextButton(
                 onPressed: () => Navigator.pushNamedAndRemoveUntil(
                   context,
                   '/nav',
                   (route) => false,
-                  arguments: 1, // Go to bookings tab
                 ),
                 child: AppText(
-                  text: "View My Bookings",
+                  text: "Back to Home",
                   textStyle: AppTextTheme.black13.copyWith(
                     color: colorScheme.primary,
                     fontWeight: FontWeight.w700,
@@ -316,8 +315,7 @@ class _VenueCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black
-                .withOpacity(theme.brightness == Brightness.dark ? 0.3 : 0.08),
+            color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.3 : 0.08),
             blurRadius: 20,
             offset: const Offset(0, 8),
           )
@@ -334,26 +332,8 @@ class _VenueCard extends StatelessWidget {
                   height: 160,
                   width: double.infinity,
                   child: Image.network(
-                    ground.imageUrl ??
-                        "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e",
+                    ground.imageUrl ?? "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e",
                     fit: BoxFit.cover,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return SizedBox(
-                        height: 160,
-                        width: double.infinity,
-                        child: Shimmer.fromColors(
-                          baseColor: Colors.grey.shade300,
-                          highlightColor: Colors.grey.shade100,
-                          child: Container(
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
                     errorBuilder: (_, __, ___) => Container(
                       color: Colors.grey.shade200,
                       child: const Center(
@@ -370,47 +350,44 @@ class _VenueCard extends StatelessWidget {
                       end: Alignment.bottomCenter,
                       colors: [
                         Colors.transparent,
-                        Colors.black.withOpacity(0.7),
+                        Colors.black.withOpacity(0.6),
                       ],
                     ),
                   ),
                 ),
                 Positioned(
-                  top: 12,
-                  right: 12,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppColors.success,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.check_circle,
-                            color: Colors.white, size: 14),
-                        const AppSizedBox(width: 4),
-                        AppText(
-                          text: "CONFIRMED",
-                          textStyle: AppTextTheme.white10.copyWith(
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: .5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 12,
+                  bottom: 16,
                   left: 16,
-                  child: AppText(
-                    text: ground.name,
-                    textStyle: AppTextTheme.white15.copyWith(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
+                  right: 16,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppText(
+                        text: ground.name ?? "PowerPlay Arena",
+                        textStyle: AppTextTheme.white15.copyWith(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const AppSizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on, size: 14, color: Colors.white70),
+                          const AppSizedBox(width: 4),
+                          Expanded(
+                            child: AppText(
+                              text: ground.address ?? "Ahmedabad, Gujarat",
+                              textStyle: AppTextTheme.white10.copyWith(
+                                fontSize: 12,
+                                color: Colors.white.withOpacity(0.8),
+                              ),
+                              maxLines: 1,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -420,23 +397,31 @@ class _VenueCard extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                Icon(Icons.location_on, color: colorScheme.primary, size: 16),
-                const AppSizedBox(width: 6),
-                Expanded(
-                  child: AppText(
-                    text: ground.address ??
-                        "Location details available in ticket",
-                    maxLines: 1,
-                    textStyle: AppTextTheme.grey12.copyWith(
-                      color: colorScheme.onSurface.withOpacity(0.6),
-                    ),
-                  ),
-                ),
+                _buildAmenity(Icons.wifi, "Free WiFi"),
+                const AppSizedBox(width: 16),
+                _buildAmenity(Icons.local_parking, "Parking"),
+                const AppSizedBox(width: 16),
+                _buildAmenity(Icons.wc, "Washroom"),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildAmenity(IconData icon, String label) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: AppColors.primaryDarkGreen),
+        const AppSizedBox(width: 6),
+        AppText(
+          text: label,
+          textStyle: AppTextTheme.grey11.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -460,132 +445,102 @@ class _BookingDetailsCard extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.5)),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
       ),
       child: Column(
         children: [
-          _DetailRow(
-            icon: Icons.calendar_today_rounded,
-            label: "DATE",
-            value: DateFormat('EEEE, d MMM yyyy').format(date),
+          _buildDetailRow(
+            context,
+            "Date",
+            DateFormat('EEEE, d MMMM yyyy').format(date),
+            Icons.calendar_today_outlined,
           ),
-          const AppSizedBox(height: 16),
-          _DetailRow(
-            icon: Icons.access_time_rounded,
-            label: "TIME SLOT",
-            value: timeRange,
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Divider(height: 1),
           ),
-          const AppSizedBox(height: 20),
-          Divider(color: colorScheme.outlineVariant.withOpacity(0.5)),
-          const AppSizedBox(height: 20),
-          _DetailRow(
-            label: "Booking ID",
-            value: "#$orderId",
-            isSmall: true,
+          _buildDetailRow(
+            context,
+            "Time Slot",
+            timeRange,
+            Icons.access_time_rounded,
           ),
-          const AppSizedBox(height: 12),
-          _DetailRow(
-            label: "Total Amount",
-            value: "₹${totalPrice.toStringAsFixed(0)}",
-            isSmall: true,
-            valueBold: true,
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Divider(height: 1),
           ),
-          const AppSizedBox(height: 12),
-          const _DetailRow(
-            label: "Payment Status",
-            value: "PAID",
-            isSmall: true,
-            valueColor: AppColors.success,
-            valueBold: true,
+          _buildDetailRow(
+            context,
+            "Booking ID",
+            "#$orderId",
+            Icons.confirmation_number_outlined,
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DetailRow extends StatelessWidget {
-  final IconData? icon;
-  final String label;
-  final String value;
-  final bool isSmall;
-  final bool valueBold;
-  final Color? valueColor;
-
-  const _DetailRow({
-    this.icon,
-    required this.label,
-    required this.value,
-    this.isSmall = false,
-    this.valueBold = false,
-    this.valueColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    if (!isSmall) {
-      return Row(
-        children: [
-          if (icon != null)
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: colorScheme.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: colorScheme.primary, size: 20),
-            ),
-          const AppSizedBox(width: 14),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Divider(height: 1),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               AppText(
-                text: label,
-                textStyle: AppTextTheme.grey12.copyWith(
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5,
-                  fontSize: 10,
-                  color: colorScheme.onSurface.withOpacity(0.5),
+                text: "Total Amount",
+                textStyle: AppTextTheme.black15.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface.withOpacity(0.6),
                 ),
               ),
-              const AppSizedBox(height: 4),
               AppText(
-                text: value,
-                textStyle: AppTextTheme.black14.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: colorScheme.onSurface,
+                text: "₹${totalPrice.toStringAsFixed(0)}",
+                textStyle: AppTextTheme.black18.copyWith(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.primaryDarkGreen,
                 ),
               ),
             ],
           ),
         ],
-      );
-    }
+      ),
+    );
+  }
 
+  Widget _buildDetailRow(BuildContext context, String label, String value, IconData icon) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        AppText(
-          text: label,
-          textStyle: AppTextTheme.grey12.copyWith(
-            color: colorScheme.onSurface.withOpacity(0.6),
-            fontWeight: FontWeight.w500,
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.primaryDarkGreen.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
           ),
+          child: Icon(icon, size: 18, color: AppColors.primaryDarkGreen),
         ),
-        AppText(
-          text: value,
-          textStyle: AppTextTheme.black12.copyWith(
-            color: valueColor ?? colorScheme.onSurface,
-            fontWeight: valueBold ? FontWeight.w800 : FontWeight.w600,
-            fontSize: 13,
-          ),
+        const AppSizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AppText(
+              text: label,
+              textStyle: AppTextTheme.grey11.copyWith(
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface.withOpacity(0.5),
+              ),
+            ),
+            const AppSizedBox(height: 2),
+            AppText(
+              text: value,
+              textStyle: AppTextTheme.black13.copyWith(
+                fontWeight: FontWeight.w700,
+                color: colorScheme.onSurface,
+              ),
+            ),
+          ],
         ),
       ],
     );

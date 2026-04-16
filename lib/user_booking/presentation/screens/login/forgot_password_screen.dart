@@ -69,15 +69,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     return BlocConsumer<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state is AuthError) {
-          ToastUtil.show(message: state.message, type: ToastType.error);
+          ToastUtil.show(context, message: state.message, type: ToastType.error);
         } else if (state is AuthPasswordResetEmailSent) {
-          ToastUtil.show(message: "Verification code sent to email", type: ToastType.success);
+          ToastUtil.show(context, message: "Verification code sent to email", type: ToastType.success);
           _nextStep();
         } else if (state is AuthPasswordResetOtpVerified) {
-          ToastUtil.show(message: "OTP Verified", type: ToastType.success);
+          ToastUtil.show(context, message: "OTP Verified", type: ToastType.success);
           _nextStep();
         } else if (state is AuthPasswordUpdated) {
-          ToastUtil.show(message: "Password updated successfully!", type: ToastType.success);
+          ToastUtil.show(context, message: "Password updated successfully!", type: ToastType.success);
           Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (route) => false);
         }
       },

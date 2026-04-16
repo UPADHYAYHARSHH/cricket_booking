@@ -1,11 +1,14 @@
 import 'package:bloc_structure/user_booking/data/models/ground_model.dart';
 import 'package:bloc_structure/user_booking/domain/models/booking_arguments.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'dart:math';
 import 'package:shimmer/shimmer.dart';
+import 'package:bloc_structure/utils/toast_util.dart';
+import 'package:bloc_structure/utils/ticket_util.dart';
 
 import '../../../../common/constants/colors.dart';
 import '../../../constants/text_theme.dart';
@@ -17,6 +20,10 @@ import '../../../constants/route_constants.dart';
 import '../../blocs/booking/booking_cubit.dart';
 import '../../blocs/booking/booking_state.dart';
 import '../../../data/models/booking_model.dart';
+import 'package:bloc_structure/user_booking/di/get_it/get_it.dart';
+import 'package:bloc_structure/user_booking/domain/repositories/review_repository.dart';
+import 'package:bloc_structure/user_booking/presentation/widgets/add_review_bottom_sheet.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MyBookingsScreen extends StatefulWidget {
   const MyBookingsScreen({super.key});
@@ -114,9 +121,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
           child: AppText(
             text: label,
             textStyle: AppTextTheme.black13.copyWith(
-              color: isSelected
-                  ? AppColors.white
-                  : theme.colorScheme.onSurface.withOpacity(0.6),
+              color: isSelected ? AppColors.white : theme.colorScheme.onSurface.withOpacity(0.6),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -134,9 +139,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
         }
 
         if (state is BookingError) {
-          return Center(
-              child:
-                  AppText(text: state.message, textStyle: AppTextTheme.grey13));
+          return Center(child: AppText(text: state.message, textStyle: AppTextTheme.grey13));
         }
 
         if (state is BookingLoaded) {
@@ -209,10 +212,39 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   }
 }
 
-class _BookingCard extends StatelessWidget {
+class _BookingCard extends StatefulWidget {
   final BookingModel booking;
 
   const _BookingCard({required this.booking});
+
+  @override
+  State<_BookingCard> createState() => _BookingCardState();
+}
+
+class _BookingCardState extends State<_BookingCard> {
+  bool _hasRated = false;
+  bool _isLoadingRating = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkIfRated();
+  }
+
+  Future<void> _checkIfRated() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      final rated = await getIt<ReviewRepository>().hasUserRatedGround(user.id, widget.booking.groundId);
+      if (mounted) {
+        setState(() {
+          _hasRated = rated;
+          _isLoadingRating = false;
+        });
+      }
+    } else {
+      if (mounted) setState(() => _isLoadingRating = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -223,11 +255,11 @@ class _BookingCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.07),
-            blurRadius: 12,
+            color: Colors.black.withOpacity(isDark ? 0.15 : 0.05),
+            blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
@@ -235,375 +267,284 @@ class _BookingCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildImage(),
-          _buildInfo(),
-          _buildActions(context),
-          const AppSizedBox(height: 14),
+          _buildTopRow(context),
+          const Divider(height: 1, thickness: 0.5),
+          _buildDetailsRow(context),
+          _buildFooterRow(context),
         ],
       ),
     );
   }
 
-  Widget _buildImage() {
-    return Stack(
-      children: [
-        ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-          child: Hero(
-            tag: 'booking_${booking.id}',
-            child: Image.network(
-              booking.ground?.imageUrl ?? '',
-              height: 160,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                height: 160,
-                width: double.infinity,
-                color: Colors.grey.shade100,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.sports_cricket_outlined,
-                        size: 40, color: Colors.grey.shade400),
-                    const AppSizedBox(height: 8),
-                    AppText(
-                      text: "PowerPlay Arena",
-                      textStyle: AppTextTheme.grey12
-                          .copyWith(color: Colors.grey.shade500),
-                    ),
-                  ],
-                ),
-              ),
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return SizedBox(
-                  height: 160,
-                  width: double.infinity,
-                  child: Shimmer.fromColors(
-                    baseColor: Colors.grey.shade300,
-                    highlightColor: Colors.grey.shade100,
-                    child: Container(color: Colors.white),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-        // Gradient overlay for better text readability if needed later
-        Positioned.fill(
-          child: DecoratedBox(
+  Widget _buildTopRow(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            width: 50,
+            height: 50,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  Colors.black.withOpacity(0.05),
-                ],
-              ),
+              borderRadius: BorderRadius.circular(12),
+              image: widget.booking.ground?.imageUrl != null
+                  ? DecorationImage(
+                      image: NetworkImage(widget.booking.ground!.imageUrl),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
+              color: Colors.grey.shade200,
             ),
+            child: widget.booking.ground?.imageUrl == null ? const Icon(Icons.sports_cricket, color: Colors.grey) : null,
           ),
-        ),
-        Positioned(
-          top: 12,
-          right: 12,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: booking.status.toLowerCase() == 'paid'
-                  ? AppColors.primaryDarkGreen
-                  : AppColors.accentOrange,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  booking.status.toLowerCase() == 'paid'
-                      ? Icons.check_circle
-                      : Icons.pending_actions,
-                  size: 12,
-                  color: Colors.white,
-                ),
-                const AppSizedBox(width: 4),
                 AppText(
-                  text: booking.status.toUpperCase(),
-                  textStyle: AppTextTheme.white10.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: .8,
+                  text: widget.booking.ground?.name ?? "Venue Name",
+                  textStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
+                ),
+                const SizedBox(height: 2),
+                AppText(
+                  text: widget.booking.ground?.address ?? "Location not available",
+                  textStyle: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.onSurface.withOpacity(0.5),
+                  ),
+                  maxLines: 1,
                 ),
               ],
             ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: widget.booking.status.toLowerCase() == 'confirmed' || widget.booking.status.toLowerCase() == 'paid' ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: AppText(
+              text: widget.booking.status.toUpperCase(),
+              textStyle: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: widget.booking.status.toLowerCase() == 'confirmed' || widget.booking.status.toLowerCase() == 'paid' ? Colors.green : Colors.orange,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailsRow(BuildContext context) {
+    final dateStr = DateFormat('EEE, d MMM yyyy').format(widget.booking.slotTime);
+    final timeStr = DateFormat('hh:mm a').format(widget.booking.slotTime);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          _infoItem(context, Icons.calendar_today_outlined, dateStr),
+          _infoItem(context, Icons.access_time, timeStr),
+          _infoItem(context, Icons.payments_outlined, "₹${widget.booking.amount}"),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoItem(BuildContext context, IconData icon, String label) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: theme.colorScheme.primary),
+        const SizedBox(width: 6),
+        AppText(
+          text: label,
+          textStyle: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildInfo() {
-    final title = booking.ground?.name ?? "PowerPlay Arena";
-    final timeStr = DateFormat('EEE, d MMM • hh:mm a').format(booking.slotTime);
+  Widget _buildFooterRow(BuildContext context) {
+    final isPast = widget.booking.slotTime.isBefore(DateTime.now());
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: Column(
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppText(
-                  text: title,
-                  textStyle: AppTextTheme.black18.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.5,
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => _viewTicket(context),
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                  child: const AppText(
+                    text: "View Ticket",
+                    textStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                   ),
                 ),
-                const AppSizedBox(height: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryDarkGreen.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.calendar_today_rounded,
-                          size: 14, color: AppColors.primaryDarkGreen),
-                      const AppSizedBox(width: 8),
-                      AppText(
-                        text: timeStr,
-                        textStyle: AppTextTheme.black13.copyWith(
-                          color: AppColors.primaryDarkGreen,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
+              ),
+              if (isPast) ...[
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => _rebook(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryDarkGreen,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      elevation: 0,
+                    ),
+                    child: const AppText(
+                      text: "Rebook",
+                      textStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
+                    ),
                   ),
                 ),
               ],
-            ),
-          ),
-          const AppSizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              AppText(
-                text: "AMOUNT PAID",
-                textStyle: AppTextTheme.grey12.copyWith(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const AppSizedBox(height: 2),
-              AppText(
-                text: "₹${booking.amount.toStringAsFixed(0)}",
-                textStyle: AppTextTheme.black18.copyWith(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.primaryDarkGreen,
-                ),
-              ),
             ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActions(BuildContext context) {
-    final isPast = booking.slotTime.isBefore(DateTime.now());
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Row(
-        children: [
-          Expanded(child: _viewTicketButton(context)),
-          if (isPast) ...[
-            const SizedBox(width: 12),
-            Expanded(child: _rebookButton(context)),
+          if (isPast && !_isLoadingRating && !_hasRated) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _showRatingSheet(context),
+                icon: const Icon(Icons.star_rate_rounded, size: 18),
+                label: const Text("Rate Your Match Experience"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber.shade700,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  elevation: 0,
+                ),
+              ),
+            ),
           ],
         ],
       ),
     );
   }
 
-  Widget _viewTicketButton(BuildContext context) {
-    return OutlinedButton(
-      onPressed: () {
-        const userName =
-            "User"; // Generic for now or fetch from Supabase if needed
-
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ViewTicketScreen(
-              ticket: TicketModel(
-                bookingId: booking.razorpayOrderId,
-                venueName: booking.ground?.name ?? "Venue",
-                pitchName:
-                    "Pitch", // Slot info not fully captured in booking table yet
-                date: DateFormat('EEE, d MMM yyyy').format(booking.slotTime),
-                time: DateFormat('hh:mm a').format(booking.slotTime),
-                bookedBy: userName,
-                location: booking.ground?.address ?? "Location",
-                price: booking.amount,
-                imageUrl: booking.ground?.imageUrl ?? "",
-                isPaid: booking.status == 'paid',
-              ),
-            ),
-          ),
-        );
-      },
-      style: OutlinedButton.styleFrom(
-        side: BorderSide(
-            color: AppColors.primaryDarkGreen.withOpacity(0.5), width: 1.5),
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+  void _showRatingSheet(BuildContext context) async {
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => AddReviewBottomSheet(
+        groundId: widget.booking.groundId,
+        groundName: widget.booking.ground?.name ?? "Venue",
       ),
-      child: AppText(
-        text: "View Ticket",
-        textStyle: AppTextTheme.black13.copyWith(
-          color: AppColors.primaryDarkGreen,
-          fontWeight: FontWeight.w600,
+    );
+
+    if (result == true) {
+      _checkIfRated();
+    }
+  }
+
+  void _viewTicket(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ViewTicketScreen(
+          ticket: TicketModel(
+            bookingId: widget.booking.razorpayOrderId.isNotEmpty ? widget.booking.razorpayOrderId : widget.booking.id,
+            venueName: widget.booking.ground?.name ?? "Venue",
+            pitchName: "Main Pitch",
+            date: widget.booking.slotTime, // Keep as DateTime
+            time: DateFormat('hh:mm a').format(widget.booking.slotTime),
+            bookedBy: "User",
+            location: widget.booking.ground?.address ?? "Location",
+            price: widget.booking.amount,
+            imageUrl: widget.booking.ground?.imageUrl ?? "",
+            isPaid: widget.booking.status == 'paid' || widget.booking.status == 'confirmed',
+          ),
         ),
       ),
     );
   }
 
-  Widget _rebookButton(BuildContext context) {
-    return ElevatedButton(
-      onPressed: () {
-        if (booking.ground != null) {
-          Navigator.pushNamed(
-            context,
-            AppRoutes.slotSelection,
-            arguments: booking.ground,
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Cannot rebook: Ground details missing.")),
-          );
-        }
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primaryDarkGreen,
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      child: AppText(
-        text: "Rebook",
-        textStyle: AppTextTheme.black13.copyWith(
-          color: Colors.white,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
+  void _rebook(BuildContext context) {
+    if (widget.booking.ground != null) {
+      Navigator.pushNamed(
+        context,
+        AppRoutes.slotSelection,
+        arguments: widget.booking.ground,
+      );
+    }
   }
 }
 
-// Removing local _BookingModel in favor of the real BookingModel
-// Removing local _paymentButton since payments are handled elsewhere now
-
-class ViewTicketScreen extends StatelessWidget {
+class ViewTicketScreen extends StatefulWidget {
   final TicketModel ticket;
 
   const ViewTicketScreen({super.key, required this.ticket});
 
   @override
+  State<ViewTicketScreen> createState() => _ViewTicketScreenState();
+}
+
+class _ViewTicketScreenState extends State<ViewTicketScreen> {
+  bool _isSaving = false;
+
+  Future<void> _generateAndDownload() async {
+    await TicketUtil.downloadTicket(
+      context,
+      groundName: widget.ticket.venueName,
+      groundAddress: widget.ticket.location,
+      groundImageUrl: widget.ticket.imageUrl,
+      date: widget.ticket.date,
+      timeRange: widget.ticket.time,
+      orderId: widget.ticket.bookingId,
+      totalPrice: widget.ticket.price,
+      onLoadingStarted: () => setState(() => _isSaving = true),
+      onLoadingFinished: () {
+        if (mounted) setState(() => _isSaving = false);
+      },
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(
-            margin: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Icon(Icons.arrow_back_ios_new,
-                size: 16, color: theme.colorScheme.onSurface),
-          ),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new, size: 20, color: theme.colorScheme.onSurface),
+          onPressed: () => Navigator.pop(context),
         ),
-        title: AppText(
+        title: const AppText(
           text: "My Ticket",
-          textStyle: AppTextTheme.black18.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         centerTitle: true,
-        actions: [
-          GestureDetector(
-            onTap: () {
-              HapticFeedback.lightImpact();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Ticket shared!"),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
-            child: Container(
-              margin: const EdgeInsets.all(10),
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Icon(Icons.share_outlined,
-                  size: 16, color: theme.colorScheme.onSurface),
-            ),
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         child: Column(
           children: [
-            _TicketCard(ticket: ticket),
+            _TicketCard(ticket: widget.ticket),
             const SizedBox(height: 24),
-            _buildDownloadButton(context),
-            const SizedBox(height: 12),
-            _buildSplitButton(context),
+            _buildActionButtons(context),
             const SizedBox(height: 32),
           ],
         ),
@@ -611,87 +552,49 @@ class ViewTicketScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDownloadButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: ElevatedButton.icon(
-        onPressed: () {
-          HapticFeedback.mediumImpact();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Ticket downloaded to gallery!"),
-              behavior: SnackBarBehavior.floating,
+  Widget _buildActionButtons(BuildContext context) {
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: ElevatedButton.icon(
+            onPressed: _isSaving ? null : _generateAndDownload,
+            icon: _isSaving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                  )
+                : const Icon(Icons.download_rounded, color: Colors.white),
+            label: Text(
+              _isSaving ? "Generating PDF..." : "Download Ticket",
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
-          );
-        },
-        icon: const Icon(Icons.download_rounded, color: Colors.white),
-        label: const Text(
-          "Download Ticket",
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: 15,
-          ),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryDarkGreen,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          elevation: 0,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSplitButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: OutlinedButton.icon(
-        onPressed: () {
-          // Find original ground and create arguments
-          Navigator.pushNamed(
-            context,
-            AppRoutes.splitSetup,
-            arguments: BookingSuccessArguments(
-              ground: GroundModel.fromJson({
-                'id': '', // Minimal fields for setup display
-                'name': ticket.venueName,
-                'imageUrl': ticket.imageUrl,
-              }),
-              date: DateFormat('EEE, d MMM yyyy').parse(ticket.date),
-              selectedSlots: [],
-              orderId: ticket.bookingId,
-              totalPrice: ticket.price.toDouble(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryDarkGreen,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-          );
-        },
-        icon: const HugeIcon(
-            icon: HugeIcons.strokeRoundedUserGroup,
-            color: AppColors.primaryDarkGreen,
-            size: 20),
-        label: const Text(
-          "Split Bill with Teammates",
-          style: TextStyle(
-            color: AppColors.primaryDarkGreen,
-            fontWeight: FontWeight.w700,
-            fontSize: 15,
           ),
         ),
-        style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: AppColors.primaryDarkGreen, width: 1.5),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: OutlinedButton.icon(
+            onPressed: () {},
+            icon: const Icon(Icons.share_outlined, color: AppColors.primaryDarkGreen),
+            label: const Text("Share with Friends", style: TextStyle(color: AppColors.primaryDarkGreen, fontWeight: FontWeight.bold)),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: AppColors.primaryDarkGreen),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 }
-
-// ─── Ticket Card ──────────────────────────────────────────────────────────────
 
 class _TicketCard extends StatelessWidget {
   final TicketModel ticket;
@@ -701,369 +604,65 @@ class _TicketCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Column(
-      children: [
-        // ── Top half ──
-        Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              _buildVenueImage(),
-              _buildVenueInfo(context),
-              _buildDividerRow(context),
-              _buildDetailsGrid(context),
-            ],
-          ),
-        ),
-
-        // ── Tear line ──
-        _TearLine(),
-
-        // ── Bottom half ──
-        Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius:
-                const BorderRadius.vertical(bottom: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              _buildQrSection(context),
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
-      ],
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          )
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildVenueImage(),
+          _buildTicketInfo(context),
+          _buildDashedDivider(context),
+          _buildQrSection(context),
+          const SizedBox(height: 20),
+        ],
+      ),
     );
   }
 
   Widget _buildVenueImage() {
-    return Stack(
-      children: [
-        ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          child: Image.network(
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      child: Stack(
+        children: [
+          Image.network(
             ticket.imageUrl,
-            height: 160,
+            height: 150,
             width: double.infinity,
             fit: BoxFit.cover,
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return SizedBox(
-                height: 160,
-                width: double.infinity,
-                child: Shimmer.fromColors(
-                  baseColor: Colors.grey.shade300,
-                  highlightColor: Colors.grey.shade100,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                    ),
-                  ),
-                ),
-              );
-            },
-            errorBuilder: (_, __, ___) => Container(
-              height: 160,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade200,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              child: const Icon(Icons.sports_cricket,
-                  size: 56, color: Colors.grey),
-            ),
+            errorBuilder: (_, __, ___) => Container(color: Colors.grey.shade200, height: 150),
           ),
-        ),
-        // Dark gradient overlay
-        Positioned.fill(
-          child: ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withOpacity(0.55),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-        // Status badge
-        Positioned(
-          top: 14,
-          right: 14,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-            decoration: BoxDecoration(
-              color: ticket.isPaid
-                  ? AppColors.primaryDarkGreen
-                  : AppColors.accentOrange,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  ticket.isPaid ? Icons.check_circle_outline : Icons.schedule,
-                  size: 12,
-                  color: Colors.white,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  ticket.isPaid ? "CONFIRMED" : "PENDING PAYMENT",
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        // Booking ID badge
-        Positioned(
-          bottom: 12,
-          left: 14,
-          child: Text(
-            "# ${ticket.bookingId}",
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildVenueInfo(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-      child: Row(
-        children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            height: 150,
             decoration: BoxDecoration(
-              color: AppColors.primaryDarkGreen.withOpacity(isDark ? 0.2 : 0.1),
-              borderRadius: BorderRadius.circular(12),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Colors.black.withOpacity(0.6)],
+              ),
             ),
-            child: const Icon(Icons.sports_cricket,
-                color: AppColors.primaryDarkGreen, size: 22),
           ),
-          const SizedBox(width: 12),
-          Expanded(
+          Positioned(
+            bottom: 12,
+            left: 16,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AppText(
                   text: ticket.venueName,
-                  textStyle: AppTextTheme.black17.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                AppText(
-                  text: ticket.pitchName,
-                  textStyle: AppTextTheme.grey13,
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              AppText(
-                text: "PRICE",
-                textStyle: AppTextTheme.grey11.copyWith(
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.8,
-                ),
-              ),
-              AppText(
-                text: "₹${ticket.price.toStringAsFixed(0)}",
-                textStyle: AppTextTheme.black18.copyWith(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDividerRow(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Divider(
-          color: Theme.of(context).dividerColor.withOpacity(0.5),
-          thickness: 1.5),
-    );
-  }
-
-  Widget _buildDetailsGrid(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: _DetailTile(
-                  icon: Icons.calendar_today_outlined,
-                  label: "Date",
-                  value: ticket.date,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _DetailTile(
-                  icon: Icons.access_time_rounded,
-                  label: "Time",
-                  value: ticket.time,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _DetailTile(
-                  icon: Icons.sports_score_outlined,
-                  label: "Pitch",
-                  value: ticket.pitchName,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _DetailTile(
-                  icon: Icons.person_outline_rounded,
-                  label: "Booked By",
-                  value: ticket.bookedBy,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _DetailTile(
-            icon: Icons.location_on_outlined,
-            label: "Location",
-            value: ticket.location,
-            fullWidth: true,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQrSection(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-      child: Column(
-        children: [
-          AppText(
-            text: "Scan at Venue",
-            textStyle: AppTextTheme.grey13.copyWith(
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              border: Border.all(
-                  color: AppColors.primaryDarkGreen.withOpacity(0.18),
-                  width: 2),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: _QrCodePainter(data: ticket.bookingId),
-          ),
-          const SizedBox(height: 14),
-          AppText(
-            text: ticket.bookingId,
-            textStyle: AppTextTheme.black14.copyWith(
-              fontWeight: FontWeight.w700,
-              letterSpacing: 2,
-            ),
-          ),
-          const SizedBox(height: 4),
-          const AppText(
-            text: "Show this QR at the venue entrance",
-            textStyle: AppTextTheme.grey11,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Detail Tile ──────────────────────────────────────────────────────────────
-
-class _DetailTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final bool fullWidth;
-
-  const _DetailTile({
-    required this.icon,
-    required this.label,
-    required this.value,
-    this.fullWidth = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Container(
-      width: fullWidth ? double.infinity : null,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: theme.brightness == Brightness.dark
-            ? theme.colorScheme.surface.withOpacity(0.5)
-            : Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-            color: theme.dividerColor.withOpacity(isDark ? 0.1 : 0.05)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: AppColors.primaryDarkGreen),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppText(
-                  text: label,
-                  textStyle: AppTextTheme.grey11,
+                  textStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 AppText(
-                  text: value,
-                  textStyle: AppTextTheme.black12.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  text: ticket.location,
+                  textStyle: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12),
                 ),
               ],
             ),
@@ -1072,79 +671,117 @@ class _DetailTile extends StatelessWidget {
       ),
     );
   }
-}
 
-// ─── Tear Line ────────────────────────────────────────────────────────────────
-
-class _TearLine extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      color: theme.colorScheme.surface,
-      child: Row(
+  Widget _buildTicketInfo(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
         children: [
-          _semiCircle(context, isLeft: true),
-          Expanded(
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _infoColumn("DATE", DateFormat('EEE, d MMM yyyy').format(ticket.date)),
+              _infoColumn("TIME", ticket.time),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _infoColumn("ORDER ID", "#${ticket.bookingId}"),
+              _infoColumn("PRICE", "₹${ticket.price.toStringAsFixed(0)}"),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoColumn(String title, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AppText(
+          text: title,
+          textStyle: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey.shade500, letterSpacing: 1),
+        ),
+        const SizedBox(height: 4),
+        AppText(
+          text: value,
+          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDashedDivider(BuildContext context) {
+    return Row(
+      children: [
+        _halfCircle(isLeft: true),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
             child: LayoutBuilder(
-              builder: (_, constraints) {
-                final count = (constraints.maxWidth / 10).floor();
-                return Row(
+              builder: (context, constraints) {
+                return Flex(
+                  direction: Axis.horizontal,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: List.generate(
-                    count,
-                    (_) => Container(
-                      width: 5,
-                      height: 1.5,
-                      color: theme.dividerColor.withOpacity(0.2),
-                    ),
+                    (constraints.constrainWidth() / 10).floor(),
+                    (index) => SizedBox(width: 5, height: 1, child: DecoratedBox(decoration: BoxDecoration(color: Colors.grey.shade300))),
                   ),
                 );
               },
             ),
           ),
-          _semiCircle(context, isLeft: false),
-        ],
+        ),
+        _halfCircle(isLeft: false),
+      ],
+    );
+  }
+
+  Widget _halfCircle({required bool isLeft}) {
+    return Container(
+      height: 20,
+      width: 10,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F9FA), // Scaffold bg color
+        borderRadius: isLeft ? const BorderRadius.only(topRight: Radius.circular(10), bottomRight: Radius.circular(10)) : const BorderRadius.only(topLeft: Radius.circular(10), bottomLeft: Radius.circular(10)),
       ),
     );
   }
 
-  Widget _semiCircle(BuildContext context, {required bool isLeft}) {
-    return Container(
-      width: 18,
-      height: 36,
-      decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        borderRadius: isLeft
-            ? const BorderRadius.only(
-                topRight: Radius.circular(18),
-                bottomRight: Radius.circular(18),
-              )
-            : const BorderRadius.only(
-                topLeft: Radius.circular(18),
-                bottomLeft: Radius.circular(18),
-              ),
-      ),
+  Widget _buildQrSection(BuildContext context) {
+    return Column(
+      children: [
+        const SizedBox(height: 20),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade200),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: _QrCodePainter(data: ticket.bookingId),
+        ),
+        const SizedBox(height: 12),
+        AppText(
+          text: "Scan at entrance",
+          textStyle: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+        ),
+      ],
     );
   }
 }
 
-// ─── QR Code Painter (Fake) ───────────────────────────────────────────────────
-
 class _QrCodePainter extends StatelessWidget {
   final String data;
-
   const _QrCodePainter({required this.data});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return CustomPaint(
-      size: const Size(160, 160),
-      painter: _QrPainter(
-        seed: data.hashCode,
-        color: theme.colorScheme.onSurface,
-      ),
+      size: const Size(120, 120),
+      painter: _QrPainter(seed: data.hashCode, color: Colors.black),
     );
   }
 }
@@ -1152,69 +789,32 @@ class _QrCodePainter extends StatelessWidget {
 class _QrPainter extends CustomPainter {
   final int seed;
   final Color color;
-
   _QrPainter({required this.seed, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..color = color;
     final rng = Random(seed);
-    final cellSize = size.width / 21;
+    final cellSize = size.width / 20;
 
-    // Draw QR-style grid
-    for (int row = 0; row < 21; row++) {
-      for (int col = 0; col < 21; col++) {
-        bool draw = false;
-
-        // Corner finder patterns
-        if (_isFinderPattern(row, col)) {
-          draw = _finderPatternCell(row, col);
-        } else {
-          draw = rng.nextBool();
-        }
-
-        if (draw) {
-          canvas.drawRect(
-            Rect.fromLTWH(
-              col * cellSize + 0.5,
-              row * cellSize + 0.5,
-              cellSize - 1,
-              cellSize - 1,
-            ),
-            paint,
-          );
+    for (int i = 0; i < 20; i++) {
+      for (int j = 0; j < 20; j++) {
+        if (rng.nextBool()) {
+          canvas.drawRect(Rect.fromLTWH(i * cellSize, j * cellSize, cellSize - 1, cellSize - 1), paint);
         }
       }
     }
   }
 
-  bool _isFinderPattern(int row, int col) {
-    return (row < 8 && col < 8) ||
-        (row < 8 && col >= 13) ||
-        (row >= 13 && col < 8);
-  }
-
-  bool _finderPatternCell(int row, int col) {
-    // Normalize to 0-7
-    int r = row < 8 ? row : row - 13;
-    int c = col < 8 ? col : col - 13;
-    if (r == 0 || r == 6) return c >= 0 && c <= 6;
-    if (c == 0 || c == 6) return r >= 0 && r <= 6;
-    if (r >= 2 && r <= 4 && c >= 2 && c <= 4) return true;
-    return false;
-  }
-
   @override
-  bool shouldRepaint(covariant _QrPainter old) => old.seed != seed;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-
-// ─── Model ────────────────────────────────────────────────────────────────────
 
 class TicketModel {
   final String bookingId;
   final String venueName;
   final String pitchName;
-  final String date;
+  final DateTime date; // Changed to DateTime
   final String time;
   final String bookedBy;
   final String location;

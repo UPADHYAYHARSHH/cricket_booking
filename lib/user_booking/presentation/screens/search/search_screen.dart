@@ -78,7 +78,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           color: Theme.of(context)
                               .colorScheme
                               .onSurface
-                              .withOpacity(0.4),
+                              .withValues(alpha: 0.4),
                         ),
                         prefixIcon: Padding(
                           padding: const EdgeInsets.all(12),
@@ -88,7 +88,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             color: Theme.of(context)
                                 .colorScheme
                                 .onSurface
-                                .withOpacity(0.4),
+                                .withValues(alpha: 0.4),
                           ),
                         ),
                         prefixIconConstraints: const BoxConstraints(
@@ -96,7 +96,8 @@ class _SearchScreenState extends State<SearchScreen> {
                         ),
                         filled: true,
                         fillColor: Theme.of(context).scaffoldBackgroundColor,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 12),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(30),
                           borderSide: BorderSide.none,
@@ -220,13 +221,17 @@ class _SearchScreenState extends State<SearchScreen> {
           HugeIcon(
             icon: HugeIcons.strokeRoundedSearch01,
             size: 64,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
           ),
           const AppSizedBox(height: 16),
           AppText(
             text: message,
             textStyle: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.4),
             ),
           ),
         ],
@@ -242,7 +247,8 @@ class _SearchScreenState extends State<SearchScreen> {
           HugeIcon(
             icon: HugeIcons.strokeRoundedSearch01,
             size: 64,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
           ),
           const AppSizedBox(height: 16),
           AppText(text: message),

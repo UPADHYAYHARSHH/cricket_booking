@@ -29,6 +29,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'user_booking/presentation/screens/splash/splash_screen.dart';
@@ -41,6 +42,8 @@ import 'package:bloc_structure/common/constants/colors.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await dotenv.load(fileName: ".env");
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -58,9 +61,8 @@ void main() async {
   Bloc.observer = AppBlocObserver();
 
   await Supabase.initialize(
-    url: 'https://qcybnzopffyzmpiaxwbc.supabase.co',
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjeWJuem9wZmZ5em1waWF4d2JjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxMDYyNzMsImV4cCI6MjA4OTY4MjI3M30.cRnvZzQhbwI26PhRkdjnptVa5yiWo6oBIGZlZU7JEgg',
+    url: dotenv.env['SUPABASE_URL']!,
+    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
   SystemChrome.setPreferredOrientations(
     [
@@ -71,8 +73,7 @@ void main() async {
   if (kIsWeb) {
     await Hive.initFlutter();
   } else {
-    final appDocumentDir =
-        await path_provider.getApplicationDocumentsDirectory();
+    final appDocumentDir = await path_provider.getApplicationDocumentsDirectory();
 
     Hive.init(appDocumentDir.path);
   }
@@ -129,8 +130,7 @@ void main() async {
               "/nav": (context) => const MainNavScreen(),
               "/search": (context) => const SearchScreen(),
               "/slotSelection": (context) => const SlotSelectionScreen(),
-              "/bookingConfirmationScreen": (context) =>
-                  const BookingConfirmationScreen(),
+              "/bookingConfirmationScreen": (context) => const BookingConfirmationScreen(),
               "/myBookingScreen": (context) => const MyBookingsScreen(),
               "/paymentFailedScreen": (context) => const PaymentFailedScreen(),
               AppRoutes.editProfileScreen: (context) => BlocProvider(
@@ -148,5 +148,3 @@ void main() async {
     ),
   );
 }
-// api key- rzp_test_SZQGlX68eXuGzw
-// secret key GumrVkR1ylb4jG2dnLdmz2e8

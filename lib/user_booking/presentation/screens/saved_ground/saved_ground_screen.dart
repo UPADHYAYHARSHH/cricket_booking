@@ -164,7 +164,8 @@ class _SavedGroundsScreenState extends State<SavedGroundsScreen> {
           ),
           const AppSizedBox(height: 4),
           const AppText(
-            text: "Discover new arenas in your area and\nexpand your favorites.",
+            text:
+                "Discover new arenas in your area and\nexpand your favorites.",
             align: TextAlign.center,
             textStyle: AppTextTheme.black12,
           ),
@@ -173,11 +174,13 @@ class _SavedGroundsScreenState extends State<SavedGroundsScreen> {
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                    content: Text("Search for new grounds in the Discover tab!")),
+                    content:
+                        Text("Search for new grounds in the Discover tab!")),
               );
             },
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: AppColors.primaryDarkGreen, width: 1.5),
+              side: const BorderSide(
+                  color: AppColors.primaryDarkGreen, width: 1.5),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10)),
               padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),

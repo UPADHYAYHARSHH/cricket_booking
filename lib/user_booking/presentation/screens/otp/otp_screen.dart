@@ -64,7 +64,7 @@ class _OtpScreenState extends State<OtpScreen> {
         }
 
         if (state is AuthError) {
-          ToastUtil.show(message: state.message, type: ToastType.error);
+          ToastUtil.show(context, message: state.message, type: ToastType.error);
         }
       },
       child: Scaffold(
@@ -121,6 +121,7 @@ class _OtpScreenState extends State<OtpScreen> {
                     final otpCode = _controllers.map((c) => c.text).join();
                     if (otpCode.length < 4) {
                       ToastUtil.show(
+                        context,
                         message: "Please enter the full 4-digit code",
                         type: ToastType.warning,
                       );

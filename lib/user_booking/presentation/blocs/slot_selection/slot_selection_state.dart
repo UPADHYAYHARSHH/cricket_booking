@@ -1,6 +1,5 @@
 import 'package:bloc_structure/user_booking/domain/models/slot_models.dart';
 
-
 class SlotSelectionState {
   final List<DateItem> dates;
   final List<TimeSlot> slots;

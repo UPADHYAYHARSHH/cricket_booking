@@ -16,7 +16,9 @@ import 'package:bloc_structure/user_booking/data/models/ground_model.dart';
 import 'package:bloc_structure/user_booking/presentation/blocs/slot_selection/slot_selection_cubit.dart';
 import 'package:bloc_structure/user_booking/domain/models/booking_arguments.dart';
 import 'package:bloc_structure/user_booking/data/services/analytics_service.dart';
-import '../../blocs/slot_selection/slot_selection_state.dart';
+import 'package:bloc_structure/user_booking/presentation/blocs/slot_selection/slot_selection_state.dart';
+import 'package:bloc_structure/user_booking/domain/repositories/review_repository.dart';
+import 'package:bloc_structure/user_booking/data/models/review_model.dart';
 
 class SlotSelectionScreen extends StatefulWidget {
   const SlotSelectionScreen({super.key});
@@ -30,6 +32,8 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
   bool _isInitialized = false;
   late Razorpay _razorpay;
   final _paymentRepo = getIt<PaymentRepository>();
+  List<ReviewModel> _reviews = [];
+  bool _isLoadingReviews = true;
 
   // Store these to use in success handler
   double? _pendingAmount;
@@ -210,8 +214,24 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
               closingTime: _ground!.closingTime,
               pricePerSlot: _ground!.pricePerHour.toDouble(),
             );
+        _loadReviews();
       }
       _isInitialized = true;
+    }
+  }
+
+  Future<void> _loadReviews() async {
+    if (_ground == null) return;
+    try {
+      final reviews = await getIt<ReviewRepository>().fetchGroundReviews(_ground!.id);
+      if (mounted) {
+        setState(() {
+          _reviews = reviews;
+          _isLoadingReviews = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingReviews = false);
     }
   }
 
@@ -445,6 +465,8 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                           context, _ground?.amenities),
                       if (_ground != null)
                         SlotSelectionWidgets.buildMapSection(context, _ground!),
+                      SlotSelectionWidgets.buildReviewSection(
+                          context, _reviews, _isLoadingReviews),
                     ],
                   ),
                 ),

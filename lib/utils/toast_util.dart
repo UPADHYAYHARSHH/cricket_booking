@@ -5,41 +5,74 @@ import 'package:bloc_structure/common/constants/colors.dart';
 enum ToastType { success, error, warning, info }
 
 class ToastUtil {
-  /// Displays a toast message based on the [type] provided.
-  /// Standardizes appearance across the app for:
-  /// - [ToastType.success]: Green background
-  /// - [ToastType.error]: Red background
-  /// - [ToastType.warning]: Orange background
-  static void show({
+  static void show(
+    BuildContext context, {
     required String message,
     required ToastType type,
   }) {
+    FToast fToast = FToast();
+    fToast.init(context);
+
     Color backgroundColor;
-    const Color textColor = AppColors.white;
+    IconData icon;
 
     switch (type) {
       case ToastType.success:
         backgroundColor = AppColors.success;
+        icon = Icons.check_circle_rounded;
         break;
       case ToastType.error:
         backgroundColor = AppColors.error;
+        icon = Icons.error_rounded;
         break;
       case ToastType.warning:
         backgroundColor = AppColors.accentOrange;
+        icon = Icons.warning_rounded;
         break;
       case ToastType.info:
-        backgroundColor = AppColors.primaryDarkGreen.withOpacity(0.9);
+        backgroundColor = AppColors.primaryDarkGreen;
+        icon = Icons.info_rounded;
         break;
     }
 
-    Fluttertoast.showToast(
-      msg: message,
-      toastLength: Toast.LENGTH_SHORT,
+    Widget toast = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16.0),
+        color: backgroundColor,
+        boxShadow: [
+          BoxShadow(
+            color: backgroundColor.withOpacity(0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white, size: 20),
+          const SizedBox(width: 12.0),
+          Flexible(
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+                decoration: TextDecoration.none,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    fToast.showToast(
+      child: toast,
       gravity: ToastGravity.BOTTOM,
-      timeInSecForIosWeb: 2,
-      backgroundColor: backgroundColor,
-      textColor: textColor,
-      fontSize: 14.0,
+      toastDuration: const Duration(seconds: 3),
     );
   }
 }

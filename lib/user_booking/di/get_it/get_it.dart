@@ -12,14 +12,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:bloc_structure/user_booking/data/repositories/ground_repository_impl.dart';
 import 'package:bloc_structure/user_booking/data/repositories/slot_repository_impl.dart';
 import 'package:bloc_structure/user_booking/domain/repositories/slot_repository.dart';
+import 'package:bloc_structure/user_booking/data/repositories/review_repository_impl.dart';
+import 'package:bloc_structure/user_booking/domain/repositories/review_repository.dart';
 
-import '../../domain/repositories/ground_repository.dart';
-import '../../presentation/blocs/ground/ground_cubit.dart';
-import '../../data/repositories/user_repository_impl.dart';
-import '../../domain/usecases/upsert_user_profile.dart';
-import '../../presentation/blocs/location/location_cubit.dart';
-import '../../presentation/blocs/profile/profile_cubit.dart';
-import '../../presentation/blocs/splash/splash_cubit.dart';
+import 'package:bloc_structure/user_booking/domain/repositories/ground_repository.dart';
+import 'package:bloc_structure/user_booking/presentation/blocs/ground/ground_cubit.dart';
+import 'package:bloc_structure/user_booking/data/repositories/user_repository_impl.dart';
+import 'package:bloc_structure/user_booking/domain/usecases/upsert_user_profile.dart';
+import 'package:bloc_structure/user_booking/presentation/blocs/location/location_cubit.dart';
+import 'package:bloc_structure/user_booking/presentation/blocs/profile/profile_cubit.dart';
+import 'package:bloc_structure/user_booking/presentation/blocs/splash/splash_cubit.dart';
 import 'package:bloc_structure/user_booking/data/repositories/favorite_repository.dart';
 import 'package:bloc_structure/user_booking/presentation/blocs/saved_ground/saved_ground_cubit.dart';
 import 'package:bloc_structure/user_booking/presentation/blocs/theme/theme_cubit.dart';
@@ -84,6 +86,9 @@ Future<void> init() async {
   );
   getIt.registerLazySingleton<NotificationRepository>(
     () => NotificationRepository(),
+  );
+  getIt.registerLazySingleton<ReviewRepository>(
+    () => ReviewRepositoryImpl(),
   );
   getIt.registerLazySingleton<GroundCubit>(
     () => GroundCubit(getIt<GroundRepository>(), getIt<AnalyticsService>()),

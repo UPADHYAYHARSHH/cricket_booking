@@ -44,8 +44,7 @@ class ProfileScreen extends StatelessWidget {
                 }
 
                 return SingleChildScrollView(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                   child: Column(
                     children: [
                       _buildAvatar(context, profileState),
@@ -92,14 +91,12 @@ class ProfileScreen extends StatelessWidget {
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => Container(
                       color: Colors.grey.shade200,
-                      child: const Icon(Icons.person,
-                          size: 44, color: Colors.grey),
+                      child: const Icon(Icons.person, size: 44, color: Colors.grey),
                     ),
                   )
                 : Container(
                     color: Colors.grey.shade200,
-                    child:
-                        const Icon(Icons.person, size: 44, color: Colors.grey),
+                    child: const Icon(Icons.person, size: 44, color: Colors.grey),
                   ),
           ),
         ),
@@ -199,13 +196,10 @@ class ProfileScreen extends StatelessWidget {
         },
       ),
       _MenuItem(
-        icon:
-            isDark ? HugeIcons.strokeRoundedMoon : HugeIcons.strokeRoundedSun01,
+        icon: isDark ? HugeIcons.strokeRoundedMoon : HugeIcons.strokeRoundedSun01,
         label: "Dark Mode",
         iconBg: isDark ? const Color(0xFF37474F) : const Color(0xFFFFF9C4),
-        iconColor: isDark
-            ? const Color.fromARGB(255, 0, 0, 0)
-            : AppColors.accentOrange,
+        iconColor: isDark ? const Color.fromARGB(255, 0, 0, 0) : AppColors.accentOrange,
         isLogout: false,
         trailing: Switch(
           value: isDark,
@@ -213,14 +207,14 @@ class ProfileScreen extends StatelessWidget {
           activeThumbColor: AppColors.accentOrange,
         ),
       ),
-      _MenuItem(
-        icon: Icons.receipt_long_outlined,
-        label: "Split Bill History",
-        iconBg: const Color(0xFFFFF3E0).withValues(alpha: isDark ? 0.1 : 1),
-        iconColor: Colors.orange.shade800,
-        isLogout: false,
-        onTap: () => Navigator.pushNamed(context, AppRoutes.splitHistory),
-      ),
+      // _MenuItem(
+      //   icon: Icons.receipt_long_outlined,
+      //   label: "Split Bill History",
+      //   iconBg: const Color(0xFFFFF3E0).withValues(alpha: isDark ? 0.1 : 1),
+      //   iconColor: Colors.orange.shade800,
+      //   isLogout: false,
+      //   onTap: () => Navigator.pushNamed(context, AppRoutes.splitHistory),
+      // ),
       _MenuItem(
         icon: Icons.help_outline_rounded,
         label: "Help & Support",
@@ -350,9 +344,7 @@ class _MenuTile extends StatelessWidget {
                 color: item.iconBg,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: item.icon is IconData
-                  ? Icon(item.icon, size: 18, color: item.iconColor)
-                  : HugeIcon(icon: item.icon, size: 18, color: item.iconColor),
+              child: item.icon is IconData ? Icon(item.icon, size: 18, color: item.iconColor) : HugeIcon(icon: item.icon, size: 18, color: item.iconColor),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -361,9 +353,7 @@ class _MenuTile extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: item.isLogout
-                      ? const Color(0xFFD32F2F)
-                      : Theme.of(context).colorScheme.onSurface,
+                  color: item.isLogout ? const Color(0xFFD32F2F) : Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ),
@@ -373,10 +363,7 @@ class _MenuTile extends StatelessWidget {
               Icon(
                 Icons.chevron_right_rounded,
                 size: 20,
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.2),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
               ),
           ],
         ),

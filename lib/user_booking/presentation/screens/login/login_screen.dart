@@ -79,7 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
           /// ERROR
           if (state is AuthError) {
-            ToastUtil.show(message: state.message, type: ToastType.error);
+            ToastUtil.show(context, message: state.message, type: ToastType.error);
           }
         },
         child: BlocBuilder<AuthCubit, AuthState>(

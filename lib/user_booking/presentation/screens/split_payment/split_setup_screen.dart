@@ -444,7 +444,8 @@ class _SplitSetupScreenState extends State<SplitSetupScreen> {
                               const AppSizedBox(width: 12),
                               const Expanded(
                                 child: AppText(
-                                    text: "User not found. Try another username.",
+                                    text:
+                                        "User not found. Try another username.",
                                     textStyle: TextStyle(
                                         fontSize: 14, color: Colors.grey)),
                               ),
@@ -477,8 +478,7 @@ class _SplitSetupScreenState extends State<SplitSetupScreen> {
                                 textStyle: const TextStyle(fontSize: 12)),
                             onTap: () {
                               context.read<SplitPaymentCubit>().addLinkedMember(
-                                  user['name'] ?? user['username'],
-                                  user['id']);
+                                  user['name'] ?? user['username'], user['id']);
                               _memberController.clear();
                               setState(() => _showUserSearch = false);
                             },
