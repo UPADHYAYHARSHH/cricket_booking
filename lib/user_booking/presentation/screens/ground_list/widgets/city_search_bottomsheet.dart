@@ -64,14 +64,15 @@ class _CitySearchBottomSheetState extends State<CitySearchBottomSheet> {
 
       final List<String> cityStrings = [];
       for (var e in results) {
-        if (e['country_code'] == 'IN') { // Only India
+        if (e['country_code'] == 'IN') {
+          // Only India
           final cityName = e['name'] as String? ?? "";
           final stateName = e['admin1'] as String? ?? "";
-          
-          final formatString = stateName.isNotEmpty && stateName != cityName 
-              ? "$cityName, $stateName" 
+
+          final formatString = stateName.isNotEmpty && stateName != cityName
+              ? "$cityName, $stateName"
               : cityName;
-              
+
           if (!cityStrings.contains(formatString) && formatString.isNotEmpty) {
             cityStrings.add(formatString);
           }
@@ -181,13 +182,14 @@ class _CitySearchBottomSheetState extends State<CitySearchBottomSheet> {
                             .onSurface
                             .withOpacity(0.4),
                       ),
-                      prefixIcon: HugeIcon(
-                        icon: HugeIcons.strokeRoundedSearch01,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.4),
-                      ),
+                      // prefixIcon: HugeIcon(
+                      //   icon: HugeIcons.strokeRoundedSearch01,
+                      //   size: 10,
+                      //   color: Theme.of(context)
+                      //       .colorScheme
+                      //       .onSurface
+                      //       .withOpacity(0.4),
+                      // ),
                       filled: true,
                       fillColor: Theme.of(context).scaffoldBackgroundColor,
                       border: OutlineInputBorder(

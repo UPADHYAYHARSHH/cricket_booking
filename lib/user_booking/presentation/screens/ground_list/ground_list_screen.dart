@@ -27,10 +27,12 @@ class GroundListScreen extends StatefulWidget {
 
 class _GroundListScreenState extends State<GroundListScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -338,6 +340,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
                       },
                       color: AppColors.primaryDarkGreen,
                       child: ListView.builder(
+                        controller: _scrollController,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         physics: const AlwaysScrollableScrollPhysics(),
                         itemCount: state.grounds.length,
@@ -347,8 +350,8 @@ class _GroundListScreenState extends State<GroundListScreen> {
                             child: GroundCard(
                               ground: state.grounds[index],
                             ).animate()
-                             .fadeIn(duration: 400.ms, delay: (index * 50).ms)
-                             .slideY(begin: 0.05, end: 0, duration: 400.ms, curve: Curves.easeOutQuad),
+                             .fadeIn(duration: 300.ms, delay: (index < 10 ? index * 50 : 0).ms)
+                             .slideY(begin: 0.03, end: 0, duration: 300.ms, curve: Curves.easeOutQuad),
                           );
                         },
                       ),
@@ -387,6 +390,14 @@ class _GroundListScreenState extends State<GroundListScreen> {
                 userLat: locationState.latitude,
                 userLng: locationState.longitude,
               );
+          // Scroll to top when filters are applied
+          if (_scrollController.hasClients) {
+            _scrollController.animateTo(
+              0,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+            );
+          }
         },
       ),
     );

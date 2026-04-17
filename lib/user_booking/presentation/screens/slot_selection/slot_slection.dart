@@ -399,7 +399,24 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SlotSelectionWidgets.buildTurfImage(_ground),
+                      Builder(builder: (context) {
+                        final totalReviews = _isLoadingReviews
+                            ? (_ground?.totalReviews ?? 0)
+                            : _reviews.length;
+                        final averageRating = _isLoadingReviews
+                            ? (_ground?.rating ?? 0.0)
+                            : (_reviews.isEmpty
+                                ? 0.0
+                                : _reviews.fold<double>(
+                                        0, (sum, r) => sum + r.rating) /
+                                    _reviews.length);
+
+                        return SlotSelectionWidgets.buildTurfImage(
+                          _ground,
+                          rating: averageRating,
+                          totalReviews: totalReviews,
+                        );
+                      }),
                       SlotSelectionWidgets.buildDateSelector(
                           context, state.dates, (index) {
                         if (_ground != null) {

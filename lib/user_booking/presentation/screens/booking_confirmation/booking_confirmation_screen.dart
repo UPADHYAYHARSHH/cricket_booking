@@ -217,12 +217,14 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
               /// ADD TO CALENDAR
               OutlinedButton.icon(
                 onPressed: () {
-                  DateTime eventStart = date;
-                  DateTime eventEnd = date.add(const Duration(hours: 1));
+                  try {
+                    DateTime eventStart = DateTime(date.year, date.month, date.day, 9, 0); // Default 9 AM
+                    DateTime eventEnd = DateTime(date.year, date.month, date.day, 10, 0); // Default 10 AM
 
-                  if (slots.isNotEmpty) {
-                    try {
-                      final startParts = slots.first.startTime.split(':');
+                    if (slots.isNotEmpty) {
+                      // Parse start time (Expected format "HH:mm" or "H:mm")
+                      final startStr = slots.first.startTime;
+                      final startParts = startStr.contains(':') ? startStr.split(':') : [startStr, "00"];
                       eventStart = DateTime(
                         date.year,
                         date.month,
@@ -231,7 +233,9 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                         int.parse(startParts[1]),
                       );
 
-                      final endParts = slots.last.endTime.split(':');
+                      // Parse end time
+                      final endStr = slots.last.endTime;
+                      final endParts = endStr.contains(':') ? endStr.split(':') : [endStr, "00"];
                       eventEnd = DateTime(
                         date.year,
                         date.month,
@@ -239,18 +243,30 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                         int.parse(endParts[0]),
                         int.parse(endParts[1]),
                       );
-                    } catch (e) {}
+                      
+                      // Safety check: if start is after end (e.g. overnight), add a day to end
+                      if (eventEnd.isBefore(eventStart)) {
+                        eventEnd = eventEnd.add(const Duration(days: 1));
+                      }
+                    }
+
+                    final Event event = Event(
+                      title: 'Cricket Booking @ ${ground.name}',
+                      description: 'Your turf booking is confirmed.\nOrder ID: #$orderId\nVenue: ${ground.name}\nAddress: ${ground.address ?? "Box Cricket Arena"}',
+                      location: ground.address ?? 'Box Cricket Arena',
+                      startDate: eventStart,
+                      endDate: eventEnd,
+                    );
+
+                    Add2Calendar.addEvent2Cal(event).then((success) {
+                      if (!success) {
+                        ToastUtil.show(context, message: "Could not open calendar. Do you have a calendar app installed?", type: ToastType.error);
+                      }
+                    });
+                  } catch (e) {
+                    debugPrint("Calendar Error: $e");
+                    ToastUtil.show(context, message: "Failed to create calendar event. Please check formatting.", type: ToastType.error);
                   }
-
-                  final Event event = Event(
-                    title: 'Box Cricket Booking: ${ground.name}',
-                    description: 'Your turf booking is confirmed! Order ID: #$orderId',
-                    location: ground.address ?? 'Box Cricket Arena',
-                    startDate: eventStart,
-                    endDate: eventEnd,
-                  );
-
-                  Add2Calendar.addEvent2Cal(event);
                 },
                 icon: const HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: Colors.blueAccent, size: 20),
                 label: const AppText(

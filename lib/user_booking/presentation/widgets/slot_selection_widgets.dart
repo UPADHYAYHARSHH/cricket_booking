@@ -105,7 +105,7 @@ class SlotSelectionWidgets {
 
   // ── Turf Image Card ───────────────────────────────────────────────────────
 
-  static Widget buildTurfImage(GroundModel? ground) {
+  static Widget buildTurfImage(GroundModel? ground, {double? rating, int? totalReviews}) {
     return Container(
       height: 175,
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -152,7 +152,7 @@ class SlotSelectionWidgets {
             child: _badge(
               icon: HugeIcons.strokeRoundedStar,
               iconColor: AppColors.goldenYellow,
-              text: '${ground?.rating ?? 0.0}  (${ground?.totalReviews ?? 0}+ REVIEWS)',
+              text: '${(rating ?? ground?.rating ?? 0.0).toStringAsFixed(1)}  (${(totalReviews ?? ground?.totalReviews ?? 0)} REVIEWS)',
               bgColor: AppColors.black.withOpacity(0.55),
               textColor: AppColors.white,
             ),
@@ -417,7 +417,7 @@ class SlotSelectionWidgets {
               crossAxisCount: 2,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
-              childAspectRatio: 1.55,
+              childAspectRatio: 1.5,
             ),
             itemBuilder: (ctx, i) => _buildSlotCard(context, slots[i], i, onToggleSlot),
           ),
@@ -466,6 +466,7 @@ class SlotSelectionWidgets {
     }
 
     return GestureDetector(
+      key: ValueKey(slot.startTime),
       onTap: () => onToggleSlot(index),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -489,7 +490,7 @@ class SlotSelectionWidgets {
                   )
                 ],
         ),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         child: Stack(
           children: [
             Column(
@@ -515,7 +516,7 @@ class SlotSelectionWidgets {
                         color: subColor,
                       ),
                     ),
-                    const AppSizedBox(height: 8),
+                    const AppSizedBox(height: 4),
                     if (isBooked)
                       AppText(
                         text: 'Booked',
@@ -998,8 +999,39 @@ class SlotSelectionWidgets {
           const AppSizedBox(height: 16),
           if (isLoading)
             const Center(child: CircularProgressIndicator(color: kOrange))
-          else
+          else ...[
+            if (reviews.isNotEmpty) ...[
+              Row(
+                children: [
+                   HugeIcon(
+                    icon: HugeIcons.strokeRoundedStar,
+                    size: 14,
+                    color: AppColors.goldenYellow,
+                  ),
+                  const AppSizedBox(width: 4),
+                  AppText(
+                    text: (reviews.fold<double>(0, (sum, r) => sum + r.rating) / reviews.length).toStringAsFixed(1),
+                    textStyle: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.goldenYellow,
+                    ),
+                  ),
+                  const AppSizedBox(width: 4),
+                  AppText(
+                    text: 'Average Rating',
+                    textStyle: TextStyle(
+                      fontSize: 12,
+                      color: colorScheme.onSurface.withOpacity(0.5),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              const AppSizedBox(height: 16),
+            ],
             ReviewList(reviews: reviews),
+          ],
         ],
       ),
     );

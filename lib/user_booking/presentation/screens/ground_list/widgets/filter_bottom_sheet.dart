@@ -45,195 +45,190 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor.withOpacity(0.85),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const AppText(
-                    text: "Filters",
-                    textStyle:
-                        TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      setState(() {
-                        _sortBy = SortBy.nearMe;
-                        _minPrice = 0;
-                        _maxPrice = 5000;
-                        _selectedAmenities.clear();
-                      });
-                    },
-                    child: const AppText(
-                      text: "Reset All",
-                      textStyle: TextStyle(
-                          color: Colors.red, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ],
-              ),
-              const Divider(),
-              const AppSizedBox(height: 16),
-
-              /// SORT BY
               const AppText(
-                text: "Sort By",
-                textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                text: "Filters",
+                textStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
-              const AppSizedBox(height: 12),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: SortBy.values.map((sort) {
-                    final isSelected = _sortBy == sort;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ChoiceChip(
-                        label: Text(_getSortLabel(sort)),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          if (selected) setState(() => _sortBy = sort);
-                        },
-                        selectedColor: AppColors.primaryDarkGreen,
-                        labelStyle: TextStyle(
-                          color: isSelected
-                              ? Colors.white
-                              : Theme.of(context).colorScheme.onSurface,
-                          fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.normal,
-                        ),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20)),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              const AppSizedBox(height: 24),
-
-              /// PRICE RANGE
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const AppText(
-                    text: "Price Range",
-                    textStyle:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  AppText(
-                    text: "₹${_minPrice.toInt()} - ₹${_maxPrice.toInt()}",
-                    textStyle: const TextStyle(
-                        color: AppColors.primaryDarkGreen,
-                        fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-              RangeSlider(
-                values: RangeValues(_minPrice, _maxPrice),
-                min: 0,
-                max: 5000,
-                divisions: 50,
-                activeColor: AppColors.primaryDarkGreen,
-                inactiveColor: AppColors.primaryDarkGreen.withOpacity(0.1),
-                labels: RangeLabels(
-                    "₹${_minPrice.toInt()}", "₹${_maxPrice.toInt()}"),
-                onChanged: (values) {
+              TextButton(
+                onPressed: () {
                   setState(() {
-                    _minPrice = values.start;
-                    _maxPrice = values.end;
+                    _sortBy = SortBy.nearMe;
+                    _minPrice = 0;
+                    _maxPrice = 5000;
+                    _selectedAmenities.clear();
                   });
                 },
+                child: const AppText(
+                  text: "Reset All",
+                  textStyle:
+                      TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
+                ),
               ),
-              const AppSizedBox(height: 24),
+            ],
+          ),
+          const Divider(),
+          const AppSizedBox(height: 16),
 
-              /// AMENITIES
-              const AppText(
-                text: "Amenities",
-                textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const AppSizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                children: _allAmenities.map((amenity) {
-                  final isSelected = _selectedAmenities.contains(amenity);
-                  return FilterChip(
-                    label: Text(amenity),
+          /// SORT BY
+          const AppText(
+            text: "Sort By",
+            textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          const AppSizedBox(height: 12),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: SortBy.values.map((sort) {
+                final isSelected = _sortBy == sort;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(_getSortLabel(sort)),
                     selected: isSelected,
                     onSelected: (selected) {
-                      setState(() {
-                        if (selected) {
-                          _selectedAmenities.add(amenity);
-                        } else {
-                          _selectedAmenities.remove(amenity);
-                        }
-                      });
+                      if (selected) setState(() => _sortBy = sort);
                     },
-                    selectedColor: AppColors.primaryDarkGreen.withOpacity(0.2),
-                    checkmarkColor: AppColors.primaryDarkGreen,
+                    selectedColor: AppColors.primaryDarkGreen,
                     labelStyle: TextStyle(
                       color: isSelected
-                          ? AppColors.primaryDarkGreen
+                          ? Colors.white
                           : Theme.of(context).colorScheme.onSurface,
                       fontWeight:
                           isSelected ? FontWeight.bold : FontWeight.normal,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      side: BorderSide(
-                          color: isSelected
-                              ? AppColors.primaryDarkGreen
-                              : Colors.grey.withOpacity(0.2)),
-                    ),
-                  );
-                }).toList(),
-              ),
-              const AppSizedBox(height: 32),
+                        borderRadius: BorderRadius.circular(20)),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          const AppSizedBox(height: 24),
 
-              /// APPLY BUTTON
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: () {
-                    final criteria = FilterCriteria(
-                      sortBy: _sortBy,
-                      minPrice: _minPrice,
-                      maxPrice: _maxPrice,
-                      selectedAmenities: _selectedAmenities,
-                    );
-                    widget.onApply(criteria);
-                    Navigator.pop(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryDarkGreen,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16)),
-                    elevation: 0,
-                  ),
-                  child: const AppText(
-                    text: "Apply Filters",
-                    textStyle: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16),
-                  ),
-                ),
+          /// PRICE RANGE
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const AppText(
+                text: "Price Range",
+                textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
-              const AppSizedBox(height: 12),
+              AppText(
+                text: "₹${_minPrice.toInt()} - ₹${_maxPrice.toInt()}",
+                textStyle: const TextStyle(
+                    color: AppColors.primaryDarkGreen,
+                    fontWeight: FontWeight.bold),
+              ),
             ],
           ),
-        ));
+          RangeSlider(
+            values: RangeValues(_minPrice, _maxPrice),
+            min: 0,
+            max: 5000,
+            divisions: 50,
+            activeColor: AppColors.primaryDarkGreen,
+            inactiveColor: AppColors.primaryDarkGreen.withOpacity(0.1),
+            labels:
+                RangeLabels("₹${_minPrice.toInt()}", "₹${_maxPrice.toInt()}"),
+            onChanged: (values) {
+              setState(() {
+                _minPrice = values.start;
+                _maxPrice = values.end;
+              });
+            },
+          ),
+          const AppSizedBox(height: 24),
+
+          /// AMENITIES
+          const AppText(
+            text: "Amenities",
+            textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          const AppSizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: _allAmenities.map((amenity) {
+              final isSelected = _selectedAmenities.contains(amenity);
+              return FilterChip(
+                label: Text(amenity),
+                selected: isSelected,
+                onSelected: (selected) {
+                  setState(() {
+                    if (selected) {
+                      _selectedAmenities.add(amenity);
+                    } else {
+                      _selectedAmenities.remove(amenity);
+                    }
+                  });
+                },
+                selectedColor: AppColors.primaryDarkGreen.withOpacity(0.2),
+                checkmarkColor: AppColors.primaryDarkGreen,
+                labelStyle: TextStyle(
+                  color: isSelected
+                      ? AppColors.primaryDarkGreen
+                      : Theme.of(context).colorScheme.onSurface,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  side: BorderSide(
+                      color: isSelected
+                          ? AppColors.primaryDarkGreen
+                          : Colors.grey.withOpacity(0.2)),
+                ),
+              );
+            }).toList(),
+          ),
+          const AppSizedBox(height: 32),
+
+          /// APPLY BUTTON
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: ElevatedButton(
+              onPressed: () {
+                final criteria = FilterCriteria(
+                  sortBy: _sortBy,
+                  minPrice: _minPrice,
+                  maxPrice: _maxPrice,
+                  selectedAmenities: _selectedAmenities,
+                );
+                widget.onApply(criteria);
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryDarkGreen,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+                elevation: 0,
+              ),
+              child: const AppText(
+                text: "Apply Filters",
+                textStyle: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16),
+              ),
+            ),
+          ),
+          const AppSizedBox(height: 12),
+        ],
+      ),
+    );
   }
 
   String _getSortLabel(SortBy sort) {
