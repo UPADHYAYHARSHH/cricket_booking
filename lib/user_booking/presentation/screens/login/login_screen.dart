@@ -18,40 +18,24 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
 
-  bool isPasswordHidden = true;
-  String? emailError;
-  String? passwordError;
+  String? phoneError;
 
   bool _validateFields() {
     setState(() {
-      emailError = null;
-      passwordError = null;
+      phoneError = null;
     });
 
-    final email = emailController.text.trim();
-    final password = passwordController.text.trim();
+    final phone = phoneController.text.trim();
 
     bool isValid = true;
 
-    // Email Regex
-    final emailRegex = RegExp(r"^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+\.[a-z]+$");
-    if (email.isEmpty) {
-      setState(() => emailError = "Email is required");
+    if (phone.isEmpty) {
+      setState(() => phoneError = "Phone number is required");
       isValid = false;
-    } else if (!emailRegex.hasMatch(email)) {
-      setState(() => emailError = "Invalid email format");
-      isValid = false;
-    }
-
-    // Password Length
-    if (password.isEmpty) {
-      setState(() => passwordError = "Password is required");
-      isValid = false;
-    } else if (password.length < 6) {
-      setState(() => passwordError = "Password must be at least 6 characters");
+    } else if (phone.length != 10) {
+      setState(() => phoneError = "Enter a valid 10-digit number");
       isValid = false;
     }
 
@@ -75,6 +59,18 @@ class _LoginScreenState extends State<LoginScreen> {
         listener: (context, state) {
           if (state is AuthSuccess) {
             Navigator.pushReplacementNamed(context, AppRoutes.nav);
+          }
+
+          if (state is AuthOtpRequired) {
+            Navigator.pushNamed(
+              context,
+              AppRoutes.otp,
+              arguments: "+91${phoneController.text.trim()}",
+            );
+          }
+
+          if (state is AuthProfileIncomplete) {
+            Navigator.pushReplacementNamed(context, AppRoutes.signUp);
           }
 
           /// ERROR
@@ -140,7 +136,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           const AppSizedBox(height: 6),
 
                           const AppText(
-                            text: "Login with your email & password",
+                            text: "Login with your phone number",
                             size: 14,
                             color: Colors.grey,
                           ),
@@ -163,9 +159,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                /// Email
+                                /// Phone Number
                                 const AppText(
-                                  text: "Email",
+                                  text: "Phone Number",
                                   size: 12,
                                   weight: FontWeight.w600,
                                   color: Colors.black54,
@@ -174,83 +170,55 @@ class _LoginScreenState extends State<LoginScreen> {
                                 const AppSizedBox(height: 8),
 
                                 TextField(
-                                  controller: emailController,
-                                  keyboardType: TextInputType.emailAddress,
-                                  textInputAction: TextInputAction.next,
-                                  autofillHints: const [AutofillHints.email],
+                                  controller: phoneController,
+                                  keyboardType: TextInputType.phone,
+                                  maxLength: 10,
                                   style: const TextStyle(color: Colors.black87),
                                   decoration: InputDecoration(
-                                    hintText: "example@email.com",
+                                    counterText: "",
+                                    hintText: "Enter 10 digit number",
                                     hintStyle: const TextStyle(color: Colors.black38),
-                                    errorText: emailError,
-                                    prefixIcon: const Icon(Icons.email_outlined,
-                                        size: 18, color: Colors.black54),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide(
-                                          color: Colors.grey.shade300),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide(
-                                          color: Colors.grey.shade300),
-                                    ),
-                                  ),
-                                ),
-
-                                const AppSizedBox(height: 18),
-
-                                /// Password
-                                const AppText(
-                                  text: "Password",
-                                  size: 12,
-                                  weight: FontWeight.w600,
-                                  color: Colors.black54,
-                                ),
-
-                                const AppSizedBox(height: 8),
-
-                                TextField(
-                                  controller: passwordController,
-                                  obscureText: isPasswordHidden,
-                                  textInputAction: TextInputAction.done,
-                                  autofillHints: const [AutofillHints.password],
-                                  style: const TextStyle(color: Colors.black87),
-                                  decoration: InputDecoration(
-                                    hintText: "Enter password",
-                                    hintStyle: const TextStyle(color: Colors.black38),
-                                    errorText: passwordError,
-                                    prefixIcon: const Icon(Icons.lock_outlined,
-                                        size: 18, color: Colors.black54),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide(
-                                          color: Colors.grey.shade300),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide(
-                                          color: Colors.grey.shade300),
-                                    ),
-                                    suffixIcon: IconButton(
-                                      icon: Icon(
-                                        isPasswordHidden
-                                            ? Icons.visibility_off
-                                            : Icons.visibility,
-                                        size: 20,
-                                        color: Colors.black54,
+                                    errorText: phoneError,
+                                    prefixIcon: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                                      child: Text(
+                                        "+91",
+                                        style: TextStyle(
+                                          color: Colors.black87,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
                                       ),
-                                      onPressed: () {
-                                        setState(() {
-                                          isPasswordHidden = !isPasswordHidden;
-                                        });
-                                      },
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: BorderSide(
+                                          color: Colors.grey.shade300),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: BorderSide(
+                                          color: Colors.grey.shade300),
                                     ),
                                   ),
                                 ),
 
-                                const AppSizedBox(height: 12),
+                                const AppSizedBox(height: 30),
 
+                                /// Login Button
+                                AppButton(
+                                  title: "Send OTP",
+                                  isLoading: isLoading,
+                                  onTap: () {
+                                    if (_validateFields()) {
+                                      context.read<AuthCubit>().signInWithPhone(
+                                            "+91${phoneController.text.trim()}",
+                                          );
+                                    }
+                                  },
+                                ),
+
+/*
                                 /// Forgot Password Link
                                 Align(
                                   alignment: Alignment.centerRight,
@@ -267,23 +235,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                                 ),
-
-                                const AppSizedBox(height: 30),
-
-                                /// Login Button
-                                AppButton(
-                                  title: "Login",
-                                  isLoading: isLoading,
-                                  onTap: () {
-                                    if (_validateFields()) {
-                                      context.read<AuthCubit>().loginWithEmail(
-                                            email: emailController.text.trim(),
-                                            password:
-                                                passwordController.text.trim(),
-                                          );
-                                    }
-                                  },
-                                ),
+*/
 
                                 const AppSizedBox(height: 20),
 

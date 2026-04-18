@@ -51,7 +51,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final email = ModalRoute.of(context)?.settings.arguments as String? ?? "";
+    final phone = ModalRoute.of(context)?.settings.arguments as String? ?? "";
 
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
@@ -59,6 +59,14 @@ class _OtpScreenState extends State<OtpScreen> {
           Navigator.pushNamedAndRemoveUntil(
             context,
             AppRoutes.nav,
+            (route) => false,
+          );
+        }
+
+        if (state is AuthProfileIncomplete) {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.signUp,
             (route) => false,
           );
         }
@@ -85,7 +93,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
                 /// Title
                 const AppText(
-                  text: "Verify Email",
+                  text: "Verify Phone",
                   size: 26,
                   weight: FontWeight.w700,
                 ),
@@ -93,7 +101,7 @@ class _OtpScreenState extends State<OtpScreen> {
                 const AppSizedBox(height: 6),
 
                 AppText(
-                  text: "Enter the 4-digit code sent to $email",
+                  text: "Enter the 4-digit code sent to $phone",
                   size: 14,
                   color: Colors.grey,
                   align: TextAlign.left,
@@ -128,7 +136,7 @@ class _OtpScreenState extends State<OtpScreen> {
                       return;
                     }
 
-                    context.read<AuthCubit>().verifyOtp(email, otpCode);
+                    context.read<AuthCubit>().verifyPhoneOtp(phone, otpCode);
                   },
                 ),
 

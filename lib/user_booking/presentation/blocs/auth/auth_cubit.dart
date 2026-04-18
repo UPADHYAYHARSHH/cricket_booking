@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
 import '../../../domain/repositories/auth_repositories.dart';
+import '../../../data/repositories/user_repository_impl.dart';
 import 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
@@ -9,106 +10,155 @@ class AuthCubit extends Cubit<AuthState> {
 
   AuthCubit(this.repository) : super(AuthInitial());
 
-  Future<void> loginWithEmail({
-    required String email,
-    required String password,
-  }) async {
+  // Future<void> loginWithEmail({
+  //   required String email,
+  //   required String password,
+  // }) async {
+  //   emit(AuthLoading());
+
+  //   try {
+  //     await repository.loginWithEmail(
+  //       email: email,
+  //       password: password,
+  //     );
+
+  //     emit(AuthSuccess());
+  //   } on AuthException catch (e) {
+  //     String errorMessage = e.message;
+
+  //     // SPECIFIC VALIDATION: User not found
+  //     if (e.message.toLowerCase().contains("invalid login credentials")) {
+  //       errorMessage = "No account found with this email, or password incorrect.";
+  //     }
+
+  //     emit(AuthError(errorMessage));
+  //   } catch (e) {
+  //     emit(AuthError(e.toString()));
+  //   }
+  // }
+
+  // Future<void> signUpWithEmail({
+  //   required String email,
+  //   required String password,
+  // }) async {
+  //   emit(AuthLoading());
+
+  //   try {
+  //     await repository.signUpWithEmail(
+  //       email: email,
+  //       password: password,
+  //     );
+
+  //     // Signup successful, now need OTP verification
+  //     emit(AuthOtpRequired(email));
+  //   } on AuthException catch (e) {
+  //     String errorMessage = e.message;
+
+  //     // SPECIFIC VALIDATION: User already exists
+  //     if (e.message.toLowerCase().contains("already registered") || 
+  //         e.message.toLowerCase().contains("user already exists")) {
+  //       errorMessage = "This email is already in use. Try logging in instead.";
+  //     }
+
+  //     emit(AuthError(errorMessage));
+  //   } catch (e) {
+  //     emit(AuthError(e.toString()));
+  //   }
+  // }
+
+  Future<void> signInWithPhone(String phone) async {
     emit(AuthLoading());
-
     try {
-      await repository.loginWithEmail(
-        email: email,
-        password: password,
-      );
-
-      emit(AuthSuccess());
+      await repository.signInWithPhone(phone);
+      emit(AuthOtpRequired(phone));
     } on AuthException catch (e) {
-      String errorMessage = e.message;
-
-      // SPECIFIC VALIDATION: User not found
-      if (e.message.toLowerCase().contains("invalid login credentials")) {
-        errorMessage = "No account found with this email, or password incorrect.";
-      }
-
-      emit(AuthError(errorMessage));
+      emit(AuthError(e.message));
     } catch (e) {
       emit(AuthError(e.toString()));
     }
   }
 
-  Future<void> signUpWithEmail({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> verifyPhoneOtp(String phone, String code) async {
     emit(AuthLoading());
-
     try {
-      await repository.signUpWithEmail(
-        email: email,
-        password: password,
-      );
-
-      // Signup successful, now need OTP verification
-      emit(AuthOtpRequired(email));
-    } on AuthException catch (e) {
-      String errorMessage = e.message;
-
-      // SPECIFIC VALIDATION: User already exists
-      if (e.message.toLowerCase().contains("already registered") || 
-          e.message.toLowerCase().contains("user already exists")) {
-        errorMessage = "This email is already in use. Try logging in instead.";
+      await repository.verifyPhoneOtp(phone: phone, token: code);
+      
+      // Post-verification check: Is profile complete?
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null) {
+        final userData = await Supabase.instance.client
+            .from('users')
+            .select('name')
+            .eq('id', user.id)
+            .maybeSingle();
+            
+        if (userData == null || userData['name'] == null || (userData['name'] as String).isEmpty) {
+          emit(AuthProfileIncomplete());
+        } else {
+          emit(AuthSuccess());
+        }
+      } else {
+        emit(AuthError("Authentication failed"));
       }
-
-      emit(AuthError(errorMessage));
+    } on AuthException catch (e) {
+      emit(AuthError(e.message));
     } catch (e) {
       emit(AuthError(e.toString()));
     }
   }
 
-  Future<void> verifyOtp(String email, String code) async {
-    emit(AuthLoading());
+  // Future<void> sendPasswordResetEmail(String email) async {
+  //   emit(AuthLoading());
+  //   try {
+  //     await repository.sendPasswordResetEmail(email);
+  //     emit(AuthPasswordResetEmailSent(email));
+  //   } on AuthException catch (e) {
+  //     emit(AuthError(e.message));
+  //   } catch (e) {
+  //     emit(AuthError('Failed to send reset email: ${e.toString()}'));
+  //   }
+  // }
 
-    // STATIC OTP CHECK: 1111
-    if (code == "1111") {
+  // Future<void> verifyPasswordResetOtp(String email, String token) async {
+  //   emit(AuthLoading());
+  //   try {
+  //     await repository.verifyPasswordResetOtp(email, token);
+  //     emit(AuthPasswordResetOtpVerified());
+  //   } on AuthException catch (e) {
+  //     emit(AuthError(e.message));
+  //   } catch (e) {
+  //     emit(AuthError('Failed to verify OTP: ${e.toString()}'));
+  //   }
+  // }
+
+  // Future<void> updatePassword(String newPassword) async {
+  //   emit(AuthLoading());
+  //   try {
+  //     await repository.updatePassword(newPassword);
+  //     emit(AuthPasswordUpdated());
+  //   } on AuthException catch (e) {
+  //     emit(AuthError(e.message));
+  //   } catch (e) {
+  //     emit(AuthError('Failed to update password: ${e.toString()}'));
+  //   }
+  // }
+
+  Future<void> completeProfile({
+    required String name,
+    required String gender,
+    required DateTime dob,
+    required UserRepository userRepository,
+  }) async {
+    emit(AuthLoading());
+    try {
+      await userRepository.upsertUser(
+        name: name,
+        gender: gender,
+        dob: dob,
+      );
       emit(AuthSuccess());
-    } else {
-      emit(AuthError("Invalid verification code. Please try again."));
-    }
-  }
-
-  Future<void> sendPasswordResetEmail(String email) async {
-    emit(AuthLoading());
-    try {
-      await repository.sendPasswordResetEmail(email);
-      emit(AuthPasswordResetEmailSent(email));
-    } on AuthException catch (e) {
-      emit(AuthError(e.message));
     } catch (e) {
-      emit(AuthError('Failed to send reset email: ${e.toString()}'));
-    }
-  }
-
-  Future<void> verifyPasswordResetOtp(String email, String token) async {
-    emit(AuthLoading());
-    try {
-      await repository.verifyPasswordResetOtp(email, token);
-      emit(AuthPasswordResetOtpVerified());
-    } on AuthException catch (e) {
-      emit(AuthError(e.message));
-    } catch (e) {
-      emit(AuthError('Failed to verify OTP: ${e.toString()}'));
-    }
-  }
-
-  Future<void> updatePassword(String newPassword) async {
-    emit(AuthLoading());
-    try {
-      await repository.updatePassword(newPassword);
-      emit(AuthPasswordUpdated());
-    } on AuthException catch (e) {
-      emit(AuthError(e.message));
-    } catch (e) {
-      emit(AuthError('Failed to update password: ${e.toString()}'));
+      emit(AuthError("Failed to complete profile: ${e.toString()}"));
     }
   }
 

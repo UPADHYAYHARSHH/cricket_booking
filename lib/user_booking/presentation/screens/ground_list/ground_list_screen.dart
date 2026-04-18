@@ -29,6 +29,29 @@ class _GroundListScreenState extends State<GroundListScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
+  final List<Map<String, dynamic>> _sportCategories = [
+    {
+      'id': 'cricket',
+      'name': 'Cricket',
+      'icon': HugeIcons.strokeRoundedCricketBat,
+    },
+    {
+      'id': 'pickleball',
+      'name': 'Pickleball',
+      'icon': HugeIcons.strokeRoundedTennisBall,
+    },
+    {
+      'id': 'badminton',
+      'name': 'Badminton',
+      'icon': HugeIcons.strokeRoundedBadminton,
+    },
+    {
+      'id': 'volleyball',
+      'name': 'Volleyball',
+      'icon': HugeIcons.strokeRoundedVolleyball,
+    },
+  ];
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -156,137 +179,155 @@ class _GroundListScreenState extends State<GroundListScreen> {
         ),
 
         /// BODY
-        body: Column(
-          children: [
+        body: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
             /// 🔍 SEARCH & FILTER
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        Navigator.pushNamed(context, AppRoutes.search);
-                      },
-                      child: Hero(
-                        tag: 'search_bar',
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).cardColor,
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: Row(
-                            children: [
-                              HugeIcon(
-                                icon: HugeIcons.strokeRoundedSearch01,
-                                size: 18,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withOpacity(0.4),
-                              ),
-                              const AppSizedBox(width: 10),
-                              AppText(
-                                text: "Search nearby grounds...",
-                                textStyle: TextStyle(
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.pushNamed(context, AppRoutes.search);
+                        },
+                        child: Hero(
+                          tag: 'search_bar',
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            child: Row(
+                              children: [
+                                HugeIcon(
+                                  icon: HugeIcons.strokeRoundedSearch01,
+                                  size: 18,
                                   color: Theme.of(context)
                                       .colorScheme
                                       .onSurface
                                       .withOpacity(0.4),
-                                  fontSize: 14,
                                 ),
-                              ),
-                            ],
+                                const AppSizedBox(width: 10),
+                                AppText(
+                                  text: "Search nearby grounds...",
+                                  textStyle: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.4),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                   const AppSizedBox(width: 12),
-                   BlocBuilder<GroundCubit, GroundState>(
-                    builder: (context, state) {
-                      final bool hasFilters = state is GroundLoaded && !state.criteria.isDefault;
-                      
-                      return GestureDetector(
-                        onTap: () {
-                          if (state is GroundLoaded) {
-                            _showFilterSheet(context, state);
-                          }
-                        },
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryDarkGreen,
-                                borderRadius: BorderRadius.circular(15),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.primaryDarkGreen.withOpacity(0.3),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: const HugeIcon(
-                                icon: HugeIcons.strokeRoundedFilterHorizontal,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                            ),
-                            if (hasFilters)
-                              Positioned(
-                                top: -2,
-                                right: -2,
-                                child: Container(
-                                  width: 12,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    color: Colors.red,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white, width: 2),
-                                  ),
+                    const AppSizedBox(width: 12),
+                    BlocBuilder<GroundCubit, GroundState>(
+                      builder: (context, state) {
+                        final bool hasFilters = state is GroundLoaded && !state.criteria.isDefault;
+                        
+                        return GestureDetector(
+                          onTap: () {
+                            if (state is GroundLoaded) {
+                              _showFilterSheet(context, state);
+                            }
+                          },
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryDarkGreen,
+                                  borderRadius: BorderRadius.circular(15),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.primaryDarkGreen.withOpacity(0.3),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: const HugeIcon(
+                                  icon: HugeIcons.strokeRoundedFilterHorizontal,
+                                  color: Colors.white,
+                                  size: 20,
                                 ),
                               ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+                              if (hasFilters)
+                                Positioned(
+                                  top: -2,
+                                  right: -2,
+                                  child: Container(
+                                    width: 12,
+                                    height: 12,
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.white, width: 2),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            /// 🎾 SPORT SELECTION
+            SliverToBoxAdapter(
+              child: Column(
+                children: [
+                  const AppSizedBox(height: 4),
+                  _buildSportSelection(),
+                  const AppSizedBox(height: 24),
                 ],
               ),
             ),
 
-
-
-            const AppSizedBox(height: 10),
-
             /// 📋 LIST (DYNAMIC)
-            Expanded(
-              child: BlocBuilder<GroundCubit, GroundState>(
-                builder: (context, state) {
-                  /// 🔄 Loading
-                  if (state is GroundLoading) {
-                    return ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: 5,
-                      itemBuilder: (context, index) => const GroundSkeleton(),
-                    );
-                  }
+            BlocBuilder<GroundCubit, GroundState>(
+              builder: (context, state) {
+                /// 🔄 Loading
+                if (state is GroundLoading) {
+                  return SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) => const Padding(
+                          padding: EdgeInsets.only(bottom: 16),
+                          child: GroundSkeleton(),
+                        ),
+                        childCount: 5,
+                      ),
+                    ),
+                  );
+                }
 
-                  /// ✅ Data Loaded
-                  if (state is GroundLoaded) {
-                    if (state.grounds.isEmpty) {
-                      return Center(
+                /// ✅ Data Loaded
+                if (state is GroundLoaded) {
+                  if (state.grounds.isEmpty) {
+                    return SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             SizedBox(
                               child: Lottie.network(
-                                'https://Assets1.lottiefiles.com/packages/lf20_cwA7Cn.json', // Stable fallback url if the host one expires
+                                'https://Assets1.lottiefiles.com/packages/lf20_cwA7Cn.json',
                                 height: 180,
                                 width: 180,
                                 fit: BoxFit.contain,
@@ -325,26 +366,15 @@ class _GroundListScreenState extends State<GroundListScreen> {
                             ).animate().fadeIn(delay: 500.ms),
                           ],
                         ),
-                      );
-                    }
+                      ),
+                    );
+                  }
 
-                    return RefreshIndicator(
-                      onRefresh: () async {
-                        final locationState =
-                            context.read<LocationCubit>().state;
-                        await context.read<GroundCubit>().getGrounds(
-                              city: locationState.city,
-                              userLat: locationState.latitude,
-                              userLng: locationState.longitude,
-                            );
-                      },
-                      color: AppColors.primaryDarkGreen,
-                      child: ListView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        itemCount: state.grounds.length,
-                        itemBuilder: (context, index) {
+                  return SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 16),
                             child: GroundCard(
@@ -354,23 +384,84 @@ class _GroundListScreenState extends State<GroundListScreen> {
                              .slideY(begin: 0.03, end: 0, duration: 300.ms, curve: Curves.easeOutQuad),
                           );
                         },
+                        childCount: state.grounds.length,
                       ),
-                    );
-                  }
+                    ),
+                  );
+                }
 
-                  /// ❌ Error
-                  if (state is GroundError) {
-                    return Center(
+                /// ❌ Error
+                if (state is GroundError) {
+                  return SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
                       child: AppText(text: state.message),
-                    );
-                  }
+                    ),
+                  );
+                }
 
-                  return const SizedBox();
-                },
-              ),
-            )
+                return const SliverToBoxAdapter(child: SizedBox());
+              },
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSportSelection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const AppText(
+            text: "Popular Sports",
+            textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const AppSizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: _sportCategories.map((sport) {
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.pushNamed(
+                      context,
+                      AppRoutes.categoryGrounds,
+                      arguments: sport['name'],
+                    );
+                  },
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryDarkGreen.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: HugeIcon(
+                          icon: sport['icon'],
+                          color: AppColors.primaryDarkGreen,
+                          size: 28,
+                        ),
+                      ),
+                      const AppSizedBox(height: 8),
+                      AppText(
+                        text: sport['name'],
+                        textStyle: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
       ),
     );
   }

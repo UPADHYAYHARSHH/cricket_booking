@@ -1,9 +1,13 @@
 import 'package:bloc_structure/user_booking/constants/text_theme.dart';
 import 'package:bloc_structure/user_booking/presentation/blocs/auth/auth_cubit.dart';
 import 'package:bloc_structure/user_booking/presentation/blocs/auth/auth_state.dart';
+import 'package:bloc_structure/user_booking/data/repositories/user_repository_impl.dart';
 import 'package:bloc_structure/utils/toast_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
+
+import 'package:bloc_structure/user_booking/di/get_it/get_it.dart' as di;
 
 import '../../../constants/route_constants.dart';
 import '../../../constants/widgets/app_button.dart';
@@ -18,310 +22,199 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-
-  bool isPasswordHidden = true;
-  String? emailError;
-  String? passwordError;
+  final TextEditingController nameController = TextEditingController();
+  String? nameError;
+  String selectedGender = "Male";
+  DateTime? selectedDate;
 
   bool _validateFields() {
     setState(() {
-      emailError = null;
-      passwordError = null;
+      nameError = null;
     });
 
-    final email = emailController.text.trim();
-    final password = passwordController.text.trim();
-
+    final name = nameController.text.trim();
     bool isValid = true;
 
-    // Email Regex
-    final emailRegex = RegExp(r"^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+\.[a-z]+$");
-    if (email.isEmpty) {
-      setState(() => emailError = "Email is required");
-      isValid = false;
-    } else if (!emailRegex.hasMatch(email)) {
-      setState(() => emailError = "Invalid email format");
+    if (name.isEmpty) {
+      setState(() => nameError = "Name is required");
       isValid = false;
     }
 
-    // Password Length
-    if (password.isEmpty) {
-      setState(() => passwordError = "Password is required");
-      isValid = false;
-    } else if (password.length < 6) {
-      setState(() => passwordError = "Password must be at least 6 characters");
+    if (selectedDate == null) {
+      ToastUtil.show(context, message: "Please select your date of birth", type: ToastType.warning);
       isValid = false;
     }
 
     return isValid;
   }
 
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().subtract(const Duration(days: 365 * 18)),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null && picked != selectedDate) {
+      setState(() {
+        selectedDate = picked;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-
-    final isDesktop = screenWidth > 900;
-    final isTablet = screenWidth > 600;
-
-    final horizontalPadding = isDesktop
-        ? screenWidth * .30
-        : isTablet
-            ? screenWidth * .15
-            : 20.0;
+    final horizontalPadding = screenWidth > 600 ? screenWidth * .15 : 20.0;
 
     return BlocListener<AuthCubit, AuthState>(
-        listener: (context, state) {
-          if (state is AuthOtpRequired) {
-            Navigator.pushNamed(
-              context,
-              AppRoutes.otp,
-              arguments: state.email,
-            );
-          }
+      listener: (context, state) {
+        if (state is AuthSuccess) {
+          Navigator.pushReplacementNamed(context, AppRoutes.nav);
+        }
+        if (state is AuthError) {
+          ToastUtil.show(context, message: state.message, type: ToastType.error);
+        }
+      },
+      child: BlocBuilder<AuthCubit, AuthState>(
+        builder: (context, state) {
+          final isLoading = state is AuthLoading;
 
-          /// ERROR
-          if (state is AuthError) {
-            ToastUtil.show(context, message: state.message, type: ToastType.error);
-          }
-        },
-        child: BlocBuilder<AuthCubit, AuthState>(
-          builder: (context, state) {
-            final isLoading = state is AuthLoading;
-
-            return Scaffold(
-              backgroundColor: const Color(0xffECECEC),
-              body: SafeArea(
-                child: Center(
-                  child: SingleChildScrollView(
-                    child: Padding(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: horizontalPadding),
-                      child: Column(
-                        children: [
-                          /// Turf Image
-                          Container(
-                            height: isDesktop ? 220 : 160,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
-                              image: const DecorationImage(
-                                image: NetworkImage(
-                                    "https://images.unsplash.com/photo-1584464491033-06628f3a6b7b"),
-                                fit: BoxFit.cover,
+          return Scaffold(
+            backgroundColor: const Color(0xffECECEC),
+            body: SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                    child: Column(
+                      children: [
+                        const AppSizedBox(height: 30),
+                        const AppText(
+                          text: "Complete Your Profile",
+                          size: 26,
+                          weight: FontWeight.w700,
+                        ),
+                        const AppSizedBox(height: 6),
+                        const AppText(
+                          text: "Just a few more details to get started",
+                          size: 14,
+                          color: Colors.grey,
+                        ),
+                        const AppSizedBox(height: 30),
+                        Container(
+                          padding: const EdgeInsets.all(22),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(18),
+                            boxShadow: [
+                              BoxShadow(
+                                blurRadius: 10,
+                                color: Colors.black.withOpacity(.05),
+                              )
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const AppText(
+                                text: "Full Name",
+                                size: 12,
+                                weight: FontWeight.w600,
+                                color: Colors.black54,
                               ),
-                            ),
-                            child: Align(
-                              alignment: Alignment.bottomLeft,
-                              child: Container(
-                                margin: const EdgeInsets.all(12),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.orange,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: const AppText(
-                                  text: "PREMIUM TURFS",
-                                  size: 10,
-                                  weight: FontWeight.w600,
-                                  color: Colors.white,
+                              const AppSizedBox(height: 8),
+                              TextField(
+                                controller: nameController,
+                                style: const TextStyle(color: Colors.black87),
+                                decoration: InputDecoration(
+                                  hintText: "Enter your name",
+                                  errorText: nameError,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
-
-                          const AppSizedBox(height: 30),
-
-                          /// Title
-                          const AppText(
-                            text: "Create Account",
-                            size: 26,
-                            weight: FontWeight.w700,
-                            textStyle: AppTextTheme.black17,
-                          ),
-
-                          const AppSizedBox(height: 6),
-
-                          const AppText(
-                            text: "Sign up to start booking turfs",
-                            size: 14,
-                            color: Colors.grey,
-                          ),
-
-                          const AppSizedBox(height: 30),
-
-                          /// Signup Card
-                          Container(
-                            padding: const EdgeInsets.all(22),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(18),
-                              boxShadow: [
-                                BoxShadow(
-                                  blurRadius: 10,
-                                  color: Colors.black.withOpacity(.05),
-                                )
-                              ],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                /// Email
-                                const AppText(
-                                  text: "Email",
-                                  size: 12,
-                                  weight: FontWeight.w600,
-                                  color: Colors.black54,
-                                ),
-
-                                const AppSizedBox(height: 8),
-
-                                TextField(
-                                  controller: emailController,
-                                  keyboardType: TextInputType.emailAddress,
-                                  textInputAction: TextInputAction.next,
-                                  autofillHints: const [AutofillHints.email],
-                                  style: const TextStyle(color: Colors.black87),
-                                  decoration: InputDecoration(
-                                    hintText: "example@email.com",
-                                    hintStyle: const TextStyle(color: Colors.black38),
-                                    errorText: emailError,
-                                    prefixIcon: const Icon(Icons.email_outlined,
-                                        size: 18, color: Colors.black54),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide(
-                                          color: Colors.grey.shade300),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide(
-                                          color: Colors.grey.shade300),
-                                    ),
+                              const AppSizedBox(height: 18),
+                              const AppText(
+                                text: "Gender",
+                                size: 12,
+                                weight: FontWeight.w600,
+                                color: Colors.black54,
+                              ),
+                              const AppSizedBox(height: 8),
+                              Row(
+                                children: [
+                                  ChoiceChip(
+                                    label: const Text("Male"),
+                                    selected: selectedGender == "Male",
+                                    onSelected: (val) => setState(() => selectedGender = "Male"),
                                   ),
-                                ),
-
-                                const AppSizedBox(height: 18),
-
-                                /// Password
-                                const AppText(
-                                  text: "Password",
-                                  size: 12,
-                                  weight: FontWeight.w600,
-                                  color: Colors.black54,
-                                ),
-
-                                const AppSizedBox(height: 8),
-
-                                TextField(
-                                  controller: passwordController,
-                                  obscureText: isPasswordHidden,
-                                  textInputAction: TextInputAction.done,
-                                  autofillHints: const [
-                                    AutofillHints.newPassword
-                                  ],
-                                  style: const TextStyle(color: Colors.black87),
-                                  decoration: InputDecoration(
-                                    hintText: "Enter password",
-                                    hintStyle: const TextStyle(color: Colors.black38),
-                                    errorText: passwordError,
-                                    prefixIcon: const Icon(Icons.lock_outlined,
-                                        size: 18, color: Colors.black54),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide(
-                                          color: Colors.grey.shade300),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide(
-                                          color: Colors.grey.shade300),
-                                    ),
-                                    suffixIcon: IconButton(
-                                      icon: Icon(
-                                        isPasswordHidden
-                                            ? Icons.visibility_off
-                                            : Icons.visibility,
-                                        size: 20,
-                                        color: Colors.black54,
+                                  const AppSizedBox(width: 8),
+                                  ChoiceChip(
+                                    label: const Text("Female"),
+                                    selected: selectedGender == "Female",
+                                    onSelected: (val) => setState(() => selectedGender = "Female"),
+                                  ),
+                                ],
+                              ),
+                              const AppSizedBox(height: 18),
+                              const AppText(
+                                text: "Date of Birth",
+                                size: 12,
+                                weight: FontWeight.w600,
+                                color: Colors.black54,
+                              ),
+                              const AppSizedBox(height: 8),
+                              GestureDetector(
+                                onTap: () => _selectDate(context),
+                                child: Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.grey.shade300),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      AppText(
+                                        text: selectedDate == null
+                                            ? "Select Date"
+                                            : DateFormat('dd/MM/yyyy').format(selectedDate!),
+                                        color: selectedDate == null ? Colors.black38 : Colors.black87,
                                       ),
-                                      onPressed: () {
-                                        setState(() {
-                                          isPasswordHidden = !isPasswordHidden;
-                                        });
-                                      },
-                                    ),
+                                      const Icon(Icons.calendar_today, size: 18),
+                                    ],
                                   ),
                                 ),
-
-                                const AppSizedBox(height: 30),
-
-                                /// Signup Button
-                                AppButton(
-                                  title: "Sign Up",
-                                  isLoading: isLoading,
-                                  onTap: () {
-                                    if (_validateFields()) {
-                                      context.read<AuthCubit>().signUpWithEmail(
-                                            email: emailController.text.trim(),
-                                            password:
-                                                passwordController.text.trim(),
-                                          );
-                                    }
-                                  },
-                                ),
-
-                                const AppSizedBox(height: 20),
-
-                                /// Back to Login
-                                Center(
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      Navigator.pop(context);
-                                    },
-                                    child: RichText(
-                                      text: const TextSpan(
-                                        text: "Already have an account? ",
-                                        style: TextStyle(
-                                            color: Colors.grey, fontSize: 13),
-                                        children: [
-                                          TextSpan(
-                                            text: "Login",
-                                            style: TextStyle(
-                                              color: Colors.green,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                              ),
+                              const AppSizedBox(height: 30),
+                              AppButton(
+                                title: "Save & Continue",
+                                isLoading: isLoading,
+                                onTap: () {
+                                  if (_validateFields()) {
+                                    context.read<AuthCubit>().completeProfile(
+                                          name: nameController.text.trim(),
+                                          gender: selectedGender,
+                                          dob: selectedDate!,
+                                          userRepository: di.getIt<UserRepository>(),
+                                        );
+                                  }
+                                },
+                              ),
+                            ],
                           ),
-
-                          const AppSizedBox(height: 40),
-
-                          /// Terms
-                          const AppText(
-                            text:
-                                "By continuing, you agree to our Terms of Service and Privacy Policy",
-                            size: 12,
-                            color: Colors.grey,
-                            align: TextAlign.center,
-                          ),
-
-                          const AppSizedBox(height: 20),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
-            );
-          },
-        ));
+            ),
+          );
+        },
+      ),
+    );
   }
 }

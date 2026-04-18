@@ -293,9 +293,9 @@ class _BookingCardState extends State<_BookingCard> {
                       fit: BoxFit.cover,
                     )
                   : null,
-              color: Colors.grey.shade200,
+              color: theme.brightness == Brightness.dark ? Colors.white10 : Colors.black.withOpacity(0.05),
             ),
-            child: widget.booking.ground?.imageUrl == null ? const Icon(Icons.sports_cricket, color: Colors.grey) : null,
+            child: widget.booking.ground?.imageUrl == null ? Icon(Icons.sports_cricket, color: theme.colorScheme.onSurface.withOpacity(0.3)) : null,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -610,7 +610,7 @@ class _TicketCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.3 : 0.08),
             blurRadius: 20,
             offset: const Offset(0, 10),
           )
@@ -618,7 +618,7 @@ class _TicketCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _buildVenueImage(),
+          _buildVenueImage(context),
           _buildTicketInfo(context),
           _buildDashedDivider(context),
           _buildQrSection(context),
@@ -628,7 +628,8 @@ class _TicketCard extends StatelessWidget {
     );
   }
 
-  Widget _buildVenueImage() {
+  Widget _buildVenueImage(BuildContext context) {
+    final theme = Theme.of(context);
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       child: Stack(
@@ -638,7 +639,7 @@ class _TicketCard extends StatelessWidget {
             height: 150,
             width: double.infinity,
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(color: Colors.grey.shade200, height: 150),
+            errorBuilder: (_, __, ___) => Container(color: theme.brightness == Brightness.dark ? Colors.white10 : Colors.black.withOpacity(0.05), height: 150),
           ),
           Container(
             height: 150,
@@ -680,16 +681,16 @@ class _TicketCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _infoColumn("DATE", DateFormat('EEE, d MMM yyyy').format(ticket.date)),
-              _infoColumn("TIME", ticket.time),
+              _infoColumn(context, "DATE", DateFormat('EEE, d MMM yyyy').format(ticket.date)),
+              _infoColumn(context, "TIME", ticket.time),
             ],
           ),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _infoColumn("ORDER ID", "#${ticket.bookingId}"),
-              _infoColumn("PRICE", "₹${ticket.price.toStringAsFixed(0)}"),
+              _infoColumn(context, "ORDER ID", "#${ticket.bookingId}"),
+              _infoColumn(context, "PRICE", "₹${ticket.price.toStringAsFixed(0)}"),
             ],
           ),
         ],
@@ -697,13 +698,18 @@ class _TicketCard extends StatelessWidget {
     );
   }
 
-  Widget _infoColumn(String title, String value) {
+  Widget _infoColumn(BuildContext context, String title, String value) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AppText(
           text: title,
-          textStyle: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey.shade500, letterSpacing: 1),
+          textStyle: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onSurface.withOpacity(0.4),
+              letterSpacing: 1),
         ),
         const SizedBox(height: 4),
         AppText(
@@ -717,7 +723,7 @@ class _TicketCard extends StatelessWidget {
   Widget _buildDashedDivider(BuildContext context) {
     return Row(
       children: [
-        _halfCircle(isLeft: true),
+        _halfCircle(context, isLeft: true),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -728,37 +734,43 @@ class _TicketCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: List.generate(
                     (constraints.constrainWidth() / 10).floor(),
-                    (index) => SizedBox(width: 5, height: 1, child: DecoratedBox(decoration: BoxDecoration(color: Colors.grey.shade300))),
+                    (index) => SizedBox(width: 5, height: 1, child: DecoratedBox(decoration: BoxDecoration(color: Theme.of(context).dividerColor))),
                   ),
                 );
               },
             ),
           ),
         ),
-        _halfCircle(isLeft: false),
+        _halfCircle(context, isLeft: false),
       ],
     );
   }
 
-  Widget _halfCircle({required bool isLeft}) {
+  Widget _halfCircle(BuildContext context, {required bool isLeft}) {
+    final theme = Theme.of(context);
     return Container(
       height: 20,
       width: 10,
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FA), // Scaffold bg color
-        borderRadius: isLeft ? const BorderRadius.only(topRight: Radius.circular(10), bottomRight: Radius.circular(10)) : const BorderRadius.only(topLeft: Radius.circular(10), bottomLeft: Radius.circular(10)),
+        color: theme.scaffoldBackgroundColor, // Use theme bg color
+        borderRadius: isLeft
+            ? const BorderRadius.only(
+                topRight: Radius.circular(10), bottomRight: Radius.circular(10))
+            : const BorderRadius.only(
+                topLeft: Radius.circular(10), bottomLeft: Radius.circular(10)),
       ),
     );
   }
 
   Widget _buildQrSection(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       children: [
         const SizedBox(height: 20),
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade200),
+            border: Border.all(color: theme.dividerColor),
             borderRadius: BorderRadius.circular(12),
           ),
           child: _QrCodePainter(data: ticket.bookingId),
@@ -766,7 +778,7 @@ class _TicketCard extends StatelessWidget {
         const SizedBox(height: 12),
         AppText(
           text: "Scan at entrance",
-          textStyle: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+          textStyle: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.4)),
         ),
       ],
     );
@@ -781,7 +793,7 @@ class _QrCodePainter extends StatelessWidget {
   Widget build(BuildContext context) {
     return CustomPaint(
       size: const Size(120, 120),
-      painter: _QrPainter(seed: data.hashCode, color: Colors.black),
+      painter: _QrPainter(seed: data.hashCode, color: Theme.of(context).colorScheme.onSurface),
     );
   }
 }

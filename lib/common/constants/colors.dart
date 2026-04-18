@@ -32,6 +32,12 @@ class AppColors {
   static const Color success = Color(0xFF2E7D32);
   static const Color white = Color(0xFFFFFFFF);
   static const Color black = Color(0xFF000000);
+  static const Color ratingAmber = Color(0xFFFFC107);
+
+  // --- SEMANTIC TOKENS ---
+  static const Color slotAvailableBorder = Color(0xFF00C897);
+  static const Color slotAvailableBg = Color(0xFFE8F5E9);
+  static const Color slotBookedBg = Color(0xFFFEEBEE);
 
   static ThemeData getLightTheme() {
     return ThemeData(

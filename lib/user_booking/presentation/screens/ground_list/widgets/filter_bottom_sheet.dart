@@ -23,16 +23,6 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   late SortBy _sortBy;
   late double _minPrice;
   late double _maxPrice;
-  late List<String> _selectedAmenities;
-
-  final List<String> _allAmenities = [
-    'LED Lights',
-    'Parking',
-    'Water',
-    'Washroom',
-    'Changing Room',
-    'Canteen'
-  ];
 
   @override
   void initState() {
@@ -40,16 +30,25 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     _sortBy = widget.initialCriteria.sortBy;
     _minPrice = widget.initialCriteria.minPrice;
     _maxPrice = widget.initialCriteria.maxPrice;
-    _selectedAmenities = List.from(widget.initialCriteria.selectedAmenities);
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -4),
+          )
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -68,7 +67,6 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     _sortBy = SortBy.nearMe;
                     _minPrice = 0;
                     _maxPrice = 5000;
-                    _selectedAmenities.clear();
                   });
                 },
                 child: const AppText(
@@ -152,47 +150,6 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
           ),
           const AppSizedBox(height: 24),
 
-          /// AMENITIES
-          const AppText(
-            text: "Amenities",
-            textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          const AppSizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 4,
-            children: _allAmenities.map((amenity) {
-              final isSelected = _selectedAmenities.contains(amenity);
-              return FilterChip(
-                label: Text(amenity),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    if (selected) {
-                      _selectedAmenities.add(amenity);
-                    } else {
-                      _selectedAmenities.remove(amenity);
-                    }
-                  });
-                },
-                selectedColor: AppColors.primaryDarkGreen.withOpacity(0.2),
-                checkmarkColor: AppColors.primaryDarkGreen,
-                labelStyle: TextStyle(
-                  color: isSelected
-                      ? AppColors.primaryDarkGreen
-                      : Theme.of(context).colorScheme.onSurface,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  side: BorderSide(
-                      color: isSelected
-                          ? AppColors.primaryDarkGreen
-                          : Colors.grey.withOpacity(0.2)),
-                ),
-              );
-            }).toList(),
-          ),
           const AppSizedBox(height: 32),
 
           /// APPLY BUTTON
@@ -201,12 +158,12 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             height: 56,
             child: ElevatedButton(
               onPressed: () {
-                final criteria = FilterCriteria(
-                  sortBy: _sortBy,
-                  minPrice: _minPrice,
-                  maxPrice: _maxPrice,
-                  selectedAmenities: _selectedAmenities,
-                );
+                  final criteria = FilterCriteria(
+                    sortBy: _sortBy,
+                    minPrice: _minPrice,
+                    maxPrice: _maxPrice,
+                    selectedAmenities: widget.initialCriteria.selectedAmenities,
+                  );
                 widget.onApply(criteria);
                 Navigator.pop(context);
               },

@@ -70,7 +70,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       listener: (context, state) {
         if (state is AuthError) {
           ToastUtil.show(context, message: state.message, type: ToastType.error);
-        } else if (state is AuthPasswordResetEmailSent) {
+        } 
+        /*
+        else if (state is AuthPasswordResetEmailSent) {
           ToastUtil.show(context, message: "Verification code sent to email", type: ToastType.success);
           _nextStep();
         } else if (state is AuthPasswordResetOtpVerified) {
@@ -80,6 +82,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ToastUtil.show(context, message: "Password updated successfully!", type: ToastType.success);
           Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (route) => false);
         }
+        */
       },
       builder: (context, state) {
         final isLoading = state is AuthLoading;
@@ -134,9 +137,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             title: "Send OTP",
             isLoading: isLoading,
             onTap: () {
-              if (_validateEmail()) {
-                context.read<AuthCubit>().sendPasswordResetEmail(emailController.text.trim());
-              }
+              // if (_validateEmail()) {
+              //   context.read<AuthCubit>().sendPasswordResetEmail(emailController.text.trim());
+              // }
             },
           ),
         ],
@@ -169,9 +172,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             title: "Verify",
             isLoading: isLoading,
             onTap: () {
-              if (_validateOtp()) {
-                context.read<AuthCubit>().verifyPasswordResetOtp(emailController.text.trim(), otpController.text.trim());
-              }
+              // if (_validateOtp()) {
+              //   context.read<AuthCubit>().verifyPasswordResetOtp(emailController.text.trim(), otpController.text.trim());
+              // }
             },
           ),
         ],
@@ -215,9 +218,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             title: "Update Password",
             isLoading: isLoading,
             onTap: () {
-              if (_validatePassword()) {
-                context.read<AuthCubit>().updatePassword(passwordController.text.trim());
-              }
+              // if (_validatePassword()) {
+              //   context.read<AuthCubit>().updatePassword(passwordController.text.trim());
+              // }
             },
           ),
         ],

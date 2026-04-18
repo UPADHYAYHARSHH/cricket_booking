@@ -412,6 +412,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                                     _reviews.length);
 
                         return SlotSelectionWidgets.buildTurfImage(
+                          context,
                           _ground,
                           rating: averageRating,
                           totalReviews: totalReviews,

@@ -242,6 +242,7 @@ class _GroundCardState extends State<GroundCard> {
   }
 
   Widget _buildInfo(BuildContext context, Color onSurface) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.all(14),
       child: Column(
@@ -276,10 +277,12 @@ class _GroundCardState extends State<GroundCard> {
                     const AppSizedBox(width: 4),
                     AppText(
                       text: widget.ground.rating.toString(),
-                      textStyle: const TextStyle(
+                      textStyle: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF856404),
+                        color: theme.brightness == Brightness.dark 
+                            ? AppColors.goldenYellow 
+                            : const Color(0xFF856404),
                       ),
                     ),
                   ],

@@ -12,12 +12,13 @@ import 'package:bloc_structure/user_booking/constants/widgets/app_network_image.
 import 'package:bloc_structure/user_booking/domain/models/slot_models.dart';
 import 'package:bloc_structure/user_booking/data/models/review_model.dart';
 import 'package:bloc_structure/user_booking/presentation/widgets/review_widgets.dart';
+import 'package:bloc_structure/utils/toast_util.dart';
 
 class SlotSelectionWidgets {
   static const Color kOrange = AppColors.accentOrange;
-  static const Color kLightOrange = Color(0xFFFFF3EE);
 
-  static Widget buildHeader(BuildContext context, GroundModel? ground, {bool isSaved = false, VoidCallback? onToggleFav}) {
+  static Widget buildHeader(BuildContext context, GroundModel? ground,
+      {bool isSaved = false, VoidCallback? onToggleFav}) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -105,7 +106,9 @@ class SlotSelectionWidgets {
 
   // ── Turf Image Card ───────────────────────────────────────────────────────
 
-  static Widget buildTurfImage(GroundModel? ground, {double? rating, int? totalReviews}) {
+  static Widget buildTurfImage(BuildContext context, GroundModel? ground,
+      {double? rating, int? totalReviews}) {
+    final theme = Theme.of(context);
     return Container(
       height: 175,
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -113,7 +116,9 @@ class SlotSelectionWidgets {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.black.withOpacity(0.12),
+            color: theme.brightness == Brightness.dark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           )
@@ -125,7 +130,10 @@ class SlotSelectionWidgets {
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: AppNetworkImage(
-              imageUrl: (ground?.imageUrl != null && ground!.imageUrl.isNotEmpty) ? ground.imageUrl : "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e",
+              imageUrl: (ground?.imageUrl != null &&
+                      ground!.imageUrl.isNotEmpty)
+                  ? ground.imageUrl
+                  : "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e",
               height: 175,
               width: double.infinity,
               fit: BoxFit.cover,
@@ -152,7 +160,8 @@ class SlotSelectionWidgets {
             child: _badge(
               icon: HugeIcons.strokeRoundedStar,
               iconColor: AppColors.goldenYellow,
-              text: '${(rating ?? ground?.rating ?? 0.0).toStringAsFixed(1)}  (${(totalReviews ?? ground?.totalReviews ?? 0)} REVIEWS)',
+              text:
+                  '${(rating ?? ground?.rating ?? 0.0).toStringAsFixed(1)}  (${(totalReviews ?? ground?.totalReviews ?? 0)} REVIEWS)',
               bgColor: AppColors.black.withOpacity(0.55),
               textColor: AppColors.white,
             ),
@@ -161,9 +170,10 @@ class SlotSelectionWidgets {
             bottom: 12,
             right: 12,
             child: _badge(
-              text: 'From ₹${ground?.pricePerHour.toStringAsFixed(0) ?? '0'}/hr',
+              text:
+                  'From ₹${ground?.pricePerHour.toStringAsFixed(0) ?? '0'}/hr',
               bgColor: kOrange,
-              textColor: AppColors.white,
+              textColor: Colors.white,
             ),
           ),
         ],
@@ -206,7 +216,8 @@ class SlotSelectionWidgets {
 
   // ── Date Selector ─────────────────────────────────────────────────────────
 
-  static Widget buildDateSelector(BuildContext context, List<DateItem> dates, Function(int) onSelectDate) {
+  static Widget buildDateSelector(
+      BuildContext context, List<DateItem> dates, Function(int) onSelectDate) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -259,7 +270,10 @@ class SlotSelectionWidgets {
                       decoration: BoxDecoration(
                         color: sel ? kOrange : Colors.transparent,
                         borderRadius: BorderRadius.circular(12),
-                        border: sel ? null : Border.all(color: theme.dividerColor),
+                        border: sel
+                            ? null
+                            : Border.all(
+                                color: theme.dividerColor.withOpacity(0.5)),
                       ),
                       child: Column(
                         children: [
@@ -268,7 +282,9 @@ class SlotSelectionWidgets {
                             textStyle: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: sel ? AppColors.white.withOpacity(0.7) : colorScheme.onSurface.withOpacity(0.5),
+                              color: sel
+                                  ? Colors.white.withOpacity(0.7)
+                                  : colorScheme.onSurface.withOpacity(0.5),
                             ),
                           ),
                           const AppSizedBox(height: 4),
@@ -277,7 +293,8 @@ class SlotSelectionWidgets {
                             textStyle: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w800,
-                              color: sel ? AppColors.white : colorScheme.onSurface,
+                              color:
+                                  sel ? AppColors.white : colorScheme.onSurface,
                             ),
                           ),
                         ],
@@ -294,7 +311,8 @@ class SlotSelectionWidgets {
   }
 
   // ── Period Filter ─────────────────────────────────────────────────────────
-  static Widget buildPeriodFilter(BuildContext context, String selectedPeriod, Function(String) onSelect) {
+  static Widget buildPeriodFilter(
+      BuildContext context, String selectedPeriod, Function(String) onSelect) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
@@ -306,7 +324,9 @@ class SlotSelectionWidgets {
       child: Container(
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF121212) : const Color(0xFFF5F7FA),
+          color: isDark
+              ? theme.cardColor.withOpacity(0.5)
+              : theme.scaffoldBackgroundColor,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
@@ -325,7 +345,8 @@ class SlotSelectionWidgets {
                     boxShadow: isSel
                         ? [
                             BoxShadow(
-                              color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
+                              color:
+                                  Colors.black.withOpacity(isDark ? 0.4 : 0.05),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             )
@@ -338,7 +359,11 @@ class SlotSelectionWidgets {
                       textStyle: TextStyle(
                         fontSize: 14,
                         fontWeight: isSel ? FontWeight.w700 : FontWeight.w600,
-                        color: isSel ? (isDark ? const Color(0xFF81C784) : const Color(0xFF4A7C59)) : colorScheme.onSurface.withOpacity(0.4),
+                        color: isSel
+                            ? (isDark
+                                ? AppColors.primaryLightGreen
+                                : AppColors.primaryDarkGreen)
+                            : colorScheme.onSurface.withOpacity(0.4),
                       ),
                     ),
                   ),
@@ -372,7 +397,8 @@ class SlotSelectionWidgets {
   //   );
   // }
 
-  static Widget _legendItem(BuildContext context, {required Color color, required String label}) {
+  static Widget _legendItem(BuildContext context,
+      {required Color color, required String label}) {
     final theme = Theme.of(context);
     return Row(
       children: [
@@ -397,7 +423,8 @@ class SlotSelectionWidgets {
 
   // ── Slot Section ──────────────────────────────────────────────────────────
 
-  static Widget buildSlotSection(BuildContext context, List<TimeSlot> slots, Function(int) onToggleSlot) {
+  static Widget buildSlotSection(
+      BuildContext context, List<TimeSlot> slots, Function(int) onToggleSlot) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -419,16 +446,19 @@ class SlotSelectionWidgets {
               mainAxisSpacing: 12,
               childAspectRatio: 1.5,
             ),
-            itemBuilder: (ctx, i) => _buildSlotCard(context, slots[i], i, onToggleSlot),
+            itemBuilder: (ctx, i) =>
+                _buildSlotCard(context, slots[i], i, onToggleSlot),
           ),
         ],
       ),
     );
   }
 
-  static Widget _buildSlotCard(BuildContext context, TimeSlot slot, int index, Function(int) onToggleSlot) {
+  static Widget _buildSlotCard(BuildContext context, TimeSlot slot, int index,
+      Function(int) onToggleSlot) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     final bool isBooked = slot.status == SlotStatus.booked;
     final bool isSelected = slot.status == SlotStatus.selected;
@@ -438,42 +468,57 @@ class SlotSelectionWidgets {
     Color borderColor;
     Color timeColor = colorScheme.onSurface;
     Color subColor = colorScheme.onSurface.withOpacity(0.4);
-    Color priceColor = const Color(0xFF4A7C59);
+    Color priceColor =
+        isDark ? AppColors.primaryLightGreen : AppColors.primaryDarkGreen;
     IconData? statusIcon;
     Color? iconColor;
 
     if (isSelected) {
       borderColor = AppColors.primaryDarkGreen;
       statusIcon = Icons.radio_button_checked;
-      iconColor = const Color(0xFFFF9800);
-      priceColor = const Color(0xFFFF9800);
+      iconColor = AppColors.accentOrange;
+      priceColor = AppColors.accentOrange;
     } else if (isBooked) {
       borderColor = Colors.transparent;
-      timeColor = colorScheme.onSurface.withOpacity(0.3);
-      subColor = colorScheme.onSurface.withOpacity(0.2);
-      priceColor = colorScheme.onSurface.withOpacity(0.2);
-      statusIcon = Icons.block;
-      iconColor = colorScheme.onSurface.withOpacity(0.3);
+      timeColor = colorScheme.onSurface.withOpacity(0.4);
+      subColor = colorScheme.onSurface.withOpacity(0.3);
+      priceColor = colorScheme.onSurface.withOpacity(0.3);
+      statusIcon = null;
+      iconColor = null;
     } else if (isAdvance) {
-      borderColor = const Color(0xFFFFD600);
+      borderColor = AppColors.goldenYellow;
       statusIcon = Icons.info;
-      iconColor = const Color(0xFFFFD600);
+      iconColor = AppColors.goldenYellow;
     } else {
       // Available
-      borderColor = const Color(0xFF00C897).withOpacity(0.15);
+      borderColor =
+          AppColors.slotAvailableBorder.withOpacity(isDark ? 0.3 : 0.15);
       statusIcon = Icons.check_circle;
-      iconColor = const Color(0xFF00C897);
+      iconColor = AppColors.slotAvailableBorder;
     }
 
     return GestureDetector(
       key: ValueKey(slot.startTime),
-      onTap: () => onToggleSlot(index),
+      onTap: () {
+        if (isBooked) {
+          ToastUtil.show(
+            context,
+            message: "Oops! You missed that opportunity.",
+            type: ToastType.info,
+          );
+        } else {
+          onToggleSlot(index);
+        }
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          color: isBooked ? colorScheme.onSurface.withOpacity(0.08) : colorScheme.surface,
+          color: isBooked
+              ? (isDark ? Colors.white10 : Colors.black.withOpacity(0.04))
+              : colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isBooked ? Colors.transparent : borderColor, width: 2),
+          border: Border.all(
+              color: isBooked ? Colors.transparent : borderColor, width: 2),
           boxShadow: isSelected
               ? [
                   BoxShadow(
@@ -484,7 +529,7 @@ class SlotSelectionWidgets {
                 ]
               : [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
+                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.03),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   )
@@ -556,7 +601,12 @@ class SlotSelectionWidgets {
 
   // ── Bottom Bar ────────────────────────────────────────────────────────────
 
-  static Widget buildBottomBar(BuildContext context, List<TimeSlot> selectedSlots, DateItem activeDate, double totalPrice, VoidCallback onConfirm) {
+  static Widget buildBottomBar(
+      BuildContext context,
+      List<TimeSlot> selectedSlots,
+      DateItem activeDate,
+      double totalPrice,
+      VoidCallback onConfirm) {
     if (selectedSlots.isEmpty) return const SizedBox.shrink();
 
     final theme = Theme.of(context);
@@ -568,7 +618,8 @@ class SlotSelectionWidgets {
         color: colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.3 : 0.1),
+            color: Colors.black
+                .withOpacity(theme.brightness == Brightness.dark ? 0.3 : 0.1),
             blurRadius: 16,
             offset: const Offset(0, -4),
           )
@@ -606,7 +657,8 @@ class SlotSelectionWidgets {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               AppText(
-                text: '${selectedSlots.length} Slot • ${activeDate.month} ${activeDate.date}, ${firstSlot.startTime}',
+                text:
+                    '${selectedSlots.length} Slot • ${activeDate.month} ${activeDate.date}, ${firstSlot.startTime}',
                 textStyle: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -646,7 +698,7 @@ class SlotSelectionWidgets {
                     textStyle: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.white,
+                      color: Colors.white,
                       letterSpacing: 0.3,
                     ),
                   ),
@@ -663,7 +715,8 @@ class SlotSelectionWidgets {
 
   // ── Description Section ───────────────────────────────────────────────────
 
-  static Widget buildDescriptionSection(BuildContext context, String? description) {
+  static Widget buildDescriptionSection(
+      BuildContext context, String? description) {
     if (description == null || description.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -697,7 +750,8 @@ class SlotSelectionWidgets {
 
   // ── Amenities Section ──────────────────────────────────────────────────────
 
-  static Widget buildAmenitiesSection(BuildContext context, List<String>? amenities) {
+  static Widget buildAmenitiesSection(
+      BuildContext context, List<String>? amenities) {
     if (amenities == null || amenities.isEmpty) return const SizedBox.shrink();
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -887,12 +941,14 @@ class SlotSelectionWidgets {
                             markers: {
                               Marker(
                                 markerId: const MarkerId('ground'),
-                                position: LatLng(ground.latitude, ground.longitude),
+                                position:
+                                    LatLng(ground.latitude, ground.longitude),
                               ),
                             },
                             zoomControlsEnabled: false,
                             myLocationButtonEnabled: false,
-                            liteModeEnabled: true, // IMPORTANT for performance in lists/scrolls
+                            liteModeEnabled:
+                                true, // IMPORTANT for performance in lists/scrolls
                           ),
                         ),
 
@@ -900,36 +956,40 @@ class SlotSelectionWidgets {
                         Positioned.fill(
                           child: Center(
                             child: GestureDetector(
-                              onTap: () => _openMap(ground.latitude, ground.longitude),
+                              onTap: () =>
+                                  _openMap(ground.latitude, ground.longitude),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 8),
                                 decoration: BoxDecoration(
-                                  color: AppColors.white,
+                                  color: Theme.of(context).cardColor,
                                   borderRadius: BorderRadius.circular(20),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppColors.black.withOpacity(0.15),
+                                      color: Colors.black.withOpacity(0.15),
                                       blurRadius: 10,
                                       offset: const Offset(0, 4),
                                     )
                                   ],
                                 ),
-                                child: const Row(
+                                child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    HugeIcon(
+                                    const HugeIcon(
                                       icon: HugeIcons.strokeRoundedLocation01,
                                       size: 16,
                                       color: kOrange,
                                     ),
-                                    AppSizedBox(width: 8),
+                                    const AppSizedBox(width: 8),
                                     AppText(
                                       text: 'Open in Maps',
                                       align: TextAlign.left,
                                       textStyle: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w700,
-                                        color: AppColors.textPrimaryLight,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface,
                                       ),
                                     ),
                                   ],
@@ -951,7 +1011,8 @@ class SlotSelectionWidgets {
   }
 
   static Future<void> _openMap(double lat, double lng) async {
-    final String googleUrl = 'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
+    final String googleUrl =
+        'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
     final Uri url = Uri.parse(googleUrl);
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
@@ -960,7 +1021,8 @@ class SlotSelectionWidgets {
     }
   }
 
-  static Widget buildReviewSection(BuildContext context, List<ReviewModel> reviews, bool isLoading) {
+  static Widget buildReviewSection(
+      BuildContext context, List<ReviewModel> reviews, bool isLoading) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -1003,14 +1065,16 @@ class SlotSelectionWidgets {
             if (reviews.isNotEmpty) ...[
               Row(
                 children: [
-                   HugeIcon(
+                  const HugeIcon(
                     icon: HugeIcons.strokeRoundedStar,
                     size: 14,
                     color: AppColors.goldenYellow,
                   ),
                   const AppSizedBox(width: 4),
                   AppText(
-                    text: (reviews.fold<double>(0, (sum, r) => sum + r.rating) / reviews.length).toStringAsFixed(1),
+                    text: (reviews.fold<double>(0, (sum, r) => sum + r.rating) /
+                            reviews.length)
+                        .toStringAsFixed(1),
                     textStyle: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
@@ -1092,7 +1156,8 @@ class _ExpandableDescriptionState extends State<_ExpandableDescription> {
               Text(
                 widget.description,
                 maxLines: _isExpanded ? null : 3,
-                overflow: _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                overflow:
+                    _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 14,
                   height: 1.5,

@@ -4,6 +4,8 @@ import 'package:bloc_structure/user_booking/presentation/blocs/auth/auth_cubit.d
 import 'package:bloc_structure/user_booking/presentation/blocs/profile/profile_cubit.dart';
 import 'package:bloc_structure/user_booking/presentation/blocs/slot_selection/slot_selection_cubit.dart';
 import 'package:bloc_structure/user_booking/presentation/blocs/splash/splash_cubit.dart';
+import 'package:bloc_structure/user_booking/presentation/blocs/connectivity/connectivity_cubit.dart';
+import 'package:bloc_structure/user_booking/presentation/screens/no_internet/no_internet_screen.dart';
 import 'package:bloc_structure/user_booking/presentation/screens/booking_confirmation/booking_confirmation_screen.dart';
 import 'package:bloc_structure/user_booking/presentation/screens/login/login_screen.dart';
 import 'package:bloc_structure/user_booking/presentation/screens/login/forgot_password_screen.dart';
@@ -19,6 +21,7 @@ import 'package:bloc_structure/user_booking/presentation/screens/split_payment/s
 import 'package:bloc_structure/user_booking/presentation/screens/split_payment/split_share_screen.dart';
 import 'package:bloc_structure/user_booking/presentation/screens/split_payment/split_overview_screen.dart';
 import 'package:bloc_structure/user_booking/presentation/blocs/split_payment/split_cubit.dart';
+import 'package:bloc_structure/user_booking/presentation/screens/category_grounds/category_grounds_screen.dart';
 import 'package:bloc_structure/user_booking/constants/route_constants.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -113,6 +116,9 @@ void main() async {
         BlocProvider<SplitPaymentCubit>(
           create: (_) => di.getIt<SplitPaymentCubit>(),
         ),
+        BlocProvider<ConnectivityCubit>(
+          create: (_) => di.getIt<ConnectivityCubit>(),
+        ),
       ],
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, state) {
@@ -122,6 +128,16 @@ void main() async {
             theme: AppColors.getLightTheme(),
             darkTheme: AppColors.getDarkTheme(),
             initialRoute: "/",
+            builder: (context, child) {
+              return BlocBuilder<ConnectivityCubit, ConnectivityState>(
+                builder: (context, connectivityState) {
+                  if (connectivityState is ConnectivityDisconnected) {
+                    return const NoInternetScreen();
+                  }
+                  return child!;
+                },
+              );
+            },
             routes: {
               "/": (context) => const SplashScreen(),
               "/login": (context) => const LoginScreen(),
@@ -141,6 +157,7 @@ void main() async {
               AppRoutes.splitShare: (context) => const SplitShareScreen(),
               AppRoutes.splitOverview: (context) => const SplitOverviewScreen(),
               AppRoutes.forgotPassword: (context) => const ForgotPasswordScreen(),
+              AppRoutes.categoryGrounds: (context) => const CategoryGroundsScreen(),
             },
           );
         },

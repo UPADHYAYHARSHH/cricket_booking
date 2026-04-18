@@ -16,4 +16,5 @@ class AppRoutes {
   static const splitHistory = "/splitHistory";
   static const notification = "/notification";
   static const forgotPassword = "/forgotPassword";
+  static const categoryGrounds = "/categoryGrounds";
 }

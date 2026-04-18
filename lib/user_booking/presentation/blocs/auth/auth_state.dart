@@ -5,20 +5,22 @@ class AuthInitial extends AuthState {}
 class AuthLoading extends AuthState {}
 
 class AuthOtpRequired extends AuthState {
-  final String email;
-  AuthOtpRequired(this.email);
+  final String phone;
+  AuthOtpRequired(this.phone);
 }
+
+class AuthProfileIncomplete extends AuthState {}
 
 class AuthSuccess extends AuthState {}
 
-class AuthPasswordResetEmailSent extends AuthState {
-  final String email;
-  AuthPasswordResetEmailSent(this.email);
-}
+// class AuthPasswordResetEmailSent extends AuthState {
+//   final String email;
+//   AuthPasswordResetEmailSent(this.email);
+// }
 
-class AuthPasswordResetOtpVerified extends AuthState {}
+// class AuthPasswordResetOtpVerified extends AuthState {}
 
-class AuthPasswordUpdated extends AuthState {}
+// class AuthPasswordUpdated extends AuthState {}
 
 class AuthError extends AuthState {
   final String message;

@@ -14,6 +14,7 @@ class GroundModel {
   final String description;
   final List<String> amenities;
   final List<String> images;
+  final List<String> categories;
 
   GroundModel({
     required this.id,
@@ -31,6 +32,7 @@ class GroundModel {
     this.description = '',
     this.amenities = const [],
     this.images = const [],
+    this.categories = const [],
   });
 
   factory GroundModel.fromJson(Map<String, dynamic> json) {
@@ -50,6 +52,7 @@ class GroundModel {
       description: json['description'] ?? '',
       amenities: (json['amenities'] as List?)?.map((e) => e.toString()).toList() ?? [],
       images: (json['images'] as List?)?.map((e) => e.toString()).toList() ?? [],
+      categories: (json['categories'] as List?)?.map((e) => e.toString()).toList() ?? [],
     );
   }
 }

@@ -21,6 +21,7 @@ class GroundRepositoryImpl implements GroundRepository {
           total_reviews,
           description,
           amenities,
+          categories,
           ground_images(image_url)
         ''');
 
@@ -39,6 +40,7 @@ class GroundRepositoryImpl implements GroundRepository {
         totalReviews: e['total_reviews'] ?? 0,
         description: e['description'] ?? '',
         amenities: (e['amenities'] as List?)?.map((a) => a.toString()).toList() ?? [],
+        categories: (e['categories'] as List?)?.map((c) => c.toString()).toList() ?? [],
         imageUrl: e['ground_images'] != null && e['ground_images'].isNotEmpty ? e['ground_images'][0]['image_url'] : '',
       );
     }).toList();

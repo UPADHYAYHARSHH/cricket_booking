@@ -1,4 +1,6 @@
 import 'package:bloc_structure/user_booking/data/repositories/auth_repositories_impl.dart';
+import 'package:bloc_structure/user_booking/presentation/blocs/connectivity/connectivity_cubit.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:bloc_structure/user_booking/data/services/analytics_service.dart';
 import 'package:bloc_structure/user_booking/data/repositories/payment_repository.dart';
 import 'package:bloc_structure/user_booking/data/repositories/booking_repository.dart';
@@ -38,6 +40,9 @@ Future<void> init() async {
 
   /// Register Supabase
   getIt.registerLazySingleton<SupabaseClient>(() => supabase);
+
+  /// Register Connectivity
+  getIt.registerLazySingleton<Connectivity>(() => Connectivity());
 
   /// Repository (REGISTER FIRST)
   getIt.registerLazySingleton<AuthRepository>(
@@ -111,6 +116,10 @@ Future<void> init() async {
 
   getIt.registerFactory(
     () => SplitHistoryCubit(getIt<SplitPaymentRepository>()),
+  );
+
+  getIt.registerLazySingleton<ConnectivityCubit>(
+    () => ConnectivityCubit(getIt<Connectivity>()),
   );
 
   /// Services

@@ -16,10 +16,6 @@ import 'package:bloc_structure/user_booking/di/get_it/get_it.dart';
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
-  static const Color _primaryGreen = Color(0xFF2D6A2D);
-  static const Color _orange = Color(0xFFFF6B1A);
-  static const Color _darkCard = Color(0xFF1A1F2E);
-
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -53,7 +49,7 @@ class ProfileScreen extends StatelessWidget {
                       const SizedBox(height: 28),
                       _buildMenuList(context),
                       const SizedBox(height: 24),
-                      _buildProBanner(),
+                      _buildProBanner(context),
                       const SizedBox(height: 16),
                     ],
                   ),
@@ -78,7 +74,7 @@ class ProfileScreen extends StatelessWidget {
             border: Border.all(color: Colors.white, width: 3),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.12),
+                color: Colors.black.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.08),
                 blurRadius: 14,
                 offset: const Offset(0, 4),
               ),
@@ -185,8 +181,8 @@ class ProfileScreen extends StatelessWidget {
       _MenuItem(
         icon: Icons.person_outline_rounded,
         label: "Edit Profile",
-        iconBg: const Color(0xFFE8F5E9).withValues(alpha: isDark ? 0.1 : 1),
-        iconColor: isDark ? AppColors.primaryLightGreen : _primaryGreen,
+        iconBg: AppColors.primaryDarkGreen.withOpacity(isDark ? 0.2 : 0.1),
+        iconColor: isDark ? AppColors.primaryLightGreen : AppColors.primaryDarkGreen,
         isLogout: false,
         onTap: () async {
           await Navigator.pushNamed(context, AppRoutes.editProfileScreen);
@@ -198,8 +194,8 @@ class ProfileScreen extends StatelessWidget {
       _MenuItem(
         icon: isDark ? HugeIcons.strokeRoundedMoon : HugeIcons.strokeRoundedSun01,
         label: "Dark Mode",
-        iconBg: isDark ? const Color(0xFF37474F) : const Color(0xFFFFF9C4),
-        iconColor: isDark ? const Color.fromARGB(255, 0, 0, 0) : AppColors.accentOrange,
+        iconBg: isDark ? Colors.blueGrey.withOpacity(0.2) : Colors.amber.withOpacity(0.1),
+        iconColor: isDark ? Colors.lightBlueAccent : AppColors.accentOrange,
         isLogout: false,
         trailing: Switch(
           value: isDark,
@@ -218,15 +214,15 @@ class ProfileScreen extends StatelessWidget {
       _MenuItem(
         icon: Icons.help_outline_rounded,
         label: "Help & Support",
-        iconBg: const Color(0xFFF3E5F5).withValues(alpha: isDark ? 0.1 : 1),
-        iconColor: const Color(0xFF7B1FA2),
+        iconBg: Colors.purple.withOpacity(isDark ? 0.2 : 0.1),
+        iconColor: isDark ? Colors.purpleAccent : const Color(0xFF7B1FA2),
         isLogout: false,
       ),
       _MenuItem(
         icon: Icons.logout_rounded,
         label: "Logout",
-        iconBg: const Color(0xFFFFEBEE).withValues(alpha: isDark ? 0.1 : 1),
-        iconColor: const Color(0xFFD32F2F),
+        iconBg: Colors.red.withOpacity(isDark ? 0.2 : 0.1),
+        iconColor: isDark ? Colors.redAccent : const Color(0xFFD32F2F),
         isLogout: true,
         onTap: () {
           context.read<AuthCubit>().logout();
@@ -263,13 +259,27 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProBanner() {
+  Widget _buildProBanner(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       decoration: BoxDecoration(
-        color: _darkCard,
+        gradient: LinearGradient(
+          colors: isDark 
+            ? [AppColors.surfaceDark, AppColors.bgDark] 
+            : [AppColors.primaryDarkGreen, AppColors.primaryLightGreen],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -298,16 +308,16 @@ class ProfileScreen extends StatelessWidget {
             child: ElevatedButton(
               onPressed: () {},
               style: ElevatedButton.styleFrom(
-                backgroundColor: _orange,
+                backgroundColor: isDark ? AppColors.accentOrange : Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text(
+              child: Text(
                 "Go Pro Membership",
                 style: TextStyle(
-                  color: Colors.white,
+                  color: isDark ? Colors.white : AppColors.primaryDarkGreen,
                   fontWeight: FontWeight.w700,
                   fontSize: 14,
                 ),
