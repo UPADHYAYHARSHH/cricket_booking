@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:bloc_structure/common/constants/colors.dart';
+
 import 'package:bloc_structure/user_booking/constants/widgets/app_text.dart';
 import 'package:bloc_structure/user_booking/constants/widgets/app_sizedBox.dart';
 import 'package:bloc_structure/user_booking/presentation/blocs/ground/ground_cubit.dart';
@@ -60,12 +60,12 @@ class CategoryGroundsScreen extends StatelessWidget {
                     HugeIcon(
                       icon: HugeIcons.strokeRoundedSearch01,
                       size: 64,
-                      color: theme.colorScheme.onSurface.withOpacity(0.1),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
                     ),
                     const AppSizedBox(height: 16),
                     AppText(
                       text: "No $category grounds found in this city",
-                      textStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                      textStyle: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
                     ),
                   ],
                 ),

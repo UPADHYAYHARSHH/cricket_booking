@@ -5,7 +5,7 @@ import 'package:bloc_structure/utils/toast_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../constants/route_constants.dart';
+
 import '../../../constants/widgets/app_button.dart';
 import '../../../constants/widgets/app_sizedBox.dart';
 import '../../../constants/widgets/app_text.dart';
@@ -27,42 +27,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   String? errorMessage;
   int _currentStep = 0; // 0: Email, 1: OTP, 2: New Password
 
-  void _nextStep() {
-    setState(() => _currentStep++);
-    _pageController.nextPage(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
-  }
 
-  bool _validateEmail() {
-    setState(() => errorMessage = null);
-    final email = emailController.text.trim();
-    final emailRegex = RegExp(r"^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+\.[a-z]+$");
-    if (email.isEmpty || !emailRegex.hasMatch(email)) {
-      setState(() => errorMessage = "Please enter a valid email address");
-      return false;
-    }
-    return true;
-  }
-
-  bool _validateOtp() {
-    setState(() => errorMessage = null);
-    if (otpController.text.trim().isEmpty) {
-      setState(() => errorMessage = "OTP is required");
-      return false;
-    }
-    return true;
-  }
-
-  bool _validatePassword() {
-    setState(() => errorMessage = null);
-    if (passwordController.text.trim().length < 6) {
-      setState(() => errorMessage = "Password must be at least 6 characters");
-      return false;
-    }
-    return true;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -246,7 +211,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(18),
-                  boxShadow: [BoxShadow(blurRadius: 10, color: Colors.black.withOpacity(.05))],
+                  boxShadow: [BoxShadow(blurRadius: 10, color: Colors.black.withValues(alpha: 0.05))],
                 ),
                 child: child,
               ),

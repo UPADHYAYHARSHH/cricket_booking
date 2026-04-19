@@ -1,13 +1,7 @@
-import 'package:bloc_structure/user_booking/data/models/ground_model.dart';
-import 'package:bloc_structure/user_booking/domain/models/booking_arguments.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'dart:math';
-import 'package:shimmer/shimmer.dart';
-import 'package:bloc_structure/utils/toast_util.dart';
 import 'package:bloc_structure/utils/ticket_util.dart';
 
 import '../../../../common/constants/colors.dart';
@@ -121,7 +115,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
           child: AppText(
             text: label,
             textStyle: AppTextTheme.black13.copyWith(
-              color: isSelected ? AppColors.white : theme.colorScheme.onSurface.withOpacity(0.6),
+              color: isSelected ? AppColors.white : theme.colorScheme.onSurface.withValues(alpha: 0.6),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -164,7 +158,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
@@ -173,7 +167,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                     child: Icon(
                       Icons.calendar_today_outlined,
                       size: 64,
-                      color: AppColors.primaryDarkGreen.withOpacity(0.3),
+                      color: AppColors.primaryDarkGreen.withValues(alpha: 0.3),
                     ),
                   ),
                   const AppSizedBox(height: 24),
@@ -181,14 +175,14 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                     text: "No bookings yet",
                     textStyle: AppTextTheme.black18.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.onSurface.withOpacity(0.8),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
                     ),
                   ),
                   const AppSizedBox(height: 8),
                   AppText(
                     text: "Your upcoming matches will appear here",
                     textStyle: AppTextTheme.grey13.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.5),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
                 ],
@@ -258,7 +252,7 @@ class _BookingCardState extends State<_BookingCard> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.15 : 0.05),
+            color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -293,9 +287,9 @@ class _BookingCardState extends State<_BookingCard> {
                       fit: BoxFit.cover,
                     )
                   : null,
-              color: theme.brightness == Brightness.dark ? Colors.white10 : Colors.black.withOpacity(0.05),
+              color: theme.brightness == Brightness.dark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
             ),
-            child: widget.booking.ground?.imageUrl == null ? Icon(Icons.sports_cricket, color: theme.colorScheme.onSurface.withOpacity(0.3)) : null,
+            child: widget.booking.ground?.imageUrl == null ? Icon(Icons.sports_cricket, color: theme.colorScheme.onSurface.withValues(alpha: 0.3)) : null,
           ),
           const SizedBox(width: 12),
           Expanded(

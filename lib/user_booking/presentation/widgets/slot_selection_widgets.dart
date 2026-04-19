@@ -13,6 +13,7 @@ import 'package:bloc_structure/user_booking/domain/models/slot_models.dart';
 import 'package:bloc_structure/user_booking/data/models/review_model.dart';
 import 'package:bloc_structure/user_booking/presentation/widgets/review_widgets.dart';
 import 'package:bloc_structure/utils/toast_util.dart';
+import 'package:bloc_structure/user_booking/constants/widgets/app_button.dart';
 
 class SlotSelectionWidgets {
   static const Color kOrange = AppColors.accentOrange;
@@ -59,7 +60,7 @@ class SlotSelectionWidgets {
                     HugeIcon(
                       icon: HugeIcons.strokeRoundedLocation01,
                       size: 12,
-                      color: colorScheme.onSurface.withOpacity(0.6),
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                     const AppSizedBox(width: 4),
                     Flexible(
@@ -68,7 +69,7 @@ class SlotSelectionWidgets {
                         align: TextAlign.left,
                         textStyle: TextStyle(
                           fontSize: 12,
-                          color: colorScheme.onSurface.withOpacity(0.6),
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                     ),
@@ -117,8 +118,8 @@ class SlotSelectionWidgets {
         boxShadow: [
           BoxShadow(
             color: theme.brightness == Brightness.dark
-                ? Colors.black.withOpacity(0.3)
-                : Colors.black.withOpacity(0.08),
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.black.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           )
@@ -148,7 +149,7 @@ class SlotSelectionWidgets {
                 end: Alignment.bottomCenter,
                 colors: [
                   Colors.transparent,
-                  Colors.black.withOpacity(0.4),
+                  Colors.black.withValues(alpha: 0.4),
                 ],
               ),
             ),
@@ -162,7 +163,7 @@ class SlotSelectionWidgets {
               iconColor: AppColors.goldenYellow,
               text:
                   '${(rating ?? ground?.rating ?? 0.0).toStringAsFixed(1)}  (${(totalReviews ?? ground?.totalReviews ?? 0)} REVIEWS)',
-              bgColor: AppColors.black.withOpacity(0.55),
+              bgColor: AppColors.black.withValues(alpha: 0.55),
               textColor: AppColors.white,
             ),
           ),
@@ -264,16 +265,16 @@ class SlotSelectionWidgets {
                   child: GestureDetector(
                     onTap: () => onSelectDate(i),
                     child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
+                      duration: const Duration(milliseconds: 150),
                       width: 56,
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       decoration: BoxDecoration(
-                        color: sel ? kOrange : Colors.transparent,
+                        color: sel ? kOrange : kOrange.withValues(alpha: 0),
                         borderRadius: BorderRadius.circular(12),
                         border: sel
                             ? null
                             : Border.all(
-                                color: theme.dividerColor.withOpacity(0.5)),
+                                color: theme.dividerColor.withValues(alpha: 0.5)),
                       ),
                       child: Column(
                         children: [
@@ -283,8 +284,8 @@ class SlotSelectionWidgets {
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                               color: sel
-                                  ? Colors.white.withOpacity(0.7)
-                                  : colorScheme.onSurface.withOpacity(0.5),
+                                  ? Colors.white.withValues(alpha: 0.7)
+                                  : colorScheme.onSurface.withValues(alpha: 0.5),
                             ),
                           ),
                           const AppSizedBox(height: 4),
@@ -325,7 +326,7 @@ class SlotSelectionWidgets {
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
           color: isDark
-              ? theme.cardColor.withOpacity(0.5)
+              ? theme.cardColor.withValues(alpha: 0.5)
               : theme.scaffoldBackgroundColor,
           borderRadius: BorderRadius.circular(20),
         ),
@@ -337,16 +338,18 @@ class SlotSelectionWidgets {
               child: GestureDetector(
                 onTap: () => onSelect(p),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
+                  duration: const Duration(milliseconds: 150),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   decoration: BoxDecoration(
-                    color: isSel ? colorScheme.surface : Colors.transparent,
+                    color: isSel
+                        ? colorScheme.surface
+                        : colorScheme.surface.withValues(alpha: 0),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: isSel
                         ? [
                             BoxShadow(
                               color:
-                                  Colors.black.withOpacity(isDark ? 0.4 : 0.05),
+                                  Colors.black.withValues(alpha: isDark ? 0.4 : 0.05),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             )
@@ -363,7 +366,7 @@ class SlotSelectionWidgets {
                             ? (isDark
                                 ? AppColors.primaryLightGreen
                                 : AppColors.primaryDarkGreen)
-                            : colorScheme.onSurface.withOpacity(0.4),
+                            : colorScheme.onSurface.withValues(alpha: 0.4),
                       ),
                     ),
                   ),
@@ -376,50 +379,6 @@ class SlotSelectionWidgets {
     );
   }
 
-  // ── Legend ────────────────────────────────────────────────────────────────
-
-  // static Widget buildLegend(BuildContext context) {
-  //   final theme = Theme.of(context);
-  //   final colorScheme = theme.colorScheme;
-
-  //   return Container(
-  //     color: colorScheme.surface,
-  //     padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-  //     child: Row(
-  //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //       children: [
-  //         _legendItem(context, color: const Color(0xFF00C897), label: 'AVAILABLE'),
-  //         _legendItem(context, color: const Color(0xFFFF5252), label: 'BOOKED'),
-  //         _legendItem(context, color: const Color(0xFFFFD600), label: 'ADVANCE'),
-  //         _legendItem(context, color: const Color(0xFFFF9800), label: 'SELECTED'),
-  //       ],
-  //     ),
-  //   );
-  // }
-
-  static Widget _legendItem(BuildContext context,
-      {required Color color, required String label}) {
-    final theme = Theme.of(context);
-    return Row(
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const AppSizedBox(width: 6),
-        AppText(
-          text: label,
-          textStyle: TextStyle(
-            fontSize: 9,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.5,
-            color: theme.colorScheme.onSurface.withOpacity(0.5),
-          ),
-        ),
-      ],
-    );
-  }
 
   // ── Slot Section ──────────────────────────────────────────────────────────
 
@@ -467,7 +426,7 @@ class SlotSelectionWidgets {
 
     Color borderColor;
     Color timeColor = colorScheme.onSurface;
-    Color subColor = colorScheme.onSurface.withOpacity(0.4);
+    Color subColor = colorScheme.onSurface.withValues(alpha: 0.4);
     Color priceColor =
         isDark ? AppColors.primaryLightGreen : AppColors.primaryDarkGreen;
     IconData? statusIcon;
@@ -480,9 +439,9 @@ class SlotSelectionWidgets {
       priceColor = AppColors.accentOrange;
     } else if (isBooked) {
       borderColor = Colors.transparent;
-      timeColor = colorScheme.onSurface.withOpacity(0.4);
-      subColor = colorScheme.onSurface.withOpacity(0.3);
-      priceColor = colorScheme.onSurface.withOpacity(0.3);
+      timeColor = colorScheme.onSurface.withValues(alpha: 0.4);
+      subColor = colorScheme.onSurface.withValues(alpha: 0.3);
+      priceColor = colorScheme.onSurface.withValues(alpha: 0.3);
       statusIcon = null;
       iconColor = null;
     } else if (isAdvance) {
@@ -514,7 +473,7 @@ class SlotSelectionWidgets {
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
           color: isBooked
-              ? (isDark ? Colors.white10 : Colors.black.withOpacity(0.04))
+              ? (isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.04))
               : colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
@@ -522,7 +481,7 @@ class SlotSelectionWidgets {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.primaryDarkGreen.withOpacity(0.25),
+                    color: AppColors.primaryDarkGreen.withValues(alpha: 0.25),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   )
@@ -687,7 +646,7 @@ class SlotSelectionWidgets {
                   borderRadius: BorderRadius.circular(14),
                 ),
                 elevation: 2,
-                shadowColor: kOrange.withOpacity(0.4),
+                shadowColor: kOrange.withValues(alpha: 0.4),
               ),
               onPressed: onConfirm,
               child: const Row(
@@ -882,7 +841,7 @@ class SlotSelectionWidgets {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: kOrange.withOpacity(0.1),
+                          color: kOrange.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: const HugeIcon(
@@ -921,7 +880,7 @@ class SlotSelectionWidgets {
                       HugeIcon(
                         icon: HugeIcons.strokeRoundedArrowRight01,
                         size: 18,
-                        color: colorScheme.onSurface.withOpacity(0.4),
+                        color: colorScheme.onSurface.withValues(alpha: 0.4),
                       ),
                     ],
                   ),
@@ -966,7 +925,7 @@ class SlotSelectionWidgets {
                                   borderRadius: BorderRadius.circular(20),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.15),
+                                      color: Colors.black.withValues(alpha: 0.15),
                                       blurRadius: 10,
                                       offset: const Offset(0, 4),
                                     )
@@ -1094,10 +1053,274 @@ class SlotSelectionWidgets {
               ),
               const AppSizedBox(height: 16),
             ],
-            ReviewList(reviews: reviews),
+            ReviewList(reviews: reviews.take(3).toList()),
           ],
         ],
       ),
+    );
+  }
+
+  static Future<void> showPriceBreakdown({
+    required BuildContext context,
+    required GroundModel? ground,
+    required List<TimeSlot> selectedSlots,
+    required DateItem activeDate,
+    required double totalPrice,
+    required Function(double, int) onConfirm,
+    int availablePoints = 0,
+    bool useLoyaltyPoints = false,
+    Function(bool)? onTogglePoints,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    const double platformFee = 25.0;
+
+    // Loyalty Points Logic
+    double pointsDiscount = 0.0;
+    bool canRedeem = availablePoints >= 50;
+    
+    if (useLoyaltyPoints && canRedeem) {
+      // Max 50% of base price
+      double maxDiscount = totalPrice * 0.5;
+      pointsDiscount = availablePoints > maxDiscount ? maxDiscount : availablePoints.toDouble();
+    }
+
+
+
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          // Re-calculate based on current modal state
+          double currentDiscount = 0.0;
+          if (useLoyaltyPoints && canRedeem) {
+            double maxDiscount = totalPrice * 0.5;
+            currentDiscount = availablePoints > maxDiscount ? maxDiscount : availablePoints.toDouble();
+          }
+          final double currentGrandTotal = (totalPrice - currentDiscount) + platformFee;
+
+          return Container(
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).padding.bottom + 20,
+              left: 20,
+              right: 20,
+              top: 12,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: colorScheme.onSurface.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const AppSizedBox(height: 24),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLightGreen.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const HugeIcon(
+                        icon: HugeIcons.strokeRoundedMessageQuestion,
+                        size: 24,
+                        color: AppColors.primaryDarkGreen,
+                      ),
+                    ),
+                    const AppSizedBox(width: 12),
+                    const AppText(
+                      text: "Booking Summary",
+                      size: 20,
+                      weight: FontWeight.w700,
+                    ),
+                  ],
+                ),
+                const AppSizedBox(height: 24),
+
+                // Ground & Details
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white.withValues(alpha: 0.05) : AppColors.bgLight,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    children: [
+                      _summaryRow(
+                        context,
+                        label: "Turf",
+                        value: ground?.name ?? "Turf",
+                        isBold: true,
+                      ),
+                      const AppSizedBox(height: 12),
+                      _summaryRow(
+                        context,
+                        label: "Date",
+                        value: "${activeDate.month} ${activeDate.date}, ${DateFormat('yyyy').format(DateTime.now())}",
+                      ),
+                      const AppSizedBox(height: 12),
+                      _summaryRow(
+                        context,
+                        label: "Slots",
+                        value: "${selectedSlots.length} Slots Selection",
+                      ),
+                    ],
+                  ),
+                ),
+                const AppSizedBox(height: 20),
+
+                // Loyalty Points Section
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppColors.primaryDarkGreen.withValues(alpha: 0.2)),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.stars, color: AppColors.goldenYellow, size: 24),
+                      const AppSizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            AppText(
+                              text: "Loyalty Points",
+                              size: 14,
+                              weight: FontWeight.w700,
+                              color: colorScheme.onSurface,
+                            ),
+                            AppText(
+                              text: canRedeem 
+                                ? "Use $availablePoints points for ₹${(availablePoints > (totalPrice * 0.5) ? (totalPrice * 0.5) : availablePoints).toStringAsFixed(0)} discount"
+                                : "Min. 50 points required to redeem",
+                              size: 11,
+                              color: Colors.grey,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: useLoyaltyPoints,
+                        activeThumbColor: AppColors.primaryDarkGreen,
+                        onChanged: canRedeem ? (val) {
+                          setModalState(() {
+                            useLoyaltyPoints = val;
+                          });
+                          if (onTogglePoints != null) onTogglePoints(val);
+                        } : null,
+                      ),
+                    ],
+                  ),
+                ),
+                const AppSizedBox(height: 24),
+
+                // Price Breakdown
+                const AppText(
+                  text: "Price Breakdown",
+                  size: 14,
+                  weight: FontWeight.w700,
+                  color: Colors.grey,
+                ),
+                const AppSizedBox(height: 16),
+                _priceRow(context, label: "Base Amount (${selectedSlots.length} slots)", amount: totalPrice),
+                if (useLoyaltyPoints && currentDiscount > 0) ...[
+                  const AppSizedBox(height: 12),
+                  _priceRow(context, label: "Loyalty Discount", amount: -currentDiscount, isPoints: true),
+                ],
+                const AppSizedBox(height: 12),
+                _priceRow(context, label: "Platform Fee", amount: platformFee),
+                const AppSizedBox(height: 12),
+                _priceRow(context, label: "Taxes & Charges", amount: 0.0, isFree: true),
+                
+                const AppSizedBox(height: 16),
+                const Divider(),
+                const AppSizedBox(height: 16),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const AppText(
+                      text: "Total Amount",
+                      size: 18,
+                      weight: FontWeight.w700,
+                    ),
+                    AppText(
+                      text: "₹${currentGrandTotal.toStringAsFixed(0)}",
+                      size: 22,
+                      weight: FontWeight.w900,
+                      color: AppColors.accentOrange,
+                    ),
+                  ],
+                ),
+                const AppSizedBox(height: 32),
+
+                AppButton(
+                  title: "Confirm & Proceed to Pay",
+                  onTap: () {
+                    Navigator.pop(context);
+                    // We need to pass the final confirmed amount and points back
+                    onConfirm(currentGrandTotal, useLoyaltyPoints ? currentDiscount.toInt() : 0);
+                  },
+                ),
+              ],
+            ),
+          );
+        }
+      ),
+    );
+  }
+
+  static Widget _summaryRow(BuildContext context, {required String label, required String value, bool isBold = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        AppText(
+          text: label,
+          size: 14,
+          color: Colors.grey,
+        ),
+        AppText(
+          text: value,
+          size: 14,
+          weight: isBold ? FontWeight.w700 : FontWeight.w600,
+        ),
+      ],
+    );
+  }
+
+  static Widget _priceRow(BuildContext context, {required String label, required double amount, bool isFree = false, bool isPoints = false}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        AppText(
+          text: label,
+          size: 14,
+          color: colorScheme.onSurface.withValues(alpha: 0.7),
+        ),
+        AppText(
+          text: isFree ? "FREE" : "${isPoints ? '- ' : ''}₹${amount.abs().toStringAsFixed(2)}",
+          size: 15,
+          weight: FontWeight.w700,
+          color: isFree ? Colors.green : (isPoints ? AppColors.primaryDarkGreen : colorScheme.onSurface),
+        ),
+      ],
     );
   }
 }
@@ -1127,7 +1350,7 @@ class _ExpandableDescriptionState extends State<_ExpandableDescription> {
             style: TextStyle(
               fontSize: 14,
               height: 1.5,
-              color: colorScheme.onSurface.withOpacity(0.6),
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           );
 
@@ -1145,7 +1368,7 @@ class _ExpandableDescriptionState extends State<_ExpandableDescription> {
               textStyle: TextStyle(
                 fontSize: 14,
                 height: 1.5,
-                color: colorScheme.onSurface.withOpacity(0.6),
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             );
           }
@@ -1161,7 +1384,7 @@ class _ExpandableDescriptionState extends State<_ExpandableDescription> {
                 style: TextStyle(
                   fontSize: 14,
                   height: 1.5,
-                  color: colorScheme.onSurface.withOpacity(0.6),
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
               const AppSizedBox(height: 4),

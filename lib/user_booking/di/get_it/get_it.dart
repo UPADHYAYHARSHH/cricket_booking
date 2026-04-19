@@ -16,6 +16,8 @@ import 'package:bloc_structure/user_booking/data/repositories/slot_repository_im
 import 'package:bloc_structure/user_booking/domain/repositories/slot_repository.dart';
 import 'package:bloc_structure/user_booking/data/repositories/review_repository_impl.dart';
 import 'package:bloc_structure/user_booking/domain/repositories/review_repository.dart';
+import 'package:bloc_structure/user_booking/domain/repositories/loyalty_repository.dart';
+import 'package:bloc_structure/user_booking/data/repositories/loyalty_repository_impl.dart';
 
 import 'package:bloc_structure/user_booking/domain/repositories/ground_repository.dart';
 import 'package:bloc_structure/user_booking/presentation/blocs/ground/ground_cubit.dart';
@@ -51,10 +53,16 @@ Future<void> init() async {
   getIt.registerLazySingleton<SlotRepository>(
     () => SlotRepositoryImpl(getIt<SupabaseClient>()),
   );
+  getIt.registerLazySingleton<LoyaltyRepository>(
+    () => LoyaltyRepositoryImpl(),
+  );
 
   /// Cubits (REGISTER AFTER)
   getIt.registerFactory(() => SplashCubit());
-  getIt.registerFactory(() => SlotSelectionCubit(getIt<SlotRepository>()));
+  getIt.registerFactory(() => SlotSelectionCubit(
+        getIt<SlotRepository>(),
+        getIt<LoyaltyRepository>(),
+      ));
   getIt.registerFactory(() => AuthCubit(getIt<AuthRepository>()));
 
   getIt.registerLazySingleton<UserRepository>(

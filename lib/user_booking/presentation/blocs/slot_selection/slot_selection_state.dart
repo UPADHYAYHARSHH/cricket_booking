@@ -8,6 +8,8 @@ class SlotSelectionState {
   final DateTime? selectedDate;
   final String selectedPeriod;
   final String? groundId;
+  final int availableLoyaltyPoints;
+  final bool useLoyaltyPoints;
 
   SlotSelectionState({
     required this.dates,
@@ -17,6 +19,8 @@ class SlotSelectionState {
     this.selectedDate,
     this.selectedPeriod = 'Morning',
     this.groundId,
+    this.availableLoyaltyPoints = 0,
+    this.useLoyaltyPoints = false,
   });
 
   SlotSelectionState copyWith({
@@ -27,6 +31,8 @@ class SlotSelectionState {
     DateTime? selectedDate,
     String? selectedPeriod,
     String? groundId,
+    int? availableLoyaltyPoints,
+    bool? useLoyaltyPoints,
   }) {
     return SlotSelectionState(
       dates: dates ?? this.dates,
@@ -36,6 +42,8 @@ class SlotSelectionState {
       selectedDate: selectedDate ?? this.selectedDate,
       selectedPeriod: selectedPeriod ?? this.selectedPeriod,
       groundId: groundId ?? this.groundId,
+      availableLoyaltyPoints: availableLoyaltyPoints ?? this.availableLoyaltyPoints,
+      useLoyaltyPoints: useLoyaltyPoints ?? this.useLoyaltyPoints,
     );
   }
 }

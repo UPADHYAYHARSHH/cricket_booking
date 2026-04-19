@@ -19,6 +19,7 @@ import 'package:bloc_structure/user_booking/data/services/analytics_service.dart
 import 'package:bloc_structure/user_booking/presentation/blocs/slot_selection/slot_selection_state.dart';
 import 'package:bloc_structure/user_booking/domain/repositories/review_repository.dart';
 import 'package:bloc_structure/user_booking/data/models/review_model.dart';
+import 'package:bloc_structure/user_booking/domain/repositories/loyalty_repository.dart';
 
 class SlotSelectionScreen extends StatefulWidget {
   const SlotSelectionScreen({super.key});
@@ -32,6 +33,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
   bool _isInitialized = false;
   late Razorpay _razorpay;
   final _paymentRepo = getIt<PaymentRepository>();
+  final _loyaltyRepo = getIt<LoyaltyRepository>();
   List<ReviewModel> _reviews = [];
   bool _isLoadingReviews = true;
 
@@ -235,9 +237,9 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
     }
   }
 
-  void _onConfirmBooking(
-      double totalPrice, dynamic activeDate, List<TimeSlot> selectedSlots,
-      {bool fromRetry = false}) async {
+  void _onConfirmBooking(double totalPrice, dynamic activeDate,
+      List<TimeSlot> selectedSlots,
+      {int appliedPoints = 0, bool fromRetry = false}) async {
     HapticFeedback.mediumImpact();
     debugPrint('--- USER TAPPED CONFIRM BOOKING ---');
     debugPrint('Total Price: $totalPrice');
@@ -278,6 +280,19 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
         amount: totalPrice.toInt(),
       );
       debugPrint('Step 3: Supabase Booking & Slot updates completed');
+
+      // 1.5 Handle Loyalty Points Redemption & Earning
+      if (appliedPoints > 0) {
+        debugPrint('Step 3.5: Redeeming $appliedPoints loyalty points...');
+        await _loyaltyRepo.redeemPoints(appliedPoints);
+      }
+      
+      // Earn 10 points per ₹100 spent (Rounding down)
+      final pointsEarned = (totalPrice / 10).floor();
+      if (pointsEarned > 0) {
+        debugPrint('Step 3.6: Earning $pointsEarned loyalty points...');
+        await _loyaltyRepo.earnPoints(pointsEarned);
+      }
 
       // 2. Log successful booking (Wrapped in try-catch to avoid blocking UI)
       try {
@@ -494,7 +509,23 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                 selectedSlots,
                 activeDate,
                 totalPrice,
-                () => _onConfirmBooking(totalPrice, activeDate, selectedSlots),
+                () {
+                  final cubit = context.read<SlotSelectionCubit>();
+                  SlotSelectionWidgets.showPriceBreakdown(
+                    context: context,
+                    ground: _ground,
+                    selectedSlots: selectedSlots,
+                    activeDate: activeDate,
+                    totalPrice: totalPrice,
+                    availablePoints: state.availableLoyaltyPoints,
+                    useLoyaltyPoints: state.useLoyaltyPoints,
+                    onTogglePoints: (val) => cubit.toggleLoyaltyPoints(),
+                    onConfirm: (finalAmount, appliedPoints) {
+                      _onConfirmBooking(finalAmount, activeDate, selectedSlots,
+                          appliedPoints: appliedPoints);
+                    },
+                  );
+                },
               ),
             ],
           );

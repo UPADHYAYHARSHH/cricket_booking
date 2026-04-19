@@ -4,20 +4,33 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 
+import 'package:bloc_structure/user_booking/domain/repositories/loyalty_repository.dart';
 import 'slot_selection_state.dart';
 
 class SlotSelectionCubit extends Cubit<SlotSelectionState> {
   final SlotRepository repository;
+  final LoyaltyRepository loyaltyRepository;
   StreamSubscription<List<TimeSlot>>? _slotsSubscription;
 
-  SlotSelectionCubit(this.repository)
+  SlotSelectionCubit(this.repository, this.loyaltyRepository)
       : super(
           SlotSelectionState(
             dates: _generateDates(),
             slots: [],
             isLoading: false,
           ),
-        );
+        ) {
+    loadLoyaltyPoints();
+  }
+
+  Future<void> loadLoyaltyPoints() async {
+    final points = await loyaltyRepository.fetchTotalAvailablePoints();
+    emit(state.copyWith(availableLoyaltyPoints: points));
+  }
+
+  void toggleLoyaltyPoints() {
+    emit(state.copyWith(useLoyaltyPoints: !state.useLoyaltyPoints));
+  }
 
   static List<DateItem> _generateDates() {
     final now = DateTime.now();

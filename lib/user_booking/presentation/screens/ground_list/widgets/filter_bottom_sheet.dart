@@ -2,7 +2,7 @@ import 'package:bloc_structure/common/constants/colors.dart';
 import 'package:bloc_structure/user_booking/constants/widgets/app_sizedBox.dart';
 import 'package:bloc_structure/user_booking/constants/widgets/app_text.dart';
 import 'package:bloc_structure/user_booking/domain/models/filter_criteria.dart';
-import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 
 class FilterBottomSheet extends StatefulWidget {
@@ -44,7 +44,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
             blurRadius: 10,
             offset: const Offset(0, -4),
           )
@@ -138,7 +138,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             max: 5000,
             divisions: 50,
             activeColor: AppColors.primaryDarkGreen,
-            inactiveColor: AppColors.primaryDarkGreen.withOpacity(0.1),
+            inactiveColor: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
             labels:
                 RangeLabels("₹${_minPrice.toInt()}", "₹${_maxPrice.toInt()}"),
             onChanged: (values) {

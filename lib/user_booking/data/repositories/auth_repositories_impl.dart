@@ -58,21 +58,56 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> signInWithPhone(String phone) async {
-    await supabase.auth.signInWithOtp(
-      phone: phone,
-    );
+    try {
+      print("DEBUG: [AuthRepository] Attempting signInWithPhone for: $phone");
+      
+      await supabase.auth.signInWithOtp(
+        phone: phone,
+      );
+      
+      print("DEBUG: [AuthRepository] signInWithOtp call completed successfully");
+    } on AuthException catch (e) {
+      print("DEBUG: [AuthRepository] Supabase AuthException during signInWithOtp:");
+      print("DEBUG: Message: ${e.message}");
+      print("DEBUG: Status Code: ${e.statusCode}");
+      rethrow;
+    } catch (e, st) {
+      print("DEBUG: [AuthRepository] Unexpected error during signInWithOtp:");
+      print("DEBUG: Error: $e");
+      print("DEBUG: StackTrace: $st");
+      rethrow;
+    }
   }
 
   @override
   Future<void> verifyPhoneOtp({required String phone, required String token}) async {
-    final response = await supabase.auth.verifyOTP(
-      phone: phone,
-      token: token,
-      type: OtpType.sms,
-    );
-    
-    if (response.user == null) {
-      throw const AuthException('Invalid or expired OTP');
+    try {
+      print("DEBUG: [AuthRepository] Attempting verifyPhoneOtp for: $phone with token: $token");
+      
+      final response = await supabase.auth.verifyOTP(
+        phone: phone,
+        token: token,
+        type: OtpType.sms,
+      );
+      
+      print("DEBUG: [AuthRepository] verifyOTP response user: ${response.user?.id}");
+      
+      if (response.user == null) {
+        print("DEBUG: [AuthRepository] verifyOTP failed: User is null");
+        throw const AuthException('Invalid or expired OTP');
+      }
+      
+      print("DEBUG: [AuthRepository] verifyOTP success");
+    } on AuthException catch (e) {
+      print("DEBUG: [AuthRepository] Supabase AuthException during verifyOTP:");
+      print("DEBUG: Message: ${e.message}");
+      print("DEBUG: Status Code: ${e.statusCode}");
+      rethrow;
+    } catch (e, st) {
+      print("DEBUG: [AuthRepository] Unexpected error during verifyOTP:");
+      print("DEBUG: Error: $e");
+      print("DEBUG: StackTrace: $st");
+      rethrow;
     }
   }
 

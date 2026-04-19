@@ -1,4 +1,4 @@
-import 'package:bloc_structure/user_booking/constants/text_theme.dart';
+
 import 'package:bloc_structure/user_booking/presentation/blocs/auth/auth_cubit.dart';
 import 'package:bloc_structure/user_booking/presentation/blocs/auth/auth_state.dart';
 import 'package:bloc_structure/user_booking/data/repositories/user_repository_impl.dart';
@@ -110,7 +110,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             boxShadow: [
                               BoxShadow(
                                 blurRadius: 10,
-                                color: Colors.black.withOpacity(.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                               )
                             ],
                           ),

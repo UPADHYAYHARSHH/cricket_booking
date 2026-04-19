@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:bloc_structure/common/constants/colors.dart';
 import 'package:bloc_structure/user_booking/di/get_it/get_it.dart';
@@ -66,10 +66,8 @@ class _AddReviewBottomSheetState extends State<AddReviewBottomSheet> {
     }
   }
 
-  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       padding: EdgeInsets.only(
@@ -92,7 +90,7 @@ class _AddReviewBottomSheetState extends State<AddReviewBottomSheet> {
                     width: 45,
                     height: 5,
                     decoration: BoxDecoration(
-                        color: theme.colorScheme.onSurface.withOpacity(0.2),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(10)))),
             const AppSizedBox(height: 24),
             Row(
@@ -110,7 +108,7 @@ class _AddReviewBottomSheetState extends State<AddReviewBottomSheet> {
                         textStyle: TextStyle(
                             fontSize: 14,
                             color:
-                                theme.colorScheme.onSurface.withOpacity(0.5))),
+                                theme.colorScheme.onSurface.withValues(alpha: 0.5))),
                   ],
                 ),
                 IconButton(
@@ -118,7 +116,7 @@ class _AddReviewBottomSheetState extends State<AddReviewBottomSheet> {
                   icon: const Icon(Icons.close),
                   style: IconButton.styleFrom(
                       backgroundColor:
-                          theme.colorScheme.onSurface.withOpacity(0.05)),
+                          theme.colorScheme.onSurface.withValues(alpha: 0.05)),
                 ),
               ],
             ),
@@ -137,7 +135,7 @@ class _AddReviewBottomSheetState extends State<AddReviewBottomSheet> {
                             : Icons.star_outline_rounded,
                         color: index < _rating
                             ? AppColors.goldenYellow
-                            : theme.colorScheme.onSurface.withOpacity(0.2),
+                            : theme.colorScheme.onSurface.withValues(alpha: 0.2),
                         size: 48,
                       ),
                     ),
@@ -152,11 +150,11 @@ class _AddReviewBottomSheetState extends State<AddReviewBottomSheet> {
               decoration: InputDecoration(
                 hintText: "Write your review here...",
                 hintStyle: TextStyle(
-                    color: theme.colorScheme.onSurface.withOpacity(0.4)),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
                 filled: true,
                 fillColor: theme.brightness == Brightness.dark
                     ? Colors.white10
-                    : Colors.black.withOpacity(0.04),
+                    : Colors.black.withValues(alpha: 0.04),
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide.none),

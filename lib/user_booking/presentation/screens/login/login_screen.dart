@@ -211,9 +211,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   isLoading: isLoading,
                                   onTap: () {
                                     if (_validateFields()) {
-                                      context.read<AuthCubit>().signInWithPhone(
-                                            "+91${phoneController.text.trim()}",
-                                          );
+                                      final phone = "+91${phoneController.text.trim()}";
+                                      print("DEBUG: [LoginScreen] Send OTP button pressed for: $phone");
+                                      context.read<AuthCubit>().signInWithPhone(phone);
                                     }
                                   },
                                 ),

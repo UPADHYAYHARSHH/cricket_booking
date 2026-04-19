@@ -1,33 +1,25 @@
-import 'dart:typed_data';
-import 'dart:ui' as ui;
-import 'package:flutter/foundation.dart'; // Add for kIsWeb
+// Add for kIsWeb
 import 'package:add_2_calendar/add_2_calendar.dart';
 import 'package:bloc_structure/common/constants/colors.dart';
-import 'package:bloc_structure/user_booking/constants/route_constants.dart';
 import 'package:bloc_structure/user_booking/constants/text_theme.dart';
 import 'package:bloc_structure/user_booking/constants/widgets/app_sizedBox.dart';
 import 'package:bloc_structure/user_booking/constants/widgets/app_text.dart';
 import 'package:bloc_structure/user_booking/domain/models/booking_arguments.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
-import 'package:shimmer/shimmer.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:file_picker/file_picker.dart';
-import 'package:printing/printing.dart'; // Already here, good for Web sharing
+// Already here, good for Web sharing
 import 'package:bloc_structure/utils/toast_util.dart';
-import 'package:bloc_structure/utils/file_save_helper.dart'; // Add our new helper
+// Add our new helper
 import 'package:bloc_structure/utils/ticket_util.dart'; // Add TicketUtil
 
 class BookingConfirmationScreen extends StatefulWidget {
   const BookingConfirmationScreen({super.key});
 
   @override
-  State<BookingConfirmationScreen> createState() => _BookingConfirmationScreenState();
+  State<BookingConfirmationScreen> createState() =>
+      _BookingConfirmationScreenState();
 }
 
 class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
@@ -74,7 +66,8 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
               const AppSizedBox(height: 16),
               const AppText(text: "Booking information missing"),
               TextButton(
-                onPressed: () => Navigator.pushNamedAndRemoveUntil(context, '/nav', (r) => false),
+                onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                    context, '/nav', (r) => false),
                 child: const Text("Go to Home"),
               )
             ],
@@ -90,7 +83,9 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
     final orderId = args.orderId;
     final totalPrice = args.totalPrice;
 
-    final timeRange = slots.isEmpty ? "No slots selected" : "${slots.first.startTime} - ${slots.last.endTime}";
+    final timeRange = slots.isEmpty
+        ? "No slots selected"
+        : "${slots.first.startTime} - ${slots.last.endTime}";
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -150,10 +145,11 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
 
               /// SUBTITLE
               AppText(
-                text: "Get ready to hit some sixes! Your pitch is ready for action.",
+                text:
+                    "Get ready to hit some sixes! Your pitch is ready for action.",
                 align: TextAlign.center,
                 textStyle: AppTextTheme.grey13.copyWith(
-                  color: colorScheme.onSurface.withOpacity(0.6),
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
                   height: 1.5,
                   fontSize: 14,
                 ),
@@ -177,10 +173,9 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                 onPressed: _isSaving
                     ? null
                     : () => _captureAndSave(
-                          ground.name ?? 'Box Cricket Arena',
-                          ground.address ?? 'Ahmedabad, Gujarat',
-                          ground.imageUrl ??
-                              'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e',
+                          ground.name,
+                          ground.address,
+                          ground.imageUrl,
                           date,
                           timeRange,
                           orderId,
@@ -218,13 +213,17 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
               OutlinedButton.icon(
                 onPressed: () {
                   try {
-                    DateTime eventStart = DateTime(date.year, date.month, date.day, 9, 0); // Default 9 AM
-                    DateTime eventEnd = DateTime(date.year, date.month, date.day, 10, 0); // Default 10 AM
+                    DateTime eventStart = DateTime(
+                        date.year, date.month, date.day, 9, 0); // Default 9 AM
+                    DateTime eventEnd = DateTime(date.year, date.month,
+                        date.day, 10, 0); // Default 10 AM
 
                     if (slots.isNotEmpty) {
                       // Parse start time (Expected format "HH:mm" or "H:mm")
                       final startStr = slots.first.startTime;
-                      final startParts = startStr.contains(':') ? startStr.split(':') : [startStr, "00"];
+                      final startParts = startStr.contains(':')
+                          ? startStr.split(':')
+                          : [startStr, "00"];
                       eventStart = DateTime(
                         date.year,
                         date.month,
@@ -235,7 +234,9 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
 
                       // Parse end time
                       final endStr = slots.last.endTime;
-                      final endParts = endStr.contains(':') ? endStr.split(':') : [endStr, "00"];
+                      final endParts = endStr.contains(':')
+                          ? endStr.split(':')
+                          : [endStr, "00"];
                       eventEnd = DateTime(
                         date.year,
                         date.month,
@@ -243,7 +244,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                         int.parse(endParts[0]),
                         int.parse(endParts[1]),
                       );
-                      
+
                       // Safety check: if start is after end (e.g. overnight), add a day to end
                       if (eventEnd.isBefore(eventStart)) {
                         eventEnd = eventEnd.add(const Duration(days: 1));
@@ -252,23 +253,33 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
 
                     final Event event = Event(
                       title: 'Cricket Booking @ ${ground.name}',
-                      description: 'Your turf booking is confirmed.\nOrder ID: #$orderId\nVenue: ${ground.name}\nAddress: ${ground.address ?? "Box Cricket Arena"}',
-                      location: ground.address ?? 'Box Cricket Arena',
+                      description:
+                          'Your turf booking is confirmed.\nOrder ID: #$orderId\nVenue: ${ground.name}\nAddress: ${ground.address}',
+                      location: ground.address,
                       startDate: eventStart,
                       endDate: eventEnd,
                     );
 
                     Add2Calendar.addEvent2Cal(event).then((success) {
                       if (!success) {
-                        ToastUtil.show(context, message: "Could not open calendar. Do you have a calendar app installed?", type: ToastType.error);
+                        ToastUtil.show(context,
+                            message:
+                                "Could not open calendar. Do you have a calendar app installed?",
+                            type: ToastType.error);
                       }
                     });
                   } catch (e) {
                     debugPrint("Calendar Error: $e");
-                    ToastUtil.show(context, message: "Failed to create calendar event. Please check formatting.", type: ToastType.error);
+                    ToastUtil.show(context,
+                        message:
+                            "Failed to create calendar event. Please check formatting.",
+                        type: ToastType.error);
                   }
                 },
-                icon: const HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: Colors.blueAccent, size: 20),
+                icon: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedCalendar01,
+                    color: Colors.blueAccent,
+                    size: 20),
                 label: const AppText(
                   text: "Add to Calendar",
                   textStyle: TextStyle(
@@ -331,7 +342,8 @@ class _VenueCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.3 : 0.08),
+            color: Colors.black.withValues(
+                alpha: theme.brightness == Brightness.dark ? 0.3 : 0.08),
             blurRadius: 20,
             offset: const Offset(0, 8),
           )
@@ -348,12 +360,14 @@ class _VenueCard extends StatelessWidget {
                   height: 160,
                   width: double.infinity,
                   child: Image.network(
-                    ground.imageUrl ?? "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e",
+                    ground.imageUrl ??
+                        "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e",
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => Container(
                       color: Colors.grey.shade200,
                       child: const Center(
-                        child: Icon(Icons.sports_cricket, size: 40, color: Colors.grey),
+                        child: Icon(Icons.sports_cricket,
+                            size: 40, color: Colors.grey),
                       ),
                     ),
                   ),
@@ -366,7 +380,7 @@ class _VenueCard extends StatelessWidget {
                       end: Alignment.bottomCenter,
                       colors: [
                         Colors.transparent,
-                        Colors.black.withOpacity(0.6),
+                        Colors.black.withValues(alpha: 0.6),
                       ],
                     ),
                   ),
@@ -389,14 +403,15 @@ class _VenueCard extends StatelessWidget {
                       const AppSizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(Icons.location_on, size: 14, color: Colors.white70),
+                          const Icon(Icons.location_on,
+                              size: 14, color: Colors.white70),
                           const AppSizedBox(width: 4),
                           Expanded(
                             child: AppText(
                               text: ground.address ?? "Ahmedabad, Gujarat",
                               textStyle: AppTextTheme.white10.copyWith(
                                 fontSize: 12,
-                                color: Colors.white.withOpacity(0.8),
+                                color: Colors.white.withValues(alpha: 0.8),
                               ),
                               maxLines: 1,
                             ),
@@ -466,7 +481,7 @@ class _BookingDetailsCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
       ),
       child: Column(
         children: [
@@ -525,7 +540,8 @@ class _BookingDetailsCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(BuildContext context, String label, String value, IconData icon) {
+  Widget _buildDetailRow(
+      BuildContext context, String label, String value, IconData icon) {
     final colorScheme = Theme.of(context).colorScheme;
     return Row(
       children: [
