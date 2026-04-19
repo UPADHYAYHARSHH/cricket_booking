@@ -50,6 +50,37 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
     );
   }
 
+  DateTime _parseSlotTime(DateTime baseDate, String timeStr) {
+    // Expected format: "09:00 AM" or "09:00 PM"
+    try {
+      final parts = timeStr.trim().split(' ');
+      if (parts.length < 2) {
+        // Fallback for formats without AM/PM
+        final timeParts = timeStr.split(':');
+        return DateTime(
+          baseDate.year,
+          baseDate.month,
+          baseDate.day,
+          int.parse(timeParts[0]),
+          int.parse(timeParts[1]),
+        );
+      }
+
+      final timeParts = parts[0].split(':');
+      int hour = int.parse(timeParts[0]);
+      int minute = int.parse(timeParts[1]);
+      final amPm = parts[1].toUpperCase();
+
+      if (amPm == 'PM' && hour < 12) hour += 12;
+      if (amPm == 'AM' && hour == 12) hour = 0;
+
+      return DateTime(baseDate.year, baseDate.month, baseDate.day, hour, minute);
+    } catch (e) {
+      debugPrint("Error parsing slot time '$timeStr': $e");
+      return baseDate;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -219,31 +250,8 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                         date.day, 10, 0); // Default 10 AM
 
                     if (slots.isNotEmpty) {
-                      // Parse start time (Expected format "HH:mm" or "H:mm")
-                      final startStr = slots.first.startTime;
-                      final startParts = startStr.contains(':')
-                          ? startStr.split(':')
-                          : [startStr, "00"];
-                      eventStart = DateTime(
-                        date.year,
-                        date.month,
-                        date.day,
-                        int.parse(startParts[0]),
-                        int.parse(startParts[1]),
-                      );
-
-                      // Parse end time
-                      final endStr = slots.last.endTime;
-                      final endParts = endStr.contains(':')
-                          ? endStr.split(':')
-                          : [endStr, "00"];
-                      eventEnd = DateTime(
-                        date.year,
-                        date.month,
-                        date.day,
-                        int.parse(endParts[0]),
-                        int.parse(endParts[1]),
-                      );
+                      eventStart = _parseSlotTime(date, slots.first.startTime);
+                      eventEnd = _parseSlotTime(date, slots.last.endTime);
 
                       // Safety check: if start is after end (e.g. overnight), add a day to end
                       if (eventEnd.isBefore(eventStart)) {
