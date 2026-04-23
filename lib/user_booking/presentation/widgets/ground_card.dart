@@ -42,24 +42,33 @@ class _GroundCardState extends State<GroundCard> {
     final theme = Theme.of(context);
     final onSurface = theme.colorScheme.onSurface;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            blurRadius: 10,
-            color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.2 : 0.06),
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildImageSlider(context),
-          _buildInfo(context, onSurface),
-        ],
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          AppRoutes.slotSelection,
+          arguments: widget.ground,
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              blurRadius: 10,
+              color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.2 : 0.06),
+              offset: const Offset(0, 4),
+            )
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildImageSlider(context),
+            _buildInfo(context, onSurface),
+          ],
+        ),
       ),
     );
   }
@@ -336,33 +345,6 @@ class _GroundCardState extends State<GroundCard> {
                     ),
                   ),
                 ],
-              ),
-
-              // Book Now Button
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pushNamed(
-                    context,
-                    AppRoutes.slotSelection,
-                    arguments: widget.ground,
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryDarkGreen,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                ),
-                child: const Text(
-                  "Book Now",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
               ),
             ],
           ),

@@ -1,5 +1,6 @@
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:location/location.dart' as loc;
 
 class UserLocation {
   final String city;
@@ -36,7 +37,12 @@ Future<UserLocation> getCurrentLocation() async {
   // 4. Check if device location services (GPS) are enabled.
   serviceEnabled = await Geolocator.isLocationServiceEnabled();
   if (!serviceEnabled) {
-    return Future.error('SERVICE_DISABLED');
+    // Attempt to request service natively
+    final location = loc.Location();
+    serviceEnabled = await location.requestService();
+    if (!serviceEnabled) {
+      return Future.error('SERVICE_DISABLED');
+    }
   }
 
   // 5. Fetch device's absolute coordinates.
