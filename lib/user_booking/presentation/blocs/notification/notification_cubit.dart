@@ -1,5 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:bloc_structure/common/services/audio_service.dart';
+import 'package:turfpro/common/services/audio_service.dart';
 import '../../../data/repositories/notification_repository.dart';
 
 abstract class NotificationState {

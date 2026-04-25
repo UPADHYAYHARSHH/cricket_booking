@@ -1,7 +1,7 @@
-import 'package:bloc_structure/common/constants/colors.dart';
-import 'package:bloc_structure/user_booking/constants/widgets/app_sizedBox.dart';
-import 'package:bloc_structure/user_booking/constants/widgets/app_text.dart';
-import 'package:bloc_structure/user_booking/domain/models/filter_criteria.dart';
+import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
+import 'package:turfpro/user_booking/domain/models/filter_criteria.dart';
 
 import 'package:flutter/material.dart';
 

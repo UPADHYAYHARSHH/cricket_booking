@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:bloc_structure/user_booking/data/models/review_model.dart';
-import 'package:bloc_structure/common/constants/colors.dart';
-import 'package:bloc_structure/user_booking/constants/widgets/app_text.dart';
-import 'package:bloc_structure/user_booking/constants/widgets/app_sizedBox.dart';
+import 'package:turfpro/user_booking/data/models/review_model.dart';
+import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
 import 'package:intl/intl.dart';
 
 class ReviewList extends StatelessWidget {

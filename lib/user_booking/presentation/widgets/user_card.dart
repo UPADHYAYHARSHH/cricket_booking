@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:bloc_structure/common/constants/colors.dart';
-import 'package:bloc_structure/user_booking/constants/widgets/app_text.dart';
-import 'package:bloc_structure/user_booking/constants/widgets/app_sizedBox.dart';
+import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
 
 class UserCard extends StatelessWidget {
   final Map<String, dynamic> user;

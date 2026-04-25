@@ -1,10 +1,10 @@
-import 'package:bloc_structure/user_booking/domain/models/slot_models.dart';
-import 'package:bloc_structure/user_booking/domain/repositories/slot_repository.dart';
+import 'package:turfpro/user_booking/domain/models/slot_models.dart';
+import 'package:turfpro/user_booking/domain/repositories/slot_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 
-import 'package:bloc_structure/user_booking/domain/repositories/loyalty_repository.dart';
+import 'package:turfpro/user_booking/domain/repositories/loyalty_repository.dart';
 import 'slot_selection_state.dart';
 
 class SlotSelectionCubit extends Cubit<SlotSelectionState> {

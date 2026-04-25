@@ -1,19 +1,19 @@
 import 'dart:ui' as ui;
-import 'package:bloc_structure/common/constants/colors.dart';
-import 'package:bloc_structure/user_booking/constants/widgets/app_sizedBox.dart';
-import 'package:bloc_structure/user_booking/constants/widgets/app_text.dart';
-import 'package:bloc_structure/user_booking/data/models/ground_model.dart';
+import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
+import 'package:turfpro/user_booking/data/models/ground_model.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:bloc_structure/user_booking/constants/widgets/app_network_image.dart';
-import 'package:bloc_structure/user_booking/domain/models/slot_models.dart';
-import 'package:bloc_structure/user_booking/data/models/review_model.dart';
-import 'package:bloc_structure/user_booking/presentation/widgets/review_widgets.dart';
-import 'package:bloc_structure/utils/toast_util.dart';
-import 'package:bloc_structure/user_booking/constants/widgets/app_button.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_network_image.dart';
+import 'package:turfpro/user_booking/domain/models/slot_models.dart';
+import 'package:turfpro/user_booking/data/models/review_model.dart';
+import 'package:turfpro/user_booking/presentation/widgets/review_widgets.dart';
+import 'package:turfpro/utils/toast_util.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_button.dart';
 
 class SlotSelectionWidgets {
   static const Color kOrange = AppColors.accentOrange;
@@ -1110,15 +1110,16 @@ class SlotSelectionWidgets {
               color: colorScheme.surface,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             ),
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).padding.bottom + 20,
-              left: 20,
-              right: 20,
-              top: 12,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: SingleChildScrollView(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).padding.bottom + 20,
+                left: 20,
+                right: 20,
+                top: 12,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Center(
                   child: Container(
@@ -1283,11 +1284,12 @@ class SlotSelectionWidgets {
                 ),
               ],
             ),
-          );
-        }
-      ),
-    );
-  }
+          ),
+        );
+      },
+    ),
+  );
+}
 
   static Widget _summaryRow(BuildContext context, {required String label, required String value, bool isBold = false}) {
     return Row(

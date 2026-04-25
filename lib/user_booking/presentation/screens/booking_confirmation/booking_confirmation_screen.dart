@@ -1,18 +1,18 @@
 // Add for kIsWeb
 import 'package:add_2_calendar/add_2_calendar.dart';
-import 'package:bloc_structure/common/constants/colors.dart';
-import 'package:bloc_structure/user_booking/constants/text_theme.dart';
-import 'package:bloc_structure/user_booking/constants/widgets/app_sizedBox.dart';
-import 'package:bloc_structure/user_booking/constants/widgets/app_text.dart';
-import 'package:bloc_structure/user_booking/domain/models/booking_arguments.dart';
+import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/user_booking/constants/text_theme.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
+import 'package:turfpro/user_booking/domain/models/booking_arguments.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 // Already here, good for Web sharing
-import 'package:bloc_structure/utils/toast_util.dart';
+import 'package:turfpro/utils/toast_util.dart';
 // Add our new helper
-import 'package:bloc_structure/utils/ticket_util.dart'; // Add TicketUtil
+import 'package:turfpro/utils/ticket_util.dart'; // Add TicketUtil
 
 class BookingConfirmationScreen extends StatefulWidget {
   const BookingConfirmationScreen({super.key});

@@ -1,19 +1,19 @@
 import 'dart:math';
-import 'package:bloc_structure/common/constants/colors.dart';
-import 'package:bloc_structure/user_booking/constants/widgets/app_sizedBox.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/location/location_cubit.dart';
+import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
+import 'package:turfpro/user_booking/presentation/blocs/location/location_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/saved_ground/saved_ground_cubit.dart';
+import 'package:turfpro/user_booking/presentation/blocs/saved_ground/saved_ground_cubit.dart';
 
-import 'package:bloc_structure/user_booking/constants/route_constants.dart';
-import 'package:bloc_structure/user_booking/constants/text_theme.dart';
-import 'package:bloc_structure/user_booking/constants/widgets/app_network_image.dart';
-import 'package:bloc_structure/user_booking/constants/widgets/app_text.dart';
-import 'package:bloc_structure/user_booking/data/models/ground_model.dart';
+import 'package:turfpro/user_booking/constants/route_constants.dart';
+import 'package:turfpro/user_booking/constants/text_theme.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_network_image.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
+import 'package:turfpro/user_booking/data/models/ground_model.dart';
 
 class GroundCard extends StatefulWidget {
   final GroundModel ground;

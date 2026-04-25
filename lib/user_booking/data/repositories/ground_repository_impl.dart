@@ -1,6 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/repositories/ground_repository.dart';
-import 'package:bloc_structure/user_booking/data/models/ground_model.dart';
+import 'package:turfpro/user_booking/data/models/ground_model.dart';
 
 class GroundRepositoryImpl implements GroundRepository {
   final supabase = Supabase.instance.client;

@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../domain/repositories/ground_repository.dart';
 import '../../../data/models/ground_model.dart';
 import '../../../data/services/analytics_service.dart';
-import 'package:bloc_structure/user_booking/domain/models/filter_criteria.dart';
+import 'package:turfpro/user_booking/domain/models/filter_criteria.dart';
 import 'ground_state.dart';
 
 class GroundCubit extends Cubit<GroundState> {

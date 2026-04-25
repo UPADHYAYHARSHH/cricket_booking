@@ -1,7 +1,7 @@
 import 'dart:io';
-import 'package:bloc_structure/user_booking/constants/route_constants.dart';
-import 'package:bloc_structure/user_booking/domain/models/booking_arguments.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/split_payment/split_cubit.dart';
+import 'package:turfpro/user_booking/constants/route_constants.dart';
+import 'package:turfpro/user_booking/domain/models/booking_arguments.dart';
+import 'package:turfpro/user_booking/presentation/blocs/split_payment/split_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hugeicons/hugeicons.dart';

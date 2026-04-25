@@ -8,9 +8,9 @@ import 'package:http/http.dart' as http;
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'package:hugeicons/hugeicons.dart';
-import 'package:bloc_structure/common/constants/colors.dart';
-import 'package:bloc_structure/user_booking/constants/widgets/app_text.dart';
-import 'package:bloc_structure/user_booking/constants/widgets/app_sizedBox.dart';
+import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
 
 import '../../../blocs/location/location_cubit.dart';
 

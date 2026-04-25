@@ -1,7 +1,7 @@
-import 'package:bloc_structure/user_booking/constants/text_theme.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/auth/auth_cubit.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/auth/auth_state.dart';
-import 'package:bloc_structure/utils/toast_util.dart';
+import 'package:turfpro/user_booking/constants/text_theme.dart';
+import 'package:turfpro/user_booking/presentation/blocs/auth/auth_cubit.dart';
+import 'package:turfpro/user_booking/presentation/blocs/auth/auth_state.dart';
+import 'package:turfpro/utils/toast_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

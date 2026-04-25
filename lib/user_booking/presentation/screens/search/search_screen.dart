@@ -1,8 +1,8 @@
-import 'package:bloc_structure/user_booking/constants/widgets/app_sizedBox.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/ground/ground_cubit.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/ground/ground_state.dart';
-import 'package:bloc_structure/user_booking/presentation/widgets/ground_card.dart';
-import 'package:bloc_structure/user_booking/presentation/screens/ground_list/widgets/ground_skeleton.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
+import 'package:turfpro/user_booking/presentation/blocs/ground/ground_cubit.dart';
+import 'package:turfpro/user_booking/presentation/blocs/ground/ground_state.dart';
+import 'package:turfpro/user_booking/presentation/widgets/ground_card.dart';
+import 'package:turfpro/user_booking/presentation/screens/ground_list/widgets/ground_skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hugeicons/hugeicons.dart';

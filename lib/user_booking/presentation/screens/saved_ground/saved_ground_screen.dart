@@ -1,8 +1,8 @@
-import 'package:bloc_structure/user_booking/data/models/ground_model.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/ground/ground_cubit.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/ground/ground_state.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/saved_ground/saved_ground_cubit.dart';
-import 'package:bloc_structure/user_booking/presentation/widgets/ground_card.dart';
+import 'package:turfpro/user_booking/data/models/ground_model.dart';
+import 'package:turfpro/user_booking/presentation/blocs/ground/ground_cubit.dart';
+import 'package:turfpro/user_booking/presentation/blocs/ground/ground_state.dart';
+import 'package:turfpro/user_booking/presentation/blocs/saved_ground/saved_ground_cubit.dart';
+import 'package:turfpro/user_booking/presentation/widgets/ground_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -13,7 +13,8 @@ import '../../../constants/widgets/app_sizedBox.dart';
 import '../../../constants/widgets/app_text.dart';
 
 class SavedGroundsScreen extends StatefulWidget {
-  const SavedGroundsScreen({super.key});
+  final VoidCallback? onFindGrounds;
+  const SavedGroundsScreen({super.key, this.onFindGrounds});
 
   @override
   State<SavedGroundsScreen> createState() => _SavedGroundsScreenState();
@@ -171,13 +172,7 @@ class _SavedGroundsScreenState extends State<SavedGroundsScreen> {
           ),
           const AppSizedBox(height: 16),
           OutlinedButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content:
-                        Text("Search for new grounds in the Discover tab!")),
-              );
-            },
+            onPressed: widget.onFindGrounds,
             style: OutlinedButton.styleFrom(
               side: const BorderSide(
                   color: AppColors.primaryDarkGreen, width: 1.5),

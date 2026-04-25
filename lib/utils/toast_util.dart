@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:bloc_structure/common/constants/colors.dart';
+import 'package:turfpro/common/constants/colors.dart';
 
 enum ToastType { success, error, warning, info }
 

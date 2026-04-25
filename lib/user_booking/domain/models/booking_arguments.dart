@@ -1,5 +1,5 @@
-import 'package:bloc_structure/user_booking/data/models/ground_model.dart';
-import 'package:bloc_structure/user_booking/domain/models/slot_models.dart';
+import 'package:turfpro/user_booking/data/models/ground_model.dart';
+import 'package:turfpro/user_booking/domain/models/slot_models.dart';
 
 class BookingSuccessArguments {
   final GroundModel ground;

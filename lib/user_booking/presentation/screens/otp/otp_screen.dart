@@ -1,8 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/auth/auth_cubit.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/auth/auth_state.dart';
-import 'package:bloc_structure/utils/toast_util.dart';
+import 'package:turfpro/user_booking/presentation/blocs/auth/auth_cubit.dart';
+import 'package:turfpro/user_booking/presentation/blocs/auth/auth_state.dart';
+import 'package:turfpro/utils/toast_util.dart';
 import 'package:pinput/pinput.dart';
 import 'package:smart_auth/smart_auth.dart';
 import '../../../constants/route_constants.dart';
@@ -20,6 +21,8 @@ class OtpScreen extends StatefulWidget {
 class _OtpScreenState extends State<OtpScreen> {
   late final TextEditingController pinController;
   late final FocusNode focusNode;
+  int _secondsRemaining = 30;
+  Timer? _timer;
   final SmartAuth smartAuth = SmartAuth.instance;
 
   @override
@@ -28,12 +31,32 @@ class _OtpScreenState extends State<OtpScreen> {
     pinController = TextEditingController();
     focusNode = FocusNode();
     _listenForSms();
+    _startTimer();
+  }
+
+  void _startTimer() {
+    setState(() {
+      _secondsRemaining = 30;
+    });
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          if (_secondsRemaining > 0) {
+            _secondsRemaining--;
+          } else {
+            _timer?.cancel();
+          }
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
     pinController.dispose();
     focusNode.dispose();
+    _timer?.cancel();
     smartAuth.removeUserConsentApiListener();
     super.dispose();
   }
@@ -44,7 +67,9 @@ class _OtpScreenState extends State<OtpScreen> {
 
     await smartAuth.getSmsWithUserConsentApi().then((res) {
       if (res.hasData && res.requireData.code != null) {
-        pinController.text = res.requireData.code!;
+        if (mounted) {
+          pinController.text = res.requireData.code!;
+        }
       }
     });
   }
@@ -211,25 +236,29 @@ class _OtpScreenState extends State<OtpScreen> {
                             const AppSizedBox(height: 8),
                             GestureDetector(
                               onTap: () {
-                                if (!isLoading) {
+                                if (!isLoading && _secondsRemaining == 0) {
                                   context
                                       .read<AuthCubit>()
                                       .signInWithPhone(phone);
+                                  _startTimer();
                                 }
                               },
                               child: AppText(
                                 text: "Resend OTP",
                                 size: 14,
                                 weight: FontWeight.w600,
-                                color: isLoading ? Colors.grey : Colors.green,
+                                color: (isLoading || _secondsRemaining > 0) 
+                                    ? Colors.grey 
+                                    : Colors.green,
                               ),
                             ),
                             const AppSizedBox(height: 6),
-                            const AppText(
-                              text: "(00:30)",
-                              size: 12,
-                              color: Colors.grey,
-                            ),
+                            if (_secondsRemaining > 0)
+                              AppText(
+                                text: "(00:${_secondsRemaining.toString().padLeft(2, '0')})",
+                                size: 12,
+                                color: Colors.grey,
+                              ),
                           ],
                         ),
                       )

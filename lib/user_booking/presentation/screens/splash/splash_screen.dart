@@ -1,13 +1,14 @@
-import 'package:bloc_structure/user_booking/constants/route_constants.dart';
-import 'package:bloc_structure/user_booking/constants/widgets/app_sizedBox.dart';
-import 'package:bloc_structure/user_booking/constants/widgets/app_text.dart';
-import 'package:bloc_structure/user_booking/di/get_it/get_it.dart';
+import 'package:turfpro/user_booking/constants/route_constants.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
+import 'package:turfpro/user_booking/di/get_it/get_it.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../../common/constants/colors.dart';
 import '../../blocs/splash/splash_cubit.dart';
+import 'app_status_screens.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -39,7 +40,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     splashCubit = getIt<SplashCubit>();
 
     Future.delayed(const Duration(milliseconds: 2500), () {
-      splashCubit.checkAuth(); // ✅ THIS LINE FIXES EVERYTHING
+      splashCubit.checkStatus(); 
     });
 
     _setupAnimations();
@@ -137,6 +138,22 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
           if (state is SplashNavigateToLogin) {
             Navigator.pushReplacementNamed(context, AppRoutes.login);
+          }
+
+          if (state is SplashUnderMaintenance) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const MaintenanceScreen()),
+              (route) => false,
+            );
+          }
+
+          if (state is SplashUpdateRequired) {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (_) => ForceUpdateDialog(updateUrl: state.updateUrl),
+            );
           }
         },
         child: Scaffold(
@@ -277,15 +294,6 @@ class _BrandText extends StatelessWidget {
             fontSize: titleSize,
             fontWeight: FontWeight.w800,
             letterSpacing: 4,
-          ),
-        ),
-        const AppSizedBox(height: 6),
-        AppText(
-          text: 'SLOT BOOKING ENGINE',
-          textStyle: TextStyle(
-            color: AppColors.white.withValues(alpha: .65),
-            fontSize: titleSize * .35,
-            letterSpacing: 3,
           ),
         ),
       ],

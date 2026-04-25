@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:bloc_structure/common/constants/colors.dart';
-import 'package:bloc_structure/user_booking/di/get_it/get_it.dart';
-import 'package:bloc_structure/user_booking/domain/repositories/review_repository.dart';
-import 'package:bloc_structure/user_booking/constants/widgets/app_text.dart';
-import 'package:bloc_structure/user_booking/constants/widgets/app_sizedBox.dart';
+import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/user_booking/di/get_it/get_it.dart';
+import 'package:turfpro/user_booking/domain/repositories/review_repository.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
 
 class AddReviewBottomSheet extends StatefulWidget {
   final String groundId;

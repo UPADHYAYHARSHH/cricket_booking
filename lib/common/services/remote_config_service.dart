@@ -1,0 +1,63 @@
+import 'dart:convert';
+import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:flutter/foundation.dart';
+
+class RemoteConfigService {
+  static final RemoteConfigService _instance = RemoteConfigService._internal();
+  factory RemoteConfigService() => _instance;
+  RemoteConfigService._internal();
+
+  final FirebaseRemoteConfig _remoteConfig = FirebaseRemoteConfig.instance;
+
+  // Keys
+  static const String _kMaintenanceMode = 'is_under_maintenance';
+  static const String _kRequiredVersion = 'required_version';
+  static const String _kUpdateUrl = 'update_url';
+
+  Future<void> initialize() async {
+    try {
+      await _remoteConfig.setDefaults({
+        _kMaintenanceMode: false,
+        _kRequiredVersion: '1.0.0',
+        _kUpdateUrl: 'https://play.google.com/store/apps/details?id=com.boxcricket.booking',
+      });
+
+      await _remoteConfig.setConfigSettings(RemoteConfigSettings(
+        fetchTimeout: const Duration(minutes: 1),
+        minimumFetchInterval: kDebugMode ? Duration.zero : const Duration(hours: 1),
+      ));
+
+      await _remoteConfig.fetchAndActivate();
+    } catch (e) {
+      debugPrint('Error initializing Remote Config: $e');
+    }
+  }
+
+  bool get isMaintenanceMode => _remoteConfig.getBool(_kMaintenanceMode);
+  String get requiredVersion => _remoteConfig.getString(_kRequiredVersion);
+  String get updateUrl => _remoteConfig.getString(_kUpdateUrl);
+
+  Future<bool> isUpdateRequired() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      final currentVersion = packageInfo.version;
+      
+      return _isVersionGreaterThan(requiredVersion, currentVersion);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  bool _isVersionGreaterThan(String v1, String v2) {
+    List<int> v1List = v1.split('.').map(int.parse).toList();
+    List<int> v2List = v2.split('.').map(int.parse).toList();
+
+    for (int i = 0; i < v1List.length; i++) {
+      if (i >= v2List.length) return true;
+      if (v1List[i] > v2List[i]) return true;
+      if (v1List[i] < v2List[i]) return false;
+    }
+    return false;
+  }
+}

@@ -1,4 +1,4 @@
-name: bloc_structure
+name: turfpro
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -59,12 +59,13 @@ dependencies:
   firebase_core: ^4.6.0
   firebase_analytics: ^12.2.0
   firebase_crashlytics: ^5.1.0
+  firebase_remote_config: ^6.1.0
+  package_info_plus: ^8.1.0
   share_plus: ^12.0.2
   screenshot: ^3.0.0
   image_cropper: ^12.2.0
   flutter_animate: ^4.5.2
   add_2_calendar: ^3.0.1
-  flutter_dotenv: ^5.1.0
   gal: ^2.3.2
   pdf: ^3.12.0
   printing: ^5.14.3
@@ -108,7 +109,6 @@ flutter:
   uses-material-design: true
 
   assets:
-    - .env
     - assets/svgs/
     - assets/pngs/
     - assets/languages/

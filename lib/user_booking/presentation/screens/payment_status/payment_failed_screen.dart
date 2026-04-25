@@ -3,26 +3,27 @@ import '../../../../common/constants/colors.dart';
 import '../../../constants/text_theme.dart';
 import '../../../constants/widgets/app_sizedBox.dart';
 import '../../../constants/widgets/app_text.dart';
-import 'package:bloc_structure/user_booking/domain/models/booking_arguments.dart';
+import 'package:turfpro/user_booking/domain/models/booking_arguments.dart';
 
 class PaymentFailedScreen extends StatelessWidget {
   const PaymentFailedScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final args =
         ModalRoute.of(context)!.settings.arguments as BookingFailureArguments;
 
     return Scaffold(
-      backgroundColor: AppColors.surfaceLight,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.surfaceLight,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios,
-            color: AppColors.textPrimaryLight,
+            color: theme.colorScheme.onSurface,
             size: 20,
           ),
           onPressed: () => Navigator.pop(context),
@@ -30,7 +31,7 @@ class PaymentFailedScreen extends StatelessWidget {
         title: AppText(
           text: "Payment Status",
           textStyle: AppTextTheme.black16.copyWith(
-            color: AppColors.textPrimaryLight,
+            color: theme.colorScheme.onSurface,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -77,7 +78,7 @@ class PaymentFailedScreen extends StatelessWidget {
               text: args.errorMessage,
               align: TextAlign.center,
               textStyle: AppTextTheme.grey14.copyWith(
-                color: AppColors.textSecondaryLight,
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
                 height: 1.5,
               ),
             ),
@@ -116,8 +117,8 @@ class PaymentFailedScreen extends StatelessWidget {
             OutlinedButton(
               onPressed: () => Navigator.pop(context),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.textPrimaryLight,
-                side: const BorderSide(color: AppColors.borderLight),
+                foregroundColor: theme.colorScheme.onSurface,
+                side: BorderSide(color: theme.dividerColor),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 minimumSize: const Size(double.infinity, 52),
                 shape: RoundedRectangleBorder(
@@ -128,6 +129,7 @@ class PaymentFailedScreen extends StatelessWidget {
                 text: "Check Other Slots",
                 textStyle: AppTextTheme.black15.copyWith(
                   fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
             ),
@@ -138,7 +140,7 @@ class PaymentFailedScreen extends StatelessWidget {
             AppText(
               text: "Facing issues? Contact Customer Support",
               textStyle: AppTextTheme.grey12.copyWith(
-                color: AppColors.textSecondaryLight,
+                color: theme.colorScheme.onSurface.withOpacity(0.5),
                 decoration: TextDecoration.underline,
               ),
             ),

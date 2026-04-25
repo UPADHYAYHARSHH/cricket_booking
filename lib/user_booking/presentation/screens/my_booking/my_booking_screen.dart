@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'dart:math';
-import 'package:bloc_structure/utils/ticket_util.dart';
+import 'package:turfpro/utils/ticket_util.dart';
 
 import '../../../../common/constants/colors.dart';
 import '../../../constants/text_theme.dart';
@@ -14,9 +14,9 @@ import '../../../constants/route_constants.dart';
 import '../../blocs/booking/booking_cubit.dart';
 import '../../blocs/booking/booking_state.dart';
 import '../../../data/models/booking_model.dart';
-import 'package:bloc_structure/user_booking/di/get_it/get_it.dart';
-import 'package:bloc_structure/user_booking/domain/repositories/review_repository.dart';
-import 'package:bloc_structure/user_booking/presentation/widgets/add_review_bottom_sheet.dart';
+import 'package:turfpro/user_booking/di/get_it/get_it.dart';
+import 'package:turfpro/user_booking/domain/repositories/review_repository.dart';
+import 'package:turfpro/user_booking/presentation/widgets/add_review_bottom_sheet.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MyBookingsScreen extends StatefulWidget {

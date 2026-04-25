@@ -1,4 +1,5 @@
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/services.dart';
 
 class AudioService {
   static final AudioService _instance = AudioService._internal();
@@ -35,10 +36,19 @@ class AudioService {
     }
 
     try {
-      // Ensure the player is ready for cross-platform playback
-      await _player.play(AssetSource(soundPath.replaceFirst('assets/', '')));
+      // Guard: Check if asset exists before playing to avoid crashes/errors
+      final assetPath = soundPath.replaceFirst('assets/', '');
+      
+      // We can use rootBundle to check if the asset is actually bundled
+      try {
+        await rootBundle.load(soundPath);
+        await _player.play(AssetSource(assetPath));
+      } catch (_) {
+        // Asset not found, fail silently as requested
+        return;
+      }
     } catch (e) {
-      print("Error playing sound: $e");
+      // Silently fail as requested
     }
   }
 

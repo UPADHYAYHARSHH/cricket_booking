@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hugeicons/hugeicons.dart';
 
-import 'package:bloc_structure/user_booking/constants/widgets/app_text.dart';
-import 'package:bloc_structure/user_booking/constants/widgets/app_sizedBox.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/ground/ground_cubit.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/ground/ground_state.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/location/location_cubit.dart';
-import 'package:bloc_structure/user_booking/presentation/widgets/ground_card.dart';
-import 'package:bloc_structure/user_booking/presentation/screens/ground_list/widgets/ground_skeleton.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
+import 'package:turfpro/user_booking/presentation/blocs/ground/ground_cubit.dart';
+import 'package:turfpro/user_booking/presentation/blocs/ground/ground_state.dart';
+import 'package:turfpro/user_booking/presentation/blocs/location/location_cubit.dart';
+import 'package:turfpro/user_booking/presentation/widgets/ground_card.dart';
+import 'package:turfpro/user_booking/presentation/screens/ground_list/widgets/ground_skeleton.dart';
 
 class CategoryGroundsScreen extends StatelessWidget {
   const CategoryGroundsScreen({super.key});

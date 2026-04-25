@@ -1,13 +1,13 @@
 
-import 'package:bloc_structure/user_booking/presentation/blocs/auth/auth_cubit.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/auth/auth_state.dart';
-import 'package:bloc_structure/user_booking/data/repositories/user_repository_impl.dart';
-import 'package:bloc_structure/utils/toast_util.dart';
+import 'package:turfpro/user_booking/presentation/blocs/auth/auth_cubit.dart';
+import 'package:turfpro/user_booking/presentation/blocs/auth/auth_state.dart';
+import 'package:turfpro/user_booking/data/repositories/user_repository_impl.dart';
+import 'package:turfpro/utils/toast_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
-import 'package:bloc_structure/user_booking/di/get_it/get_it.dart' as di;
+import 'package:turfpro/user_booking/di/get_it/get_it.dart' as di;
 
 import '../../../constants/route_constants.dart';
 import '../../../constants/widgets/app_button.dart';

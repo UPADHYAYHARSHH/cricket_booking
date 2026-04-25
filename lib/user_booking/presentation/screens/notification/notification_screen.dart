@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/notification/notification_cubit.dart';
-import 'package:bloc_structure/user_booking/data/repositories/notification_repository.dart';
-import 'package:bloc_structure/user_booking/constants/widgets/app_text.dart';
-import 'package:bloc_structure/user_booking/constants/widgets/app_sizedBox.dart';
-import 'package:bloc_structure/user_booking/constants/text_theme.dart';
-import 'package:bloc_structure/common/constants/colors.dart';
-import 'package:bloc_structure/user_booking/constants/route_constants.dart';
+import 'package:turfpro/user_booking/presentation/blocs/notification/notification_cubit.dart';
+import 'package:turfpro/user_booking/data/repositories/notification_repository.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
+import 'package:turfpro/user_booking/constants/text_theme.dart';
+import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/user_booking/constants/route_constants.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});

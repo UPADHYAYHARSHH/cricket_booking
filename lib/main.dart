@@ -1,58 +1,59 @@
-import 'package:bloc_structure/firebase_options.dart';
-import 'package:bloc_structure/user_booking/di/get_it/get_it.dart' as di;
-import 'package:bloc_structure/user_booking/presentation/blocs/auth/auth_cubit.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/profile/profile_cubit.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/slot_selection/slot_selection_cubit.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/splash/splash_cubit.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/connectivity/connectivity_cubit.dart';
-import 'package:bloc_structure/user_booking/presentation/screens/no_internet/no_internet_screen.dart';
-import 'package:bloc_structure/user_booking/presentation/screens/booking_confirmation/booking_confirmation_screen.dart';
-import 'package:bloc_structure/user_booking/presentation/screens/login/login_screen.dart';
-import 'package:bloc_structure/user_booking/presentation/screens/login/forgot_password_screen.dart';
-import 'package:bloc_structure/user_booking/presentation/screens/main_navbar/main_nav.dart';
-import 'package:bloc_structure/user_booking/presentation/screens/my_booking/my_booking_screen.dart';
-import 'package:bloc_structure/user_booking/presentation/screens/otp/otp_screen.dart';
-import 'package:bloc_structure/user_booking/presentation/screens/profile_screen/edit_profile.dart';
-import 'package:bloc_structure/user_booking/presentation/screens/payment_status/payment_failed_screen.dart';
-import 'package:bloc_structure/user_booking/presentation/screens/slot_selection/slot_slection.dart';
-import 'package:bloc_structure/user_booking/presentation/screens/signup/signup_screen.dart';
-import 'package:bloc_structure/user_booking/presentation/screens/search/search_screen.dart';
-import 'package:bloc_structure/user_booking/presentation/screens/split_payment/split_setup_screen.dart';
-import 'package:bloc_structure/user_booking/presentation/screens/split_payment/split_share_screen.dart';
-import 'package:bloc_structure/user_booking/presentation/screens/split_payment/split_overview_screen.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/split_payment/split_cubit.dart';
-import 'package:bloc_structure/user_booking/presentation/screens/category_grounds/category_grounds_screen.dart';
-import 'package:bloc_structure/user_booking/presentation/screens/notification/notification_screen.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/notification/notification_cubit.dart';
-import 'package:bloc_structure/user_booking/constants/route_constants.dart';
+import 'package:turfpro/firebase_options.dart';
+import 'package:turfpro/user_booking/di/get_it/get_it.dart' as di;
+import 'package:turfpro/user_booking/presentation/blocs/auth/auth_cubit.dart';
+import 'package:turfpro/user_booking/presentation/blocs/profile/profile_cubit.dart';
+import 'package:turfpro/user_booking/presentation/blocs/slot_selection/slot_selection_cubit.dart';
+import 'package:turfpro/user_booking/presentation/blocs/splash/splash_cubit.dart';
+import 'package:turfpro/user_booking/presentation/blocs/connectivity/connectivity_cubit.dart';
+import 'package:turfpro/user_booking/presentation/screens/no_internet/no_internet_screen.dart';
+import 'package:turfpro/user_booking/presentation/screens/booking_confirmation/booking_confirmation_screen.dart';
+import 'package:turfpro/user_booking/presentation/screens/login/login_screen.dart';
+import 'package:turfpro/user_booking/presentation/screens/login/forgot_password_screen.dart';
+import 'package:turfpro/user_booking/presentation/screens/main_navbar/main_nav.dart';
+import 'package:turfpro/user_booking/presentation/screens/my_booking/my_booking_screen.dart';
+import 'package:turfpro/user_booking/presentation/screens/otp/otp_screen.dart';
+import 'package:turfpro/user_booking/presentation/screens/profile_screen/edit_profile.dart';
+import 'package:turfpro/user_booking/presentation/screens/payment_status/payment_failed_screen.dart';
+import 'package:turfpro/user_booking/presentation/screens/slot_selection/slot_slection.dart';
+import 'package:turfpro/user_booking/presentation/screens/signup/signup_screen.dart';
+import 'package:turfpro/user_booking/presentation/screens/search/search_screen.dart';
+import 'package:turfpro/user_booking/presentation/screens/split_payment/split_setup_screen.dart';
+import 'package:turfpro/user_booking/presentation/screens/split_payment/split_share_screen.dart';
+import 'package:turfpro/user_booking/presentation/screens/split_payment/split_overview_screen.dart';
+import 'package:turfpro/user_booking/presentation/blocs/split_payment/split_cubit.dart';
+import 'package:turfpro/user_booking/presentation/screens/category_grounds/category_grounds_screen.dart';
+import 'package:turfpro/user_booking/presentation/screens/notification/notification_screen.dart';
+import 'package:turfpro/user_booking/presentation/blocs/notification/notification_cubit.dart';
+import 'package:turfpro/user_booking/constants/route_constants.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:bloc_structure/common/utils/app_bloc_observer.dart';
+import 'package:turfpro/common/utils/app_bloc_observer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:turfpro/common/services/remote_config_service.dart';
 
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'user_booking/presentation/screens/splash/splash_screen.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/ground/ground_cubit.dart';
+import 'package:turfpro/user_booking/presentation/blocs/ground/ground_cubit.dart';
 import 'user_booking/presentation/blocs/location/location_cubit.dart';
 import 'user_booking/presentation/blocs/saved_ground/saved_ground_cubit.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/theme/theme_cubit.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/booking/booking_cubit.dart';
-import 'package:bloc_structure/common/constants/colors.dart';
+import 'package:turfpro/user_booking/presentation/blocs/theme/theme_cubit.dart';
+import 'package:turfpro/user_booking/presentation/blocs/booking/booking_cubit.dart';
+import 'package:turfpro/common/constants/colors.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await dotenv.load(fileName: ".env");
-
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Initialize Remote Config
+  await RemoteConfigService().initialize();
 
   // Pass all uncaught "fatal" errors from the framework to Crashlytics
   FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
@@ -66,8 +67,8 @@ void main() async {
   Bloc.observer = AppBlocObserver();
 
   await Supabase.initialize(
-    url: dotenv.env['SUPABASE_URL']!,
-    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+    url: const String.fromEnvironment('SUPABASE_URL'),
+    anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY'),
   );
   SystemChrome.setPreferredOrientations(
     [

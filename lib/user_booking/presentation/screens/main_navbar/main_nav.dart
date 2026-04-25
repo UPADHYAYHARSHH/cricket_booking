@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'package:bloc_structure/user_booking/constants/widgets/app_text.dart';
-import 'package:bloc_structure/user_booking/presentation/screens/ground_list/ground_list_screen.dart';
-import 'package:bloc_structure/user_booking/presentation/screens/profile_screen/profile_screen.dart';
-import 'package:bloc_structure/user_booking/presentation/screens/saved_ground/saved_ground_screen.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
+import 'package:turfpro/user_booking/presentation/screens/ground_list/ground_list_screen.dart';
+import 'package:turfpro/user_booking/presentation/screens/profile_screen/profile_screen.dart';
+import 'package:turfpro/user_booking/presentation/screens/saved_ground/saved_ground_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
@@ -79,17 +79,30 @@ class _MainNavScreenState extends State<MainNavScreen> {
     super.dispose();
   }
 
-  final List<Widget> pages = [
-    const GroundListScreen(),
-    const MyBookingsScreen(),
-    const SavedGroundsScreen(),
-    const ProfileScreen(),
-  ];
+  void _handleTabSwitch(int index) {
+    setState(() {
+      currentIndex = index;
+    });
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final onSurface = theme.colorScheme.onSurface;
+
+    final List<Widget> pages = [
+      const GroundListScreen(),
+      const MyBookingsScreen(),
+      SavedGroundsScreen(
+        onFindGrounds: () => _handleTabSwitch(0),
+      ),
+      const ProfileScreen(),
+    ];
 
     return BlocBuilder<NotificationCubit, NotificationState>(
       builder: (context, notificationState) {

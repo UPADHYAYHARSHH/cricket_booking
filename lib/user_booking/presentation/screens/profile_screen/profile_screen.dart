@@ -1,17 +1,17 @@
-import 'package:bloc_structure/common/constants/colors.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/auth/auth_cubit.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/auth/auth_state.dart';
-import 'package:bloc_structure/user_booking/presentation/blocs/theme/theme_cubit.dart';
+import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/user_booking/presentation/blocs/auth/auth_cubit.dart';
+import 'package:turfpro/user_booking/presentation/blocs/auth/auth_state.dart';
+import 'package:turfpro/user_booking/presentation/blocs/theme/theme_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../constants/route_constants.dart';
 
-import 'package:bloc_structure/user_booking/presentation/blocs/profile/profile_cubit.dart';
+import 'package:turfpro/user_booking/presentation/blocs/profile/profile_cubit.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
-import 'package:bloc_structure/user_booking/di/get_it/get_it.dart';
+import 'package:turfpro/user_booking/di/get_it/get_it.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
