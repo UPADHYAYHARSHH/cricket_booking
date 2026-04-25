@@ -155,18 +155,19 @@ class SlotSelectionWidgets {
             ),
           ),
           // Badges
-          Positioned(
-            bottom: 12,
-            left: 12,
-            child: _badge(
-              icon: HugeIcons.strokeRoundedStar,
-              iconColor: AppColors.goldenYellow,
-              text:
-                  '${(rating ?? ground?.rating ?? 0.0).toStringAsFixed(1)}  (${(totalReviews ?? ground?.totalReviews ?? 0)} REVIEWS)',
-              bgColor: AppColors.black.withValues(alpha: 0.55),
-              textColor: AppColors.white,
+          if ((totalReviews ?? ground?.totalReviews ?? 0) > 0)
+            Positioned(
+              bottom: 12,
+              left: 12,
+              child: _badge(
+                icon: HugeIcons.strokeRoundedStar,
+                iconColor: AppColors.goldenYellow,
+                text:
+                    '${(rating ?? ground?.rating ?? 0.0).toStringAsFixed(1)}  (${(totalReviews ?? ground?.totalReviews ?? 0)} REVIEWS)',
+                bgColor: AppColors.black.withValues(alpha: 0.55),
+                textColor: AppColors.white,
+              ),
             ),
-          ),
           Positioned(
             bottom: 12,
             right: 12,
@@ -439,9 +440,9 @@ class SlotSelectionWidgets {
       priceColor = AppColors.accentOrange;
     } else if (isBooked) {
       borderColor = Colors.transparent;
-      timeColor = colorScheme.onSurface.withValues(alpha: 0.4);
-      subColor = colorScheme.onSurface.withValues(alpha: 0.3);
-      priceColor = colorScheme.onSurface.withValues(alpha: 0.3);
+      timeColor = colorScheme.onSurface.withOpacity(0.35);
+      subColor = colorScheme.onSurface.withOpacity(0.25);
+      priceColor = colorScheme.onSurface.withOpacity(0.25);
       statusIcon = null;
       iconColor = null;
     } else if (isAdvance) {
@@ -473,7 +474,9 @@ class SlotSelectionWidgets {
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
           color: isBooked
-              ? (isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.04))
+              ? (isDark 
+                  ? Colors.white.withOpacity(0.05) 
+                  : Colors.grey.withOpacity(0.08))
               : colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(

@@ -74,6 +74,7 @@ dependencies:
   connectivity_plus: ^7.1.1
   pinput: ^6.0.2
   smart_auth: ^3.2.0
+  audioplayers: ^6.6.0
 flutter_launcher_icons:
   android: true
   ios: true
@@ -112,6 +113,7 @@ flutter:
     - assets/pngs/
     - assets/languages/
     - assets/animations/
+    - assets/sounds/
     - assets/
     - assets/app_logo.png
     # An image asset can refer to one or more resolution-specific "variants", see

@@ -22,6 +22,8 @@ import 'package:bloc_structure/user_booking/presentation/screens/split_payment/s
 import 'package:bloc_structure/user_booking/presentation/screens/split_payment/split_overview_screen.dart';
 import 'package:bloc_structure/user_booking/presentation/blocs/split_payment/split_cubit.dart';
 import 'package:bloc_structure/user_booking/presentation/screens/category_grounds/category_grounds_screen.dart';
+import 'package:bloc_structure/user_booking/presentation/screens/notification/notification_screen.dart';
+import 'package:bloc_structure/user_booking/presentation/blocs/notification/notification_cubit.dart';
 import 'package:bloc_structure/user_booking/constants/route_constants.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -119,6 +121,9 @@ void main() async {
         BlocProvider<ConnectivityCubit>(
           create: (_) => di.getIt<ConnectivityCubit>(),
         ),
+        BlocProvider<NotificationCubit>(
+          create: (_) => di.getIt<NotificationCubit>()..fetchNotifications(),
+        ),
       ],
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, state) {
@@ -158,6 +163,7 @@ void main() async {
               AppRoutes.splitOverview: (context) => const SplitOverviewScreen(),
               AppRoutes.forgotPassword: (context) => const ForgotPasswordScreen(),
               AppRoutes.categoryGrounds: (context) => const CategoryGroundsScreen(),
+              AppRoutes.notification: (context) => const NotificationScreen(),
             },
           );
         },

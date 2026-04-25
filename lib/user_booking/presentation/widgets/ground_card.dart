@@ -42,32 +42,37 @@ class _GroundCardState extends State<GroundCard> {
     final theme = Theme.of(context);
     final onSurface = theme.colorScheme.onSurface;
 
-    return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(
-          context,
-          AppRoutes.slotSelection,
-          arguments: widget.ground,
-        );
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              blurRadius: 10,
-              color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.2 : 0.06),
-              offset: const Offset(0, 4),
-            )
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildImageSlider(context),
-            _buildInfo(context, onSurface),
-          ],
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            blurRadius: 10,
+            color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.2 : 0.06),
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () {
+            Navigator.pushNamed(
+              context,
+              AppRoutes.slotSelection,
+              arguments: widget.ground,
+            );
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildImageSlider(context),
+              _buildInfo(context, onSurface),
+            ],
+          ),
         ),
       ),
     );
@@ -270,33 +275,34 @@ class _GroundCardState extends State<GroundCard> {
               const AppSizedBox(width: 8),
               
               // Rating Badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.goldenYellow.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.star_rounded,
-                      size: 16,
-                      color: AppColors.goldenYellow,
-                    ),
-                    const AppSizedBox(width: 4),
-                    AppText(
-                      text: widget.ground.rating.toString(),
-                      textStyle: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                        color: theme.brightness == Brightness.dark 
-                            ? AppColors.goldenYellow 
-                            : const Color(0xFF856404),
+              if (widget.ground.totalReviews > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.goldenYellow.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.star_rounded,
+                        size: 16,
+                        color: AppColors.goldenYellow,
                       ),
-                    ),
-                  ],
+                      const AppSizedBox(width: 4),
+                      AppText(
+                        text: widget.ground.rating.toString(),
+                        textStyle: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: theme.brightness == Brightness.dark 
+                              ? AppColors.goldenYellow 
+                              : const Color(0xFF856404),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
             ],
           ),
           
@@ -325,7 +331,7 @@ class _GroundCardState extends State<GroundCard> {
           const AppSizedBox(height: 14),
 
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               // Price Label
               Column(

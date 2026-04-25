@@ -91,11 +91,9 @@ class _MainNavScreenState extends State<MainNavScreen> {
     final theme = Theme.of(context);
     final onSurface = theme.colorScheme.onSurface;
 
-    return BlocProvider(
-      create: (context) => getIt<NotificationCubit>()..fetchNotifications(),
-      child: BlocBuilder<NotificationCubit, NotificationState>(
-        builder: (context, notificationState) {
-          return BlocListener<LocationCubit, LocationState>(
+    return BlocBuilder<NotificationCubit, NotificationState>(
+      builder: (context, notificationState) {
+        return BlocListener<LocationCubit, LocationState>(
         listener: (context, state) {
           if (state.errorMessage != null) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -156,8 +154,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
         ),
       );
     },
-   ),
-  );
+   );
   }
 
   Widget _navItem(dynamic icon, String label, int index, Color onSurface, {bool showBadge = false}) {
