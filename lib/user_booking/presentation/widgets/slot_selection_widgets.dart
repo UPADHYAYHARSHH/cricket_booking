@@ -985,6 +985,8 @@ class SlotSelectionWidgets {
 
   static Widget buildReviewSection(
       BuildContext context, List<ReviewModel> reviews, bool isLoading) {
+    if (!isLoading && reviews.isEmpty) return const SizedBox.shrink();
+
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 

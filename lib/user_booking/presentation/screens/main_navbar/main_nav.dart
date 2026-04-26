@@ -4,6 +4,7 @@ import 'package:turfpro/user_booking/presentation/screens/ground_list/ground_lis
 import 'package:turfpro/user_booking/presentation/screens/profile_screen/profile_screen.dart';
 import 'package:turfpro/user_booking/presentation/screens/saved_ground/saved_ground_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../../common/constants/colors.dart';
@@ -107,70 +108,126 @@ class _MainNavScreenState extends State<MainNavScreen> {
     return BlocBuilder<NotificationCubit, NotificationState>(
       builder: (context, notificationState) {
         return BlocListener<LocationCubit, LocationState>(
-        listener: (context, state) {
-          if (state.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.errorMessage!),
-                backgroundColor: AppColors.error,
-                action: SnackBarAction(
-                  label: 'Settings',
-                  textColor: Colors.white,
-                  onPressed: () {
-                    if (state.errorMessage!.contains('permanently')) {
-                      Geolocator.openAppSettings();
-                    } else {
-                      Geolocator.openLocationSettings();
-                    }
-                  },
-                ),
-                duration: const Duration(seconds: 5),
-              ),
-            );
-          }
-        },
-        child: Scaffold(
-          body: PageView(
-            controller: _pageController,
-            onPageChanged: (index) {
-              setState(() {
-                currentIndex = index;
-              });
+            listener: (context, state) {
+              if (state.errorMessage != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.errorMessage!),
+                    backgroundColor: AppColors.error,
+                    action: SnackBarAction(
+                      label: 'Settings',
+                      textColor: Colors.white,
+                      onPressed: () {
+                        if (state.errorMessage!.contains('permanently')) {
+                          Geolocator.openAppSettings();
+                        } else {
+                          Geolocator.openLocationSettings();
+                        }
+                      },
+                    ),
+                    duration: const Duration(seconds: 5),
+                  ),
+                );
+              }
             },
-            children: pages,
-          ),
-          bottomNavigationBar: Container(
-            height: 70,
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              boxShadow: [
-                BoxShadow(
-                  blurRadius: 10,
-                  color: Colors.black.withOpacity(0.1),
-                )
-              ],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _navItem(HugeIcons.strokeRoundedDiscoverCircle, "Discover", 0,
-                    onSurface, showBadge: notificationState.unreadCount > 0),
-                _navItem(HugeIcons.strokeRoundedCalendar01, "Bookings", 1,
-                    onSurface),
-                _navItem(
-                    HugeIcons.strokeRoundedFavourite, "Saved", 2, onSurface),
-                _navItem(
-                    HugeIcons.strokeRoundedProfile, "Profile", 3, onSurface),
-              ],
-            ),
-          ),
-        ),
-      );
-    },
-   );
+            child: PopScope(
+              canPop: false,
+              onPopInvokedWithResult: (didPop, result) {
+                if (didPop) return;
+
+                if (currentIndex > 0) {
+                  _handleTabSwitch(currentIndex - 1);
+                } else {
+                  _showExitDialog(context);
+                }
+              },
+              child: Scaffold(
+                body: PageView(
+                  controller: _pageController,
+                  onPageChanged: (index) {
+                    setState(() {
+                      currentIndex = index;
+                    });
+                  },
+                  children: pages,
+                ),
+                bottomNavigationBar: Container(
+                  height: 70,
+                  decoration: BoxDecoration(
+                    color: theme.cardColor,
+                    boxShadow: [
+                      BoxShadow(
+                        blurRadius: 10,
+                        color: Colors.black.withOpacity(0.1),
+                      )
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _navItem(HugeIcons.strokeRoundedDiscoverCircle,
+                          "Discover", 0, onSurface,
+                          showBadge: notificationState.unreadCount > 0),
+                      _navItem(HugeIcons.strokeRoundedCalendar01, "Bookings", 1,
+                          onSurface),
+                      _navItem(HugeIcons.strokeRoundedFavourite, "Saved", 2,
+                          onSurface),
+                      _navItem(HugeIcons.strokeRoundedProfile, "Profile", 3,
+                          onSurface),
+                    ],
+                  ),
+                ),
+              ),
+            ));
+      },
+    );
   }
 
-  Widget _navItem(dynamic icon, String label, int index, Color onSurface, {bool showBadge = false}) {
+  Future<void> _showExitDialog(BuildContext context) async {
+    final theme = Theme.of(context);
+
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: theme.cardColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const AppText(
+          text: "Exit App",
+          textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        content: const AppText(
+          text: "Are you sure you want to close the app?",
+          textStyle: TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: AppText(
+              text: "Cancel",
+              textStyle: TextStyle(
+                  color: theme.colorScheme.onSurface.withOpacity(0.6)),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => SystemNavigator.pop(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryDarkGreen,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const AppText(
+              text: "Exit",
+              textStyle:
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _navItem(dynamic icon, String label, int index, Color onSurface,
+      {bool showBadge = false}) {
     final bool isActive = currentIndex == index;
     const Color activeColor = AppColors.primaryDarkGreen;
     final Color inactiveColor = onSurface.withValues(alpha: 0.4);

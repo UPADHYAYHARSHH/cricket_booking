@@ -53,6 +53,29 @@ class _GroundListScreenState extends State<GroundListScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _checkInitialLoad();
+  }
+
+  void _checkInitialLoad() {
+    final locationCubit = context.read<LocationCubit>();
+    final groundCubit = context.read<GroundCubit>();
+
+    // If city is already available and not loading, trigger grounds fetch
+    if (groundCubit.state is GroundInitial &&
+        locationCubit.state.city != null &&
+        !locationCubit.state.isLoading &&
+        locationCubit.state.city != "Fetching...") {
+      groundCubit.getGrounds(
+        city: locationCubit.state.city,
+        userLat: locationCubit.state.latitude,
+        userLng: locationCubit.state.longitude,
+      );
+    }
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     _scrollController.dispose();
@@ -63,24 +86,24 @@ class _GroundListScreenState extends State<GroundListScreen> {
   Widget build(BuildContext context) {
     final locationCubit = context.read<LocationCubit>();
 
-    // Trigger initial load if not already loaded (since it's a shared singleton now)
-    final groundCubit = context.read<GroundCubit>();
-    if (groundCubit.state is GroundInitial) {
-      groundCubit.getGrounds(
-        city: locationCubit.state.city,
-        userLat: locationCubit.state.latitude,
-        userLng: locationCubit.state.longitude,
-      );
-    }
-
     return BlocListener<LocationCubit, LocationState>(
+      listenWhen: (previous, current) =>
+          previous.city != current.city ||
+          previous.isLoading != current.isLoading ||
+          previous.latitude != current.latitude ||
+          previous.longitude != current.longitude,
       listener: (context, state) {
-        if (state.city != null && !state.isLoading) {
-          context.read<GroundCubit>().getGrounds(
-                city: state.city,
-                userLat: state.latitude,
-                userLng: state.longitude,
-              );
+        if (state.city != null &&
+            !state.isLoading &&
+            state.city != "Fetching...") {
+          final groundCubit = context.read<GroundCubit>();
+          // Avoid redundant fetch if already loading or loaded with same parameters
+          // Simple check: if it's initial or if city/location changed significantly
+          groundCubit.getGrounds(
+            city: state.city,
+            userLat: state.latitude,
+            userLng: state.longitude,
+          );
         }
       },
       child: Scaffold(

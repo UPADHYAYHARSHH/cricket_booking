@@ -78,18 +78,21 @@ class _OtpScreenState extends State<OtpScreen> {
   Widget build(BuildContext context) {
     final phone = ModalRoute.of(context)?.settings.arguments as String? ?? "";
 
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     final defaultPinTheme = PinTheme(
       width: 56,
       height: 56,
-      textStyle: const TextStyle(
+      textStyle: TextStyle(
         fontSize: 22,
-        color: Colors.black,
+        color: colorScheme.onSurface,
         fontWeight: FontWeight.w600,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: theme.dividerColor),
       ),
     );
 
@@ -134,7 +137,7 @@ class _OtpScreenState extends State<OtpScreen> {
           final isLoading = state is AuthLoading;
 
           return Scaffold(
-            backgroundColor: const Color(0xffECECEC),
+            backgroundColor: theme.scaffoldBackgroundColor,
             body: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -162,7 +165,7 @@ class _OtpScreenState extends State<OtpScreen> {
                       AppText(
                         text: "Enter the 6-digit code sent to $phone",
                         size: 14,
-                        color: Colors.grey,
+                        color: colorScheme.onSurface.withOpacity(0.6),
                         align: TextAlign.left,
                       ),
 
@@ -228,10 +231,10 @@ class _OtpScreenState extends State<OtpScreen> {
                       Center(
                         child: Column(
                           children: [
-                            const AppText(
+                            AppText(
                               text: "Didn't receive the code?",
                               size: 13,
-                              color: Colors.grey,
+                              color: colorScheme.onSurface.withOpacity(0.6),
                             ),
                             const AppSizedBox(height: 8),
                             GestureDetector(
@@ -247,8 +250,8 @@ class _OtpScreenState extends State<OtpScreen> {
                                 text: "Resend OTP",
                                 size: 14,
                                 weight: FontWeight.w600,
-                                color: (isLoading || _secondsRemaining > 0) 
-                                    ? Colors.grey 
+                                color: (isLoading || _secondsRemaining > 0)
+                                    ? colorScheme.onSurface.withOpacity(0.4)
                                     : Colors.green,
                               ),
                             ),
@@ -257,7 +260,7 @@ class _OtpScreenState extends State<OtpScreen> {
                               AppText(
                                 text: "(00:${_secondsRemaining.toString().padLeft(2, '0')})",
                                 size: 12,
-                                color: Colors.grey,
+                                color: colorScheme.onSurface.withOpacity(0.5),
                               ),
                           ],
                         ),

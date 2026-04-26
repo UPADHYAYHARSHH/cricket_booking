@@ -112,7 +112,17 @@ class AuthCubit extends Cubit<AuthState> {
       }
     } on AuthException catch (e) {
       print("DEBUG: [AuthCubit] verifyPhoneOtp AuthException: ${e.message}");
-      emit(AuthError(e.message));
+      
+      String errorMessage = "Verification failed";
+      if (e.message.toLowerCase().contains("expired")) {
+        errorMessage = "OTP has expired. Please request a new one.";
+      } else if (e.message.toLowerCase().contains("invalid")) {
+        errorMessage = "Invalid OTP. Please check and try again.";
+      } else {
+        errorMessage = e.message;
+      }
+      
+      emit(AuthError(errorMessage));
     } catch (e) {
       print("DEBUG: [AuthCubit] verifyPhoneOtp unexpected error: $e");
       emit(AuthError(e.toString()));
