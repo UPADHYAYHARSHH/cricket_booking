@@ -121,7 +121,7 @@ Future<void> init() async {
   getIt.registerLazySingleton(
     () => UserSearchCubit(getIt<UserRepository>()),
   );
-  getIt.registerFactory(
+  getIt.registerLazySingleton<NotificationCubit>(
     () => NotificationCubit(getIt<NotificationRepository>()),
   );
 
