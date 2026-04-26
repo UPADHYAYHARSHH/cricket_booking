@@ -38,10 +38,12 @@ import 'package:turfpro/common/services/remote_config_service.dart';
 
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'user_booking/presentation/screens/splash/splash_screen.dart';
+import 'package:turfpro/user_booking/presentation/screens/splash/app_status_screens.dart';
 import 'package:turfpro/user_booking/presentation/blocs/ground/ground_cubit.dart';
 import 'user_booking/presentation/blocs/location/location_cubit.dart';
 import 'user_booking/presentation/blocs/saved_ground/saved_ground_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/theme/theme_cubit.dart';
+import 'package:turfpro/user_booking/presentation/blocs/config/config_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/booking/booking_cubit.dart';
 import 'package:turfpro/common/constants/colors.dart';
 
@@ -125,6 +127,9 @@ void main() async {
         BlocProvider<NotificationCubit>(
           create: (_) => di.getIt<NotificationCubit>()..fetchNotifications(),
         ),
+        BlocProvider<ConfigCubit>(
+          create: (_) => di.getIt<ConfigCubit>(),
+        ),
       ],
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, state) {
@@ -135,12 +140,19 @@ void main() async {
             darkTheme: AppColors.getDarkTheme(),
             initialRoute: "/",
             builder: (context, child) {
-              return BlocBuilder<ConnectivityCubit, ConnectivityState>(
-                builder: (context, connectivityState) {
-                  if (connectivityState is ConnectivityDisconnected) {
-                    return const NoInternetScreen();
+              return BlocBuilder<ConfigCubit, ConfigState>(
+                builder: (context, configState) {
+                  if (configState is ConfigLoaded && configState.isMaintenanceMode) {
+                    return const MaintenanceScreen();
                   }
-                  return child!;
+                  return BlocBuilder<ConnectivityCubit, ConnectivityState>(
+                    builder: (context, connectivityState) {
+                      if (connectivityState is ConnectivityDisconnected) {
+                        return const NoInternetScreen();
+                      }
+                      return child!;
+                    },
+                  );
                 },
               );
             },

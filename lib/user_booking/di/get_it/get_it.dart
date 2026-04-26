@@ -35,6 +35,9 @@ import 'package:turfpro/user_booking/presentation/blocs/user_search/user_search_
 import 'package:turfpro/user_booking/data/repositories/notification_repository.dart';
 import 'package:turfpro/user_booking/presentation/blocs/notification/notification_cubit.dart';
 
+import 'package:turfpro/user_booking/presentation/blocs/config/config_cubit.dart';
+import 'package:turfpro/common/services/remote_config_service.dart';
+
 final getIt = GetIt.instance;
 
 Future<void> init() async {
@@ -128,6 +131,10 @@ Future<void> init() async {
 
   getIt.registerLazySingleton<ConnectivityCubit>(
     () => ConnectivityCubit(getIt<Connectivity>()),
+  );
+
+  getIt.registerLazySingleton<ConfigCubit>(
+    () => ConfigCubit(RemoteConfigService()),
   );
 
   /// Services

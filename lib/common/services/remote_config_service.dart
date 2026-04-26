@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter/foundation.dart';
@@ -29,9 +30,36 @@ class RemoteConfigService {
       ));
 
       await _remoteConfig.fetchAndActivate();
+
+      // Listen for real-time updates (Supported in newer Firebase SDKs, but avoid on Web due to stream-errors)
+      if (!kIsWeb) {
+        _remoteConfig.onConfigUpdated.listen((event) async {
+          await _remoteConfig.activate();
+          debugPrint('Remote Config updated: ${event.updatedKeys}');
+        });
+      } else {
+        // Fallback for Web: Periodic polling every 5 minutes in background
+        Timer.periodic(const Duration(minutes: 5), (timer) async {
+          await _remoteConfig.fetchAndActivate();
+        });
+      }
     } catch (e) {
       debugPrint('Error initializing Remote Config: $e');
     }
+  }
+
+  Stream<bool> get maintenanceModeStream {
+    if (kIsWeb) {
+      // On web, we don't have onConfigUpdated, so we can use a simpler stream or just rely on the polling above
+      // For a stream that reacts to the polling:
+      return Stream.periodic(const Duration(minutes: 5)).asyncMap((_) async {
+        return isMaintenanceMode;
+      });
+    }
+    return _remoteConfig.onConfigUpdated.asyncMap((event) async {
+      await _remoteConfig.activate();
+      return isMaintenanceMode;
+    });
   }
 
   bool get isMaintenanceMode => _remoteConfig.getBool(_kMaintenanceMode);
