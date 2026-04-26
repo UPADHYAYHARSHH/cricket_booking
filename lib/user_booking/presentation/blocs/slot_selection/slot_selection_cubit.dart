@@ -1,4 +1,5 @@
 import 'package:turfpro/user_booking/domain/models/slot_models.dart';
+import 'package:flutter/foundation.dart';
 import 'package:turfpro/user_booking/domain/repositories/slot_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -56,21 +57,42 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
     // Cancel existing subscription if any
     await _slotsSubscription?.cancel();
 
-    // Start listening to real-time updates
+    // Start listening to real-time updates with robust error handling
     _slotsSubscription = repository.getSlotsStream(groundId, date).listen(
       (dbSlots) {
         _processAndEmitSlots(dbSlots, openingTime, closingTime, pricePerSlot);
       },
       onError: (error) async {
-        print('Realtime stream error: $error. Falling back to static fetch...');
+        debugPrint('Realtime stream error: $error. Attempting fallback fetch...');
+        
+        // If it's a network error, give it a moment before fallback
+        if (error.toString().contains('ClientException') || 
+            error.toString().contains('Failed to fetch')) {
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
+
         try {
           final dbSlots = await repository.fetchSlotsForGround(groundId, date);
           _processAndEmitSlots(dbSlots, openingTime, closingTime, pricePerSlot);
         } catch (e) {
-          emit(state.copyWith(isLoading: false, errorMessage: e.toString()));
+          debugPrint('Fallback fetch also failed: $e');
+          // Only emit error if we don't have slots yet or it's a critical failure
+          if (state.slots.isEmpty || e.toString().contains('ClientException')) {
+            emit(state.copyWith(
+              isLoading: false, 
+              errorMessage: _getUserFriendlyError(e.toString()),
+            ));
+          }
         }
       },
     );
+  }
+
+  String _getUserFriendlyError(String error) {
+    if (error.contains('ClientException') || error.contains('Failed to fetch')) {
+      return "Unable to connect to the server. Please check your internet connection and try again.";
+    }
+    return error;
   }
 
   void _processAndEmitSlots(List<TimeSlot> dbSlots, String? openingTime, String? closingTime, double pricePerSlot) {
@@ -141,7 +163,7 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
         ));
       }
     } catch (e) {
-      print("Error generating slots: $e");
+      debugPrint("Error generating slots: $e");
     }
     return generated;
   }

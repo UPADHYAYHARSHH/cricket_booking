@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:turfpro/user_booking/data/repositories/user_repository_impl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -23,9 +24,9 @@ class UserSearchCubit extends Cubit<UserSearchState> {
   UserSearchCubit(this.repository) : super(UserSearchInitial());
 
   Future<void> searchUsers(String query) async {
-    print("[DEBUG] UserSearchCubit: searchUsers called with query: '$query'");
+    debugPrint("[DEBUG] UserSearchCubit: searchUsers called with query: '$query'");
     if (query.isEmpty) {
-      print("[DEBUG] UserSearchCubit: Query empty, emitting Initial");
+      debugPrint("[DEBUG] UserSearchCubit: Query empty, emitting Initial");
       emit(UserSearchInitial());
       return;
     }
@@ -33,10 +34,10 @@ class UserSearchCubit extends Cubit<UserSearchState> {
     emit(UserSearchLoading());
     try {
       final users = await repository.searchUsersByUsername(query);
-      print("[DEBUG] UserSearchCubit: Received ${users.length} users from repository");
+      debugPrint("[DEBUG] UserSearchCubit: Received ${users.length} users from repository");
       emit(UserSearchLoaded(users));
     } catch (e) {
-      print("[DEBUG] UserSearchCubit: Error during search: $e");
+      debugPrint("[DEBUG] UserSearchCubit: Error during search: $e");
       emit(UserSearchError(e.toString()));
     }
   }

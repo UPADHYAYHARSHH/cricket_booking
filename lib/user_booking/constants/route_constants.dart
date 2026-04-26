@@ -17,4 +17,5 @@ class AppRoutes {
   static const notification = "/notification";
   static const forgotPassword = "/forgotPassword";
   static const categoryGrounds = "/categoryGrounds";
+  static const scan = "/scan";
 }

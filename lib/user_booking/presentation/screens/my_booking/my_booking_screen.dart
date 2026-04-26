@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:intl/intl.dart';
 import 'dart:math';
 import 'package:turfpro/utils/ticket_util.dart';
@@ -785,36 +786,16 @@ class _QrCodePainter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      size: const Size(120, 120),
-      painter: _QrPainter(seed: data.hashCode, color: Theme.of(context).colorScheme.onSurface),
+    return QrImageView(
+      data: data,
+      version: QrVersions.auto,
+      size: 120.0,
+      backgroundColor: Colors.white,
+      foregroundColor: Colors.black,
     );
   }
 }
 
-class _QrPainter extends CustomPainter {
-  final int seed;
-  final Color color;
-  _QrPainter({required this.seed, required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = color;
-    final rng = Random(seed);
-    final cellSize = size.width / 20;
-
-    for (int i = 0; i < 20; i++) {
-      for (int j = 0; j < 20; j++) {
-        if (rng.nextBool()) {
-          canvas.drawRect(Rect.fromLTWH(i * cellSize, j * cellSize, cellSize - 1, cellSize - 1), paint);
-        }
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
 
 class TicketModel {
   final String bookingId;

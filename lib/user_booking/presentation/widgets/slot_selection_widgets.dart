@@ -14,6 +14,7 @@ import 'package:turfpro/user_booking/data/models/review_model.dart';
 import 'package:turfpro/user_booking/presentation/widgets/review_widgets.dart';
 import 'package:turfpro/utils/toast_util.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_button.dart';
+import 'package:shimmer/shimmer.dart';
 
 class SlotSelectionWidgets {
   static const Color kOrange = AppColors.accentOrange;
@@ -413,6 +414,79 @@ class SlotSelectionWidgets {
       ),
     );
   }
+
+  static Widget buildSlotShimmer(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    return Container(
+      color: theme.colorScheme.surface,
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(16),
+      child: Shimmer.fromColors(
+        baseColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[300]!,
+        highlightColor: isDark ? Colors.white.withOpacity(0.1) : Colors.grey[100]!,
+        child: GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: 6,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 1.5,
+          ),
+          itemBuilder: (ctx, i) => Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Start Time Placeholder
+                Container(
+                  width: 60,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: Colors.black,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Subtitle Placeholder
+                    Container(
+                      width: 80,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Price Placeholder
+                    Container(
+                      width: 50,
+                      height: 16,
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
 
   static Widget _buildSlotCard(BuildContext context, TimeSlot slot, int index,
       Function(int) onToggleSlot) {

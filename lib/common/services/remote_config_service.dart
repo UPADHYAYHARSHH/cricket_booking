@@ -16,6 +16,8 @@ class RemoteConfigService {
   static const String _kRequiredVersion = 'required_version';
   static const String _kUpdateUrl = 'update_url';
 
+  Timer? _webPollTimer;
+
   Future<void> initialize() async {
     try {
       await _remoteConfig.setDefaults({
@@ -39,13 +41,22 @@ class RemoteConfigService {
         });
       } else {
         // Fallback for Web: Periodic polling every 5 minutes in background
-        Timer.periodic(const Duration(minutes: 5), (timer) async {
-          await _remoteConfig.fetchAndActivate();
+        _webPollTimer?.cancel();
+        _webPollTimer = Timer.periodic(const Duration(minutes: 5), (timer) async {
+          await fetchAndActivate();
         });
       }
     } catch (e) {
       debugPrint('Error initializing Remote Config: $e');
     }
+  }
+
+  Future<void> fetchAndActivate() async {
+    await _remoteConfig.fetchAndActivate();
+  }
+
+  void dispose() {
+    _webPollTimer?.cancel();
   }
 
   Stream<bool> get maintenanceModeStream {
@@ -81,10 +92,14 @@ class RemoteConfigService {
     List<int> v1List = v1.split('.').map(int.parse).toList();
     List<int> v2List = v2.split('.').map(int.parse).toList();
 
-    for (int i = 0; i < v1List.length; i++) {
-      if (i >= v2List.length) return true;
-      if (v1List[i] > v2List[i]) return true;
-      if (v1List[i] < v2List[i]) return false;
+    int maxLength = v1List.length > v2List.length ? v1List.length : v2List.length;
+
+    for (int i = 0; i < maxLength; i++) {
+      int part1 = i < v1List.length ? v1List[i] : 0;
+      int part2 = i < v2List.length ? v2List[i] : 0;
+
+      if (part1 > part2) return true;
+      if (part1 < part2) return false;
     }
     return false;
   }

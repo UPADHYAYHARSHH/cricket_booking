@@ -368,6 +368,18 @@ class TicketUtil {
                         pw.Text(timeRange, style: pw.TextStyle(color: _kGrey, fontSize: 10)),
                       ],
                     ),
+                    // QR CODE IN PDF
+                    pw.Container(
+                      width: 50,
+                      height: 50,
+                      child: pw.BarcodeWidget(
+                        barcode: pw.Barcode.qrCode(),
+                        data: orderId,
+                        width: 50,
+                        height: 50,
+                        color: _kDark,
+                      ),
+                    ),
                     pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.end,
                       children: [

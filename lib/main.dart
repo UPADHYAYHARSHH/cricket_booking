@@ -44,8 +44,12 @@ import 'user_booking/presentation/blocs/location/location_cubit.dart';
 import 'user_booking/presentation/blocs/saved_ground/saved_ground_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/theme/theme_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/config/config_cubit.dart';
+import 'package:turfpro/user_booking/presentation/screens/scanning/scanning_screen.dart';
 import 'package:turfpro/user_booking/presentation/blocs/booking/booking_cubit.dart';
 import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/user_booking/data/services/deep_link_service.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -90,6 +94,7 @@ void main() async {
   await Hive.openBox('settings');
 
   await di.init();
+  DeepLinkService().init();
 
   runApp(
     MultiBlocProvider(
@@ -138,6 +143,7 @@ void main() async {
             themeMode: state.themeMode,
             theme: AppColors.getLightTheme(),
             darkTheme: AppColors.getDarkTheme(),
+            navigatorKey: navigatorKey,
             initialRoute: "/",
             builder: (context, child) {
               return BlocBuilder<ConfigCubit, ConfigState>(
@@ -147,10 +153,13 @@ void main() async {
                   }
                   return BlocBuilder<ConnectivityCubit, ConnectivityState>(
                     builder: (context, connectivityState) {
-                      if (connectivityState is ConnectivityDisconnected) {
-                        return const NoInternetScreen();
-                      }
-                      return child!;
+                      return Stack(
+                        children: [
+                          if (child != null) child,
+                          if (connectivityState is ConnectivityDisconnected)
+                            const NoInternetScreen(),
+                        ],
+                      );
                     },
                   );
                 },
@@ -175,6 +184,7 @@ void main() async {
               AppRoutes.splitShare: (context) => const SplitShareScreen(),
               AppRoutes.splitOverview: (context) => const SplitOverviewScreen(),
               AppRoutes.forgotPassword: (context) => const ForgotPasswordScreen(),
+              AppRoutes.scan: (context) => const ScanningScreen(),
               AppRoutes.categoryGrounds: (context) => const CategoryGroundsScreen(),
               AppRoutes.notification: (context) => const NotificationScreen(),
             },

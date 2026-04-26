@@ -106,11 +106,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   return Dismissible(
                     key: Key(notification.id),
                     direction: DismissDirection.horizontal,
+                    confirmDismiss: (direction) async {
+                      if (direction == DismissDirection.startToEnd) {
+                        context.read<NotificationCubit>().markAsRead(notification.id);
+                        return false; // Do not dismiss for "Read"
+                      }
+                      return true; // Dismiss for "Delete"
+                    },
                     onDismissed: (direction) {
                       if (direction == DismissDirection.endToStart) {
                         context.read<NotificationCubit>().deleteNotification(notification.id);
-                      } else if (direction == DismissDirection.startToEnd) {
-                        context.read<NotificationCubit>().markAsRead(notification.id);
                       }
                     },
                     background: _buildSwipeBackground(

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
@@ -67,32 +68,32 @@ class AuthCubit extends Cubit<AuthState> {
   // }
 
   Future<void> signInWithPhone(String phone) async {
-    print("DEBUG: [AuthCubit] signInWithPhone request for: $phone");
+    debugPrint("DEBUG: [AuthCubit] signInWithPhone request for: $phone");
     emit(AuthLoading());
     try {
       await repository.signInWithPhone(phone);
-      print("DEBUG: [AuthCubit] signInWithPhone success - emitting AuthOtpRequired");
+      debugPrint("DEBUG: [AuthCubit] signInWithPhone success - emitting AuthOtpRequired");
       emit(AuthOtpRequired(phone));
     } on AuthException catch (e) {
-      print("DEBUG: [AuthCubit] signInWithPhone AuthException: ${e.message}");
+      debugPrint("DEBUG: [AuthCubit] signInWithPhone AuthException: ${e.message}");
       emit(AuthError(e.message));
     } catch (e) {
-      print("DEBUG: [AuthCubit] signInWithPhone unexpected error: $e");
+      debugPrint("DEBUG: [AuthCubit] signInWithPhone unexpected error: $e");
       emit(AuthError(e.toString()));
     }
   }
 
   Future<void> verifyPhoneOtp(String phone, String code) async {
-    print("DEBUG: [AuthCubit] verifyPhoneOtp request for: $phone with code: $code");
+    debugPrint("DEBUG: [AuthCubit] verifyPhoneOtp request for: $phone with code: $code");
     emit(AuthLoading());
     try {
       await repository.verifyPhoneOtp(phone: phone, token: code);
-      print("DEBUG: [AuthCubit] verifyPhoneOtp success - checking profile completion");
+      debugPrint("DEBUG: [AuthCubit] verifyPhoneOtp success - checking profile completion");
       
       // Post-verification check: Is profile complete?
       final user = Supabase.instance.client.auth.currentUser;
       if (user != null) {
-        print("DEBUG: [AuthCubit] Logged in user: ${user.id}");
+        debugPrint("DEBUG: [AuthCubit] Logged in user: ${user.id}");
         final userData = await Supabase.instance.client
             .from('users')
             .select('name')
@@ -100,18 +101,18 @@ class AuthCubit extends Cubit<AuthState> {
             .maybeSingle();
             
         if (userData == null || userData['name'] == null || (userData['name'] as String).isEmpty) {
-          print("DEBUG: [AuthCubit] Profile incomplete - emitting AuthProfileIncomplete");
+          debugPrint("DEBUG: [AuthCubit] Profile incomplete - emitting AuthProfileIncomplete");
           emit(AuthProfileIncomplete());
         } else {
-          print("DEBUG: [AuthCubit] Profile complete - emitting AuthSuccess");
+          debugPrint("DEBUG: [AuthCubit] Profile complete - emitting AuthSuccess");
           emit(AuthSuccess());
         }
       } else {
-        print("DEBUG: [AuthCubit] User is null after verification");
+        debugPrint("DEBUG: [AuthCubit] User is null after verification");
         emit(AuthError("Authentication failed"));
       }
     } on AuthException catch (e) {
-      print("DEBUG: [AuthCubit] verifyPhoneOtp AuthException: ${e.message}");
+      debugPrint("DEBUG: [AuthCubit] verifyPhoneOtp AuthException: ${e.message}");
       
       String errorMessage = "Verification failed";
       if (e.message.toLowerCase().contains("expired")) {
@@ -124,7 +125,7 @@ class AuthCubit extends Cubit<AuthState> {
       
       emit(AuthError(errorMessage));
     } catch (e) {
-      print("DEBUG: [AuthCubit] verifyPhoneOtp unexpected error: $e");
+      debugPrint("DEBUG: [AuthCubit] verifyPhoneOtp unexpected error: $e");
       emit(AuthError(e.toString()));
     }
   }

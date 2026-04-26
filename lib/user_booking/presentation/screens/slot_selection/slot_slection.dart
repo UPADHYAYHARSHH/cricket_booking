@@ -1,4 +1,5 @@
 import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/user_booking/presentation/blocs/connectivity/connectivity_cubit.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import 'package:turfpro/user_booking/data/repositories/payment_repository.dart';
@@ -374,8 +375,32 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: BlocBuilder<SlotSelectionCubit, SlotSelectionState>(
-        builder: (context, state) {
+      body: BlocListener<ConnectivityCubit, ConnectivityState>(
+        listener: (context, connectivityState) async {
+          if (connectivityState is ConnectivityConnected && _ground != null) {
+            final slotCubit = context.read<SlotSelectionCubit>();
+            
+            // Automatically retry if there's an error when internet returns
+            if (slotCubit.state.errorMessage != null) {
+              debugPrint("[SLOT_SELECTION] Network restored, auto-retrying in 1.5s...");
+              
+              // Wait a bit for the network interface to be fully ready
+              await Future.delayed(const Duration(milliseconds: 1500));
+              
+              if (mounted && context.read<ConnectivityCubit>().state is ConnectivityConnected) {
+                slotCubit.loadSlots(
+                  _ground!.id,
+                  slotCubit.state.selectedDate ?? DateTime.now(),
+                  openingTime: _ground!.openingTime,
+                  closingTime: _ground!.closingTime,
+                  pricePerSlot: _ground!.pricePerHour.toDouble(),
+                );
+              }
+            }
+          }
+        },
+        child: BlocBuilder<SlotSelectionCubit, SlotSelectionState>(
+          builder: (context, state) {
           final selectedSlots = state.slots
               .where((s) => s.status == SlotStatus.selected)
               .toList();
@@ -452,17 +477,39 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                             context.read<SlotSelectionCubit>().changePeriod(p),
                       ),
                       if (state.isLoading)
-                        const Padding(
-                          padding: EdgeInsets.all(32.0),
-                          child: Center(
-                              child: CircularProgressIndicator(
-                                  color: AppColors.accentOrange)),
-                        )
+                        SlotSelectionWidgets.buildSlotShimmer(context)
                       else if (state.errorMessage != null)
                         Center(
                             child: Padding(
                           padding: const EdgeInsets.all(32.0),
-                          child: AppText(text: state.errorMessage!),
+                          child: Column(
+                            children: [
+                              AppText(
+                                text: state.errorMessage!,
+                                textStyle: const TextStyle(color: Colors.red),
+                                align: TextAlign.center,
+                              ),
+                              const AppSizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: () {
+                                  if (_ground != null) {
+                                    context.read<SlotSelectionCubit>().loadSlots(
+                                          _ground!.id,
+                                          state.selectedDate ?? DateTime.now(),
+                                          openingTime: _ground!.openingTime,
+                                          closingTime: _ground!.closingTime,
+                                          pricePerSlot: _ground!.pricePerHour.toDouble(),
+                                        );
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryDarkGreen,
+                                  foregroundColor: Colors.white,
+                                ),
+                                child: const Text("Retry"),
+                              ),
+                            ],
+                          ),
                         ))
                       else ...[
                         // SlotSelectionWidgets.buildLegend(context),
@@ -530,6 +577,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
             ],
           );
         },
+      ),
       ),
     );
   }

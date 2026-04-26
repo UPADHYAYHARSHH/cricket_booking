@@ -13,6 +13,7 @@ import 'package:lottie/lottie.dart';
 import 'package:turfpro/utils/toast_util.dart';
 // Add our new helper
 import 'package:turfpro/utils/ticket_util.dart'; // Add TicketUtil
+import 'package:qr_flutter/qr_flutter.dart';
 
 class BookingConfirmationScreen extends StatefulWidget {
   const BookingConfirmationScreen({super.key});
@@ -196,6 +197,9 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                 orderId: orderId,
                 totalPrice: totalPrice,
               ),
+
+              const AppSizedBox(height: 20),
+              _QRCodeCard(orderId: orderId),
 
               const AppSizedBox(height: 32),
 
@@ -586,3 +590,69 @@ class _BookingDetailsCard extends StatelessWidget {
     );
   }
 }
+
+class _QRCodeCard extends StatelessWidget {
+  final String orderId;
+  const _QRCodeCard({required this.orderId});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        children: [
+          const AppText(
+            text: "Entry QR Code",
+            textStyle: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const AppSizedBox(height: 4),
+          AppText(
+            text: "Show this at the venue for verification",
+            textStyle: TextStyle(
+              fontSize: 12,
+              color: colorScheme.onSurface.withOpacity(0.5),
+            ),
+          ),
+          const AppSizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: QrImageView(
+              data: orderId,
+              version: QrVersions.auto,
+              size: 160.0,
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.black,
+            ),
+          ),
+          const AppSizedBox(height: 16),
+          AppText(
+            text: "#$orderId",
+            textStyle: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 2,
+              color: AppColors.primaryDarkGreen,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+

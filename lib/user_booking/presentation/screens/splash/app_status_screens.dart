@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:turfpro/user_booking/presentation/blocs/config/config_cubit.dart';
 import 'package:turfpro/common/constants/colors.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
@@ -40,6 +42,17 @@ class MaintenanceScreen extends StatelessWidget {
               text: "TurfPro is currently undergoing scheduled maintenance to improve your experience. We'll be back shortly!",
               color: theme.colorScheme.onSurface.withOpacity(0.7),
               align: TextAlign.center,
+            ),
+            const AppSizedBox(height: 32),
+            ElevatedButton(
+              onPressed: () => context.read<ConfigCubit>().refresh(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryDarkGreen,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text("Check Again"),
             ),
           ],
         ),

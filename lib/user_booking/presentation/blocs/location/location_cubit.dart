@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:bloc/bloc.dart';
 
 import '../../../../utils/location_service.dart';
@@ -50,7 +51,7 @@ class LocationCubit extends Cubit<LocationState> {
   //   _locationTimer?.cancel();
   //   // Update every 5 minutes as requested
   //   _locationTimer = Timer.periodic(const Duration(minutes: 5), (_) {
-  //     print("[LOCATION_CUBIT] Periodic update triggered...");
+  //     debugPrint("[LOCATION_CUBIT] Periodic update triggered...");
   //     loadCity();
   //   });
   // }
@@ -65,17 +66,17 @@ class LocationCubit extends Cubit<LocationState> {
   Future<void> setCity(String cityLabel) async {
     emit(state.copyWith(isLoading: true));
 
-    print("[LOCATION_CUBIT] Setting city manually to: $cityLabel");
+    debugPrint("[LOCATION_CUBIT] Setting city manually to: $cityLabel");
     final cityName = cityLabel.split(',').first.trim();
 
     try {
-      print("[LOCATION_CUBIT] Geocoding cityName: $cityName");
+      debugPrint("[LOCATION_CUBIT] Geocoding cityName: $cityName");
       List<Location> locations = await locationFromAddress(cityName);
       double? lat, lng;
       if (locations.isNotEmpty) {
         lat = locations.first.latitude;
         lng = locations.first.longitude;
-        print("[LOCATION_CUBIT] Successfully geocoded to Lat: $lat, Lng: $lng");
+        debugPrint("[LOCATION_CUBIT] Successfully geocoded to Lat: $lat, Lng: $lng");
       }
 
       emit(state.copyWith(
@@ -85,10 +86,10 @@ class LocationCubit extends Cubit<LocationState> {
         isLoading: false,
       ));
 
-      print("[LOCATION_CUBIT] Persisting city to profile...");
+      debugPrint("[LOCATION_CUBIT] Persisting city to profile...");
       await repo.updateUserCity(cityLabel);
     } catch (e) {
-      print("[LOCATION_CUBIT] ERROR in setCity: $e");
+      debugPrint("[LOCATION_CUBIT] ERROR in setCity: $e");
       emit(state.copyWith(city: cityLabel, isLoading: false));
     }
   }
@@ -99,14 +100,14 @@ class LocationCubit extends Cubit<LocationState> {
     emit(state.copyWith(isLoading: true));
   }
 
-  print("[LOCATION_CUBIT] Loading city...");
+  debugPrint("[LOCATION_CUBIT] Loading city...");
 
   try {
     /// STEP 1: Check stored city FIRST
     final storedCity = await repo.getUserCity();
 
     if (storedCity != null && !forceRefresh) {
-      print("[LOCATION_CUBIT] Using stored city: $storedCity");
+      debugPrint("[LOCATION_CUBIT] Using stored city: $storedCity");
 
       // Optionally geocode to get lat/lng
       try {
@@ -136,7 +137,7 @@ class LocationCubit extends Cubit<LocationState> {
     }
 
     /// STEP 2: Fetch from GPS if no stored city
-    print("[LOCATION_CUBIT] Fetching GPS location...");
+    debugPrint("[LOCATION_CUBIT] Fetching GPS location...");
     final userLoc = await getCurrentLocation();
 
     emit(state.copyWith(
@@ -150,7 +151,7 @@ class LocationCubit extends Cubit<LocationState> {
     await repo.updateUserCity(userLoc.city);
 
   } catch (e) {
-    print("[LOCATION_CUBIT] ERROR: $e");
+    debugPrint("[LOCATION_CUBIT] ERROR: $e");
 
     String? errorMsg;
     if (e.toString().contains('PERMISSION_DENIED')) {

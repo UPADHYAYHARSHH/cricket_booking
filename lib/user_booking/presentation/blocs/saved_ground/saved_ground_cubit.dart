@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../data/repositories/favorite_repository.dart';
 
@@ -29,14 +30,14 @@ class SavedGroundCubit extends Cubit<SavedGroundState> {
   SavedGroundCubit(this._repository) : super(SavedGroundInitial());
 
   Future<void> loadFavorites(String userId) async {
-    print("[WISHLIST_CUBIT] Requesting favorites for User: $userId");
+    debugPrint("[WISHLIST_CUBIT] Requesting favorites for User: $userId");
     emit(SavedGroundLoading(state.favoriteIds));
     try {
       final ids = await _repository.fetchFavoriteIds(userId);
-      print("[WISHLIST_CUBIT] Loaded ${ids.length} favorites from Supabase: $ids");
+      debugPrint("[WISHLIST_CUBIT] Loaded ${ids.length} favorites from Supabase: $ids");
       emit(SavedGroundLoaded(ids));
     } catch (e) {
-      print("[WISHLIST_CUBIT] ERROR loading favorites: $e");
+      debugPrint("[WISHLIST_CUBIT] ERROR loading favorites: $e");
       emit(SavedGroundError(e.toString(), state.favoriteIds));
     }
   }
@@ -44,7 +45,7 @@ class SavedGroundCubit extends Cubit<SavedGroundState> {
   Future<void> toggleFavorite(String userId, String groundId) async {
     final isFavorite = state.favoriteIds.contains(groundId);
     final action = isFavorite ? "REMOVING" : "ADDING";
-    print("[WISHLIST_CUBIT] $action favorite - User: $userId, Ground: $groundId");
+    debugPrint("[WISHLIST_CUBIT] $action favorite - User: $userId, Ground: $groundId");
     
     final updatedIds = List<String>.from(state.favoriteIds);
 
@@ -60,13 +61,13 @@ class SavedGroundCubit extends Cubit<SavedGroundState> {
     try {
       if (isFavorite) {
         await _repository.removeFavorite(userId, groundId);
-        print("[WISHLIST_CUBIT] Successfully removed from Supabase");
+        debugPrint("[WISHLIST_CUBIT] Successfully removed from Supabase");
       } else {
         await _repository.addFavorite(userId, groundId);
-        print("[WISHLIST_CUBIT] Successfully added to Supabase");
+        debugPrint("[WISHLIST_CUBIT] Successfully added to Supabase");
       }
     } catch (e) {
-      print("[WISHLIST_CUBIT] ERROR in toggleFavorite: $e");
+      debugPrint("[WISHLIST_CUBIT] ERROR in toggleFavorite: $e");
       // Revert on error
       emit(SavedGroundError(e.toString(), state.favoriteIds));
     }

@@ -27,9 +27,15 @@ class ConfigCubit extends Cubit<ConfigState> {
     });
   }
 
+  Future<void> refresh() async {
+    await _remoteConfigService.fetchAndActivate();
+    emit(ConfigLoaded(isMaintenanceMode: _remoteConfigService.isMaintenanceMode));
+  }
+
   @override
   Future<void> close() {
     _subscription?.cancel();
+    _remoteConfigService.dispose();
     return super.close();
   }
 }

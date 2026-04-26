@@ -55,4 +55,25 @@ class GroundModel {
       categories: (json['categories'] as List?)?.map((e) => e.toString()).toList() ?? [],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'address': address,
+      'latitude': latitude,
+      'longitude': longitude,
+      'price_per_hour': pricePerHour,
+      'imageUrl': imageUrl,
+      'rating': rating,
+      'opening_time': openingTime,
+      'closing_time': closingTime,
+      'city': city,
+      'total_reviews': totalReviews,
+      'description': description,
+      'amenities': amenities,
+      'images': images,
+      'categories': categories,
+    };
+  }
 }

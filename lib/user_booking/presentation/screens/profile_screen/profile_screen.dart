@@ -48,8 +48,6 @@ class ProfileScreen extends StatelessWidget {
                       _buildNameSection(context, profileState),
                       const SizedBox(height: 28),
                       _buildMenuList(context),
-                      const SizedBox(height: 24),
-                      _buildProBanner(context),
                       const SizedBox(height: 16),
                     ],
                   ),
@@ -192,6 +190,14 @@ class ProfileScreen extends StatelessWidget {
         },
       ),
       _MenuItem(
+        icon: Icons.qr_code_scanner_rounded,
+        label: "Scan Booking QR",
+        iconBg: Colors.blue.withOpacity(isDark ? 0.2 : 0.1),
+        iconColor: isDark ? Colors.blueAccent : Colors.blue.shade700,
+        isLogout: false,
+        onTap: () => Navigator.pushNamed(context, AppRoutes.scan),
+      ),
+      _MenuItem(
         icon: isDark ? HugeIcons.strokeRoundedMoon : HugeIcons.strokeRoundedSun01,
         label: "Dark Mode",
         iconBg: isDark ? Colors.blueGrey.withOpacity(0.2) : Colors.amber.withOpacity(0.1),
@@ -203,14 +209,6 @@ class ProfileScreen extends StatelessWidget {
           activeThumbColor: AppColors.accentOrange,
         ),
       ),
-      // _MenuItem(
-      //   icon: Icons.receipt_long_outlined,
-      //   label: "Split Bill History",
-      //   iconBg: const Color(0xFFFFF3E0).withValues(alpha: isDark ? 0.1 : 1),
-      //   iconColor: Colors.orange.shade800,
-      //   isLogout: false,
-      //   onTap: () => Navigator.pushNamed(context, AppRoutes.splitHistory),
-      // ),
       _MenuItem(
         icon: Icons.help_outline_rounded,
         label: "Help & Support",
@@ -255,76 +253,6 @@ class ProfileScreen extends StatelessWidget {
           final item = menuItems[index];
           return _MenuTile(item: item);
         },
-      ),
-    );
-  }
-
-  Widget _buildProBanner(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark 
-            ? [AppColors.surfaceDark, AppColors.bgDark] 
-            : [AppColors.primaryDarkGreen, AppColors.primaryLightGreen],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "Elevate Your Game",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            "Unlock priority bookings, exclusive\ntournaments, and 15% discount on all turfs.",
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.6),
-              fontSize: 12,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            height: 46,
-            child: ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isDark ? AppColors.accentOrange : Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: Text(
-                "Go Pro Membership",
-                style: TextStyle(
-                  color: isDark ? Colors.white : AppColors.primaryDarkGreen,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
