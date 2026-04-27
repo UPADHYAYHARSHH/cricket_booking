@@ -48,11 +48,15 @@ import 'package:turfpro/user_booking/presentation/screens/scanning/scanning_scre
 import 'package:turfpro/user_booking/presentation/blocs/booking/booking_cubit.dart';
 import 'package:turfpro/common/constants/colors.dart';
 import 'package:turfpro/user_booking/data/services/deep_link_service.dart';
+import 'package:turfpro/user_booking/data/services/shorebird_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Silent OTA updates
+  ShorebirdService.checkForUpdates();
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
