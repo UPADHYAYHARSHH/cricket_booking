@@ -18,4 +18,5 @@ class AppRoutes {
   static const forgotPassword = "/forgotPassword";
   static const categoryGrounds = "/categoryGrounds";
   static const scan = "/scan";
+  static const bookingSummary = "/bookingSummary";
 }

@@ -4,6 +4,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:intl/intl.dart';
 import 'dart:math';
 import 'package:turfpro/utils/ticket_util.dart';
+import 'package:turfpro/utils/id_util.dart';
 
 import '../../../../common/constants/colors.dart';
 import '../../../constants/text_theme.dart';
@@ -458,7 +459,8 @@ class _BookingCardState extends State<_BookingCard> {
       MaterialPageRoute(
         builder: (_) => ViewTicketScreen(
           ticket: TicketModel(
-            bookingId: widget.booking.razorpayOrderId.isNotEmpty ? widget.booking.razorpayOrderId : widget.booking.id,
+            bookingId: widget.booking.id,
+            displayId: widget.booking.displayId,
             venueName: widget.booking.ground?.name ?? "Venue",
             pitchName: "Main Pitch",
             date: widget.booking.slotTime, // Keep as DateTime
@@ -506,6 +508,7 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
       date: widget.ticket.date,
       timeRange: widget.ticket.time,
       orderId: widget.ticket.bookingId,
+      displayId: widget.ticket.displayId,
       totalPrice: widget.ticket.price,
       onLoadingStarted: () => setState(() => _isSaving = true),
       onLoadingFinished: () {
@@ -684,7 +687,7 @@ class _TicketCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _infoColumn(context, "ORDER ID", "#${ticket.bookingId}"),
+              _infoColumn(context, "ORDER ID", "#${IdUtil.formatDisplayId(ticket.displayId)}"),
               _infoColumn(context, "PRICE", "₹${ticket.price.toStringAsFixed(0)}"),
             ],
           ),
@@ -799,9 +802,10 @@ class _QrCodePainter extends StatelessWidget {
 
 class TicketModel {
   final String bookingId;
+  final int displayId;
   final String venueName;
   final String pitchName;
-  final DateTime date; // Changed to DateTime
+  final DateTime date;
   final String time;
   final String bookedBy;
   final String location;
@@ -809,8 +813,9 @@ class TicketModel {
   final String imageUrl;
   final bool isPaid;
 
-  const TicketModel({
+  TicketModel({
     required this.bookingId,
+    required this.displayId,
     required this.venueName,
     required this.pitchName,
     required this.date,

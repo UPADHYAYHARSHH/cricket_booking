@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
-        android:label="box_cricket_new"
+        android:label="TurfPro"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

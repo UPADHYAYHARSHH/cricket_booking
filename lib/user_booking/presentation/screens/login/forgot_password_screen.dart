@@ -9,6 +9,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../constants/widgets/app_button.dart';
 import '../../../constants/widgets/app_sizedBox.dart';
 import '../../../constants/widgets/app_text.dart';
+import '../../../../common/constants/colors.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -52,9 +53,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       builder: (context, state) {
         final isLoading = state is AuthLoading;
 
-        return Scaffold(
-          backgroundColor: const Color(0xffECECEC),
-          appBar: AppBar(
+        return Theme(
+          data: AppColors.getLightTheme(),
+          child: Scaffold(
+            backgroundColor: const Color(0xffECECEC),
+            appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
             iconTheme: const IconThemeData(color: Colors.black87),
@@ -72,6 +75,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               ],
             ),
           ),
+        ),
         );
       },
     );

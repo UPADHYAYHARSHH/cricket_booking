@@ -23,6 +23,7 @@ import 'package:turfpro/user_booking/presentation/screens/split_payment/split_ov
 import 'package:turfpro/user_booking/presentation/blocs/split_payment/split_cubit.dart';
 import 'package:turfpro/user_booking/presentation/screens/category_grounds/category_grounds_screen.dart';
 import 'package:turfpro/user_booking/presentation/screens/notification/notification_screen.dart';
+import 'package:turfpro/user_booking/presentation/screens/booking_summary/booking_summary_screen.dart';
 import 'package:turfpro/user_booking/presentation/blocs/notification/notification_cubit.dart';
 import 'package:turfpro/user_booking/constants/route_constants.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -191,6 +192,7 @@ void main() async {
               AppRoutes.scan: (context) => const ScanningScreen(),
               AppRoutes.categoryGrounds: (context) => const CategoryGroundsScreen(),
               AppRoutes.notification: (context) => const NotificationScreen(),
+              AppRoutes.bookingSummary: (context) => const BookingSummaryScreen(),
             },
           );
         },

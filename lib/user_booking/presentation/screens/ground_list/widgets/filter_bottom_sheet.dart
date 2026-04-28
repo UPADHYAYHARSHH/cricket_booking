@@ -23,6 +23,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   late SortBy _sortBy;
   late double _minPrice;
   late double _maxPrice;
+  late bool _isAvailableNow;
 
   @override
   void initState() {
@@ -30,6 +31,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     _sortBy = widget.initialCriteria.sortBy;
     _minPrice = widget.initialCriteria.minPrice;
     _maxPrice = widget.initialCriteria.maxPrice;
+    _isAvailableNow = widget.initialCriteria.isAvailableNow;
   }
 
   @override
@@ -67,6 +69,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     _sortBy = SortBy.nearMe;
                     _minPrice = 0;
                     _maxPrice = 5000;
+                    _isAvailableNow = false;
                   });
                 },
                 child: const AppText(
@@ -150,6 +153,37 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
           ),
           const AppSizedBox(height: 24),
 
+          const AppSizedBox(height: 24),
+
+          /// AVAILABLE NOW
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const AppText(
+                    text: "Available Now",
+                    textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  AppText(
+                    text: "Show grounds that are currently open",
+                    textStyle: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                  ),
+                ],
+              ),
+              Switch(
+                value: _isAvailableNow,
+                activeColor: AppColors.primaryDarkGreen,
+                onChanged: (val) {
+                  setState(() {
+                    _isAvailableNow = val;
+                  });
+                },
+              ),
+            ],
+          ),
+
           const AppSizedBox(height: 32),
 
           /// APPLY BUTTON
@@ -163,6 +197,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     minPrice: _minPrice,
                     maxPrice: _maxPrice,
                     selectedAmenities: widget.initialCriteria.selectedAmenities,
+                    isAvailableNow: _isAvailableNow,
                   );
                 widget.onApply(criteria);
                 Navigator.pop(context);

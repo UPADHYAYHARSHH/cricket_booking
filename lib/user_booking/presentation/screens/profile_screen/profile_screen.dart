@@ -190,14 +190,6 @@ class ProfileScreen extends StatelessWidget {
         },
       ),
       _MenuItem(
-        icon: Icons.qr_code_scanner_rounded,
-        label: "Scan Booking QR",
-        iconBg: Colors.blue.withOpacity(isDark ? 0.2 : 0.1),
-        iconColor: isDark ? Colors.blueAccent : Colors.blue.shade700,
-        isLogout: false,
-        onTap: () => Navigator.pushNamed(context, AppRoutes.scan),
-      ),
-      _MenuItem(
         icon: isDark ? HugeIcons.strokeRoundedMoon : HugeIcons.strokeRoundedSun01,
         label: "Dark Mode",
         iconBg: isDark ? Colors.blueGrey.withOpacity(0.2) : Colors.amber.withOpacity(0.1),

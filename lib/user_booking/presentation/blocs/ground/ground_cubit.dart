@@ -71,7 +71,12 @@ class GroundCubit extends Cubit<GroundState> {
         }).toList();
       }
 
-      // 3. Sort
+      // 3. Filter by Available Now
+      if (criteria.isAvailableNow) {
+        filteredList = filteredList.where((g) => _isAvailableNow(g.openingTime, g.closingTime)).toList();
+      }
+
+      // 4. Sort
       switch (criteria.sortBy) {
         case SortBy.nearMe:
           if (userLat != null && userLng != null) {
@@ -131,5 +136,29 @@ class GroundCubit extends Cubit<GroundState> {
         cos((lat2 - lat1) * p) / 2 +
         cos(lat1 * p) * cos(lat2 * p) * (1 - cos((lon2 - lon1) * p)) / 2;
     return 12742 * asin(sqrt(a));
+  }
+
+  bool _isAvailableNow(String openingTimeStr, String closingTimeStr) {
+    try {
+      final now = DateTime.now();
+      final currentTimeMinutes = now.hour * 60 + now.minute;
+      
+      final openParts = openingTimeStr.split(':');
+      final openMinutes = int.parse(openParts[0]) * 60 + int.parse(openParts[1]);
+      
+      final closeParts = closingTimeStr.split(':');
+      final closeMinutes = int.parse(closeParts[0]) * 60 + int.parse(closeParts[1]);
+      
+      // Handle overnight grounds (e.g., open 18:00, close 02:00)
+      if (openMinutes <= closeMinutes) {
+        return currentTimeMinutes >= openMinutes && currentTimeMinutes <= closeMinutes;
+      } else {
+        // Overnight
+        return currentTimeMinutes >= openMinutes || currentTimeMinutes <= closeMinutes;
+      }
+    } catch (e) {
+      // If parsing fails or times are missing/invalid, default to false
+      return false; 
+    }
   }
 }

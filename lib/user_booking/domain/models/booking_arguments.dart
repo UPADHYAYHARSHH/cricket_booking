@@ -6,6 +6,7 @@ class BookingSuccessArguments {
   final DateTime date;
   final List<TimeSlot> selectedSlots;
   final String orderId;
+  final int displayId;
   final double totalPrice;
 
   BookingSuccessArguments({
@@ -13,6 +14,7 @@ class BookingSuccessArguments {
     required this.date,
     required this.selectedSlots,
     required this.orderId,
+    required this.displayId,
     required this.totalPrice,
   });
 }

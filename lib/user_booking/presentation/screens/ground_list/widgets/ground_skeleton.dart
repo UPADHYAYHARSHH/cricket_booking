@@ -59,6 +59,30 @@ class GroundSkeleton extends StatelessWidget {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 8),
+
+                  /// Categories Placeholder
+                  Row(
+                    children: [
+                      Container(
+                        width: 60,
+                        height: 18,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 70,
+                        height: 18,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ],
+                  ),
 
                   const SizedBox(height: 10),
 

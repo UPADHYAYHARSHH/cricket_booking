@@ -10,6 +10,7 @@ class BookingModel {
   final String razorpayOrderId;
   final String razorpayPaymentId;
   final String razorpaySignature;
+  final int displayId;
   final GroundModel? ground;
 
   BookingModel({
@@ -22,6 +23,7 @@ class BookingModel {
     required this.razorpayOrderId,
     required this.razorpayPaymentId,
     required this.razorpaySignature,
+    required this.displayId,
     this.ground,
   });
 
@@ -36,6 +38,7 @@ class BookingModel {
       razorpayOrderId: json['razorpay_order_id'] ?? '',
       razorpayPaymentId: json['razorpay_payment_id'] ?? '',
       razorpaySignature: json['razorpay_signature'] ?? '',
+      displayId: json['display_id'] ?? 0,
       ground: json['grounds'] != null ? GroundModel.fromJson(json['grounds']) : null,
     );
   }

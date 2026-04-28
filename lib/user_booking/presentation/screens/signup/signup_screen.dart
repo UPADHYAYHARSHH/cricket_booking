@@ -13,6 +13,7 @@ import '../../../constants/route_constants.dart';
 import '../../../constants/widgets/app_button.dart';
 import '../../../constants/widgets/app_sizedBox.dart';
 import '../../../constants/widgets/app_text.dart';
+import '../../../../common/constants/colors.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -80,9 +81,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
         builder: (context, state) {
           final isLoading = state is AuthLoading;
 
-          return Scaffold(
-            backgroundColor: const Color(0xffECECEC),
-            body: SafeArea(
+          return Theme(
+            data: AppColors.getLightTheme(),
+            child: Scaffold(
+              backgroundColor: const Color(0xffECECEC),
+              body: SafeArea(
               child: Center(
                 child: SingleChildScrollView(
                   child: Padding(
@@ -212,6 +215,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
               ),
             ),
+          ),
           );
         },
       ),

@@ -8,6 +8,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:printing/printing.dart';
 import 'package:turfpro/utils/toast_util.dart';
 import 'package:turfpro/utils/file_save_helper.dart';
+import 'package:turfpro/utils/id_util.dart';
+import 'package:open_file_plus/open_file_plus.dart';
 
 // ─────────────────────────────────────────────────────
 //  PDF Colour palette  (mirrors user's requested design)
@@ -31,6 +33,7 @@ class TicketUtil {
     required DateTime date,
     required String timeRange,
     required String orderId,
+    required int displayId,
     required double totalPrice,
     VoidCallback? onLoadingStarted,
     VoidCallback? onLoadingFinished,
@@ -45,6 +48,7 @@ class TicketUtil {
         date: date,
         timeRange: timeRange,
         orderId: orderId,
+        displayId: displayId,
         totalPrice: totalPrice,
       );
 
@@ -81,6 +85,13 @@ class TicketUtil {
           if (context.mounted) {
             ToastUtil.show(context, message: "Ticket saved successfully", type: ToastType.success);
           }
+
+          // Open the file directly after saving
+          try {
+            await OpenFile.open(outputFile);
+          } catch (e) {
+            debugPrint("Error opening file: $e");
+          }
         }
       }
     } catch (e) {
@@ -100,6 +111,7 @@ class TicketUtil {
     required DateTime date,
     required String timeRange,
     required String orderId,
+    required int displayId,
     required double totalPrice,
   }) async {
     final pdf = pw.Document();
@@ -114,7 +126,7 @@ class TicketUtil {
     // ── Formatted values ──────────────────────────────
     final formattedDate = DateFormat('EEEE, d MMMM yyyy').format(date);
     final formattedPrice = '₹${totalPrice.toStringAsFixed(0)}';
-    final shortId = orderId.length > 10 ? orderId.substring(0, 10) : orderId;
+    final shortId = IdUtil.formatDisplayId(displayId);
 
     pdf.addPage(
       pw.Page(
@@ -252,7 +264,7 @@ class TicketUtil {
                             _pdfDivider(),
                             _pdfDetailRow('Time Slot', timeRange),
                             _pdfDivider(),
-                            _pdfDetailRow('Booking ID', '#$orderId'),
+                            _pdfDetailRow('Booking ID', '#$shortId'),
                             _pdfDivider(),
                             _pdfDetailRow('Status', 'Payment Successful ✓'),
                           ],

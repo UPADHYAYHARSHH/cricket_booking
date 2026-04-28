@@ -14,6 +14,7 @@ import 'package:turfpro/utils/toast_util.dart';
 // Add our new helper
 import 'package:turfpro/utils/ticket_util.dart'; // Add TicketUtil
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:turfpro/utils/id_util.dart';
 
 class BookingConfirmationScreen extends StatefulWidget {
   const BookingConfirmationScreen({super.key});
@@ -33,6 +34,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
     DateTime date,
     String timeRange,
     String orderId,
+    int displayId,
     double totalPrice,
   ) async {
     await TicketUtil.downloadTicket(
@@ -43,6 +45,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
       date: date,
       timeRange: timeRange,
       orderId: orderId,
+      displayId: displayId,
       totalPrice: totalPrice,
       onLoadingStarted: () => setState(() => _isSaving = true),
       onLoadingFinished: () {
@@ -113,6 +116,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
     final date = args.date;
     final slots = args.selectedSlots;
     final orderId = args.orderId;
+    final displayId = args.displayId;
     final totalPrice = args.totalPrice;
 
     final timeRange = slots.isEmpty
@@ -195,11 +199,12 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                 date: date,
                 timeRange: timeRange,
                 orderId: orderId,
+                displayId: displayId,
                 totalPrice: totalPrice,
               ),
 
               const AppSizedBox(height: 20),
-              _QRCodeCard(orderId: orderId),
+              _QRCodeCard(orderId: orderId, displayId: displayId),
 
               const AppSizedBox(height: 32),
 
@@ -214,6 +219,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                           date,
                           timeRange,
                           orderId,
+                          displayId,
                           totalPrice,
                         ),
                 icon: _isSaving
@@ -266,7 +272,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                     final Event event = Event(
                       title: 'Cricket Booking @ ${ground.name}',
                       description:
-                          'Your turf booking is confirmed.\nOrder ID: #$orderId\nVenue: ${ground.name}\nAddress: ${ground.address}',
+                          'Your turf booking is confirmed.\nOrder ID: #${IdUtil.formatDisplayId(displayId)}\nVenue: ${ground.name}\nAddress: ${ground.address}',
                       location: ground.address,
                       startDate: eventStart,
                       endDate: eventEnd,
@@ -473,12 +479,14 @@ class _BookingDetailsCard extends StatelessWidget {
   final DateTime date;
   final String timeRange;
   final String orderId;
+  final int displayId;
   final double totalPrice;
 
   const _BookingDetailsCard({
     required this.date,
     required this.timeRange,
     required this.orderId,
+    required this.displayId,
     required this.totalPrice,
   });
 
@@ -520,7 +528,7 @@ class _BookingDetailsCard extends StatelessWidget {
           _buildDetailRow(
             context,
             "Booking ID",
-            "#$orderId",
+            "#${IdUtil.formatDisplayId(displayId)}",
             Icons.confirmation_number_outlined,
           ),
           const Padding(
@@ -593,7 +601,8 @@ class _BookingDetailsCard extends StatelessWidget {
 
 class _QRCodeCard extends StatelessWidget {
   final String orderId;
-  const _QRCodeCard({required this.orderId});
+  final int displayId;
+  const _QRCodeCard({required this.orderId, required this.displayId});
 
   @override
   Widget build(BuildContext context) {
@@ -642,7 +651,7 @@ class _QRCodeCard extends StatelessWidget {
           ),
           const AppSizedBox(height: 16),
           AppText(
-            text: "#$orderId",
+            text: "#${IdUtil.formatDisplayId(displayId)}",
             textStyle: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w800,

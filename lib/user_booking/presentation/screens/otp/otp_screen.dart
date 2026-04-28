@@ -10,6 +10,7 @@ import '../../../constants/route_constants.dart';
 import '../../../constants/widgets/app_button.dart';
 import '../../../constants/widgets/app_sizedBox.dart';
 import '../../../constants/widgets/app_text.dart';
+import '../../../../common/constants/colors.dart';
 
 class OtpScreen extends StatefulWidget {
   const OtpScreen({super.key});
@@ -136,9 +137,11 @@ class _OtpScreenState extends State<OtpScreen> {
         builder: (context, state) {
           final isLoading = state is AuthLoading;
 
-          return Scaffold(
-            backgroundColor: theme.scaffoldBackgroundColor,
-            body: SafeArea(
+          return Theme(
+            data: AppColors.getLightTheme(),
+            child: Scaffold(
+              backgroundColor: theme.scaffoldBackgroundColor,
+              body: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: SingleChildScrollView(
@@ -270,6 +273,7 @@ class _OtpScreenState extends State<OtpScreen> {
                 ),
               ),
             ),
+          ),
           );
         },
       ),

@@ -59,7 +59,7 @@ class PaymentRepository {
   }
 
   /// SAVE BOOKING TO DATABASE
-  Future<void> saveBooking({
+  Future<Map<String, dynamic>> saveBooking({
     required String groundId,
     required DateTime slotTime,
     required int amount,
@@ -84,12 +84,13 @@ class PaymentRepository {
     
     debugPrint('PaymentRepository: Inserting booking: $bookingData');
 
-    await _supabase.from('bookings').insert(bookingData);
+    final response = await _supabase.from('bookings').insert(bookingData).select().single();
     debugPrint('PaymentRepository: saveBooking completed');
+    return response;
   }
 
   /// SAVE DIRECT BOOKING (BYPASS PAYMENT)
-  Future<void> saveDirectBooking({
+  Future<Map<String, dynamic>> saveDirectBooking({
     required String groundId,
     required DateTime date,
     required List<String> slotStartTimes,
@@ -113,7 +114,7 @@ class PaymentRepository {
       };
 
       debugPrint('PaymentRepository: Inserting into bookings... Data: $bookingData');
-      await _supabase.from('bookings').insert(bookingData);
+      final bookingResponse = await _supabase.from('bookings').insert(bookingData).select().single();
       debugPrint('PaymentRepository: Booking record created successfully');
 
       // 2. Block Slots in Database
@@ -133,6 +134,7 @@ class PaymentRepository {
       }
 
       debugPrint('PaymentRepository: saveDirectBooking FULLY completed');
+      return bookingResponse;
     } catch (e) {
       debugPrint('PaymentRepository: EXCEPTION in saveDirectBooking: $e');
       if (e is PostgrestException) {

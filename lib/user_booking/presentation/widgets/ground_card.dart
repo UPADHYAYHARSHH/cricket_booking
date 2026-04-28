@@ -308,7 +308,33 @@ class _GroundCardState extends State<GroundCard> {
             ],
           ),
           
-          const AppSizedBox(height: 6),
+          if (widget.ground.categories.isNotEmpty) ...[
+            const AppSizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: widget.ground.categories.map((category) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryDarkGreen.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppColors.primaryDarkGreen.withOpacity(0.2)),
+                  ),
+                  child: AppText(
+                    text: category,
+                    textStyle: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryDarkGreen,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+
+          const AppSizedBox(height: 8),
 
           // Address
           Row(

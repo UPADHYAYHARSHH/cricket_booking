@@ -9,6 +9,7 @@ import '../../../constants/route_constants.dart';
 import '../../../constants/widgets/app_button.dart';
 import '../../../constants/widgets/app_sizedBox.dart';
 import '../../../constants/widgets/app_text.dart';
+import '../../../../common/constants/colors.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -82,9 +83,11 @@ class _LoginScreenState extends State<LoginScreen> {
           builder: (context, state) {
             final isLoading = state is AuthLoading;
 
-            return Scaffold(
-              backgroundColor: const Color(0xffECECEC),
-              body: SafeArea(
+            return Theme(
+              data: AppColors.getLightTheme(),
+              child: Scaffold(
+                backgroundColor: const Color(0xffECECEC),
+                body: SafeArea(
                 child: Center(
                   child: SingleChildScrollView(
                     child: Padding(
@@ -286,6 +289,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
+            ),
             );
           },
         ));

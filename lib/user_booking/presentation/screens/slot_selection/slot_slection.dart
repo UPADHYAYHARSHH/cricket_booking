@@ -102,7 +102,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
       if (isValid && _ground != null && _pendingDate != null) {
         debugPrint('Saving booking to database...');
         // Save to DB
-        await _paymentRepo.saveBooking(
+        final bookingData = await _paymentRepo.saveBooking(
           groundId: _ground!.id,
           slotTime: _pendingDate!,
           amount: (_pendingAmount! * 100).toInt(),
@@ -111,6 +111,8 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
           signature: response.signature!,
         );
         debugPrint('Booking saved successfully!');
+
+        final int displayId = bookingData['display_id'] ?? 0;
 
         if (!mounted) return;
         Navigator.pop(context); // Pop loading dialog
@@ -130,6 +132,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
             date: _pendingDate!,
             selectedSlots: _pendingSlots ?? [],
             orderId: response.orderId!,
+            displayId: displayId,
             totalPrice: _pendingAmount!,
           ),
         );
@@ -274,13 +277,15 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
 
       // 1. Save Direct Booking and Block Slots
       debugPrint('Step 2: Saving Direct Booking to Supabase...');
-      await _paymentRepo.saveDirectBooking(
+      final bookingData = await _paymentRepo.saveDirectBooking(
         groundId: _ground!.id,
         date: _pendingDate!,
         slotStartTimes: selectedSlots.map((s) => s.startTime).toList(),
         amount: totalPrice.toInt(),
       );
       debugPrint('Step 3: Supabase Booking & Slot updates completed');
+
+      final int displayId = bookingData['display_id'] ?? 0;
 
       // 1.5 Handle Loyalty Points Redemption & Earning
       if (appliedPoints > 0) {
@@ -319,6 +324,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
         date: _pendingDate!,
         selectedSlots: selectedSlots,
         orderId: 'DIRECT_${DateTime.now().millisecondsSinceEpoch}',
+        displayId: displayId,
         totalPrice: totalPrice,
       );
 
@@ -556,22 +562,19 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                 selectedSlots,
                 activeDate,
                 totalPrice,
-                () {
-                  final cubit = context.read<SlotSelectionCubit>();
-                  SlotSelectionWidgets.showPriceBreakdown(
-                    context: context,
-                    ground: _ground,
-                    selectedSlots: selectedSlots,
-                    activeDate: activeDate,
-                    totalPrice: totalPrice,
-                    availablePoints: state.availableLoyaltyPoints,
-                    useLoyaltyPoints: state.useLoyaltyPoints,
-                    onTogglePoints: (val) => cubit.toggleLoyaltyPoints(),
-                    onConfirm: (finalAmount, appliedPoints) {
-                      _onConfirmBooking(finalAmount, activeDate, selectedSlots,
-                          appliedPoints: appliedPoints);
-                    },
+                () async {
+                  final result = await Navigator.pushNamed(
+                    context,
+                    AppRoutes.bookingSummary,
+                    arguments: _ground,
                   );
+
+                  if (result != null && result is Map<String, dynamic>) {
+                    final finalAmount = result['finalAmount'] as double;
+                    final appliedPoints = result['appliedPoints'] as int;
+                    _onConfirmBooking(finalAmount, activeDate, selectedSlots,
+                        appliedPoints: appliedPoints);
+                  }
                 },
               ),
             ],

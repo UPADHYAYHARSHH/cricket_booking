@@ -323,8 +323,8 @@ class _GroundListScreenState extends State<GroundListScreen> {
             /// 📋 LIST (DYNAMIC)
             BlocBuilder<GroundCubit, GroundState>(
               builder: (context, state) {
-                /// 🔄 Loading
-                if (state is GroundLoading) {
+                /// 🔄 Loading or Initial
+                if (state is GroundLoading || state is GroundInitial) {
                   return SliverPadding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     sliver: SliverList(

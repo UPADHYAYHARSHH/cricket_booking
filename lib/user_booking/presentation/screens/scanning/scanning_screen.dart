@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:turfpro/common/constants/colors.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import 'package:turfpro/utils/toast_util.dart';
+import 'package:turfpro/utils/id_util.dart';
 
 class ScanningScreen extends StatefulWidget {
   const ScanningScreen({super.key});
@@ -24,7 +25,7 @@ class _ScanningScreenState extends State<ScanningScreen> {
       // 1. Try to find the booking by ID or Razorpay Order ID
       final response = await Supabase.instance.client
           .from('bookings')
-          .select('id, status, user_id, grounds(name)')
+          .select('id, status, user_id, display_id, grounds(name)')
           .or('id.eq.$code,razorpay_order_id.eq.$code')
           .maybeSingle();
 
@@ -36,6 +37,7 @@ class _ScanningScreenState extends State<ScanningScreen> {
         final bookingId = response['id'];
         final currentStatus = response['status'];
         final groundName = response['grounds']['name'];
+        final int displayId = response['display_id'] ?? 0;
 
         if (currentStatus == 'checked_in') {
           if (mounted) {
@@ -49,7 +51,7 @@ class _ScanningScreenState extends State<ScanningScreen> {
               .eq('id', bookingId);
 
           if (mounted) {
-            _showSuccessDialog(groundName, code);
+            _showSuccessDialog(groundName, displayId);
           }
         }
       }
@@ -64,7 +66,7 @@ class _ScanningScreenState extends State<ScanningScreen> {
     }
   }
 
-  void _showSuccessDialog(String groundName, String orderId) {
+  void _showSuccessDialog(String groundName, int displayId) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -83,7 +85,7 @@ class _ScanningScreenState extends State<ScanningScreen> {
           children: [
             Text("Venue: $groundName"),
             const SizedBox(height: 8),
-            Text("Order ID: #$orderId"),
+            Text("Order ID: #${IdUtil.formatDisplayId(displayId)}"),
             const SizedBox(height: 16),
             const Text("Booking has been marked as Verified."),
           ],
