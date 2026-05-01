@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../constants/route_constants.dart';
+import 'package:turfpro/common/config/feature_config.dart';
 
 import 'package:turfpro/user_booking/presentation/blocs/profile/profile_cubit.dart';
 import 'package:image_picker/image_picker.dart';
@@ -189,6 +190,29 @@ class ProfileScreen extends StatelessWidget {
           }
         },
       ),
+      if (FeatureConfig.isLoyaltyEnabled)
+        _MenuItem(
+          icon: HugeIcons.strokeRoundedStar,
+          label: "My Rewards",
+          iconBg: Colors.amber.withOpacity(isDark ? 0.2 : 0.1),
+          iconColor: isDark ? Colors.amberAccent : Colors.amber.shade700,
+          isLogout: false,
+          onTap: () {
+            // Placeholder for rewards screen
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Rewards screen coming soon!")),
+            );
+          },
+        ),
+      if (FeatureConfig.isSplitEnabled)
+        _MenuItem(
+          icon: HugeIcons.strokeRoundedCreditCard,
+          label: "Split History",
+          iconBg: Colors.blue.withOpacity(isDark ? 0.2 : 0.1),
+          iconColor: isDark ? Colors.blueAccent : Colors.blue.shade700,
+          isLogout: false,
+          onTap: () => Navigator.pushNamed(context, AppRoutes.splitHistory),
+        ),
       _MenuItem(
         icon: isDark ? HugeIcons.strokeRoundedMoon : HugeIcons.strokeRoundedSun01,
         label: "Dark Mode",

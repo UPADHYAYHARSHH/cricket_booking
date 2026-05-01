@@ -20,7 +20,9 @@ import 'package:turfpro/user_booking/presentation/screens/search/search_screen.d
 import 'package:turfpro/user_booking/presentation/screens/split_payment/split_setup_screen.dart';
 import 'package:turfpro/user_booking/presentation/screens/split_payment/split_share_screen.dart';
 import 'package:turfpro/user_booking/presentation/screens/split_payment/split_overview_screen.dart';
+import 'package:turfpro/user_booking/presentation/screens/split_payment/split_history_screen.dart';
 import 'package:turfpro/user_booking/presentation/blocs/split_payment/split_cubit.dart';
+import 'package:turfpro/user_booking/presentation/blocs/split_history/split_history_cubit.dart';
 import 'package:turfpro/user_booking/presentation/screens/category_grounds/category_grounds_screen.dart';
 import 'package:turfpro/user_booking/presentation/screens/notification/notification_screen.dart';
 import 'package:turfpro/user_booking/presentation/screens/booking_summary/booking_summary_screen.dart';
@@ -131,6 +133,9 @@ void main() async {
         BlocProvider<SplitPaymentCubit>(
           create: (_) => di.getIt<SplitPaymentCubit>(),
         ),
+        BlocProvider<SplitHistoryCubit>(
+          create: (_) => di.getIt<SplitHistoryCubit>(),
+        ),
         BlocProvider<ConnectivityCubit>(
           create: (_) => di.getIt<ConnectivityCubit>(),
         ),
@@ -188,6 +193,7 @@ void main() async {
               AppRoutes.splitSetup: (context) => const SplitSetupScreen(),
               AppRoutes.splitShare: (context) => const SplitShareScreen(),
               AppRoutes.splitOverview: (context) => const SplitOverviewScreen(),
+              AppRoutes.splitHistory: (context) => const SplitHistoryScreen(),
               AppRoutes.forgotPassword: (context) => const ForgotPasswordScreen(),
               AppRoutes.scan: (context) => const ScanningScreen(),
               AppRoutes.categoryGrounds: (context) => const CategoryGroundsScreen(),
