@@ -116,12 +116,16 @@ class TicketUtil {
   }) async {
     final pdf = pw.Document();
 
-    // ── Try to fetch ground image ──────────────────────
+    // ── Try to fetch ground image (Optimized with timeout) ──────────────────────
     pw.MemoryImage? venueImage;
     try {
-      final netImage = await networkImage(groundImageUrl);
+      // Use a shorter timeout for image fetching to prevent hanging
+      final netImage = await networkImage(groundImageUrl).timeout(const Duration(seconds: 3));
       venueImage = netImage as pw.MemoryImage?;
-    } catch (_) {}
+    } catch (e) {
+      debugPrint("Image fetch failed or timed out: $e");
+      // Continue without image instead of failing the whole PDF
+    }
 
     // ── Formatted values ──────────────────────────────
     final formattedDate = DateFormat('EEEE, d MMMM yyyy').format(date);
