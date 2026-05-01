@@ -89,10 +89,51 @@ class BookingSummaryScreen extends StatelessWidget {
                       _summaryRow(context, label: "Date", value: "${activeDate.month} ${activeDate.date}, ${DateTime.now().year}"),
                       const AppSizedBox(height: 12),
                       _summaryRow(context, label: "Total Slots", value: "${selectedSlots.length} Selected"),
-                      const AppSizedBox(height: 12),
-                      _summaryRow(context, label: "Time", value: selectedSlots.isNotEmpty ? selectedSlots.first.startTime : "-"),
                     ],
                   ),
+                ),
+                const AppSizedBox(height: 24),
+
+                // Selected Slots chips
+                AppText(
+                  text: "Selected Slots",
+                  textStyle: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const AppSizedBox(height: 12),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: selectedSlots.map((slot) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.primaryDarkGreen.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.access_time_rounded, size: 14, color: AppColors.primaryDarkGreen),
+                          const AppSizedBox(width: 6),
+                          AppText(
+                            text: slot.startTime,
+                            textStyle: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryDarkGreen,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
                 ),
                 const AppSizedBox(height: 28),
 
