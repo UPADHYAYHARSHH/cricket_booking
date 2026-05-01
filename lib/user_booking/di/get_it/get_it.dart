@@ -65,6 +65,7 @@ Future<void> init() async {
   getIt.registerFactory(() => SlotSelectionCubit(
         getIt<SlotRepository>(),
         getIt<LoyaltyRepository>(),
+        getIt<GroundRepository>(),
       ));
   getIt.registerFactory(() => AuthCubit(getIt<AuthRepository>()));
 

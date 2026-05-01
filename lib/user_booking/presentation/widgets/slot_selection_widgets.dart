@@ -3,6 +3,7 @@ import 'package:turfpro/common/constants/colors.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import 'package:turfpro/user_booking/data/models/ground_model.dart';
+import 'package:turfpro/user_booking/presentation/blocs/slot_selection/slot_selection_state.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -20,7 +21,7 @@ class SlotSelectionWidgets {
   static const Color kOrange = AppColors.accentOrange;
 
   static Widget buildHeader(BuildContext context, GroundModel? ground,
-      {bool isSaved = false, VoidCallback? onToggleFav}) {
+      {bool isSaved = false, VoidCallback? onToggleFav, String? title}) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -47,7 +48,7 @@ class SlotSelectionWidgets {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AppText(
-                  text: ground?.name ?? 'Loading Turf...',
+                  text: title ?? ground?.name ?? 'Loading Turf...',
                   align: TextAlign.left,
                   textStyle: TextStyle(
                     fontSize: 17,
@@ -104,6 +105,527 @@ class SlotSelectionWidgets {
         ],
       ),
     );
+  }
+
+  static Widget buildSelectionDropdowns(BuildContext context, SlotSelectionState state, 
+      {required Function(String?) onSportChanged, required Function(GroundModel?) onTurfChanged}) {
+    final theme = Theme.of(context);
+    final bool showSport = state.availableSports.length > 1;
+    final bool showTurf = state.availableTurfs.length > 1 || (state.availableSports.length > 1 && state.selectedSport != null);
+    
+    // If only one sport and only one ground for that sport, hide everything
+    if (state.availableSports.length == 1 && state.availableTurfs.length == 1) {
+      return const SizedBox.shrink();
+    }
+
+    // If only one sport and NO grounds (shouldn't happen but safe), or nothing available yet
+    if (state.availableSports.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        border: Border(bottom: BorderSide(color: theme.dividerColor.withOpacity(0.1))),
+      ),
+      child: Row(
+        children: [
+          // Sport Dropdown
+          if (showSport)
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: theme.dividerColor.withOpacity(0.2)),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: (state.availableSports.contains(state.selectedSport)) ? state.selectedSport : null,
+                    hint: const AppText(text: "Sport", textStyle: TextStyle(fontSize: 13, color: Colors.grey)),
+                    isExpanded: true,
+                    icon: const Icon(Icons.keyboard_arrow_down, size: 20, color: AppColors.primaryDarkGreen),
+                    items: state.availableSports.map((sport) {
+                      return DropdownMenuItem<String>(
+                        value: sport,
+                        child: Row(
+                          children: [
+                            Icon(_getSportIcon(sport), size: 16, color: _getSportColor(sport)),
+                            const AppSizedBox(width: 8),
+                            AppText(text: sport, textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: onSportChanged,
+                  ),
+                ),
+              ),
+            ),
+          if (showSport && showTurf) const AppSizedBox(width: 12),
+          // Ground Dropdown
+          if (showTurf)
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: theme.dividerColor.withOpacity(0.2)),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<GroundModel>(
+                    value: (state.availableTurfs.contains(state.selectedTurf)) ? state.selectedTurf : null,
+                    hint: const AppText(text: "Ground", textStyle: TextStyle(fontSize: 13, color: Colors.grey)),
+                    isExpanded: true,
+                    icon: const Icon(Icons.keyboard_arrow_down, size: 20, color: AppColors.primaryDarkGreen),
+                    items: state.availableTurfs.map((turf) {
+                      return DropdownMenuItem<GroundModel>(
+                        value: turf,
+                        child: Row(
+                          children: [
+                            const Icon(Icons.location_on, size: 16, color: AppColors.primaryDarkGreen),
+                            const AppSizedBox(width: 8),
+                            Expanded(
+                              child: AppText(
+                                text: turf.name, 
+                                textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: state.selectedSport == null ? null : onTurfChanged,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  static Widget buildSelectionSummary(BuildContext context, SlotSelectionState state, 
+      {VoidCallback? onChangeSport, VoidCallback? onChangeTurf}) {
+    final theme = Theme.of(context);
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        border: Border(bottom: BorderSide(color: theme.dividerColor.withOpacity(0.1))),
+      ),
+      child: Row(
+        children: [
+          if (state.selectedSport != null)
+            GestureDetector(
+              onTap: onChangeSport,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: _getSportColor(state.selectedSport!).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: _getSportColor(state.selectedSport!).withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(_getSportIcon(state.selectedSport!), size: 16, color: _getSportColor(state.selectedSport!)),
+                    const AppSizedBox(width: 8),
+                    AppText(
+                      text: state.selectedSport!,
+                      textStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _getSportColor(state.selectedSport!)),
+                    ),
+                    const AppSizedBox(width: 4),
+                    const Icon(Icons.keyboard_arrow_down, size: 14, color: Colors.grey),
+                  ],
+                ),
+              ),
+            ),
+          if (state.selectedTurf != null) ...[
+            const AppSizedBox(width: 12),
+            Expanded(
+              child: GestureDetector(
+                onTap: onChangeTurf,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryDarkGreen.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.primaryDarkGreen.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.location_on, size: 16, color: AppColors.primaryDarkGreen),
+                      const AppSizedBox(width: 8),
+                      Expanded(
+                        child: AppText(
+                          text: state.selectedTurf!.name,
+                          textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryDarkGreen),
+                          maxLines: 1,
+                        ),
+                      ),
+                      const AppSizedBox(width: 4),
+                      const Icon(Icons.keyboard_arrow_down, size: 14, color: Colors.grey),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  static Widget buildStepIndicator(BuildContext context, int currentStep, SlotSelectionState state) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    Widget buildStep(int index, String label, bool isCompleted, bool isActive) {
+      return Expanded(
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(child: Divider(color: index == 0 ? Colors.transparent : (isActive || isCompleted ? AppColors.primaryDarkGreen : Colors.grey.withOpacity(0.3)), thickness: 2)),
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: isActive ? AppColors.primaryDarkGreen : (isCompleted ? AppColors.primaryDarkGreen : theme.cardColor),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isActive || isCompleted ? AppColors.primaryDarkGreen : Colors.grey.withOpacity(0.3),
+                      width: 2,
+                    ),
+                    boxShadow: isActive ? [
+                      BoxShadow(color: AppColors.primaryDarkGreen.withOpacity(0.3), blurRadius: 8, spreadRadius: 1)
+                    ] : null,
+                  ),
+                  child: Center(
+                    child: isCompleted 
+                      ? const Icon(Icons.check, size: 16, color: Colors.white)
+                      : AppText(
+                          text: (index + 1).toString(),
+                          textStyle: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: isActive ? Colors.white : Colors.grey,
+                          ),
+                        ),
+                  ),
+                ),
+                Expanded(child: Divider(color: index == 2 ? Colors.transparent : (isCompleted && currentStep > index ? AppColors.primaryDarkGreen : Colors.grey.withOpacity(0.3)), thickness: 2)),
+              ],
+            ),
+            const AppSizedBox(height: 4),
+            AppText(
+              text: label,
+              textStyle: TextStyle(
+                fontSize: 10,
+                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                color: isActive ? AppColors.primaryDarkGreen : Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      color: theme.cardColor,
+      child: Row(
+        children: [
+          buildStep(0, "SPORT", state.selectedSport != null, currentStep == 0),
+          buildStep(1, "GROUND", state.selectedTurf != null, currentStep == 1),
+          buildStep(2, "SLOTS", false, currentStep == 2),
+        ],
+      ),
+    );
+  }
+
+  static Widget buildSportSelectionGrid(
+      BuildContext context, List<String> sports, Function(String) onSelect) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const AppText(
+            text: "WHAT ARE YOU PLAYING TODAY?",
+            textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+          ),
+          const AppSizedBox(height: 20),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: sports.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 1.1,
+            ),
+            itemBuilder: (context, index) {
+              final sport = sports[index];
+              final color = _getSportColor(sport);
+              return GestureDetector(
+                onTap: () => onSelect(sport),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        color.withOpacity(0.8),
+                        color,
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
+                      )
+                    ],
+                  ),
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        right: -10,
+                        bottom: -10,
+                        child: Icon(
+                          _getSportIcon(sport),
+                          size: 80,
+                          color: Colors.white.withOpacity(0.15),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                _getSportIcon(sport),
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                            const Spacer(),
+                            AppText(
+                              text: sport.toUpperCase(),
+                              textStyle: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                                letterSpacing: 1,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  static Widget buildTurfSelectionList(
+      BuildContext context, String sport, List<GroundModel> turfs, Function(GroundModel) onSelect) {
+    final theme = Theme.of(context);
+    final title = sport == 'Cricket' ? 'AVAILABLE BOX GROUNDS' : 'AVAILABLE TURFS';
+    
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppText(
+            text: title,
+            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+          ),
+          const AppSizedBox(height: 20),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: turfs.length,
+            itemBuilder: (context, index) {
+              final turf = turfs[index];
+              return GestureDetector(
+                onTap: () => onSelect(turf),
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: theme.cardColor,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      )
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Stack(
+                          children: [
+                            AppNetworkImage(
+                              imageUrl: turf.imageUrl,
+                              height: 140,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            ),
+                            if (turf.rating >= 4.5)
+                              Positioned(
+                                top: 12,
+                                left: 12,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.5),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Row(
+                                    children: [
+                                      Icon(Icons.star, color: Colors.amber, size: 14),
+                                      AppSizedBox(width: 4),
+                                      AppText(
+                                        text: "TOP RATED",
+                                        textStyle: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            Positioned(
+                              bottom: 12,
+                              right: 12,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryDarkGreen,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: AppText(
+                                  text: "₹${turf.pricePerHour}/hr",
+                                  textStyle: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    AppText(
+                                      text: turf.name,
+                                      textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+                                    ),
+                                    const AppSizedBox(height: 6),
+                                    Row(
+                                      children: [
+                                        ..._getAmenityIcons(turf.amenities).take(4),
+                                        if ((turf.amenities?.length ?? 0) > 4)
+                                          AppText(
+                                            text: "+${turf.amenities!.length - 4}",
+                                            textStyle: const TextStyle(fontSize: 10, color: Colors.grey),
+                                          ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryDarkGreen.withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.primaryDarkGreen),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  static List<Widget> _getAmenityIcons(List<String>? amenities) {
+    if (amenities == null) return [];
+    return amenities.map((a) {
+      IconData icon;
+      switch (a.toLowerCase()) {
+        case 'wifi': icon = Icons.wifi; break;
+        case 'parking': icon = Icons.local_parking; break;
+        case 'water': icon = Icons.water_drop; break;
+        case 'washroom': icon = Icons.wc; break;
+        case 'changing room': icon = Icons.door_front_door; break;
+        default: icon = Icons.check_circle_outline;
+      }
+      return Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: Icon(icon, size: 14, color: Colors.grey),
+      );
+    }).toList();
+  }
+
+  static Color _getSportColor(String sport) {
+    switch (sport.toLowerCase()) {
+      case 'cricket': return const Color(0xFF2E7D32); // Dark Green
+      case 'football': return const Color(0xFF1B5E20); // Even Darker Green
+      case 'badminton': return const Color(0xFF1976D2); // Blue
+      case 'tennis': return const Color(0xFFC0CA33); // Lime
+      case 'basketball': return const Color(0xFFE65100); // Orange
+      default: return AppColors.primaryDarkGreen;
+    }
+  }
+
+  static IconData _getSportIcon(String sport) {
+    switch (sport.toLowerCase()) {
+      case 'cricket': return Icons.sports_cricket;
+      case 'football': return Icons.sports_soccer;
+      case 'badminton': return Icons.sports_tennis;
+      case 'tennis': return Icons.sports_tennis;
+      case 'volleyball': return Icons.sports_volleyball;
+      case 'basketball': return Icons.sports_basketball;
+      default: return Icons.sports_score;
+    }
   }
 
   // ── Turf Image Card ───────────────────────────────────────────────────────
@@ -333,6 +855,10 @@ class SlotSelectionWidgets {
               ? theme.cardColor.withValues(alpha: 0.5)
               : theme.scaffoldBackgroundColor,
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: theme.dividerColor.withOpacity(isDark ? 0.2 : 0.1),
+            width: 1.5,
+          ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -349,6 +875,15 @@ class SlotSelectionWidgets {
                         ? colorScheme.surface
                         : colorScheme.surface.withValues(alpha: 0),
                     borderRadius: BorderRadius.circular(16),
+                    border: isSel
+                        ? Border.all(
+                            color: (isDark
+                                    ? AppColors.primaryLightGreen
+                                    : AppColors.primaryDarkGreen)
+                                .withOpacity(0.2),
+                            width: 1,
+                          )
+                        : null,
                     boxShadow: isSel
                         ? [
                             BoxShadow(

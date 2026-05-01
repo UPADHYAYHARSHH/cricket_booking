@@ -1,19 +1,23 @@
+import 'package:turfpro/user_booking/data/models/ground_model.dart';
 import 'package:turfpro/user_booking/domain/models/slot_models.dart';
 import 'package:flutter/foundation.dart';
 import 'package:turfpro/user_booking/domain/repositories/slot_repository.dart';
+import 'package:turfpro/user_booking/domain/repositories/ground_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 
 import 'package:turfpro/user_booking/domain/repositories/loyalty_repository.dart';
+import 'package:turfpro/common/config/feature_config.dart';
 import 'slot_selection_state.dart';
 
 class SlotSelectionCubit extends Cubit<SlotSelectionState> {
   final SlotRepository repository;
   final LoyaltyRepository loyaltyRepository;
+  final GroundRepository groundRepository;
   StreamSubscription<List<TimeSlot>>? _slotsSubscription;
 
-  SlotSelectionCubit(this.repository, this.loyaltyRepository)
+  SlotSelectionCubit(this.repository, this.loyaltyRepository, this.groundRepository)
       : super(
           SlotSelectionState(
             dates: _generateDates(),
@@ -21,7 +25,9 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
             isLoading: false,
           ),
         ) {
-    loadLoyaltyPoints();
+    if (FeatureConfig.isLoyaltyEnabled) {
+      loadLoyaltyPoints();
+    }
   }
 
   Future<void> loadLoyaltyPoints() async {
@@ -30,7 +36,9 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
   }
 
   void toggleLoyaltyPoints() {
-    emit(state.copyWith(useLoyaltyPoints: !state.useLoyaltyPoints));
+    if (FeatureConfig.isLoyaltyEnabled) {
+      emit(state.copyWith(useLoyaltyPoints: !state.useLoyaltyPoints));
+    }
   }
 
   static List<DateItem> _generateDates() {
@@ -44,6 +52,101 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
         isSelected: i == 0,
       );
     });
+  }
+
+  Future<void> initFacility(GroundModel initialGround) async {
+    emit(state.copyWith(isLoading: true, selectedTurf: initialGround));
+
+    try {
+      final grounds = await groundRepository.fetchGrounds();
+      
+      // Group grounds by ownerId and address to find turfs of the same facility
+      final facilityGrounds = grounds.where((g) {
+        return g.ownerId == initialGround.ownerId && g.address == initialGround.address;
+      }).toList();
+
+      if (facilityGrounds.isEmpty) {
+        // Fallback if no other grounds found (e.g. current ground only)
+        final sports = List<String>.from(initialGround.categories);
+        emit(state.copyWith(
+          facilityGrounds: [initialGround],
+          availableSports: sports,
+          isLoading: false,
+        ));
+        return;
+      }
+
+      // Extract unique sports from all grounds in this facility
+      final sportsSet = <String>{};
+      for (var g in facilityGrounds) {
+        for (var cat in g.categories) {
+          sportsSet.add(cat);
+        }
+      }
+
+      final sportsList = sportsSet.toList();
+      
+      emit(state.copyWith(
+        facilityGrounds: facilityGrounds,
+        availableSports: sportsList,
+        isLoading: false,
+      ));
+
+      // Auto-select if only one sport exists
+      if (sportsList.length == 1) {
+        selectSport(sportsList.first);
+        
+        // After selecting sport, if only one turf exists, select it too
+        final turfs = facilityGrounds.where((g) => g.categories.contains(sportsList.first)).toList();
+        if (turfs.length == 1) {
+          selectTurf(turfs.first);
+        }
+      } else {
+        // If multiple sports, but the initial ground's sport is known, maybe pre-select it?
+        // User said: "when user tap on ground... first all available sports"
+        // So we keep it unselected if there are multiple.
+      }
+    } catch (e) {
+      emit(state.copyWith(isLoading: false, errorMessage: "Error loading facility data: $e"));
+    }
+  }
+
+  void selectSport(String sport) {
+    final turfs = state.facilityGrounds.where((g) {
+      return g.categories.contains(sport);
+    }).toList();
+
+    emit(state.copyWith(
+      selectedSport: sport,
+      availableTurfs: turfs,
+      clearSelectedTurf: true,
+    ));
+  }
+
+  void selectTurf(GroundModel turf) {
+    emit(state.copyWith(selectedTurf: turf));
+    loadSlots(
+      turf.id,
+      state.selectedDate ?? DateTime.now(),
+      openingTime: turf.openingTime,
+      closingTime: turf.closingTime,
+      pricePerSlot: turf.pricePerHour.toDouble(),
+    );
+  }
+
+  void goBackToSportSelection() {
+    emit(state.copyWith(
+      clearSelectedSport: true,
+      clearSelectedTurf: true,
+      slots: [],
+    ));
+  }
+
+  void goBackToTurfSelection() {
+    emit(state.copyWith(
+      clearSelectedTurf: true,
+      slots: [],
+    ));
   }
 
   Future<void> loadSlots(String groundId, DateTime date,

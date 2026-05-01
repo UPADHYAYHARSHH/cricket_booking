@@ -15,6 +15,7 @@ class GroundModel {
   final List<String> amenities;
   final List<String> images;
   final List<String> categories;
+  final String ownerId;
 
   GroundModel({
     required this.id,
@@ -33,6 +34,7 @@ class GroundModel {
     this.amenities = const [],
     this.images = const [],
     this.categories = const [],
+    this.ownerId = '',
   });
 
   factory GroundModel.fromJson(Map<String, dynamic> json) {
@@ -53,6 +55,7 @@ class GroundModel {
       amenities: (json['amenities'] as List?)?.map((e) => e.toString()).toList() ?? [],
       images: (json['images'] as List?)?.map((e) => e.toString()).toList() ?? [],
       categories: (json['categories'] as List?)?.map((e) => e.toString()).toList() ?? [],
+      ownerId: json['owner_id'] ?? '',
     );
   }
 
@@ -74,6 +77,15 @@ class GroundModel {
       'amenities': amenities,
       'images': images,
       'categories': categories,
+      'owner_id': ownerId,
     };
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GroundModel && runtimeType == other.runtimeType && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }

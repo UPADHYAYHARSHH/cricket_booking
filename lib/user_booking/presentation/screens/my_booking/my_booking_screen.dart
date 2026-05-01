@@ -141,6 +141,9 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
         if (state is BookingLoaded) {
           final now = DateTime.now();
           final bookings = state.bookings.where((b) {
+            // A booking is considered "Completed" if its start time has passed.
+            // For a better UX, we could also consider the end time (e.g. +1 hour),
+            // but following the requirement: "once date or time... has gone".
             if (_selectedTab == 0) {
               return b.slotTime.isAfter(now);
             } else {
@@ -372,7 +375,9 @@ class _BookingCardState extends State<_BookingCard> {
   }
 
   Widget _buildFooterRow(BuildContext context) {
-    final isPast = widget.booking.slotTime.isBefore(DateTime.now());
+    final now = DateTime.now();
+    // Rating button only appears if the booking time has fully passed
+    final isPast = widget.booking.slotTime.isBefore(now);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),

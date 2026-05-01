@@ -22,6 +22,7 @@ class GroundRepositoryImpl implements GroundRepository {
           description,
           amenities,
           categories,
+          owner_id,
           ground_images(image_url)
         ''');
 
@@ -41,6 +42,7 @@ class GroundRepositoryImpl implements GroundRepository {
         description: e['description'] ?? '',
         amenities: (e['amenities'] as List?)?.map((a) => a.toString()).toList() ?? [],
         categories: (e['categories'] as List?)?.map((c) => c.toString()).toList() ?? [],
+        ownerId: e['owner_id'] ?? '',
         imageUrl: e['ground_images'] != null && e['ground_images'].isNotEmpty ? e['ground_images'][0]['image_url'] : '',
       );
     }).toList();
@@ -63,6 +65,7 @@ class GroundRepositoryImpl implements GroundRepository {
           description,
           amenities,
           categories,
+          owner_id,
           ground_images(image_url)
         ''').eq('id', id).maybeSingle();
 
@@ -84,6 +87,7 @@ class GroundRepositoryImpl implements GroundRepository {
       description: e['description'] ?? '',
       amenities: (e['amenities'] as List?)?.map((a) => a.toString()).toList() ?? [],
       categories: (e['categories'] as List?)?.map((c) => c.toString()).toList() ?? [],
+      ownerId: e['owner_id'] ?? '',
       imageUrl: e['ground_images'] != null && e['ground_images'].isNotEmpty ? e['ground_images'][0]['image_url'] : '',
     );
   }

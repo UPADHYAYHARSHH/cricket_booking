@@ -4,6 +4,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart';
 import 'package:turfpro/common/constants/colors.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_button.dart';
+import 'package:turfpro/common/config/feature_config.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import 'package:turfpro/user_booking/data/models/ground_model.dart';
@@ -31,13 +32,14 @@ class BookingSummaryScreen extends StatelessWidget {
 
         // Loyalty Points Logic
         double pointsDiscount = 0.0;
-        bool canRedeem = state.availableLoyaltyPoints >= 50;
-        
-        if (state.useLoyaltyPoints && canRedeem) {
-          double maxDiscount = basePrice * 0.5;
-          pointsDiscount = state.availableLoyaltyPoints > maxDiscount 
-              ? maxDiscount 
-              : state.availableLoyaltyPoints.toDouble();
+        if (FeatureConfig.isLoyaltyEnabled) {
+          bool canRedeem = state.availableLoyaltyPoints >= 50;
+          if (state.useLoyaltyPoints && canRedeem) {
+            double maxDiscount = basePrice * 0.5;
+            pointsDiscount = state.availableLoyaltyPoints > maxDiscount 
+                ? maxDiscount 
+                : state.availableLoyaltyPoints.toDouble();
+          }
         }
 
         final double grandTotal = (basePrice - pointsDiscount) + platformFee;
@@ -95,73 +97,75 @@ class BookingSummaryScreen extends StatelessWidget {
                 const AppSizedBox(height: 28),
 
                 // Loyalty Points Section
-                AppText(
-                  text: "Loyalty Rewards",
-                  textStyle: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-                const AppSizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: state.useLoyaltyPoints 
-                        ? AppColors.primaryDarkGreen 
-                        : colorScheme.outline.withValues(alpha: 0.2),
-                      width: 1.5,
+                if (FeatureConfig.isLoyaltyEnabled) ...[
+                  AppText(
+                    text: "Loyalty Rewards",
+                    textStyle: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: AppColors.goldenYellow.withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
+                  const AppSizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: state.useLoyaltyPoints 
+                          ? AppColors.primaryDarkGreen 
+                          : colorScheme.outline.withValues(alpha: 0.2),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.goldenYellow.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.stars_rounded, color: AppColors.goldenYellow, size: 28),
                         ),
-                        child: const Icon(Icons.stars_rounded, color: AppColors.goldenYellow, size: 28),
-                      ),
-                      const AppSizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            AppText(
-                              text: "Redeem Points",
-                              textStyle: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: colorScheme.onSurface,
+                        const AppSizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              AppText(
+                                text: "Redeem Points",
+                                textStyle: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: colorScheme.onSurface,
+                                ),
                               ),
-                            ),
-                            AppText(
-                              text: canRedeem 
-                                ? "Use ${state.availableLoyaltyPoints} pts for ₹${pointsDiscount.toStringAsFixed(0)} off"
-                                : "Min. 50 points required",
-                              textStyle: TextStyle(
-                                fontSize: 12,
-                                color: colorScheme.onSurface.withValues(alpha: 0.6),
+                              AppText(
+                                text: state.availableLoyaltyPoints >= 50 
+                                  ? "Use ${state.availableLoyaltyPoints} pts for ₹${pointsDiscount.toStringAsFixed(0)} off"
+                                  : "Min. 50 points required",
+                                textStyle: TextStyle(
+                                  fontSize: 12,
+                                  color: colorScheme.onSurface.withValues(alpha: 0.6),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      Switch(
-                        value: state.useLoyaltyPoints,
-                        activeColor: AppColors.primaryDarkGreen,
-                        onChanged: canRedeem 
-                          ? (_) => context.read<SlotSelectionCubit>().toggleLoyaltyPoints() 
-                          : null,
-                      ),
-                    ],
+                        Switch(
+                          value: state.useLoyaltyPoints,
+                          activeColor: AppColors.primaryDarkGreen,
+                          onChanged: state.availableLoyaltyPoints >= 50 
+                            ? (_) => context.read<SlotSelectionCubit>().toggleLoyaltyPoints() 
+                            : null,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const AppSizedBox(height: 32),
+                  const AppSizedBox(height: 32),
+                ],
 
                 // Bill Details
                 AppText(

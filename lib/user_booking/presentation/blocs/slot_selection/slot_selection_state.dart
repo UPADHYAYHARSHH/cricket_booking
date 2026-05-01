@@ -1,3 +1,4 @@
+import 'package:turfpro/user_booking/data/models/ground_model.dart';
 import 'package:turfpro/user_booking/domain/models/slot_models.dart';
 
 class SlotSelectionState {
@@ -10,6 +11,11 @@ class SlotSelectionState {
   final String? groundId;
   final int availableLoyaltyPoints;
   final bool useLoyaltyPoints;
+  final List<GroundModel> facilityGrounds;
+  final List<String> availableSports;
+  final List<GroundModel> availableTurfs;
+  final String? selectedSport;
+  final GroundModel? selectedTurf;
 
   SlotSelectionState({
     required this.dates,
@@ -21,6 +27,11 @@ class SlotSelectionState {
     this.groundId,
     this.availableLoyaltyPoints = 0,
     this.useLoyaltyPoints = false,
+    this.facilityGrounds = const [],
+    this.availableSports = const [],
+    this.availableTurfs = const [],
+    this.selectedSport,
+    this.selectedTurf,
   });
 
   SlotSelectionState copyWith({
@@ -33,6 +44,13 @@ class SlotSelectionState {
     String? groundId,
     int? availableLoyaltyPoints,
     bool? useLoyaltyPoints,
+    List<GroundModel>? facilityGrounds,
+    List<String>? availableSports,
+    List<GroundModel>? availableTurfs,
+    String? selectedSport,
+    bool? clearSelectedSport,
+    GroundModel? selectedTurf,
+    bool? clearSelectedTurf,
   }) {
     return SlotSelectionState(
       dates: dates ?? this.dates,
@@ -44,6 +62,11 @@ class SlotSelectionState {
       groundId: groundId ?? this.groundId,
       availableLoyaltyPoints: availableLoyaltyPoints ?? this.availableLoyaltyPoints,
       useLoyaltyPoints: useLoyaltyPoints ?? this.useLoyaltyPoints,
+      facilityGrounds: facilityGrounds ?? this.facilityGrounds,
+      availableSports: availableSports ?? this.availableSports,
+      availableTurfs: availableTurfs ?? this.availableTurfs,
+      selectedSport: clearSelectedSport == true ? null : (selectedSport ?? this.selectedSport),
+      selectedTurf: clearSelectedTurf == true ? null : (selectedTurf ?? this.selectedTurf),
     );
   }
 }
