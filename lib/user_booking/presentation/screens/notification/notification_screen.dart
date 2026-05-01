@@ -9,6 +9,7 @@ import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
 import 'package:turfpro/user_booking/constants/text_theme.dart';
 import 'package:turfpro/common/constants/colors.dart';
 import 'package:turfpro/user_booking/constants/route_constants.dart';
+import 'package:turfpro/common/config/feature_config.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -365,11 +366,13 @@ class _NotificationTile extends StatelessWidget {
     // Custom navigation based on type
     switch (notification.type) {
       case 'split_payment':
-        Navigator.pushNamed(
-          context,
-          AppRoutes.splitOverview,
-          arguments: notification.data?['booking_id'],
-        );
+        if (FeatureConfig.isSplitEnabled) {
+          Navigator.pushNamed(
+            context,
+            AppRoutes.splitOverview,
+            arguments: notification.data?['booking_id'],
+          );
+        }
         break;
       case 'booking_confirmed':
       case 'booking_cancelled':
@@ -377,8 +380,10 @@ class _NotificationTile extends StatelessWidget {
         Navigator.pushNamed(context, AppRoutes.myBookingScreen);
         break;
       case 'loyalty_points':
-        // Navigate to profile or rewards section
-        Navigator.pushNamed(context, AppRoutes.nav);
+        if (FeatureConfig.isLoyaltyEnabled) {
+          // Navigate to profile or rewards section
+          Navigator.pushNamed(context, AppRoutes.nav);
+        }
         break;
     }
   }
