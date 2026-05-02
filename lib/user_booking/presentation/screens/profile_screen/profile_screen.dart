@@ -47,6 +47,10 @@ class ProfileScreen extends StatelessWidget {
                       _buildAvatar(context, profileState),
                       const SizedBox(height: 14),
                       _buildNameSection(context, profileState),
+                      if (FeatureConfig.isWalletEnabled) ...[
+                        const SizedBox(height: 24),
+                        _buildWalletCard(context, profileState),
+                      ],
                       const SizedBox(height: 28),
                       _buildMenuList(context),
                       const SizedBox(height: 16),
@@ -146,6 +150,86 @@ class ProfileScreen extends StatelessWidget {
         context.read<ProfileCubit>().uploadImage(XFile(croppedFile.path));
       }
     }
+  }
+
+  Widget _buildWalletCard(BuildContext context, ProfileState state) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark 
+            ? [const Color(0xFF1E3A8A), const Color(0xFF1E40AF)] 
+            : [const Color(0xFF3B82F6), const Color(0xFF2563EB)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: (isDark ? Colors.black : Colors.blue).withValues(alpha: 0.2),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 28),
+          ),
+          const SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "My Wallet",
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "₹${state.walletBalance.toStringAsFixed(2)}",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Text(
+              "Active",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildNameSection(BuildContext context, ProfileState state) {

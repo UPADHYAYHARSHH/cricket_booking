@@ -16,6 +16,8 @@ class SlotSelectionState {
   final List<GroundModel> availableTurfs;
   final String? selectedSport;
   final GroundModel? selectedTurf;
+  final double walletBalance;
+  final bool useWallet;
 
   SlotSelectionState({
     required this.dates,
@@ -27,6 +29,8 @@ class SlotSelectionState {
     this.groundId,
     this.availableLoyaltyPoints = 0,
     this.useLoyaltyPoints = false,
+    this.walletBalance = 0.0,
+    this.useWallet = false,
     this.facilityGrounds = const [],
     this.availableSports = const [],
     this.availableTurfs = const [],
@@ -44,6 +48,8 @@ class SlotSelectionState {
     String? groundId,
     int? availableLoyaltyPoints,
     bool? useLoyaltyPoints,
+    double? walletBalance,
+    bool? useWallet,
     List<GroundModel>? facilityGrounds,
     List<String>? availableSports,
     List<GroundModel>? availableTurfs,
@@ -62,6 +68,8 @@ class SlotSelectionState {
       groundId: groundId ?? this.groundId,
       availableLoyaltyPoints: availableLoyaltyPoints ?? this.availableLoyaltyPoints,
       useLoyaltyPoints: useLoyaltyPoints ?? this.useLoyaltyPoints,
+      walletBalance: walletBalance ?? this.walletBalance,
+      useWallet: useWallet ?? this.useWallet,
       facilityGrounds: facilityGrounds ?? this.facilityGrounds,
       availableSports: availableSports ?? this.availableSports,
       availableTurfs: availableTurfs ?? this.availableTurfs,

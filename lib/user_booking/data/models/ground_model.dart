@@ -16,6 +16,7 @@ class GroundModel {
   final List<String> images;
   final List<String> categories;
   final String ownerId;
+  final bool isAvailable;
 
   GroundModel({
     required this.id,
@@ -35,6 +36,7 @@ class GroundModel {
     this.images = const [],
     this.categories = const [],
     this.ownerId = '',
+    this.isAvailable = true,
   });
 
   factory GroundModel.fromJson(Map<String, dynamic> json) {
@@ -56,6 +58,7 @@ class GroundModel {
       images: (json['images'] as List?)?.map((e) => e.toString()).toList() ?? [],
       categories: (json['categories'] as List?)?.map((e) => e.toString()).toList() ?? [],
       ownerId: json['owner_id'] ?? '',
+      isAvailable: json['is_available'] ?? true,
     );
   }
 
@@ -78,6 +81,7 @@ class GroundModel {
       'images': images,
       'categories': categories,
       'owner_id': ownerId,
+      'is_available': isAvailable,
     };
   }
 

@@ -442,21 +442,35 @@ class _VenueCard extends StatelessWidget {
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                _buildAmenity(Icons.wifi, "Free WiFi"),
-                const AppSizedBox(width: 16),
-                _buildAmenity(Icons.local_parking, "Parking"),
-                const AppSizedBox(width: 16),
-                _buildAmenity(Icons.wc, "Washroom"),
-              ],
+          if (ground.amenities.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: ground.amenities.map<Widget>((amenity) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 16),
+                      child: _buildAmenity(_getAmenityIcon(amenity), amenity),
+                    );
+                  }).toList(),
+                ),
+              ),
             ),
-          ),
         ],
       ),
     );
+  }
+
+  IconData _getAmenityIcon(String amenity) {
+    final lower = amenity.toLowerCase();
+    if (lower.contains('wifi')) return Icons.wifi;
+    if (lower.contains('parking')) return Icons.local_parking;
+    if (lower.contains('washroom') || lower.contains('toilet')) return Icons.wc;
+    if (lower.contains('water')) return Icons.local_drink;
+    if (lower.contains('cctv')) return Icons.videocam;
+    if (lower.contains('cafeteria') || lower.contains('food')) return Icons.restaurant;
+    return Icons.check_circle_outline;
   }
 
   Widget _buildAmenity(IconData icon, String label) {

@@ -41,8 +41,16 @@ class BookingSummaryScreen extends StatelessWidget {
                 : state.availableLoyaltyPoints.toDouble();
           }
         }
+        // Wallet Balance Logic
+        double walletDiscount = 0.0;
+        if (FeatureConfig.isWalletEnabled && state.useWallet && state.walletBalance > 0) {
+          double remainingAfterLoyalty = basePrice - pointsDiscount;
+          walletDiscount = state.walletBalance > remainingAfterLoyalty 
+              ? remainingAfterLoyalty 
+              : state.walletBalance;
+        }
 
-        final double grandTotal = (basePrice - pointsDiscount) + platformFee;
+        final double grandTotal = (basePrice - pointsDiscount - walletDiscount) + platformFee;
 
         return Scaffold(
           backgroundColor: theme.scaffoldBackgroundColor,
@@ -83,10 +91,97 @@ class BookingSummaryScreen extends StatelessWidget {
                     ],
                   ),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _summaryRow(context, label: "Venue", value: ground?.name ?? "Turf", isBold: true),
-                      const Divider(height: 24),
-                      _summaryRow(context, label: "Date", value: "${activeDate.month} ${activeDate.date}, ${DateTime.now().year}"),
+                      Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.network(
+                              ground?.imageUrl ?? "",
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                width: 80,
+                                height: 80,
+                                color: colorScheme.surfaceContainerHighest,
+                                child: const Icon(Icons.sports_cricket, color: Colors.grey),
+                              ),
+                            ),
+                          ),
+                          const AppSizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                AppText(
+                                  text: ground?.name ?? "Turf",
+                                  textStyle: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: colorScheme.onSurface,
+                                  ),
+                                ),
+                                const AppSizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(Icons.location_on_outlined, size: 14, color: colorScheme.primary),
+                                    const AppSizedBox(width: 4),
+                                    Expanded(
+                                      child: AppText(
+                                        text: ground?.address ?? "Venue Address",
+                                        maxLines: 1,
+                                        textStyle: TextStyle(
+                                          fontSize: 12,
+                                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const AppSizedBox(height: 16),
+                      if (ground?.amenities.isNotEmpty ?? false) ...[
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: ground!.amenities.map((amenity) {
+                              return Container(
+                                margin: const EdgeInsets.only(right: 8),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.primary.withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.check_circle_outline, size: 12, color: colorScheme.primary),
+                                    const AppSizedBox(width: 4),
+                                    AppText(
+                                      text: amenity,
+                                      textStyle: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: colorScheme.onSurface.withValues(alpha: 0.8),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                        const AppSizedBox(height: 16),
+                      ],
+                      const Divider(height: 1),
+                      const AppSizedBox(height: 16),
+                      _summaryRow(context, label: "Booking Date", value: "${activeDate.month} ${activeDate.date}, ${DateTime.now().year}"),
                       const AppSizedBox(height: 12),
                       _summaryRow(context, label: "Total Slots", value: "${selectedSlots.length} Selected"),
                     ],
@@ -208,6 +303,77 @@ class BookingSummaryScreen extends StatelessWidget {
                   const AppSizedBox(height: 32),
                 ],
 
+                // Wallet Section
+                if (FeatureConfig.isWalletEnabled) ...[
+                  AppText(
+                    text: "Wallet Balance",
+                    textStyle: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const AppSizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: state.useWallet 
+                          ? AppColors.primaryDarkGreen 
+                          : colorScheme.outline.withValues(alpha: 0.2),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.blue, size: 28),
+                        ),
+                        const AppSizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              AppText(
+                                text: "Use Wallet Balance",
+                                textStyle: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: colorScheme.onSurface,
+                                ),
+                              ),
+                              AppText(
+                                text: state.walletBalance > 0 
+                                  ? "Available: ₹${state.walletBalance.toStringAsFixed(0)}"
+                                  : "No balance available",
+                                textStyle: TextStyle(
+                                  fontSize: 12,
+                                  color: colorScheme.onSurface.withValues(alpha: 0.6),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Switch(
+                          value: state.useWallet,
+                          activeColor: AppColors.primaryDarkGreen,
+                          onChanged: state.walletBalance > 0 
+                            ? (_) => context.read<SlotSelectionCubit>().toggleWallet() 
+                            : null,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const AppSizedBox(height: 32),
+                ],
+
                 // Bill Details
                 AppText(
                   text: "Bill Details",
@@ -222,6 +388,10 @@ class BookingSummaryScreen extends StatelessWidget {
                 const AppSizedBox(height: 12),
                 if (pointsDiscount > 0) ...[
                   _priceRow(context, label: "Loyalty Discount", amount: -pointsDiscount, isDiscount: true),
+                  const AppSizedBox(height: 12),
+                ],
+                if (walletDiscount > 0) ...[
+                  _priceRow(context, label: "Wallet Used", amount: -walletDiscount, isDiscount: true, isWallet: true),
                   const AppSizedBox(height: 12),
                 ],
                 _priceRow(context, label: "Platform Fee", amount: platformFee),
@@ -260,6 +430,7 @@ class BookingSummaryScreen extends StatelessWidget {
                     Navigator.pop(context, {
                       'finalAmount': grandTotal,
                       'appliedPoints': state.useLoyaltyPoints ? pointsDiscount.toInt() : 0,
+                      'appliedWallet': state.useWallet ? walletDiscount : 0.0,
                     });
                   },
                 ),
@@ -296,7 +467,7 @@ class BookingSummaryScreen extends StatelessWidget {
     );
   }
 
-  Widget _priceRow(BuildContext context, {required String label, required double amount, bool isDiscount = false, bool isFree = false}) {
+  Widget _priceRow(BuildContext context, {required String label, required double amount, bool isDiscount = false, bool isFree = false, bool isWallet = false}) {
     final colorScheme = Theme.of(context).colorScheme;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -315,7 +486,9 @@ class BookingSummaryScreen extends StatelessWidget {
             fontWeight: FontWeight.bold,
             color: isFree 
               ? Colors.green 
-              : (isDiscount ? AppColors.primaryDarkGreen : colorScheme.onSurface),
+              : (isDiscount 
+                  ? (isWallet ? Colors.blue : AppColors.primaryDarkGreen) 
+                  : colorScheme.onSurface),
           ),
         ),
       ],

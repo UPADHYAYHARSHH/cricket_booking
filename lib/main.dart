@@ -38,6 +38,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:turfpro/common/services/remote_config_service.dart';
+import 'package:turfpro/common/screens/maintenance_screen.dart';
 
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'user_booking/presentation/screens/splash/splash_screen.dart';

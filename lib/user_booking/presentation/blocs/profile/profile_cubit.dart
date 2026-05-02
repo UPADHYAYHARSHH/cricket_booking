@@ -2,6 +2,7 @@ import 'package:turfpro/user_booking/data/repositories/user_repository_impl.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../domain/usecases/upsert_user_profile.dart';
+import '../../../domain/repositories/wallet_repository.dart';
 
 class ProfileState {
   final bool isLoading;
@@ -14,6 +15,7 @@ class ProfileState {
   final String? username;
   final bool? isUsernameAvailable;
   final String? lastCheckedUsername;
+  final double walletBalance;
 
   ProfileState({
     this.isLoading = false,
@@ -26,6 +28,7 @@ class ProfileState {
     this.username,
     this.isUsernameAvailable,
     this.lastCheckedUsername,
+    this.walletBalance = 0.0,
   });
 
   ProfileState copyWith({
@@ -39,6 +42,7 @@ class ProfileState {
     String? username,
     bool? isUsernameAvailable,
     String? lastCheckedUsername,
+    double? walletBalance,
   }) {
     return ProfileState(
       isLoading: isLoading ?? this.isLoading,
@@ -51,6 +55,7 @@ class ProfileState {
       username: username ?? this.username,
       isUsernameAvailable: isUsernameAvailable ?? this.isUsernameAvailable,
       lastCheckedUsername: lastCheckedUsername ?? this.lastCheckedUsername,
+      walletBalance: walletBalance ?? this.walletBalance,
     );
   }
 }
@@ -58,8 +63,9 @@ class ProfileState {
 class ProfileCubit extends Cubit<ProfileState> {
   final UpsertUserProfile upsertUserProfile;
   final UserRepository userRepository;
+  final WalletRepository walletRepository;
 
-  ProfileCubit(this.upsertUserProfile, this.userRepository) : super(ProfileState());
+  ProfileCubit(this.upsertUserProfile, this.userRepository, this.walletRepository) : super(ProfileState());
 
   Future<void> loadProfile() async {
     emit(state.copyWith(isLoading: true, error: null));
@@ -81,6 +87,8 @@ class ProfileCubit extends Cubit<ProfileState> {
           );
         }
 
+        final walletBalance = await walletRepository.getBalance();
+
         emit(state.copyWith(
           isLoading: false,
           name: data['name'],
@@ -88,6 +96,7 @@ class ProfileCubit extends Cubit<ProfileState> {
           dob: data['dob'] != null ? DateTime.parse(data['dob']) : null,
           photoUrl: data['photo_url'],
           username: username,
+          walletBalance: walletBalance,
         ));
       } else {
         emit(state.copyWith(isLoading: false));
@@ -95,6 +104,13 @@ class ProfileCubit extends Cubit<ProfileState> {
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: e.toString()));
     }
+  }
+
+  Future<void> loadWalletBalance() async {
+    try {
+      final balance = await walletRepository.getBalance();
+      emit(state.copyWith(walletBalance: balance));
+    } catch (_) {}
   }
 
   Future<void> saveProfile({

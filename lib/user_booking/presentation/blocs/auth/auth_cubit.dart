@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
+import 'package:turfpro/common/services/notification_service.dart';
 import '../../../domain/repositories/auth_repositories.dart';
 import '../../../data/repositories/user_repository_impl.dart';
 import 'auth_state.dart';
@@ -105,6 +106,7 @@ class AuthCubit extends Cubit<AuthState> {
           emit(AuthProfileIncomplete());
         } else {
           debugPrint("DEBUG: [AuthCubit] Profile complete - emitting AuthSuccess");
+          await NotificationService.updateFcmToken();
           emit(AuthSuccess());
         }
       } else {
@@ -179,6 +181,7 @@ class AuthCubit extends Cubit<AuthState> {
         gender: gender,
         dob: dob,
       );
+      await NotificationService.updateFcmToken();
       emit(AuthSuccess());
     } catch (e) {
       emit(AuthError("Failed to complete profile: ${e.toString()}"));

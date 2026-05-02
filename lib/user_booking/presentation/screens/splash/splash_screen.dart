@@ -9,6 +9,7 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../../../common/constants/colors.dart';
 import '../../blocs/splash/splash_cubit.dart';
 import 'app_status_screens.dart';
+import 'package:turfpro/common/screens/maintenance_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

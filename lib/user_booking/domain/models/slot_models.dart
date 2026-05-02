@@ -20,7 +20,7 @@ class TimeSlot {
   final String startTime;
   final String endTime;
   final double price;
-  SlotStatus status;
+  final SlotStatus status;
 
   TimeSlot({
     required this.startTime,
@@ -28,4 +28,18 @@ class TimeSlot {
     required this.price,
     this.status = SlotStatus.available,
   });
+
+  TimeSlot copyWith({
+    String? startTime,
+    String? endTime,
+    double? price,
+    SlotStatus? status,
+  }) {
+    return TimeSlot(
+      startTime: startTime ?? this.startTime,
+      endTime: endTime ?? this.endTime,
+      price: price ?? this.price,
+      status: status ?? this.status,
+    );
+  }
 }

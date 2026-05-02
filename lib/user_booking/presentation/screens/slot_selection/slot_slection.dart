@@ -1,5 +1,4 @@
 import 'package:turfpro/common/constants/colors.dart';
-import 'package:turfpro/user_booking/presentation/blocs/connectivity/connectivity_cubit.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import 'package:turfpro/user_booking/data/repositories/payment_repository.dart';
@@ -7,8 +6,6 @@ import 'package:turfpro/user_booking/domain/models/slot_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:turfpro/user_booking/presentation/blocs/saved_ground/saved_ground_cubit.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:turfpro/user_booking/di/get_it/get_it.dart';
 import 'package:turfpro/user_booking/constants/route_constants.dart';
@@ -16,11 +13,11 @@ import 'package:turfpro/user_booking/presentation/widgets/slot_selection_widgets
 import 'package:turfpro/user_booking/data/models/ground_model.dart';
 import 'package:turfpro/user_booking/presentation/blocs/slot_selection/slot_selection_cubit.dart';
 import 'package:turfpro/user_booking/domain/models/booking_arguments.dart';
-import 'package:turfpro/user_booking/data/services/analytics_service.dart';
 import 'package:turfpro/user_booking/presentation/blocs/slot_selection/slot_selection_state.dart';
 import 'package:turfpro/user_booking/domain/repositories/review_repository.dart';
 import 'package:turfpro/user_booking/data/models/review_model.dart';
 import 'package:turfpro/user_booking/domain/repositories/loyalty_repository.dart';
+import 'package:turfpro/user_booking/domain/repositories/wallet_repository.dart';
 import 'package:turfpro/common/config/feature_config.dart';
 
 class SlotSelectionScreen extends StatefulWidget {
@@ -52,9 +49,12 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
     _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
   }
 
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void dispose() {
     _razorpay.clear();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -139,11 +139,12 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
     try {
       final reviews =
           await getIt<ReviewRepository>().fetchGroundReviews(_ground!.id);
-      if (mounted)
+      if (mounted) {
         setState(() {
           _reviews = reviews;
           _isLoadingReviews = false;
         });
+      }
     } catch (_) {
       if (mounted) setState(() => _isLoadingReviews = false);
     }
@@ -151,7 +152,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
 
   void _onConfirmBooking(
       double totalPrice, dynamic activeDate, List<TimeSlot> selectedSlots,
-      {int appliedPoints = 0, bool fromRetry = false}) async {
+      {int appliedPoints = 0, double appliedWallet = 0.0, bool fromRetry = false}) async {
     HapticFeedback.mediumImpact();
     if (selectedSlots.isEmpty || _ground == null) return;
 
@@ -172,6 +173,18 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
         if (_pendingDate!.isBefore(DateTime(now.year, now.month, now.day))) {
           _pendingDate = DateTime(now.year, now.month + 1, activeDate.date);
         }
+      }
+
+      // Deduct from wallet if used
+      if (FeatureConfig.isWalletEnabled && appliedWallet > 0) {
+        final walletRepo = getIt<WalletRepository>();
+        final currentBalance = await walletRepo.getBalance();
+        await walletRepo.updateBalance(currentBalance - appliedWallet);
+        await walletRepo.addTransaction(
+          amount: appliedWallet,
+          type: 'debit',
+          description: 'Used for booking @ ${_ground!.name}',
+        );
       }
 
       final bookingData = await _paymentRepo.saveDirectBooking(
@@ -231,37 +244,120 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
     }
   }
 
+  void _scrollToTop() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  Future<bool> _showClearSelectionDialog(BuildContext context) async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const AppText(
+          text: "Clear Selection?",
+          textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        content: const AppText(
+          text: "Changing sport or ground will clear your currently selected slots. Do you want to proceed?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const AppText(text: "Cancel", textStyle: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const AppText(text: "Clear & Proceed", textStyle: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    ) ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: BlocBuilder<SlotSelectionCubit, SlotSelectionState>(
         builder: (context, state) {
           final cubit = context.read<SlotSelectionCubit>();
+          final selectedSlots = state.slots.where((s) => s.status == SlotStatus.selected).toList();
+          final totalPrice = selectedSlots.fold<double>(0, (sum, s) => sum + s.price);
+          final activeDate = state.dates.isNotEmpty ? state.dates.firstWhere((d) => d.isSelected, orElse: () => state.dates.first) : null;
 
           return Column(
             children: [
+              // Fixed Header
               SlotSelectionWidgets.buildHeader(
                   context, state.selectedTurf ?? _ground,
                   title: state.selectedTurf?.name ?? "Book Slots"),
 
-              // Dropdowns Row
-              SlotSelectionWidgets.buildSelectionDropdowns(
+              // Fixed Sport Selection
+              SlotSelectionWidgets.buildSportSelection(
                 context,
                 state,
-                onSportChanged: (sport) {
-                  if (sport != null) cubit.selectSport(sport);
-                },
-                onTurfChanged: (turf) {
-                  if (turf != null) cubit.selectTurf(turf);
+                onSportChanged: (sport) async {
+                  if (selectedSlots.isNotEmpty && sport != state.selectedSport) {
+                    final proceed = await _showClearSelectionDialog(context);
+                    if (!proceed) return;
+                    cubit.clearSelections();
+                  }
+                  cubit.selectSport(sport);
+                  _scrollToTop();
                 },
               ),
 
+              // Scrollable Content
               Expanded(
-                child: state.selectedTurf == null
-                    ? _buildEmptyState(context, state)
-                    : _buildSlotSelection(context, state, cubit),
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    children: [
+                      // Ground Selection (Now Scrollable)
+                      SlotSelectionWidgets.buildGroundSelection(
+                        context,
+                        state,
+                        onTurfChanged: (turf) async {
+                          if (selectedSlots.isNotEmpty && turf.id != state.selectedTurf?.id) {
+                            final proceed = await _showClearSelectionDialog(context);
+                            if (!proceed) return;
+                            cubit.clearSelections();
+                          }
+                          cubit.selectTurf(turf);
+                        },
+                      ),
+
+                      if (state.selectedTurf == null)
+                        _buildEmptyState(context, state)
+                      else
+                        _buildSlotSelectionContent(context, state, cubit),
+                    ],
+                  ),
+                ),
               ),
+
+              // Fixed Bottom Bar
+              if (activeDate != null)
+                SlotSelectionWidgets.buildBottomBar(
+                  context, selectedSlots, activeDate, totalPrice, () async {
+                    if (state.selectedTurf == null) return;
+                    final result = await Navigator.pushNamed(
+                        context, AppRoutes.bookingSummary,
+                        arguments: state.selectedTurf);
+                    if (result != null && result is Map<String, dynamic>) {
+                      _onConfirmBooking(result['finalAmount'], activeDate, selectedSlots,
+                          appliedPoints: result['appliedPoints'],
+                          appliedWallet: result['appliedWallet'] ?? 0.0);
+                    }
+                  }
+                ),
             ],
           );
         },
@@ -270,7 +366,9 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
   }
 
   Widget _buildEmptyState(BuildContext context, SlotSelectionState state) {
-    return Center(
+    return Container(
+      height: 300, // Fixed height to show in the scrollable view
+      alignment: Alignment.center,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -286,85 +384,62 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
             text: state.selectedSport == null
                 ? "Please select a sport first"
                 : "Select a ground to see slots",
-            textStyle:
-                TextStyle(color: Colors.grey.withOpacity(0.7), fontSize: 16),
+            textStyle: TextStyle(color: Colors.grey.withValues(alpha: 0.7), fontSize: 16),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSlotSelection(BuildContext context, SlotSelectionState state,
+  Widget _buildSlotSelectionContent(BuildContext context, SlotSelectionState state,
       SlotSelectionCubit cubit) {
     final currentTurf = state.selectedTurf!;
-    final selectedSlots =
-        state.slots.where((s) => s.status == SlotStatus.selected).toList();
-    final totalPrice = selectedSlots.fold<double>(0, (sum, s) => sum + s.price);
-    final activeDate = state.dates.firstWhere((d) => d.isSelected);
-
+    
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SlotSelectionWidgets.buildTurfImage(context, currentTurf,
-                    rating: currentTurf.rating,
-                    totalReviews: currentTurf.totalReviews),
-                SlotSelectionWidgets.buildDateSelector(context, state.dates,
-                    (index) {
-                  cubit.selectDate(index, currentTurf.id,
-                      openingTime: currentTurf.openingTime,
-                      closingTime: currentTurf.closingTime,
-                      pricePerSlot: currentTurf.pricePerHour.toDouble());
-                }),
-                SlotSelectionWidgets.buildPeriodFilter(context,
-                    state.selectedPeriod, (p) => cubit.changePeriod(p)),
-                if (state.isLoading)
-                  SlotSelectionWidgets.buildSlotShimmer(context)
-                else if (state.errorMessage != null)
-                  Center(
-                      child: AppText(
-                          text: state.errorMessage!,
-                          textStyle: const TextStyle(color: Colors.red)))
-                else ...[
-                  Builder(builder: (context) {
-                    final filtered = state.slots
-                        .asMap()
-                        .entries
-                        .where((e) =>
-                            _getSlotPeriod(e.value.startTime) ==
-                            state.selectedPeriod)
-                        .toList();
-                    return SlotSelectionWidgets.buildSlotSection(
-                        context,
-                        filtered.map((e) => e.value).toList(),
-                        (i) => cubit.toggleSlot(filtered[i].key));
-                  }),
-                  const AppSizedBox(height: 20),
-                ],
-                SlotSelectionWidgets.buildDescriptionSection(
-                    context, currentTurf.description),
-                SlotSelectionWidgets.buildAmenitiesSection(
-                    context, currentTurf.amenities),
-                SlotSelectionWidgets.buildMapSection(context, currentTurf),
-                SlotSelectionWidgets.buildReviewSection(
-                    context, _reviews, _isLoadingReviews),
-              ],
-            ),
-          ),
-        ),
-        SlotSelectionWidgets.buildBottomBar(
-            context, selectedSlots, activeDate, totalPrice, () async {
-          final result = await Navigator.pushNamed(
-              context, AppRoutes.bookingSummary,
-              arguments: currentTurf);
-          if (result != null && result is Map<String, dynamic>) {
-            _onConfirmBooking(result['finalAmount'], activeDate, selectedSlots,
-                appliedPoints: result['appliedPoints']);
-          }
+        SlotSelectionWidgets.buildTurfImage(context, currentTurf,
+            rating: currentTurf.rating,
+            totalReviews: currentTurf.totalReviews),
+        SlotSelectionWidgets.buildDateSelector(context, state.dates,
+            (index) {
+          cubit.selectDate(index, currentTurf.id,
+              openingTime: currentTurf.openingTime,
+              closingTime: currentTurf.closingTime,
+              pricePerSlot: currentTurf.pricePerHour.toDouble());
         }),
+        SlotSelectionWidgets.buildPeriodFilter(context,
+            state.selectedPeriod, (p) => cubit.changePeriod(p)),
+        if (state.isLoading)
+          SlotSelectionWidgets.buildSlotShimmer(context)
+        else if (state.errorMessage != null)
+          Center(
+              child: AppText(
+                  text: state.errorMessage!,
+                  textStyle: const TextStyle(color: Colors.red)))
+        else ...[
+          Builder(builder: (context) {
+            final filtered = state.slots
+                .asMap()
+                .entries
+                .where((e) =>
+                    _getSlotPeriod(e.value.startTime) ==
+                    state.selectedPeriod)
+                .toList();
+            return SlotSelectionWidgets.buildSlotSection(
+                context,
+                filtered.map((e) => e.value).toList(),
+                (i) => cubit.toggleSlot(filtered[i].key));
+          }),
+          const AppSizedBox(height: 20),
+        ],
+        SlotSelectionWidgets.buildDescriptionSection(
+            context, currentTurf.description),
+        SlotSelectionWidgets.buildAmenitiesSection(
+            context, currentTurf.amenities),
+        SlotSelectionWidgets.buildMapSection(context, currentTurf),
+        SlotSelectionWidgets.buildReviewSection(
+            context, _reviews, _isLoadingReviews),
       ],
     );
   }

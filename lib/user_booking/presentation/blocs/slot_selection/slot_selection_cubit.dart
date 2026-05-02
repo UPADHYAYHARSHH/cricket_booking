@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'dart:async';
 
 import 'package:turfpro/user_booking/domain/repositories/loyalty_repository.dart';
+import 'package:turfpro/user_booking/domain/repositories/wallet_repository.dart';
 import 'package:turfpro/common/config/feature_config.dart';
 import 'slot_selection_state.dart';
 
@@ -15,9 +16,10 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
   final SlotRepository repository;
   final LoyaltyRepository loyaltyRepository;
   final GroundRepository groundRepository;
+  final WalletRepository walletRepository;
   StreamSubscription<List<TimeSlot>>? _slotsSubscription;
 
-  SlotSelectionCubit(this.repository, this.loyaltyRepository, this.groundRepository)
+  SlotSelectionCubit(this.repository, this.loyaltyRepository, this.groundRepository, this.walletRepository)
       : super(
           SlotSelectionState(
             dates: _generateDates(),
@@ -28,6 +30,22 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
     if (FeatureConfig.isLoyaltyEnabled) {
       loadLoyaltyPoints();
     }
+    if (FeatureConfig.isWalletEnabled) {
+      loadWalletBalance();
+    }
+  }
+
+  Future<void> loadWalletBalance() async {
+    try {
+      final balance = await walletRepository.getBalance();
+      emit(state.copyWith(walletBalance: balance));
+    } catch (e) {
+      debugPrint("Error loading wallet balance: $e");
+    }
+  }
+
+  void toggleWallet() {
+    emit(state.copyWith(useWallet: !state.useWallet));
   }
 
   Future<void> loadLoyaltyPoints() async {
@@ -92,19 +110,15 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
         isLoading: false,
       ));
 
-      // Auto-select if only one sport exists
-      if (sportsList.length == 1) {
-        selectSport(sportsList.first);
+      if (sportsList.isNotEmpty) {
+        final firstSport = sportsList.first;
+        selectSport(firstSport);
         
-        // After selecting sport, if only one turf exists, select it too
-        final turfs = facilityGrounds.where((g) => g.categories.contains(sportsList.first)).toList();
-        if (turfs.length == 1) {
-          selectTurf(turfs.first);
+        // Find turfs for this first sport and auto-select the first one
+        final firstSportTurfs = facilityGrounds.where((g) => g.categories.contains(firstSport)).toList();
+        if (firstSportTurfs.isNotEmpty) {
+          selectTurf(firstSportTurfs.first);
         }
-      } else {
-        // If multiple sports, but the initial ground's sport is known, maybe pre-select it?
-        // User said: "when user tap on ground... first all available sports"
-        // So we keep it unselected if there are multiple.
       }
     } catch (e) {
       emit(state.copyWith(isLoading: false, errorMessage: "Error loading facility data: $e"));
@@ -121,6 +135,21 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
       availableTurfs: turfs,
       clearSelectedTurf: true,
     ));
+
+    // Auto-select if only one turf exists for this sport
+    if (turfs.length == 1) {
+      selectTurf(turfs.first);
+    }
+  }
+
+  void clearSelections() {
+    final updatedSlots = state.slots.map((slot) {
+      if (slot.status == SlotStatus.selected) {
+        return slot.copyWith(status: SlotStatus.available);
+      }
+      return slot;
+    }).toList();
+    emit(state.copyWith(slots: updatedSlots));
   }
 
   void selectTurf(GroundModel turf) {
@@ -298,9 +327,11 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
       return;
     }
 
-    slot.status = slot.status == SlotStatus.selected
-        ? SlotStatus.available
-        : SlotStatus.selected;
+    slots[index] = slot.copyWith(
+      status: slot.status == SlotStatus.selected
+          ? SlotStatus.available
+          : SlotStatus.selected,
+    );
 
     emit(state.copyWith(slots: slots));
   }

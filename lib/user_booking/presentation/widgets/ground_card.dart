@@ -356,6 +356,31 @@ class _GroundCardState extends State<GroundCard> {
             ],
           ),
 
+          if (widget.ground.amenities.isNotEmpty) ...[
+            const AppSizedBox(height: 10),
+            Row(
+              children: widget.ground.amenities.take(3).map((amenity) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Row(
+                    children: [
+                      Icon(_getAmenityIcon(amenity), size: 12, color: AppColors.primaryDarkGreen),
+                      const AppSizedBox(width: 4),
+                      AppText(
+                        text: amenity,
+                        textStyle: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: onSurface.withOpacity(0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+
           const AppSizedBox(height: 14),
 
           Row(
@@ -385,6 +410,17 @@ class _GroundCardState extends State<GroundCard> {
         ],
       ),
     );
+  }
+
+  IconData _getAmenityIcon(String amenity) {
+    final lower = amenity.toLowerCase();
+    if (lower.contains('wifi')) return Icons.wifi;
+    if (lower.contains('parking')) return Icons.local_parking;
+    if (lower.contains('washroom') || lower.contains('toilet')) return Icons.wc;
+    if (lower.contains('water')) return Icons.local_drink;
+    if (lower.contains('cctv')) return Icons.videocam;
+    if (lower.contains('cafeteria') || lower.contains('food')) return Icons.restaurant;
+    return Icons.check_circle_outline;
   }
 
   double _calculateDistance(

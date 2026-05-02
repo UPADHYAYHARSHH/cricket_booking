@@ -6,6 +6,8 @@ import 'package:turfpro/user_booking/data/repositories/payment_repository.dart';
 import 'package:turfpro/user_booking/data/repositories/booking_repository.dart';
 import 'package:turfpro/user_booking/presentation/blocs/booking/booking_cubit.dart';
 import 'package:turfpro/user_booking/domain/repositories/auth_repositories.dart';
+import 'package:turfpro/user_booking/domain/repositories/loyalty_repository.dart';
+import 'package:turfpro/user_booking/domain/repositories/wallet_repository.dart';
 import 'package:turfpro/user_booking/presentation/blocs/auth/auth_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/slot_selection/slot_selection_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/split_history/split_history_cubit.dart';
@@ -60,12 +62,17 @@ Future<void> init() async {
     () => LoyaltyRepositoryImpl(),
   );
 
+  getIt.registerLazySingleton<WalletRepository>(
+    () => WalletRepositoryImpl(supabase),
+  );
+
   /// Cubits (REGISTER AFTER)
   getIt.registerFactory(() => SplashCubit());
   getIt.registerFactory(() => SlotSelectionCubit(
         getIt<SlotRepository>(),
         getIt<LoyaltyRepository>(),
         getIt<GroundRepository>(),
+        getIt<WalletRepository>(),
       ));
   getIt.registerFactory(() => AuthCubit(getIt<AuthRepository>()));
 
@@ -77,9 +84,11 @@ Future<void> init() async {
     () => UpsertUserProfile(getIt<UserRepository>()),
   );
 
-  getIt.registerFactory(
-    () => ProfileCubit(getIt<UpsertUserProfile>(), getIt<UserRepository>()),
-  );
+  getIt.registerFactory(() => ProfileCubit(
+        getIt<UpsertUserProfile>(),
+        getIt<UserRepository>(),
+        getIt<WalletRepository>(),
+      ));
   getIt.registerFactory(
     () => LocationCubit(getIt<UserRepository>()),
   );
