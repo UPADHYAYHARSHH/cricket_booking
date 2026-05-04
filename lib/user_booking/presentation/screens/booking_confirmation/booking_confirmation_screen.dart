@@ -200,6 +200,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                 orderId: orderId,
                 displayId: displayId,
                 totalPrice: totalPrice,
+                groundAddress: ground.address,
               ),
 
               const AppSizedBox(height: 20),
@@ -444,7 +445,8 @@ class _VenueCard extends StatelessWidget {
                                   decorationColor:
                                       Colors.white.withValues(alpha: 0.5),
                                 ),
-                                maxLines: 1,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -509,6 +511,7 @@ class _BookingDetailsCard extends StatelessWidget {
   final String orderId;
   final int displayId;
   final double totalPrice;
+  final String groundAddress;
 
   const _BookingDetailsCard({
     required this.date,
@@ -516,6 +519,7 @@ class _BookingDetailsCard extends StatelessWidget {
     required this.orderId,
     required this.displayId,
     required this.totalPrice,
+    required this.groundAddress,
   });
 
   @override
@@ -533,6 +537,16 @@ class _BookingDetailsCard extends StatelessWidget {
       ),
       child: Column(
         children: [
+          _buildDetailRow(
+            context,
+            "Venue Address",
+            groundAddress,
+            Icons.location_on_outlined,
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Divider(height: 1),
+          ),
           _buildDetailRow(
             context,
             "Date",

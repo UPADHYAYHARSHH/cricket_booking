@@ -19,6 +19,7 @@ import 'package:turfpro/user_booking/data/models/review_model.dart';
 import 'package:turfpro/user_booking/domain/repositories/loyalty_repository.dart';
 import 'package:turfpro/user_booking/domain/repositories/wallet_repository.dart';
 import 'package:turfpro/common/config/feature_config.dart';
+import 'package:share_plus/share_plus.dart';
 
 class SlotSelectionScreen extends StatefulWidget {
   const SlotSelectionScreen({super.key});
@@ -280,6 +281,14 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
     ) ?? false;
   }
 
+  void _shareGround() {
+    if (_ground == null) return;
+    final String shareText = 'Check out ${_ground!.name} on TurfPro!\n'
+        'Location: ${_ground!.address}\n'
+        'Book your slots now for only ₹${_ground!.pricePerHour}/hr!';
+    Share.share(shareText);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -297,7 +306,8 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
               // Fixed Header
               SlotSelectionWidgets.buildHeader(
                   context, state.selectedTurf ?? _ground,
-                  title: state.selectedTurf?.name ?? "Book Slots"),
+                  title: state.selectedTurf?.name ?? "Book Slots",
+                  onShare: _shareGround),
 
               // Fixed Sport Selection
               SlotSelectionWidgets.buildSportSelection(

@@ -113,6 +113,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
 
         /// APP BAR
         appBar: AppBar(
+          centerTitle: false,
           title: BlocBuilder<LocationCubit, LocationState>(
             builder: (context, state) {
               final city = state.city ?? "Fetching...";
@@ -166,11 +167,12 @@ class _GroundListScreenState extends State<GroundListScreen> {
             BlocBuilder<NotificationCubit, NotificationState>(
               builder: (context, state) {
                 final bool hasUnread = state.unreadCount > 0;
-                
+
                 return Padding(
                   padding: const EdgeInsets.only(right: 16),
                   child: GestureDetector(
-                    onTap: () => Navigator.pushNamed(context, AppRoutes.notification),
+                    onTap: () =>
+                        Navigator.pushNamed(context, AppRoutes.notification),
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
@@ -188,7 +190,8 @@ class _GroundListScreenState extends State<GroundListScreen> {
                               decoration: BoxDecoration(
                                 color: Colors.red,
                                 shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 1.5),
+                                border:
+                                    Border.all(color: Colors.white, width: 1.5),
                               ),
                             ),
                           ),
@@ -215,7 +218,8 @@ class _GroundListScreenState extends State<GroundListScreen> {
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                       child: GestureDetector(
                         onTap: () {
-                          Clipboard.setData(ClipboardData(text: snapshot.data!));
+                          Clipboard.setData(
+                              ClipboardData(text: snapshot.data!));
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text("FCM Token copied to clipboard!"),
@@ -228,11 +232,13 @@ class _GroundListScreenState extends State<GroundListScreen> {
                           decoration: BoxDecoration(
                             color: Colors.blue.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                            border: Border.all(
+                                color: Colors.blue.withValues(alpha: 0.3)),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.key_rounded, color: Colors.blue, size: 20),
+                              const Icon(Icons.key_rounded,
+                                  color: Colors.blue, size: 20),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
@@ -252,14 +258,18 @@ class _GroundListScreenState extends State<GroundListScreen> {
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.7),
                                         fontFamily: 'monospace',
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                              const Icon(Icons.copy_rounded, color: Colors.blue, size: 16),
+                              const Icon(Icons.copy_rounded,
+                                  color: Colors.blue, size: 16),
                             ],
                           ),
                         ),
@@ -321,8 +331,9 @@ class _GroundListScreenState extends State<GroundListScreen> {
                     const AppSizedBox(width: 12),
                     BlocBuilder<GroundCubit, GroundState>(
                       builder: (context, state) {
-                        final bool hasFilters = state is GroundLoaded && !state.criteria.isDefault;
-                        
+                        final bool hasFilters =
+                            state is GroundLoaded && !state.criteria.isDefault;
+
                         return GestureDetector(
                           onTap: () {
                             if (state is GroundLoaded) {
@@ -339,7 +350,8 @@ class _GroundListScreenState extends State<GroundListScreen> {
                                   borderRadius: BorderRadius.circular(15),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppColors.primaryDarkGreen.withOpacity(0.3),
+                                      color: AppColors.primaryDarkGreen
+                                          .withOpacity(0.3),
                                       blurRadius: 10,
                                       offset: const Offset(0, 4),
                                     ),
@@ -361,7 +373,8 @@ class _GroundListScreenState extends State<GroundListScreen> {
                                     decoration: BoxDecoration(
                                       color: Colors.red,
                                       shape: BoxShape.circle,
-                                      border: Border.all(color: Colors.white, width: 2),
+                                      border: Border.all(
+                                          color: Colors.white, width: 2),
                                     ),
                                   ),
                                 ),
@@ -424,7 +437,10 @@ class _GroundListScreenState extends State<GroundListScreen> {
                                   return Container(
                                     padding: const EdgeInsets.all(24),
                                     decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withOpacity(0.05),
                                       shape: BoxShape.circle,
                                     ),
                                     child: const HugeIcon(
@@ -435,7 +451,10 @@ class _GroundListScreenState extends State<GroundListScreen> {
                                   );
                                 },
                               ),
-                            ).animate().scale(delay: 200.ms, duration: 400.ms, curve: Curves.easeOutBack),
+                            ).animate().scale(
+                                delay: 200.ms,
+                                duration: 400.ms,
+                                curve: Curves.easeOutBack),
                             const AppSizedBox(height: 16),
                             AppText(
                               text: "No Grounds Found",
@@ -450,7 +469,10 @@ class _GroundListScreenState extends State<GroundListScreen> {
                               text: "Try adjusting your filters or location",
                               textStyle: TextStyle(
                                 fontSize: 13,
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.5),
                               ),
                             ).animate().fadeIn(delay: 500.ms),
                           ],
@@ -468,9 +490,16 @@ class _GroundListScreenState extends State<GroundListScreen> {
                             padding: const EdgeInsets.only(bottom: 16),
                             child: GroundCard(
                               ground: state.grounds[index],
-                            ).animate()
-                             .fadeIn(duration: 300.ms, delay: (index < 10 ? index * 50 : 0).ms)
-                             .slideY(begin: 0.03, end: 0, duration: 300.ms, curve: Curves.easeOutQuad),
+                            )
+                                .animate()
+                                .fadeIn(
+                                    duration: 300.ms,
+                                    delay: (index < 10 ? index * 50 : 0).ms)
+                                .slideY(
+                                    begin: 0.03,
+                                    end: 0,
+                                    duration: 300.ms,
+                                    curve: Curves.easeOutQuad),
                           );
                         },
                         childCount: state.grounds.length,
@@ -554,7 +583,6 @@ class _GroundListScreenState extends State<GroundListScreen> {
       ),
     );
   }
-
 
   void _showFilterSheet(BuildContext context, GroundLoaded state) {
     showModalBottomSheet(

@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:file_picker/file_picker.dart';
@@ -35,6 +37,7 @@ class TicketUtil {
       debugPrint('Could not launch $googleUrl');
     }
   }
+
   /// Entry point for downloading a ticket.
   /// [onLoadingStarted] and [onLoadingFinished] used to manage loading state in UI.
   static Future<void> downloadTicket(
@@ -68,44 +71,52 @@ class TicketUtil {
           'cricbook_ticket_${DateTime.now().millisecondsSinceEpoch}.pdf';
 
       if (kIsWeb) {
-        // WEB Download
         await Printing.sharePdf(bytes: pdfBytes, filename: fileName);
-        if (context.mounted) {
-          ToastUtil.show(context,
-              message: "Ticket download started", type: ToastType.success);
-        }
       } else {
-        // NATIVE Save
-        String? outputFile = await FilePicker.saveFile(
-          dialogTitle: 'Save Ticket',
-          fileName: fileName,
-          type: FileType.custom,
-          allowedExtensions: ['pdf'],
-          bytes: pdfBytes,
-        );
+        final isMobile = defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS;
 
-        if (outputFile != null) {
-          if (!outputFile.toLowerCase().endsWith('.pdf')) {
-            outputFile += '.pdf';
-          }
+        if (isMobile) {
+          // ✅ Save to device storage
+          final dir = await getTemporaryDirectory();
+          final filePath = '${dir.path}/$fileName';
 
-          final isMobile = defaultTargetPlatform == TargetPlatform.android ||
-              defaultTargetPlatform == TargetPlatform.iOS;
-
-          if (!isMobile) {
-            await FileSaveHelper.saveFile(outputFile, pdfBytes);
-          }
+          final file = File(filePath);
+          await file.writeAsBytes(pdfBytes);
 
           if (context.mounted) {
             ToastUtil.show(context,
                 message: "Ticket saved successfully", type: ToastType.success);
           }
 
-          // Open the file directly after saving
-          try {
+          // ✅ Open using OS default app
+          final result = await OpenFilex.open(filePath);
+
+          debugPrint("Open result: ${result.message}");
+        } else {
+          // Desktop flow
+          String? outputFile = await FilePicker.saveFile(
+            dialogTitle: 'Save Ticket',
+            fileName: fileName,
+            type: FileType.custom,
+            allowedExtensions: ['pdf'],
+            bytes: pdfBytes,
+          );
+
+          if (outputFile != null) {
+            if (!outputFile.toLowerCase().endsWith('.pdf')) {
+              outputFile += '.pdf';
+            }
+
+            await FileSaveHelper.saveFile(outputFile, pdfBytes);
+
+            if (context.mounted) {
+              ToastUtil.show(context,
+                  message: "Ticket saved successfully",
+                  type: ToastType.success);
+            }
+
             await OpenFilex.open(outputFile);
-          } catch (e) {
-            debugPrint("Error opening file: $e");
           }
         }
       }
@@ -132,16 +143,14 @@ class TicketUtil {
   }) async {
     final pdf = pw.Document();
 
-    // ── Try to fetch ground image (Optimized with timeout) ──────────────────────
+    // ── Try to fetch ground image ──────────────────────
     pw.MemoryImage? venueImage;
     try {
-      // Use a shorter timeout for image fetching to prevent hanging
       final netImage = await networkImage(groundImageUrl)
-          .timeout(const Duration(seconds: 3));
+          .timeout(const Duration(seconds: 4));
       venueImage = netImage as pw.MemoryImage?;
     } catch (e) {
-      debugPrint("Image fetch failed or timed out: $e");
-      // Continue without image instead of failing the whole PDF
+      debugPrint("Image fetch failed: $e");
     }
 
     // ── Formatted values ──────────────────────────────
@@ -154,336 +163,246 @@ class TicketUtil {
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(0),
         build: (pw.Context ctx) {
-          return pw.Column(
-            children: [
-              // HEADER
-              pw.Container(
-                width: double.infinity,
-                color: _kGreen,
-                padding: const pw.EdgeInsets.fromLTRB(40, 36, 40, 32),
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Row(
-                      children: [
-                        pw.Container(
-                          width: 36,
-                          height: 36,
-                          decoration: pw.BoxDecoration(
-                            color: _kLightGreen,
-                            borderRadius: pw.BorderRadius.circular(8),
-                          ),
-                          alignment: pw.Alignment.center,
-                          child: pw.Text(
-                            'C',
-                            style: pw.TextStyle(
-                              color: _kGreen,
-                              fontSize: 20,
-                              fontWeight: pw.FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        pw.SizedBox(width: 10),
-                        pw.Text(
-                          'CricBook',
-                          style: pw.TextStyle(
-                            color: _kWhite,
-                            fontSize: 22,
-                            fontWeight: pw.FontWeight.bold,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        pw.Spacer(),
-                        pw.Container(
-                          padding: const pw.EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 6),
-                          decoration: pw.BoxDecoration(
-                            color: _kLightGreen,
-                            borderRadius: pw.BorderRadius.circular(20),
-                          ),
-                          child: pw.Text(
-                            'CONFIRMED',
-                            style: pw.TextStyle(
-                              color: _kGreen,
-                              fontSize: 10,
-                              fontWeight: pw.FontWeight.bold,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    pw.SizedBox(height: 28),
-                    pw.Text(
-                      'Booking Ticket',
-                      style: pw.TextStyle(
-                        color: _kWhite.withAlpha(0.7),
-                        fontSize: 12,
-                        letterSpacing: 2,
-                      ),
-                    ),
-                    pw.SizedBox(height: 6),
-                    pw.Text(
-                      groundName,
-                      style: pw.TextStyle(
-                        color: _kWhite,
-                        fontSize: 28,
-                        fontWeight: pw.FontWeight.bold,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    pw.SizedBox(height: 8),
-                    pw.Row(
-                      children: [
-                        pw.Text('📍  ',
-                            style: const pw.TextStyle(fontSize: 11)),
-                        pw.Text(
-                          groundAddress,
-                          style:
-                              pw.TextStyle(color: _kLightGreen, fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+          return pw.Container(
+            color: _kBg,
+            alignment: pw.Alignment.center,
+            child: pw.Container(
+              width: 420,
+              margin: const pw.EdgeInsets.symmetric(vertical: 40),
+              decoration: pw.BoxDecoration(
+                color: _kWhite,
+                borderRadius: pw.BorderRadius.circular(20),
               ),
-
-              // VENUE IMAGE STRIP
-              if (venueImage != null)
-                pw.Container(
-                  width: double.infinity,
-                  height: 140,
-                  child: pw.Image(venueImage, fit: pw.BoxFit.cover),
-                ),
-
-              // TICKET BODY
-              pw.Expanded(
-                child: pw.Container(
-                  color: _kBg,
-                  padding: const pw.EdgeInsets.fromLTRB(40, 32, 40, 0),
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+              child: pw.Column(
+                mainAxisSize: pw.MainAxisSize.min,
+                children: [
+                  // 1. HERO SECTION (Image + Name Overlay)
+                  pw.Stack(
                     children: [
-                      pw.Text(
-                        'BOOKING DETAILS',
-                        style: pw.TextStyle(
-                          color: _kGrey,
-                          fontSize: 10,
-                          fontWeight: pw.FontWeight.bold,
-                          letterSpacing: 1.8,
+                      pw.ClipRect(
+                        child: pw.Container(
+                          height: 180,
+                          width: double.infinity,
+                          child: venueImage != null
+                              ? pw.Image(venueImage, fit: pw.BoxFit.cover)
+                              : pw.Container(color: _kGreen),
                         ),
                       ),
-                      pw.SizedBox(height: 16),
                       pw.Container(
-                        width: double.infinity,
-                        padding: const pw.EdgeInsets.all(24),
+                        height: 180,
                         decoration: pw.BoxDecoration(
-                          color: _kWhite,
-                          borderRadius: pw.BorderRadius.circular(12),
-                          border: pw.Border.all(color: _kBorder, width: 1),
-                        ),
-                        child: pw.Column(
-                          children: [
-                            _pdfDetailRow('Date', formattedDate),
-                            _pdfDivider(),
-                            _pdfDetailRow('Time Slot', timeRange),
-                            _pdfDivider(),
-                            _pdfDetailRow('Booking ID', '#$shortId'),
-                            _pdfDivider(),
-                            _pdfDetailRow('Status', 'Payment Successful ✓'),
-                          ],
+                          borderRadius: const pw.BorderRadius.vertical(
+                              top: pw.Radius.circular(20)),
+                          gradient: pw.LinearGradient(
+                            colors: [
+                              PdfColors.black.withAlpha(204), // 0.8 opacity
+                              PdfColor.fromInt(0x00000000), // transparent
+                            ],
+                            begin: pw.Alignment.bottomCenter,
+                            end: pw.Alignment.topCenter,
+                          ),
                         ),
                       ),
-                      pw.SizedBox(height: 24),
-                      pw.Container(
-                        width: double.infinity,
-                        padding: const pw.EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 20),
-                        decoration: pw.BoxDecoration(
-                          color: _kGreen,
-                          borderRadius: pw.BorderRadius.circular(12),
-                        ),
+                      pw.Positioned(
+                        top: 20,
+                        left: 20,
+                        right: 20,
                         child: pw.Row(
                           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                           children: [
-                            pw.Column(
-                              crossAxisAlignment: pw.CrossAxisAlignment.start,
-                              children: [
-                                pw.Text(
-                                  'TOTAL PAID',
-                                  style: pw.TextStyle(
-                                    color: _kLightGreen,
-                                    fontSize: 10,
-                                    letterSpacing: 1.4,
-                                    fontWeight: pw.FontWeight.bold,
-                                  ),
-                                ),
-                                pw.SizedBox(height: 4),
-                                pw.Text(
-                                  formattedPrice,
-                                  style: pw.TextStyle(
+                            pw.Container(
+                              padding: const pw.EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: pw.BoxDecoration(
+                                color: _kWhite.withAlpha(51), // 0.2 opacity
+                                borderRadius: pw.BorderRadius.circular(6),
+                              ),
+                              child: pw.Text(
+                                'CricBook',
+                                style: pw.TextStyle(
                                     color: _kWhite,
-                                    fontSize: 30,
-                                    fontWeight: pw.FontWeight.bold,
-                                  ),
-                                ),
-                              ],
+                                    fontSize: 10,
+                                    fontWeight: pw.FontWeight.bold),
+                              ),
                             ),
-                            pw.Column(
-                              crossAxisAlignment: pw.CrossAxisAlignment.end,
-                              children: [
-                                pw.Text(
-                                  'Razorpay · Secured',
-                                  style: pw.TextStyle(
-                                      color: _kWhite.withAlpha(0.6),
-                                      fontSize: 9),
-                                ),
-                                pw.SizedBox(height: 4),
-                                pw.Text(
-                                  DateFormat('dd MMM yyyy')
-                                      .format(DateTime.now()),
-                                  style: pw.TextStyle(
-                                      color: _kWhite.withAlpha(0.8),
-                                      fontSize: 10),
-                                ),
-                              ],
+                            pw.Container(
+                              padding: const pw.EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: pw.BoxDecoration(
+                                color: _kLightGreen,
+                                borderRadius: pw.BorderRadius.circular(6),
+                              ),
+                              child: pw.Text(
+                                'CONFIRMED',
+                                style: pw.TextStyle(
+                                    color: _kGreen,
+                                    fontSize: 8,
+                                    fontWeight: pw.FontWeight.bold),
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      pw.SizedBox(height: 24),
-                      pw.Container(
-                        width: double.infinity,
-                        padding: const pw.EdgeInsets.all(18),
-                        decoration: pw.BoxDecoration(
-                          color: _kLightGreen.withAlpha(0.15),
-                          borderRadius: pw.BorderRadius.circular(10),
-                          border: pw.Border.all(
-                              color: _kLightGreen.withAlpha(0.4), width: 1),
-                        ),
+                      pw.Positioned(
+                        bottom: 20,
+                        left: 20,
+                        right: 20,
                         child: pw.Column(
                           crossAxisAlignment: pw.CrossAxisAlignment.start,
                           children: [
                             pw.Text(
-                              '🏏  How to use this ticket',
+                              groundName,
                               style: pw.TextStyle(
-                                  color: _kGreen,
-                                  fontSize: 11,
-                                  fontWeight: pw.FontWeight.bold),
+                                color: _kWhite,
+                                fontSize: 24,
+                                fontWeight: pw.FontWeight.bold,
+                              ),
                             ),
-                            pw.SizedBox(height: 8),
-                            _pdfBullet('Show this PDF at the venue entrance.'),
-                            _pdfBullet(
-                                'Arrive 10 minutes before your slot starts.'),
-                            _pdfBullet(
-                                'Cancellations must be done 2 hours prior.'),
+                            pw.SizedBox(height: 4),
+                            pw.Row(
+                              children: [
+                                pw.Text('📍 ',
+                                    style: const pw.TextStyle(fontSize: 10)),
+                                pw.Flexible(
+                                  child: pw.Text(
+                                    groundAddress,
+                                    style: pw.TextStyle(
+                                        color: _kWhite.withAlpha(204), // 0.8 opacity
+                                        fontSize: 10),
+                                    maxLines: 1,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                ),
-              ),
 
-              // PERFORATED TEAR-OFF SEPARATOR
-              _pdfTearLine(),
-
-              // STUB
-              pw.Container(
-                color: _kWhite,
-                padding: const pw.EdgeInsets.fromLTRB(40, 20, 40, 28),
-                child: pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  // 2. MAIN DETAILS
+                  pw.Container(
+                    padding: const pw.EdgeInsets.all(24),
+                    child: pw.Column(
                       children: [
-                        pw.Text('BOOKING REF',
-                            style: pw.TextStyle(
-                                color: _kGrey,
-                                fontSize: 8,
-                                letterSpacing: 1.5)),
-                        pw.SizedBox(height: 4),
-                        pw.Text(
-                          '#$shortId',
-                          style: pw.TextStyle(
-                              color: _kDark,
-                              fontSize: 15,
-                              fontWeight: pw.FontWeight.bold,
-                              letterSpacing: 1),
+                        pw.Row(
+                          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                          children: [
+                            _pdfInfoBlock('DATE', formattedDate, isBold: true),
+                            _pdfInfoBlock('TIME', timeRange,
+                                isBold: true, alignRight: true),
+                          ],
+                        ),
+                        pw.SizedBox(height: 24),
+                        pw.Row(
+                          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                          children: [
+                            _pdfInfoBlock('BOOKING ID', '#$shortId'),
+                            _pdfInfoBlock('PRICE PAID', formattedPrice,
+                                alignRight: true),
+                          ],
+                        ),
+                        pw.SizedBox(height: 24),
+                        pw.Container(
+                          width: double.infinity,
+                          padding: const pw.EdgeInsets.all(16),
+                          decoration: pw.BoxDecoration(
+                            color: _kBg,
+                            borderRadius: pw.BorderRadius.circular(12),
+                            border: pw.Border.all(color: _kBorder, width: 1),
+                          ),
+                          child: pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            children: [
+                              pw.Text(
+                                'IMPORTANT INSTRUCTIONS',
+                                style: pw.TextStyle(
+                                    color: _kGrey,
+                                    fontSize: 8,
+                                    fontWeight: pw.FontWeight.bold,
+                                    letterSpacing: 1),
+                              ),
+                              pw.SizedBox(height: 10),
+                              _pdfBullet(
+                                  'Show this QR code at the venue entrance.'),
+                              _pdfBullet(
+                                  'Slot once booked cannot be rescheduled.'),
+                              _pdfBullet(
+                                  'Please carry your own sports gear.'),
+                            ],
+                          ),
                         ),
                       ],
                     ),
-                    pw.Column(
-                      children: [
-                        pw.Text(
-                          DateFormat('d MMM').format(date).toUpperCase(),
-                          style: pw.TextStyle(
-                              color: _kGreen,
-                              fontSize: 13,
-                              fontWeight: pw.FontWeight.bold,
-                              letterSpacing: 1),
-                        ),
-                        pw.SizedBox(height: 2),
-                        pw.Text(timeRange,
-                            style: pw.TextStyle(color: _kGrey, fontSize: 10)),
-                      ],
-                    ),
-                    // QR CODE IN PDF
-                    pw.Container(
-                      width: 50,
-                      height: 50,
-                      child: pw.BarcodeWidget(
-                        barcode: pw.Barcode.qrCode(),
-                        data: orderId,
-                        width: 50,
-                        height: 50,
-                        color: _kDark,
-                      ),
-                    ),
-                    pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.end,
-                      children: [
-                        pw.Text('TOTAL',
-                            style: pw.TextStyle(
-                                color: _kGrey,
-                                fontSize: 8,
-                                letterSpacing: 1.5)),
-                        pw.SizedBox(height: 4),
-                        pw.Text(formattedPrice,
-                            style: pw.TextStyle(
-                                color: _kGreen,
-                                fontSize: 15,
-                                fontWeight: pw.FontWeight.bold)),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+                  ),
 
-              // FOOTER
-              pw.Container(
-                color: _kDark,
-                width: double.infinity,
-                padding:
-                    const pw.EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-                child: pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text(
-                      'cricbook.app  ·  support@cricbook.app',
-                      style: pw.TextStyle(
-                          color: _kWhite.withAlpha(0.4), fontSize: 9),
+                  // 3. TEAR SECTION
+                  _pdfTearLineWithCircles(),
+
+                  // 4. QR STUB
+                  pw.Container(
+                    padding: const pw.EdgeInsets.fromLTRB(24, 10, 24, 30),
+                    child: pw.Column(
+                      children: [
+                        pw.Center(
+                          child: pw.Column(
+                            children: [
+                              pw.Container(
+                                padding: const pw.EdgeInsets.all(10),
+                                decoration: pw.BoxDecoration(
+                                  border:
+                                      pw.Border.all(color: _kBorder, width: 1),
+                                  borderRadius: pw.BorderRadius.circular(12),
+                                ),
+                                child: pw.BarcodeWidget(
+                                  barcode: pw.Barcode.qrCode(),
+                                  data: orderId,
+                                  width: 100,
+                                  height: 100,
+                                  color: _kDark,
+                                ),
+                              ),
+                              pw.SizedBox(height: 12),
+                              pw.Text(
+                                'SCAN AT VENUE',
+                                style: pw.TextStyle(
+                                  color: _kGrey,
+                                  fontSize: 9,
+                                  fontWeight: pw.FontWeight.bold,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        pw.SizedBox(height: 20),
+                        pw.Divider(color: _kBorder, thickness: 1),
+                        pw.SizedBox(height: 15),
+                        pw.Row(
+                          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                          children: [
+                            pw.Text(
+                              'cricbook.app',
+                              style: pw.TextStyle(
+                                  color: _kGrey,
+                                  fontSize: 9,
+                                  fontWeight: pw.FontWeight.bold),
+                            ),
+                            pw.Text(
+                              'ENJOY YOUR MATCH!',
+                              style: pw.TextStyle(
+                                  color: _kGreen,
+                                  fontSize: 9,
+                                  fontWeight: pw.FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    pw.Text(
-                      'Generated ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.now())}',
-                      style: pw.TextStyle(
-                          color: _kWhite.withAlpha(0.4), fontSize: 9),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           );
         },
       ),
@@ -492,55 +411,101 @@ class TicketUtil {
     return pdf.save();
   }
 
-  static pw.Widget _pdfDetailRow(String label, String value) {
-    return pw.Padding(
-      padding: const pw.EdgeInsets.symmetric(vertical: 10),
-      child: pw.Row(
-        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-        children: [
-          pw.Text(label, style: pw.TextStyle(color: _kGrey, fontSize: 11)),
-          pw.Text(value,
-              style: pw.TextStyle(
-                  color: _kDark, fontSize: 11, fontWeight: pw.FontWeight.bold)),
-        ],
-      ),
+  static pw.Widget _pdfInfoBlock(String label, String value,
+      {bool isBold = false, bool alignRight = false}) {
+    return pw.Column(
+      crossAxisAlignment:
+          alignRight ? pw.CrossAxisAlignment.end : pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text(
+          label,
+          style: pw.TextStyle(
+              color: _kGrey,
+              fontSize: 8,
+              fontWeight: pw.FontWeight.bold,
+              letterSpacing: 1),
+        ),
+        pw.SizedBox(height: 4),
+        pw.Text(
+          value,
+          style: pw.TextStyle(
+            color: _kDark,
+            fontSize: isBold ? 14 : 12,
+            fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
+          ),
+        ),
+      ],
     );
   }
 
-  static pw.Widget _pdfDivider() => pw.Divider(color: _kBorder, thickness: 0.8);
-
   static pw.Widget _pdfBullet(String text) => pw.Padding(
-        padding: const pw.EdgeInsets.only(bottom: 4),
+        padding: const pw.EdgeInsets.only(bottom: 6),
         child: pw.Row(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
-            pw.Text('• ', style: pw.TextStyle(color: _kGreen, fontSize: 10)),
+            pw.Container(
+              margin: const pw.EdgeInsets.only(top: 3, right: 6),
+              width: 3,
+              height: 3,
+              decoration: const pw.BoxDecoration(
+                  color: _kGreen, shape: pw.BoxShape.circle),
+            ),
             pw.Expanded(
                 child: pw.Text(text,
-                    style: pw.TextStyle(color: _kGrey, fontSize: 10))),
+                    style: pw.TextStyle(color: _kDark, fontSize: 9))),
           ],
         ),
       );
 
-  static pw.Widget _pdfTearLine() {
-    return pw.Container(
-      height: 20,
-      width: double.infinity,
-      color: _kBg,
-      child: pw.CustomPaint(
-        painter: (canvas, size) {
-          const dashWidth = 6.0;
-          const gap = 5.0;
-          double x = 0;
-          while (x < size.x) {
-            canvas.drawLine(x, size.y / 2, x + dashWidth, size.y / 2);
-            canvas.setStrokeColor(_kBorder);
-            canvas.setLineWidth(1.2);
-            canvas.strokePath();
-            x += dashWidth + gap;
-          }
-        },
-      ),
+  static pw.Widget _pdfTearLineWithCircles() {
+    return pw.Stack(
+      alignment: pw.Alignment.center,
+      children: [
+        // Dotted Line
+        pw.Container(
+          height: 1,
+          width: double.infinity,
+          margin: const pw.EdgeInsets.symmetric(horizontal: 20),
+          child: pw.CustomPaint(
+            painter: (canvas, size) {
+              const dashWidth = 4.0;
+              const gap = 4.0;
+              double x = 0;
+              while (x < size.x) {
+                canvas.drawLine(x, 0, x + dashWidth, 0);
+                canvas.setStrokeColor(_kBorder);
+                canvas.setLineWidth(1);
+                canvas.strokePath();
+                x += dashWidth + gap;
+              }
+            },
+          ),
+        ),
+        // Left Circle Cut
+        pw.Positioned(
+          left: -12,
+          child: pw.Container(
+            width: 24,
+            height: 24,
+            decoration: const pw.BoxDecoration(
+              color: _kBg,
+              shape: pw.BoxShape.circle,
+            ),
+          ),
+        ),
+        // Right Circle Cut
+        pw.Positioned(
+          right: -12,
+          child: pw.Container(
+            width: 24,
+            height: 24,
+            decoration: const pw.BoxDecoration(
+              color: _kBg,
+              shape: pw.BoxShape.circle,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

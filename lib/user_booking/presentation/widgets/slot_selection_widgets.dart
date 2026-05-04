@@ -21,7 +21,7 @@ class SlotSelectionWidgets {
   static const Color kOrange = AppColors.accentOrange;
 
   static Widget buildHeader(BuildContext context, GroundModel? ground,
-      {bool isSaved = false, VoidCallback? onToggleFav, String? title}) {
+      {bool isSaved = false, VoidCallback? onToggleFav, VoidCallback? onShare, String? title}) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -100,7 +100,7 @@ class SlotSelectionWidgets {
               size: 22,
               color: colorScheme.onSurface,
             ),
-            onPressed: () {},
+            onPressed: onShare,
           ),
         ],
       ),
