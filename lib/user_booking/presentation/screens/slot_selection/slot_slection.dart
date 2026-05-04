@@ -236,6 +236,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
       final ampm = timeParts.length > 1 ? timeParts[1].toUpperCase() : 'AM';
       if (ampm == 'PM' && hour != 12) hour += 12;
       if (ampm == 'AM' && hour == 12) hour = 0;
+      if (hour < 6) return 'Midnight';
       if (hour < 12) return 'Morning';
       if (hour < 18) return 'Evening';
       return 'Night';
@@ -426,6 +427,47 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                     _getSlotPeriod(e.value.startTime) ==
                     state.selectedPeriod)
                 .toList();
+
+            if (filtered.isEmpty) {
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.05)),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.event_busy_rounded,
+                      size: 48,
+                      color: Colors.grey.withOpacity(0.3),
+                    ),
+                    const AppSizedBox(height: 16),
+                    AppText(
+                      text: "No slots available for ${state.selectedPeriod}",
+                      textStyle: TextStyle(
+                        color: Colors.grey.withValues(alpha: 0.7),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const AppSizedBox(height: 4),
+                    AppText(
+                      text: "Try selecting a different time of day or date",
+                      textStyle: TextStyle(
+                        color: Colors.grey.withValues(alpha: 0.5),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
             return SlotSelectionWidgets.buildSlotSection(
                 context,
                 filtered.map((e) => e.value).toList(),
@@ -437,7 +479,12 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
             context, currentTurf.description),
         SlotSelectionWidgets.buildAmenitiesSection(
             context, currentTurf.amenities),
-        SlotSelectionWidgets.buildMapSection(context, currentTurf),
+        SlotSelectionWidgets.buildMapSection(
+          context,
+          latitude: currentTurf.latitude,
+          longitude: currentTurf.longitude,
+          address: currentTurf.address,
+        ),
         SlotSelectionWidgets.buildReviewSection(
             context, _reviews, _isLoadingReviews),
       ],

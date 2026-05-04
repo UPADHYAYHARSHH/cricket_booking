@@ -99,8 +99,6 @@ class _SplitSetupScreenState extends State<SplitSetupScreen> {
         return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
             leading: IconButton(
               icon: Icon(Icons.arrow_back_ios,
                   color: Theme.of(context).colorScheme.onSurface),

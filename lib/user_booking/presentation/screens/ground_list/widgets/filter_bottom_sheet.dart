@@ -24,6 +24,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   late double _minPrice;
   late double _maxPrice;
   late bool _isAvailableNow;
+  late bool _isNearMe;
+  late bool _isTopRated;
 
   @override
   void initState() {
@@ -32,6 +34,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     _minPrice = widget.initialCriteria.minPrice;
     _maxPrice = widget.initialCriteria.maxPrice;
     _isAvailableNow = widget.initialCriteria.isAvailableNow;
+    _isNearMe = widget.initialCriteria.isNearMe;
+    _isTopRated = widget.initialCriteria.isTopRated;
   }
 
   @override
@@ -66,10 +70,12 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               TextButton(
                 onPressed: () {
                   setState(() {
-                    _sortBy = SortBy.nearMe;
+                    _sortBy = SortBy.none;
                     _minPrice = 0;
                     _maxPrice = 5000;
                     _isAvailableNow = false;
+                    _isNearMe = false;
+                    _isTopRated = false;
                   });
                 },
                 child: const AppText(
@@ -92,7 +98,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: SortBy.values.map((sort) {
+              children: SortBy.values.where((s) => s != SortBy.none).map((sort) {
                 final isSelected = _sortBy == sort;
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
@@ -100,7 +106,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     label: Text(_getSortLabel(sort)),
                     selected: isSelected,
                     onSelected: (selected) {
-                      if (selected) setState(() => _sortBy = sort);
+                      setState(() => _sortBy = selected ? sort : SortBy.none);
                     },
                     selectedColor: AppColors.primaryDarkGreen,
                     labelStyle: TextStyle(
@@ -156,32 +162,26 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
           const AppSizedBox(height: 24),
 
           /// AVAILABLE NOW
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const AppText(
-                    text: "Available Now",
-                    textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  AppText(
-                    text: "Show grounds that are currently open",
-                    textStyle: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
-                  ),
-                ],
-              ),
-              Switch(
-                value: _isAvailableNow,
-                activeColor: AppColors.primaryDarkGreen,
-                onChanged: (val) {
-                  setState(() {
-                    _isAvailableNow = val;
-                  });
-                },
-              ),
-            ],
+          /// FILTERS (SWITCHES)
+          _buildFilterSwitch(
+            title: "Available Now",
+            subtitle: "Show grounds that are currently open",
+            value: _isAvailableNow,
+            onChanged: (val) => setState(() => _isAvailableNow = val),
+          ),
+          const AppSizedBox(height: 16),
+          _buildFilterSwitch(
+            title: "Near Me",
+            subtitle: "Show grounds within 10km radius",
+            value: _isNearMe,
+            onChanged: (val) => setState(() => _isNearMe = val),
+          ),
+          const AppSizedBox(height: 16),
+          _buildFilterSwitch(
+            title: "Top Rated",
+            subtitle: "Show grounds with 4.0+ rating",
+            value: _isTopRated,
+            onChanged: (val) => setState(() => _isTopRated = val),
           ),
 
           const AppSizedBox(height: 32),
@@ -198,6 +198,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     maxPrice: _maxPrice,
                     selectedAmenities: widget.initialCriteria.selectedAmenities,
                     isAvailableNow: _isAvailableNow,
+                    isNearMe: _isNearMe,
+                    isTopRated: _isTopRated,
                   );
                 widget.onApply(criteria);
                 Navigator.pop(context);
@@ -223,16 +225,50 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     );
   }
 
+  Widget _buildFilterSwitch({
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AppText(
+                text: title,
+                textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              AppText(
+                text: subtitle,
+                textStyle: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Switch(
+          value: value,
+          activeColor: AppColors.primaryDarkGreen,
+          onChanged: onChanged,
+        ),
+      ],
+    );
+  }
+
   String _getSortLabel(SortBy sort) {
     switch (sort) {
-      case SortBy.nearMe:
-        return "Near Me";
-      case SortBy.topRated:
-        return "Top Rated";
       case SortBy.priceLowToHigh:
         return "Price: Low to High";
       case SortBy.priceHighToLow:
         return "Price: High to Low";
+      case SortBy.none:
+        return "Default";
     }
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:turfpro/common/services/notification_service.dart';
 import 'package:turfpro/common/services/remote_config_service.dart';
 
 abstract class SplashState {}
@@ -42,6 +43,7 @@ class SplashCubit extends Cubit<SplashState> {
     // 3. Check Auth as usual
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null) {
+      NotificationService.initialize();
       emit(SplashNavigateToHome());
     } else {
       emit(SplashNavigateToLogin());

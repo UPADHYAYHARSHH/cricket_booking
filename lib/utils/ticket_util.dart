@@ -9,7 +9,9 @@ import 'package:printing/printing.dart';
 import 'package:turfpro/utils/toast_util.dart';
 import 'package:turfpro/utils/file_save_helper.dart';
 import 'package:turfpro/utils/id_util.dart';
-import 'package:open_file_plus/open_file_plus.dart';
+import 'package:open_filex/open_filex.dart';
+
+import 'package:url_launcher/url_launcher.dart';
 
 // ─────────────────────────────────────────────────────
 //  PDF Colour palette  (mirrors user's requested design)
@@ -23,6 +25,16 @@ const _kBg = PdfColor.fromInt(0xFFF9FAFB);
 const _kWhite = PdfColors.white;
 
 class TicketUtil {
+  static Future<void> openMap(double lat, double lng) async {
+    final String googleUrl =
+        'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
+    final Uri url = Uri.parse(googleUrl);
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      debugPrint('Could not launch $googleUrl');
+    }
+  }
   /// Entry point for downloading a ticket.
   /// [onLoadingStarted] and [onLoadingFinished] used to manage loading state in UI.
   static Future<void> downloadTicket(
@@ -52,13 +64,15 @@ class TicketUtil {
         totalPrice: totalPrice,
       );
 
-      final fileName = 'cricbook_ticket_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      final fileName =
+          'cricbook_ticket_${DateTime.now().millisecondsSinceEpoch}.pdf';
 
       if (kIsWeb) {
         // WEB Download
         await Printing.sharePdf(bytes: pdfBytes, filename: fileName);
         if (context.mounted) {
-          ToastUtil.show(context, message: "Ticket download started", type: ToastType.success);
+          ToastUtil.show(context,
+              message: "Ticket download started", type: ToastType.success);
         }
       } else {
         // NATIVE Save
@@ -83,12 +97,13 @@ class TicketUtil {
           }
 
           if (context.mounted) {
-            ToastUtil.show(context, message: "Ticket saved successfully", type: ToastType.success);
+            ToastUtil.show(context,
+                message: "Ticket saved successfully", type: ToastType.success);
           }
 
           // Open the file directly after saving
           try {
-            await OpenFile.open(outputFile);
+            await OpenFilex.open(outputFile);
           } catch (e) {
             debugPrint("Error opening file: $e");
           }
@@ -97,7 +112,8 @@ class TicketUtil {
     } catch (e) {
       debugPrint("Error generating ticket: $e");
       if (context.mounted) {
-        ToastUtil.show(context, message: "Error saving ticket: $e", type: ToastType.error);
+        ToastUtil.show(context,
+            message: "Error saving ticket: $e", type: ToastType.error);
       }
     } finally {
       if (onLoadingFinished != null) onLoadingFinished();
@@ -120,7 +136,8 @@ class TicketUtil {
     pw.MemoryImage? venueImage;
     try {
       // Use a shorter timeout for image fetching to prevent hanging
-      final netImage = await networkImage(groundImageUrl).timeout(const Duration(seconds: 3));
+      final netImage = await networkImage(groundImageUrl)
+          .timeout(const Duration(seconds: 3));
       venueImage = netImage as pw.MemoryImage?;
     } catch (e) {
       debugPrint("Image fetch failed or timed out: $e");
@@ -178,7 +195,8 @@ class TicketUtil {
                         ),
                         pw.Spacer(),
                         pw.Container(
-                          padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                          padding: const pw.EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 6),
                           decoration: pw.BoxDecoration(
                             color: _kLightGreen,
                             borderRadius: pw.BorderRadius.circular(20),
@@ -217,10 +235,12 @@ class TicketUtil {
                     pw.SizedBox(height: 8),
                     pw.Row(
                       children: [
-                        pw.Text('📍  ', style: const pw.TextStyle(fontSize: 11)),
+                        pw.Text('📍  ',
+                            style: const pw.TextStyle(fontSize: 11)),
                         pw.Text(
                           groundAddress,
-                          style: pw.TextStyle(color: _kLightGreen, fontSize: 12),
+                          style:
+                              pw.TextStyle(color: _kLightGreen, fontSize: 12),
                         ),
                       ],
                     ),
@@ -277,7 +297,8 @@ class TicketUtil {
                       pw.SizedBox(height: 24),
                       pw.Container(
                         width: double.infinity,
-                        padding: const pw.EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                        padding: const pw.EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 20),
                         decoration: pw.BoxDecoration(
                           color: _kGreen,
                           borderRadius: pw.BorderRadius.circular(12),
@@ -313,12 +334,17 @@ class TicketUtil {
                               children: [
                                 pw.Text(
                                   'Razorpay · Secured',
-                                  style: pw.TextStyle(color: _kWhite.withAlpha(0.6), fontSize: 9),
+                                  style: pw.TextStyle(
+                                      color: _kWhite.withAlpha(0.6),
+                                      fontSize: 9),
                                 ),
                                 pw.SizedBox(height: 4),
                                 pw.Text(
-                                  DateFormat('dd MMM yyyy').format(DateTime.now()),
-                                  style: pw.TextStyle(color: _kWhite.withAlpha(0.8), fontSize: 10),
+                                  DateFormat('dd MMM yyyy')
+                                      .format(DateTime.now()),
+                                  style: pw.TextStyle(
+                                      color: _kWhite.withAlpha(0.8),
+                                      fontSize: 10),
                                 ),
                               ],
                             ),
@@ -332,19 +358,25 @@ class TicketUtil {
                         decoration: pw.BoxDecoration(
                           color: _kLightGreen.withAlpha(0.15),
                           borderRadius: pw.BorderRadius.circular(10),
-                          border: pw.Border.all(color: _kLightGreen.withAlpha(0.4), width: 1),
+                          border: pw.Border.all(
+                              color: _kLightGreen.withAlpha(0.4), width: 1),
                         ),
                         child: pw.Column(
                           crossAxisAlignment: pw.CrossAxisAlignment.start,
                           children: [
                             pw.Text(
                               '🏏  How to use this ticket',
-                              style: pw.TextStyle(color: _kGreen, fontSize: 11, fontWeight: pw.FontWeight.bold),
+                              style: pw.TextStyle(
+                                  color: _kGreen,
+                                  fontSize: 11,
+                                  fontWeight: pw.FontWeight.bold),
                             ),
                             pw.SizedBox(height: 8),
                             _pdfBullet('Show this PDF at the venue entrance.'),
-                            _pdfBullet('Arrive 10 minutes before your slot starts.'),
-                            _pdfBullet('Cancellations must be done 2 hours prior.'),
+                            _pdfBullet(
+                                'Arrive 10 minutes before your slot starts.'),
+                            _pdfBullet(
+                                'Cancellations must be done 2 hours prior.'),
                           ],
                         ),
                       ),
@@ -366,11 +398,19 @@ class TicketUtil {
                     pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
-                        pw.Text('BOOKING REF', style: pw.TextStyle(color: _kGrey, fontSize: 8, letterSpacing: 1.5)),
+                        pw.Text('BOOKING REF',
+                            style: pw.TextStyle(
+                                color: _kGrey,
+                                fontSize: 8,
+                                letterSpacing: 1.5)),
                         pw.SizedBox(height: 4),
                         pw.Text(
                           '#$shortId',
-                          style: pw.TextStyle(color: _kDark, fontSize: 15, fontWeight: pw.FontWeight.bold, letterSpacing: 1),
+                          style: pw.TextStyle(
+                              color: _kDark,
+                              fontSize: 15,
+                              fontWeight: pw.FontWeight.bold,
+                              letterSpacing: 1),
                         ),
                       ],
                     ),
@@ -378,10 +418,15 @@ class TicketUtil {
                       children: [
                         pw.Text(
                           DateFormat('d MMM').format(date).toUpperCase(),
-                          style: pw.TextStyle(color: _kGreen, fontSize: 13, fontWeight: pw.FontWeight.bold, letterSpacing: 1),
+                          style: pw.TextStyle(
+                              color: _kGreen,
+                              fontSize: 13,
+                              fontWeight: pw.FontWeight.bold,
+                              letterSpacing: 1),
                         ),
                         pw.SizedBox(height: 2),
-                        pw.Text(timeRange, style: pw.TextStyle(color: _kGrey, fontSize: 10)),
+                        pw.Text(timeRange,
+                            style: pw.TextStyle(color: _kGrey, fontSize: 10)),
                       ],
                     ),
                     // QR CODE IN PDF
@@ -399,9 +444,17 @@ class TicketUtil {
                     pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.end,
                       children: [
-                        pw.Text('TOTAL', style: pw.TextStyle(color: _kGrey, fontSize: 8, letterSpacing: 1.5)),
+                        pw.Text('TOTAL',
+                            style: pw.TextStyle(
+                                color: _kGrey,
+                                fontSize: 8,
+                                letterSpacing: 1.5)),
                         pw.SizedBox(height: 4),
-                        pw.Text(formattedPrice, style: pw.TextStyle(color: _kGreen, fontSize: 15, fontWeight: pw.FontWeight.bold)),
+                        pw.Text(formattedPrice,
+                            style: pw.TextStyle(
+                                color: _kGreen,
+                                fontSize: 15,
+                                fontWeight: pw.FontWeight.bold)),
                       ],
                     ),
                   ],
@@ -412,17 +465,20 @@ class TicketUtil {
               pw.Container(
                 color: _kDark,
                 width: double.infinity,
-                padding: const pw.EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                padding:
+                    const pw.EdgeInsets.symmetric(horizontal: 40, vertical: 14),
                 child: pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
                     pw.Text(
                       'cricbook.app  ·  support@cricbook.app',
-                      style: pw.TextStyle(color: _kWhite.withAlpha(0.4), fontSize: 9),
+                      style: pw.TextStyle(
+                          color: _kWhite.withAlpha(0.4), fontSize: 9),
                     ),
                     pw.Text(
                       'Generated ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.now())}',
-                      style: pw.TextStyle(color: _kWhite.withAlpha(0.4), fontSize: 9),
+                      style: pw.TextStyle(
+                          color: _kWhite.withAlpha(0.4), fontSize: 9),
                     ),
                   ],
                 ),
@@ -443,7 +499,9 @@ class TicketUtil {
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           pw.Text(label, style: pw.TextStyle(color: _kGrey, fontSize: 11)),
-          pw.Text(value, style: pw.TextStyle(color: _kDark, fontSize: 11, fontWeight: pw.FontWeight.bold)),
+          pw.Text(value,
+              style: pw.TextStyle(
+                  color: _kDark, fontSize: 11, fontWeight: pw.FontWeight.bold)),
         ],
       ),
     );
@@ -457,7 +515,9 @@ class TicketUtil {
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
             pw.Text('• ', style: pw.TextStyle(color: _kGreen, fontSize: 10)),
-            pw.Expanded(child: pw.Text(text, style: pw.TextStyle(color: _kGrey, fontSize: 10))),
+            pw.Expanded(
+                child: pw.Text(text,
+                    style: pw.TextStyle(color: _kGrey, fontSize: 10))),
           ],
         ),
       );

@@ -61,8 +61,6 @@ class _SplitOverviewScreenState extends State<SplitOverviewScreen> {
         return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
             leading: IconButton(
               icon: Icon(Icons.close,
                   color: Theme.of(context).colorScheme.onSurface),

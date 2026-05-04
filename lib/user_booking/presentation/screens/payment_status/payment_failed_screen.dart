@@ -17,8 +17,6 @@ class PaymentFailedScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         centerTitle: true,
         leading: IconButton(
           icon: Icon(

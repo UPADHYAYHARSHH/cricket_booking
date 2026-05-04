@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:math';
 import 'package:turfpro/utils/ticket_util.dart';
 import 'package:turfpro/utils/id_util.dart';
@@ -19,6 +20,7 @@ import '../../../data/models/booking_model.dart';
 import 'package:turfpro/user_booking/di/get_it/get_it.dart';
 import 'package:turfpro/user_booking/domain/repositories/review_repository.dart';
 import 'package:turfpro/user_booking/presentation/widgets/add_review_bottom_sheet.dart';
+import 'package:turfpro/user_booking/presentation/widgets/slot_selection_widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MyBookingsScreen extends StatefulWidget {
@@ -472,6 +474,8 @@ class _BookingCardState extends State<_BookingCard> {
             time: DateFormat('hh:mm a').format(widget.booking.slotTime),
             bookedBy: "User",
             location: widget.booking.ground?.address ?? "Location",
+            latitude: widget.booking.ground?.latitude ?? 0.0,
+            longitude: widget.booking.ground?.longitude ?? 0.0,
             price: widget.booking.amount,
             imageUrl: widget.booking.ground?.imageUrl ?? "",
             isPaid: widget.booking.status == 'paid' || widget.booking.status == 'confirmed',
@@ -522,6 +526,10 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
     );
   }
 
+  Future<void> _openMap() async {
+    await TicketUtil.openMap(widget.ticket.latitude, widget.ticket.longitude);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -529,8 +537,6 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new, size: 20, color: theme.colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
@@ -545,7 +551,17 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         child: Column(
           children: [
-            _TicketCard(ticket: widget.ticket),
+            _TicketCard(
+              ticket: widget.ticket,
+              onLocationTap: _openMap,
+            ),
+            const SizedBox(height: 24),
+            SlotSelectionWidgets.buildMapSection(
+              context,
+              latitude: widget.ticket.latitude,
+              longitude: widget.ticket.longitude,
+              address: widget.ticket.location,
+            ),
             const SizedBox(height: 24),
             _buildActionButtons(context),
             const SizedBox(height: 32),
@@ -601,8 +617,9 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
 
 class _TicketCard extends StatelessWidget {
   final TicketModel ticket;
+  final VoidCallback onLocationTap;
 
-  const _TicketCard({required this.ticket});
+  const _TicketCard({required this.ticket, required this.onLocationTap});
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -660,13 +677,27 @@ class _TicketCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AppText(
-                  text: ticket.venueName,
-                  textStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                AppText(
-                  text: ticket.location,
-                  textStyle: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12),
+                GestureDetector(
+                  onTap: onLocationTap,
+                  child: Row(
+                    children: [
+                      Icon(Icons.location_on, color: Colors.white.withOpacity(0.8), size: 14),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: AppText(
+                          text: ticket.location,
+                          textStyle: TextStyle(
+                            color: Colors.white.withOpacity(0.8),
+                            fontSize: 12,
+                            decoration: TextDecoration.underline,
+                            decorationColor: Colors.white.withOpacity(0.5),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -814,6 +845,8 @@ class TicketModel {
   final String time;
   final String bookedBy;
   final String location;
+  final double latitude;
+  final double longitude;
   final double price;
   final String imageUrl;
   final bool isPaid;
@@ -827,6 +860,8 @@ class TicketModel {
     required this.time,
     required this.bookedBy,
     required this.location,
+    required this.latitude,
+    required this.longitude,
     required this.price,
     required this.imageUrl,
     required this.isPaid,

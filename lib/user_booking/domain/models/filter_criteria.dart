@@ -1,4 +1,4 @@
-enum SortBy { nearMe, topRated, priceLowToHigh, priceHighToLow }
+enum SortBy { priceLowToHigh, priceHighToLow, none }
 
 class FilterCriteria {
   final SortBy sortBy;
@@ -6,13 +6,17 @@ class FilterCriteria {
   final double maxPrice;
   final List<String> selectedAmenities;
   final bool isAvailableNow;
+  final bool isNearMe;
+  final bool isTopRated;
 
   FilterCriteria({
-    this.sortBy = SortBy.nearMe,
+    this.sortBy = SortBy.none,
     this.minPrice = 0,
     this.maxPrice = 5000,
     this.selectedAmenities = const [],
     this.isAvailableNow = false,
+    this.isNearMe = false,
+    this.isTopRated = false,
   });
 
   FilterCriteria copyWith({
@@ -21,6 +25,8 @@ class FilterCriteria {
     double? maxPrice,
     List<String>? selectedAmenities,
     bool? isAvailableNow,
+    bool? isNearMe,
+    bool? isTopRated,
   }) {
     return FilterCriteria(
       sortBy: sortBy ?? this.sortBy,
@@ -28,13 +34,17 @@ class FilterCriteria {
       maxPrice: maxPrice ?? this.maxPrice,
       selectedAmenities: selectedAmenities ?? this.selectedAmenities,
       isAvailableNow: isAvailableNow ?? this.isAvailableNow,
+      isNearMe: isNearMe ?? this.isNearMe,
+      isTopRated: isTopRated ?? this.isTopRated,
     );
   }
 
   bool get isDefault =>
-      sortBy == SortBy.nearMe &&
+      sortBy == SortBy.none &&
       minPrice == 0 &&
       maxPrice == 5000 &&
       selectedAmenities.isEmpty &&
-      !isAvailableNow;
+      !isAvailableNow &&
+      !isNearMe &&
+      !isTopRated;
 }

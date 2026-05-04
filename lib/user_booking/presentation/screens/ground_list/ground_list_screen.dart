@@ -113,8 +113,6 @@ class _GroundListScreenState extends State<GroundListScreen> {
 
         /// APP BAR
         appBar: AppBar(
-          backgroundColor: Theme.of(context).cardColor,
-          elevation: 0,
           title: BlocBuilder<LocationCubit, LocationState>(
             builder: (context, state) {
               final city = state.city ?? "Fetching...";

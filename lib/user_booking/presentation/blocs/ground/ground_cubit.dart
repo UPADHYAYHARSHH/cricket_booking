@@ -73,12 +73,36 @@ class GroundCubit extends Cubit<GroundState> {
 
       // 3. Filter by Available Now
       if (criteria.isAvailableNow) {
-        filteredList = filteredList.where((g) => _isAvailableNow(g.openingTime, g.closingTime)).toList();
+        filteredList = filteredList
+            .where((g) => _isAvailableNow(g.openingTime, g.closingTime))
+            .toList();
       }
 
-      // 4. Sort
+      // 4. Filter by Near Me (radius < 10km)
+      if (criteria.isNearMe && userLat != null && userLng != null) {
+        filteredList = filteredList.where((g) {
+          final distance =
+              _calculateDistance(userLat, userLng, g.latitude, g.longitude);
+          return distance <= 10.0; // 10km radius
+        }).toList();
+      }
+
+      // 5. Filter by Top Rated (rating >= 4.0)
+      if (criteria.isTopRated) {
+        filteredList = filteredList.where((g) => g.rating >= 4.0).toList();
+      }
+
+      // 6. Sort
       switch (criteria.sortBy) {
-        case SortBy.nearMe:
+        case SortBy.priceLowToHigh:
+          filteredList.sort((a, b) => a.pricePerHour.compareTo(b.pricePerHour));
+          break;
+        case SortBy.priceHighToLow:
+          filteredList.sort((a, b) => b.pricePerHour.compareTo(a.pricePerHour));
+          break;
+        case SortBy.none:
+        default:
+          // Maintain distance sort if location is available and no other sort is selected
           if (userLat != null && userLng != null) {
             filteredList.sort((a, b) {
               final distA =
@@ -88,15 +112,6 @@ class GroundCubit extends Cubit<GroundState> {
               return distA.compareTo(distB);
             });
           }
-          break;
-        case SortBy.topRated:
-          filteredList.sort((a, b) => b.rating.compareTo(a.rating));
-          break;
-        case SortBy.priceLowToHigh:
-          filteredList.sort((a, b) => a.pricePerHour.compareTo(b.pricePerHour));
-          break;
-        case SortBy.priceHighToLow:
-          filteredList.sort((a, b) => b.pricePerHour.compareTo(a.pricePerHour));
           break;
       }
 

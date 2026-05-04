@@ -15,6 +15,7 @@ import 'package:turfpro/utils/toast_util.dart';
 import 'package:turfpro/utils/ticket_util.dart'; // Add TicketUtil
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:turfpro/utils/id_util.dart';
+import 'package:turfpro/user_booking/presentation/widgets/slot_selection_widgets.dart';
 
 class BookingConfirmationScreen extends StatefulWidget {
   const BookingConfirmationScreen({super.key});
@@ -126,8 +127,6 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         centerTitle: true,
         leading: IconButton(
           icon: Icon(
@@ -205,6 +204,14 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
 
               const AppSizedBox(height: 20),
               _QRCodeCard(orderId: orderId, displayId: displayId),
+
+              const AppSizedBox(height: 24),
+              SlotSelectionWidgets.buildMapSection(
+                context,
+                latitude: ground.latitude,
+                longitude: ground.longitude,
+                address: ground.address,
+              ),
 
               const AppSizedBox(height: 32),
 
@@ -419,22 +426,29 @@ class _VenueCard extends StatelessWidget {
                         ),
                       ),
                       const AppSizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(Icons.location_on,
-                              size: 14, color: Colors.white70),
-                          const AppSizedBox(width: 4),
-                          Expanded(
-                            child: AppText(
-                              text: ground.address ?? "Ahmedabad, Gujarat",
-                              textStyle: AppTextTheme.white10.copyWith(
-                                fontSize: 12,
-                                color: Colors.white.withValues(alpha: 0.8),
+                      GestureDetector(
+                        onTap: () => TicketUtil.openMap(
+                            ground.latitude, ground.longitude),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.location_on,
+                                size: 14, color: Colors.white70),
+                            const AppSizedBox(width: 4),
+                            Expanded(
+                              child: AppText(
+                                text: ground.address ?? "Ahmedabad, Gujarat",
+                                textStyle: AppTextTheme.white10.copyWith(
+                                  fontSize: 12,
+                                  color: Colors.white.withValues(alpha: 0.8),
+                                  decoration: TextDecoration.underline,
+                                  decorationColor:
+                                      Colors.white.withValues(alpha: 0.5),
+                                ),
+                                maxLines: 1,
                               ),
-                              maxLines: 1,
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ],
                   ),

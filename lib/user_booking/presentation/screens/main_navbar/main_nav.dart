@@ -143,6 +143,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
               },
               child: Scaffold(
                 body: PageView(
+                  physics: const NeverScrollableScrollPhysics(),
                   controller: _pageController,
                   onPageChanged: (index) {
                     setState(() {
@@ -200,12 +201,18 @@ class _MainNavScreenState extends State<MainNavScreen> {
           textStyle: TextStyle(fontSize: 14),
         ),
         actions: [
-          TextButton(
+          OutlinedButton(
             onPressed: () => Navigator.pop(context),
-            child: AppText(
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: AppColors.primaryDarkGreen),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const AppText(
               text: "Cancel",
               textStyle: TextStyle(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                  color: AppColors.primaryDarkGreen,
+                  fontWeight: FontWeight.w600),
             ),
           ),
           ElevatedButton(
@@ -232,52 +239,52 @@ class _MainNavScreenState extends State<MainNavScreen> {
     const Color activeColor = AppColors.primaryDarkGreen;
     final Color inactiveColor = onSurface.withValues(alpha: 0.4);
 
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          currentIndex = index;
-        });
-        _pageController.animateToPage(
-          index,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
-      },
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Stack(
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _handleTabSwitch(index),
+          highlightColor: Colors.transparent,
+          splashColor: activeColor.withValues(alpha: 0.1),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              HugeIcon(
-                icon: icon,
-                color: isActive ? activeColor : inactiveColor,
-              ),
-              if (showBadge)
-                Positioned(
-                  right: -2,
-                  top: -2,
-                  child: Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  HugeIcon(
+                    icon: icon,
+                    color: isActive ? activeColor : inactiveColor,
+                    size: 24,
                   ),
+                  if (showBadge)
+                    Positioned(
+                      right: -4,
+                      top: -4,
+                      child: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              AppText(
+                text: label,
+                textStyle: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                  color: isActive ? activeColor : inactiveColor,
                 ),
+              )
             ],
           ),
-          const SizedBox(height: 4),
-          AppText(
-            text: label,
-            textStyle: TextStyle(
-              fontSize: 12,
-              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-              color: isActive ? activeColor : inactiveColor,
-            ),
-          )
-        ],
+        ),
       ),
     );
   }

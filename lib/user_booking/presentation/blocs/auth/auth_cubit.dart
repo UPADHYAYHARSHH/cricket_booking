@@ -106,7 +106,7 @@ class AuthCubit extends Cubit<AuthState> {
           emit(AuthProfileIncomplete());
         } else {
           debugPrint("DEBUG: [AuthCubit] Profile complete - emitting AuthSuccess");
-          await NotificationService.updateFcmToken();
+          await NotificationService.initialize();
           emit(AuthSuccess());
         }
       } else {
@@ -181,7 +181,7 @@ class AuthCubit extends Cubit<AuthState> {
         gender: gender,
         dob: dob,
       );
-      await NotificationService.updateFcmToken();
+      await NotificationService.initialize();
       emit(AuthSuccess());
     } catch (e) {
       emit(AuthError("Failed to complete profile: ${e.toString()}"));

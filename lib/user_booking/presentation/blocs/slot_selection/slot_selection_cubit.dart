@@ -25,6 +25,7 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
             dates: _generateDates(),
             slots: [],
             isLoading: false,
+            selectedPeriod: _getCurrentPeriod(),
           ),
         ) {
     if (FeatureConfig.isLoyaltyEnabled) {
@@ -33,6 +34,14 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
     if (FeatureConfig.isWalletEnabled) {
       loadWalletBalance();
     }
+  }
+
+  static String _getCurrentPeriod() {
+    final hour = DateTime.now().hour;
+    if (hour < 6) return 'Midnight';
+    if (hour < 12) return 'Morning';
+    if (hour < 18) return 'Evening';
+    return 'Night';
   }
 
   Future<void> loadWalletBalance() async {

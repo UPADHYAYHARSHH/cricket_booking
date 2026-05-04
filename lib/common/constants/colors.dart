@@ -59,10 +59,13 @@ class AppColors {
         onSecondary: white,
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: surfaceLight,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        centerTitle: true,
         iconTheme: IconThemeData(color: textPrimaryLight),
-        titleTextStyle: TextStyle(color: textPrimaryLight, fontSize: 18, fontWeight: FontWeight.bold),
+        titleTextStyle: TextStyle(
+            color: textPrimaryLight, fontSize: 18, fontWeight: FontWeight.bold),
       ),
       dividerColor: borderLight,
     );
@@ -88,10 +91,13 @@ class AppColors {
         onSecondary: white,
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: surfaceDark,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        centerTitle: true,
         iconTheme: IconThemeData(color: textPrimaryDark),
-        titleTextStyle: TextStyle(color: textPrimaryDark, fontSize: 18, fontWeight: FontWeight.bold),
+        titleTextStyle: TextStyle(
+            color: textPrimaryDark, fontSize: 18, fontWeight: FontWeight.bold),
       ),
       dividerColor: borderDark,
     );

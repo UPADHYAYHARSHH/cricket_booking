@@ -94,8 +94,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           return Scaffold(
             backgroundColor: theme.scaffoldBackgroundColor,
             appBar: AppBar(
-              backgroundColor: theme.scaffoldBackgroundColor,
-              elevation: 0,
               centerTitle: true,
               leading: IconButton(
                 icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),

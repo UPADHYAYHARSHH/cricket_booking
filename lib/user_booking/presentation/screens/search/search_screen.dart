@@ -40,8 +40,6 @@ class _SearchScreenState extends State<SearchScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).cardColor,
-        elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new,
               size: 20, color: Theme.of(context).colorScheme.onSurface),

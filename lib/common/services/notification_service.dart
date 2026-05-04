@@ -6,6 +6,24 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class NotificationService {
   static const String _fcmTokenKey = 'fcm_token';
 
+  static Future<void> initialize() async {
+    // 1. Initial Update
+    await updateFcmToken();
+
+    // 2. Listen for Token Refresh
+    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+      await _updateTokenInSupabase(newToken);
+    });
+
+    // 3. Request Permissions (especially for iOS)
+    NotificationSettings settings = await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+    debugPrint('User granted permission: ${settings.authorizationStatus}');
+  }
+
   static Future<void> updateFcmToken() async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
@@ -21,19 +39,30 @@ class NotificationService {
 
       debugPrint("\n🚀 [FCM TOKEN]: $token\n");
 
-      // 2. Store locally
+      await _updateTokenInSupabase(token);
+      
+      debugPrint("DEBUG: [NotificationService] Token updated successfully");
+    } catch (e) {
+      debugPrint("DEBUG: [NotificationService] Error updating token: $e");
+    }
+  }
+
+  static Future<void> _updateTokenInSupabase(String token) async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      // Store locally
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_fcmTokenKey, token);
 
-      // 3. Update in Supabase
+      // Update in Supabase
       await Supabase.instance.client
           .from('users')
           .update({'fcm_token': token})
           .eq('id', user.id);
-
-      debugPrint("DEBUG: [NotificationService] Token updated successfully");
     } catch (e) {
-      debugPrint("DEBUG: [NotificationService] Error updating token: $e");
+      debugPrint("DEBUG: [NotificationService] Failed to update token in Supabase: $e");
     }
   }
 

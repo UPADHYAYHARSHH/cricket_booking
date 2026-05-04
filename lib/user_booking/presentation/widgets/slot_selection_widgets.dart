@@ -1085,7 +1085,7 @@ class SlotSelectionWidgets {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    final periods = ['Morning', 'Evening', 'Night'];
+    final periods = ['Midnight', 'Morning', 'Evening', 'Night'];
 
     return Container(
       color: colorScheme.surface,
@@ -1644,7 +1644,10 @@ class SlotSelectionWidgets {
 
   // ── Address & Map Section ──────────────────────────────────────────────────
 
-  static Widget buildMapSection(BuildContext context, GroundModel ground) {
+  static Widget buildMapSection(BuildContext context,
+      {required double latitude,
+      required double longitude,
+      required String address}) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -1668,7 +1671,7 @@ class SlotSelectionWidgets {
           ),
           const AppSizedBox(height: 12),
           GestureDetector(
-            onTap: () => _openMap(ground.latitude, ground.longitude),
+            onTap: () => _openMap(latitude, longitude),
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -1698,7 +1701,7 @@ class SlotSelectionWidgets {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             AppText(
-                              text: ground.address,
+                              text: address,
                               align: TextAlign.left,
                               textStyle: TextStyle(
                                 fontSize: 13,
@@ -1736,14 +1739,14 @@ class SlotSelectionWidgets {
                           borderRadius: BorderRadius.circular(16),
                           child: GoogleMap(
                             initialCameraPosition: CameraPosition(
-                              target: LatLng(ground.latitude, ground.longitude),
+                              target: LatLng(latitude, longitude),
                               zoom: 15,
                             ),
                             markers: {
                               Marker(
                                 markerId: const MarkerId('ground'),
                                 position:
-                                    LatLng(ground.latitude, ground.longitude),
+                                    LatLng(latitude, longitude),
                               ),
                             },
                             zoomControlsEnabled: false,
@@ -1758,7 +1761,7 @@ class SlotSelectionWidgets {
                           child: Center(
                             child: GestureDetector(
                               onTap: () =>
-                                  _openMap(ground.latitude, ground.longitude),
+                                  _openMap(latitude, longitude),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 16, vertical: 8),

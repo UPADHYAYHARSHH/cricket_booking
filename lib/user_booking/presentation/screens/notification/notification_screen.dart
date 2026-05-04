@@ -31,8 +31,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new, size: 20, color: theme.colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
