@@ -245,7 +245,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
         child: InkWell(
           onTap: () => _handleTabSwitch(index),
           highlightColor: Colors.transparent,
-          splashColor: activeColor.withValues(alpha: 0.1),
+          splashColor: Colors.transparent,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

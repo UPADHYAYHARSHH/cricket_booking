@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:turfpro/user_booking/data/repositories/user_repository_impl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
@@ -65,19 +66,26 @@ class ProfileCubit extends Cubit<ProfileState> {
   final UserRepository userRepository;
   final WalletRepository walletRepository;
 
-  ProfileCubit(this.upsertUserProfile, this.userRepository, this.walletRepository) : super(ProfileState());
+  ProfileCubit(
+      this.upsertUserProfile, this.userRepository, this.walletRepository)
+      : super(ProfileState());
 
   Future<void> loadProfile() async {
     emit(state.copyWith(isLoading: true, error: null));
     try {
+      debugPrint("[PROFILE_CUBIT] Loading profile...");
       final data = await userRepository.fetchUserProfile();
+      if (isClosed) return;
+
       if (data != null) {
         String? username = data['username'];
-        
+
         // Auto-generate username if null
         if (username == null || username.isEmpty) {
+          debugPrint("[PROFILE_CUBIT] Username empty, generating...");
           username = await _generateUniqueUsername(data['name'] ?? 'user');
-          // Save it automatically
+          if (isClosed) return;
+
           await userRepository.upsertUser(
             name: data['name'] ?? '',
             gender: data['gender'] ?? 'Other',
@@ -87,7 +95,9 @@ class ProfileCubit extends Cubit<ProfileState> {
           );
         }
 
+        debugPrint("[PROFILE_CUBIT] Fetching wallet balance...");
         final walletBalance = await walletRepository.getBalance();
+        if (isClosed) return;
 
         emit(state.copyWith(
           isLoading: false,
@@ -102,6 +112,8 @@ class ProfileCubit extends Cubit<ProfileState> {
         emit(state.copyWith(isLoading: false));
       }
     } catch (e) {
+      debugPrint("[PROFILE_CUBIT] Error in loadProfile: $e");
+      if (isClosed) return;
       emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
@@ -132,7 +144,7 @@ class ProfileCubit extends Cubit<ProfileState> {
       );
 
       emit(state.copyWith(
-        isLoading: false, 
+        isLoading: false,
         isSuccess: true,
         name: name,
         gender: gender,
@@ -171,18 +183,21 @@ class ProfileCubit extends Cubit<ProfileState> {
 
   Future<void> checkUsernameAvailability(String username) async {
     if (username == state.username) {
-      emit(state.copyWith(isUsernameAvailable: true, lastCheckedUsername: username));
+      emit(state.copyWith(
+          isUsernameAvailable: true, lastCheckedUsername: username));
       return;
     }
-    
+
     if (username.length < 3) {
-      emit(state.copyWith(isUsernameAvailable: false, lastCheckedUsername: username));
+      emit(state.copyWith(
+          isUsernameAvailable: false, lastCheckedUsername: username));
       return;
     }
 
     try {
       final available = await userRepository.isUsernameAvailable(username);
-      emit(state.copyWith(isUsernameAvailable: available, lastCheckedUsername: username));
+      emit(state.copyWith(
+          isUsernameAvailable: available, lastCheckedUsername: username));
     } catch (e) {
       // Silently fail or log
     }
@@ -191,7 +206,7 @@ class ProfileCubit extends Cubit<ProfileState> {
   Future<String> _generateUniqueUsername(String name) async {
     final cleanName = name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
     final base = cleanName.isEmpty ? 'user' : cleanName;
-    
+
     // Try base name first if it's long enough
     if (base.length >= 3) {
       if (await userRepository.isUsernameAvailable(base)) return base;
@@ -199,7 +214,9 @@ class ProfileCubit extends Cubit<ProfileState> {
 
     // Add random suffix
     while (true) {
-      final random = (1000 + (9999 - 1000) * (DateTime.now().microsecond / 1000000)).toInt();
+      final random =
+          (1000 + (9999 - 1000) * (DateTime.now().microsecond / 1000000))
+              .toInt();
       final candidate = '${base}_$random';
       if (await userRepository.isUsernameAvailable(candidate)) return candidate;
     }

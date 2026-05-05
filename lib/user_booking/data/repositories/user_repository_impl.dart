@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 abstract class UserRepository {
@@ -72,6 +72,7 @@ class UserRepositoryImpl implements UserRepository {
   @override
   Future<Map<String, dynamic>?> fetchUserProfile() async {
     final user = supabase.auth.currentUser;
+    debugPrint("[USER_REPO] Fetching profile for ID: ${user?.id}");
     if (user == null) return null;
 
     final response = await supabase
@@ -80,6 +81,7 @@ class UserRepositoryImpl implements UserRepository {
         .eq('id', user.id)
         .maybeSingle();
     
+    debugPrint("[USER_REPO] Profile Data Received: $response");
     return response;
   }
 

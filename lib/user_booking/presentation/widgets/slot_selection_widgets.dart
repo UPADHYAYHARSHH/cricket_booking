@@ -1089,60 +1089,65 @@ class SlotSelectionWidgets {
 
     return Container(
       color: colorScheme.surface,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: periods.map((p) {
-          final isSel = p == selectedPeriod;
-          final accentColor = isDark ? AppColors.primaryLightGreen : AppColors.primaryDarkGreen;
-          
-          return Padding(
-            padding: const EdgeInsets.only(right: 24),
-            child: GestureDetector(
-              onTap: () => onSelect(p),
-              behavior: HitTestBehavior.opaque,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Radio Indicator
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    width: 20,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isSel ? accentColor : colorScheme.onSurface.withOpacity(0.3),
-                        width: 2,
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: periods.map((p) {
+            final isSel = p == selectedPeriod;
+            final accentColor = isDark ? AppColors.primaryLightGreen : AppColors.primaryDarkGreen;
+            
+            return Padding(
+              padding: const EdgeInsets.only(right: 24),
+              child: GestureDetector(
+                onTap: () => onSelect(p),
+                behavior: HitTestBehavior.opaque,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Radio Indicator
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isSel ? accentColor : colorScheme.onSurface.withOpacity(0.3),
+                          width: 2,
+                        ),
                       ),
-                    ),
-                    child: Center(
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        width: isSel ? 10 : 0,
-                        height: isSel ? 10 : 0,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: accentColor,
+                      child: Center(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: isSel ? 10 : 0,
+                          height: isSel ? 10 : 0,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: accentColor,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const AppSizedBox(width: 10),
-                  // Period Text
-                  AppText(
-                    text: p,
-                    textStyle: TextStyle(
-                      fontSize: 14,
-                      fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
-                      color: isSel ? colorScheme.onSurface : colorScheme.onSurface.withOpacity(0.6),
+                    const AppSizedBox(width: 10),
+                    // Period Text
+                    AppText(
+                      text: p,
+                      textStyle: TextStyle(
+                        fontSize: 14,
+                        fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
+                        color: isSel ? colorScheme.onSurface : colorScheme.onSurface.withOpacity(0.6),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          );
-        }).toList(),
+            );
+          }).toList(),
+        ),
       ),
     );
   }

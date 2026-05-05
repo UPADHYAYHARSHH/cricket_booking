@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/booking_model.dart';
 
@@ -14,6 +15,7 @@ class BookingRepository {
         .eq('user_id', user.id)
         .order('slot_time', ascending: false);
 
+    debugPrint("[BOOKING_REPO] Bookings found for ${user.id}: ${response.length}");
     final List data = response as List;
     return data.map((json) {
       // Extract ground image if available
