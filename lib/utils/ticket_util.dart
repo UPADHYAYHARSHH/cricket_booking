@@ -196,7 +196,7 @@ class TicketUtil {
                           gradient: pw.LinearGradient(
                             colors: [
                               PdfColors.black.withAlpha(204), // 0.8 opacity
-                              PdfColor.fromInt(0x00000000), // transparent
+                              const PdfColor.fromInt(0x00000000), // transparent
                             ],
                             begin: pw.Alignment.bottomCenter,
                             end: pw.Alignment.topCenter,
@@ -267,7 +267,8 @@ class TicketUtil {
                                   child: pw.Text(
                                     groundAddress,
                                     style: pw.TextStyle(
-                                        color: _kWhite.withAlpha(204), // 0.8 opacity
+                                        color: _kWhite
+                                            .withAlpha(204), // 0.8 opacity
                                         fontSize: 10),
                                     maxLines: 1,
                                   ),
@@ -327,8 +328,7 @@ class TicketUtil {
                                   'Show this QR code at the venue entrance.'),
                               _pdfBullet(
                                   'Slot once booked cannot be rescheduled.'),
-                              _pdfBullet(
-                                  'Please carry your own sports gear.'),
+                              _pdfBullet('Please carry your own sports gear.'),
                             ],
                           ),
                         ),
@@ -452,7 +452,7 @@ class TicketUtil {
             ),
             pw.Expanded(
                 child: pw.Text(text,
-                    style: pw.TextStyle(color: _kDark, fontSize: 9))),
+                    style: const pw.TextStyle(color: _kDark, fontSize: 9))),
           ],
         ),
       );

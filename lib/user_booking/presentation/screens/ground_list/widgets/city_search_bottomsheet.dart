@@ -24,9 +24,9 @@ class CitySearchBottomSheet extends StatefulWidget {
 class _CitySearchBottomSheetState extends State<CitySearchBottomSheet> {
   final TextEditingController controller = TextEditingController();
   // List of search results from Google Places API
-  List<String> results = [];
-  // List of previously searched cities loaded from Hive
-  List<String> history = [];
+  List<Map<String, dynamic>> results = [];
+  // List of previously searched cities loaded from Hive (stored as JSON)
+  List<Map<String, dynamic>> history = [];
   // Loading state for the search API call
   bool isLoading = false;
   // Hive box for persistent city search history
@@ -41,14 +41,20 @@ class _CitySearchBottomSheetState extends State<CitySearchBottomSheet> {
   void _initHistory() async {
     historyBox = await Hive.openBox<String>('city_history');
     setState(() {
-      history = historyBox.values.toList().reversed.toList();
+      history = historyBox.values.map((e) {
+        try {
+          return json.decode(e) as Map<String, dynamic>;
+        } catch (_) {
+          return {'name': e}; // Fallback for old simple strings
+        }
+      }).toList().reversed.toList();
     });
   }
 
   Timer? _debounce;
 
   /// FETCH CITIES FROM OPEN-METEO GEOCODING API (Free)
-  Future<List<String>> searchCities(String query) async {
+  Future<List<Map<String, dynamic>>> searchCities(String query) async {
     final url = "https://geocoding-api.open-meteo.com/v1/search"
         "?name=$query"
         "&count=10"
@@ -58,27 +64,33 @@ class _CitySearchBottomSheetState extends State<CitySearchBottomSheet> {
     final response = await http.get(Uri.parse(url));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      final results = data['results'] as List?;
+      final res = data['results'] as List?;
 
-      if (results == null) return [];
+      if (res == null) return [];
 
-      final List<String> cityStrings = [];
-      for (var e in results) {
+      final List<Map<String, dynamic>> cityResults = [];
+      for (var e in res) {
         if (e['country_code'] == 'IN') {
           // Only India
           final cityName = e['name'] as String? ?? "";
           final stateName = e['admin1'] as String? ?? "";
+          final lat = (e['latitude'] as num?)?.toDouble();
+          final lng = (e['longitude'] as num?)?.toDouble();
 
           final formatString = stateName.isNotEmpty && stateName != cityName
               ? "$cityName, $stateName"
               : cityName;
 
-          if (!cityStrings.contains(formatString) && formatString.isNotEmpty) {
-            cityStrings.add(formatString);
+          if (!cityResults.any((element) => element['name'] == formatString) && formatString.isNotEmpty) {
+            cityResults.add({
+              'name': formatString,
+              'lat': lat,
+              'lng': lng,
+            });
           }
         }
       }
-      return cityStrings;
+      return cityResults;
     } else {
       throw Exception("Failed to fetch cities");
     }
@@ -112,25 +124,46 @@ class _CitySearchBottomSheetState extends State<CitySearchBottomSheet> {
   }
 
   /// SELECT CITY, SAVE TO HISTORY, AND UPDATE CUBIT
-  void selectCity(String cityLabel) async {
-    // Save to Hive persistent storage
-    if (!historyBox.values.contains(cityLabel)) {
-      if (historyBox.length >= 5) {
-        await historyBox.deleteAt(0); // Maintain only top 5 history items
+  void selectCity(Map<String, dynamic> cityData) async {
+    final String cityLabel = cityData['name'];
+    
+    debugPrint("[CITY_SEARCH] Selecting city: $cityLabel with coords: ${cityData['lat']}, ${cityData['lng']}");
+
+    // Check for duplicates by name in history
+    int existingIndex = -1;
+    final List<String> currentValues = historyBox.values.toList();
+    for (int i = 0; i < currentValues.length; i++) {
+      try {
+        final Map<String, dynamic> map = json.decode(currentValues[i]);
+        if (map['name'] == cityLabel) {
+          existingIndex = i;
+          break;
+        }
+      } catch (_) {
+        if (currentValues[i] == cityLabel) {
+          existingIndex = i;
+          break;
+        }
       }
-      await historyBox.add(cityLabel);
-    } else {
-      // If already exists, move to top
-      final index = historyBox.values.toList().indexOf(cityLabel);
-      await historyBox.deleteAt(index);
-      await historyBox.add(cityLabel);
     }
+
+    // Remove old entry if exists to move it to top
+    if (existingIndex != -1) {
+      await historyBox.deleteAt(existingIndex);
+    } else if (historyBox.length >= 5) {
+      await historyBox.deleteAt(0); // Maintain only top 5 history items
+    }
+
+    // Add new entry as JSON
+    await historyBox.add(json.encode(cityData));
 
     if (mounted) {
       // Update global LocationCubit state and navigate back
-      // Extract the city name before the comma if needed for specific logic,
-      // but for UX we can show the full label.
-      context.read<LocationCubit>().setCity(cityLabel);
+      context.read<LocationCubit>().setCity(
+        cityLabel,
+        lat: cityData['lat'],
+        lng: cityData['lng'],
+      );
       Navigator.pop(context);
     }
   }
@@ -220,7 +253,8 @@ class _CitySearchBottomSheetState extends State<CitySearchBottomSheet> {
     final onSurface = Theme.of(context).colorScheme.onSurface;
     return ListView(
       padding: EdgeInsets.zero,
-      children: history.map((city) {
+      children: history.map((cityData) {
+        final String city = cityData['name'] ?? "";
         final parts = city.split(',');
         final mainCity = parts[0].trim();
         final secondary =
@@ -249,7 +283,7 @@ class _CitySearchBottomSheetState extends State<CitySearchBottomSheet> {
                   color: onSurface.withOpacity(0.5),
                 )
               : null,
-          onTap: () => selectCity(city),
+          onTap: () => selectCity(cityData),
         );
       }).toList(),
     );
@@ -259,7 +293,8 @@ class _CitySearchBottomSheetState extends State<CitySearchBottomSheet> {
     final onSurface = Theme.of(context).colorScheme.onSurface;
     return ListView(
       padding: EdgeInsets.zero,
-      children: results.map((city) {
+      children: results.map((cityData) {
+        final String city = cityData['name'] ?? "";
         final parts = city.split(',');
         final mainCity = parts[0].trim();
         final secondary =
@@ -284,7 +319,7 @@ class _CitySearchBottomSheetState extends State<CitySearchBottomSheet> {
                   color: onSurface.withOpacity(0.5),
                 )
               : null,
-          onTap: () => selectCity(city),
+          onTap: () => selectCity(cityData),
         );
       }).toList(),
     );

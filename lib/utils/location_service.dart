@@ -1,6 +1,7 @@
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:location/location.dart' as loc;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class UserLocation {
   final String city;
@@ -48,19 +49,27 @@ Future<UserLocation> getCurrentLocation() async {
   // 5. Fetch device's absolute coordinates.
   final position = await Geolocator.getCurrentPosition();
 
-  // 6. Perform reverse geocoding to get human-readable city name.
-  final placemarks = await placemarkFromCoordinates(
-    position.latitude,
-    position.longitude,
-  );
+  String city = "Unknown";
 
-  final place = placemarks.first;
+  // 6. Perform reverse geocoding (Mobile only, not supported on Web)
+  if (!kIsWeb) {
+    try {
+      final placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
 
-  // 7. Extract the most specific locality name possible.
-  final city = place.locality ??
-      place.subAdministrativeArea ??
-      place.administrativeArea ??
-      "Unknown";
+      if (placemarks.isNotEmpty) {
+        final place = placemarks.first;
+        city = place.locality ??
+            place.subAdministrativeArea ??
+            place.administrativeArea ??
+            "Unknown";
+      }
+    } catch (e) {
+      print("Reverse geocoding failed: $e");
+    }
+  }
 
   return UserLocation(
     city: city,

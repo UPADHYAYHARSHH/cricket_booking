@@ -215,10 +215,13 @@ class _GroundCardState extends State<GroundCard> {
           left: 12,
           child: BlocBuilder<LocationCubit, LocationState>(
             builder: (context, state) {
-              if (state.latitude != null && state.longitude != null) {
+              final double? originLat = state.gpsLatitude ?? state.latitude;
+              final double? originLng = state.gpsLongitude ?? state.longitude;
+
+              if (originLat != null && originLng != null) {
                 final distance = _calculateDistance(
-                  state.latitude!,
-                  state.longitude!,
+                  originLat,
+                  originLng,
                   widget.ground.latitude,
                   widget.ground.longitude,
                 );

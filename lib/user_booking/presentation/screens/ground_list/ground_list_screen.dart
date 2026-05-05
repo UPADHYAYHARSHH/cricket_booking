@@ -71,8 +71,8 @@ class _GroundListScreenState extends State<GroundListScreen> {
         locationCubit.state.city != "Fetching...") {
       groundCubit.getGrounds(
         city: locationCubit.state.city,
-        userLat: locationCubit.state.latitude,
-        userLng: locationCubit.state.longitude,
+        userLat: locationCubit.state.hasGpsLocation ? locationCubit.state.latitude : null,
+        userLng: locationCubit.state.hasGpsLocation ? locationCubit.state.longitude : null,
       );
     }
   }
@@ -93,18 +93,18 @@ class _GroundListScreenState extends State<GroundListScreen> {
           previous.city != current.city ||
           previous.isLoading != current.isLoading ||
           previous.latitude != current.latitude ||
-          previous.longitude != current.longitude,
+          previous.longitude != current.longitude ||
+          previous.hasGpsLocation != current.hasGpsLocation,
       listener: (context, state) {
         if (state.city != null &&
             !state.isLoading &&
             state.city != "Fetching...") {
           final groundCubit = context.read<GroundCubit>();
           // Avoid redundant fetch if already loading or loaded with same parameters
-          // Simple check: if it's initial or if city/location changed significantly
           groundCubit.getGrounds(
             city: state.city,
-            userLat: state.latitude,
-            userLng: state.longitude,
+            userLat: state.hasGpsLocation ? state.latitude : null,
+            userLng: state.hasGpsLocation ? state.longitude : null,
           );
         }
       },
@@ -595,8 +595,8 @@ class _GroundListScreenState extends State<GroundListScreen> {
           final locationState = context.read<LocationCubit>().state;
           context.read<GroundCubit>().applyFilters(
                 criteria,
-                userLat: locationState.latitude,
-                userLng: locationState.longitude,
+                userLat: locationState.hasGpsLocation ? locationState.latitude : null,
+                userLng: locationState.hasGpsLocation ? locationState.longitude : null,
               );
           // Scroll to top when filters are applied
           if (_scrollController.hasClients) {
