@@ -98,6 +98,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
             orderId: response.orderId!,
             displayId: displayId,
             totalPrice: _pendingAmount!,
+            sportName: context.read<SlotSelectionCubit>().state.selectedSport ?? "Sport",
           ),
         );
       } else {
@@ -216,6 +217,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
           orderId: 'DIRECT_${DateTime.now().millisecondsSinceEpoch}',
           displayId: displayId,
           totalPrice: totalPrice,
+          sportName: context.read<SlotSelectionCubit>().state.selectedSport ?? "Sport",
         ),
       );
     } catch (e) {

@@ -104,6 +104,7 @@ class BookingSummaryScreen extends StatelessWidget {
                               fit: BoxFit.cover,
                               errorBuilder: (_, __, ___) => Container(
                                 height: 160,
+                                width: double.infinity,
                                 color: colorScheme.surfaceContainerHighest,
                                 child: const Icon(Icons.sports_cricket, size: 48, color: Colors.grey),
                               ),
@@ -126,16 +127,22 @@ class BookingSummaryScreen extends StatelessWidget {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.calendar_today_rounded, size: 14, color: Colors.white),
-                                      const SizedBox(width: 6),
-                                      AppText(
-                                        text: "${activeDate.month} ${activeDate.date}, ${DateTime.now().year}",
-                                        textStyle: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                                      ),
-                                    ],
+                                  Expanded(
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.calendar_today_rounded, size: 14, color: Colors.white),
+                                        const SizedBox(width: 6),
+                                        Flexible(
+                                          child: AppText(
+                                            text: "${activeDate.month} ${activeDate.date}, ${DateTime.now().year}",
+                                            textStyle: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                                            maxLines: 1,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
+                                  const SizedBox(width: 12),
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
@@ -159,13 +166,52 @@ class BookingSummaryScreen extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              AppText(
-                                text: ground?.name ?? "Venue Name",
-                                textStyle: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: colorScheme.onSurface,
-                                ),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        AppText(
+                                          text: ground?.name ?? "Venue Name",
+                                          textStyle: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: colorScheme.onSurface,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(6),
+                                            border: Border.all(color: AppColors.primaryDarkGreen.withValues(alpha: 0.2)),
+                                          ),
+                                          child: AppText(
+                                            text: state.selectedSport?.toUpperCase() ?? "SPORT",
+                                            textStyle: const TextStyle(
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.w800,
+                                              color: AppColors.primaryDarkGreen,
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  AppText(
+                                    text: "₹${basePrice.toStringAsFixed(0)}",
+                                    textStyle: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.primaryDarkGreen,
+                                    ),
+                                  ),
+                                ],
                               ),
                               const SizedBox(height: 6),
                               Row(

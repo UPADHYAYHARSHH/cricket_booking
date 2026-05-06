@@ -201,6 +201,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                 displayId: displayId,
                 totalPrice: totalPrice,
                 groundAddress: ground.address,
+                sportName: args.sportName,
               ),
 
               const AppSizedBox(height: 20),
@@ -511,6 +512,7 @@ class _BookingDetailsCard extends StatelessWidget {
   final String orderId;
   final int displayId;
   final double totalPrice;
+  final String sportName;
   final String groundAddress;
 
   const _BookingDetailsCard({
@@ -520,6 +522,7 @@ class _BookingDetailsCard extends StatelessWidget {
     required this.displayId,
     required this.totalPrice,
     required this.groundAddress,
+    required this.sportName,
   });
 
   @override
@@ -542,6 +545,16 @@ class _BookingDetailsCard extends StatelessWidget {
             "Venue Address",
             groundAddress,
             Icons.location_on_outlined,
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Divider(height: 1),
+          ),
+          _buildDetailRow(
+            context,
+            "Sport selected",
+            sportName,
+            Icons.sports_cricket_outlined,
           ),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),

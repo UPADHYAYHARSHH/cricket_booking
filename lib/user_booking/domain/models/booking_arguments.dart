@@ -9,6 +9,8 @@ class BookingSuccessArguments {
   final int displayId;
   final double totalPrice;
 
+  final String sportName;
+
   BookingSuccessArguments({
     required this.ground,
     required this.date,
@@ -16,6 +18,7 @@ class BookingSuccessArguments {
     required this.orderId,
     required this.displayId,
     required this.totalPrice,
+    required this.sportName,
   });
 }
 
