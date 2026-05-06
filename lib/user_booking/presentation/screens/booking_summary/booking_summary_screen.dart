@@ -78,10 +78,9 @@ class BookingSummaryScreen extends StatelessWidget {
               children: [
                 // Ground Details Card
                 Container(
-                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(18),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
@@ -90,101 +89,134 @@ class BookingSummaryScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.network(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Large Header Image
+                        Stack(
+                          children: [
+                            Image.network(
                               ground?.imageUrl ?? "",
-                              width: 80,
-                              height: 80,
+                              height: 160,
+                              width: double.infinity,
                               fit: BoxFit.cover,
                               errorBuilder: (_, __, ___) => Container(
-                                width: 80,
-                                height: 80,
+                                height: 160,
                                 color: colorScheme.surfaceContainerHighest,
-                                child: const Icon(Icons.sports_cricket, color: Colors.grey),
+                                child: const Icon(Icons.sports_cricket, size: 48, color: Colors.grey),
                               ),
                             ),
-                          ),
-                          const AppSizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                AppText(
-                                  text: ground?.name ?? "Turf",
-                                  textStyle: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: colorScheme.onSurface,
+                            Positioned.fill(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
                                   ),
                                 ),
-                                const AppSizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    Icon(Icons.location_on_outlined, size: 14, color: colorScheme.primary),
-                                    const AppSizedBox(width: 4),
-                                    Expanded(
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 12,
+                              left: 14,
+                              right: 14,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.calendar_today_rounded, size: 14, color: Colors.white),
+                                      const SizedBox(width: 6),
+                                      AppText(
+                                        text: "${activeDate.month} ${activeDate.date}, ${DateTime.now().year}",
+                                        textStyle: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                                      ),
+                                    ],
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.2),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: AppText(
+                                      text: "${selectedSlots.length} Slots",
+                                      textStyle: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        
+                        // Info Section
+                        Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              AppText(
+                                text: ground?.name ?? "Venue Name",
+                                textStyle: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: colorScheme.onSurface,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  HugeIcon(
+                                    icon: HugeIcons.strokeRoundedLocation01,
+                                    size: 14,
+                                    color: colorScheme.onSurface.withValues(alpha: 0.5),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: AppText(
+                                      text: ground?.address ?? "Venue Address",
+                                      maxLines: 1,
+                                      textStyle: TextStyle(
+                                        fontSize: 12,
+                                        color: colorScheme.onSurface.withValues(alpha: 0.5),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (ground?.amenities.isNotEmpty ?? false) ...[
+                                const SizedBox(height: 12),
+                                Wrap(
+                                  spacing: 6,
+                                  runSpacing: 6,
+                                  children: ground!.amenities.take(4).map((amenity) {
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
                                       child: AppText(
-                                        text: ground?.address ?? "Venue Address",
-                                        maxLines: 1,
-                                        textStyle: TextStyle(
-                                          fontSize: 12,
-                                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                                        text: amenity,
+                                        textStyle: const TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.primaryDarkGreen,
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                    );
+                                  }).toList(),
                                 ),
                               ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const AppSizedBox(height: 16),
-                      if (ground?.amenities.isNotEmpty ?? false) ...[
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: ground!.amenities.map((amenity) {
-                              return Container(
-                                margin: const EdgeInsets.only(right: 8),
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: colorScheme.primary.withValues(alpha: 0.05),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.check_circle_outline, size: 12, color: colorScheme.primary),
-                                    const AppSizedBox(width: 4),
-                                    AppText(
-                                      text: amenity,
-                                      textStyle: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: colorScheme.onSurface.withValues(alpha: 0.8),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }).toList(),
+                            ],
                           ),
                         ),
-                        const AppSizedBox(height: 16),
                       ],
-                      const Divider(height: 1),
-                      const AppSizedBox(height: 16),
-                      _summaryRow(context, label: "Booking Date", value: "${activeDate.month} ${activeDate.date}, ${DateTime.now().year}"),
-                      const AppSizedBox(height: 12),
-                      _summaryRow(context, label: "Total Slots", value: "${selectedSlots.length} Selected"),
-                    ],
+                    ),
                   ),
                 ),
                 const AppSizedBox(height: 24),

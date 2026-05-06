@@ -250,198 +250,228 @@ class _BookingCardState extends State<_BookingCard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.05),
             blurRadius: 10,
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
             offset: const Offset(0, 4),
-          ),
+          )
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildTopRow(context),
-          const Divider(height: 1, thickness: 0.5),
-          _buildDetailsRow(context),
-          _buildFooterRow(context),
-        ],
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => _viewTicket(context),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildTopSection(context),
+              _buildInfoSection(context, onSurface),
+              _buildActionRow(context),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildTopRow(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Container(
-            width: 50,
-            height: 50,
+  Widget _buildTopSection(BuildContext context) {
+    return Stack(
+      children: [
+        AppNetworkImage(
+          imageUrl: widget.booking.ground?.imageUrl ?? "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e",
+          height: 160,
+          width: double.infinity,
+          fit: BoxFit.cover,
+        ),
+        
+        // Status Badge
+        Positioned(
+          top: 12,
+          right: 12,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              image: widget.booking.ground?.imageUrl != null
-                  ? DecorationImage(
-                      image: NetworkImage(widget.booking.ground!.imageUrl),
-                      fit: BoxFit.cover,
-                    )
-                  : null,
-              color: theme.brightness == Brightness.dark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
-            ),
-            child: widget.booking.ground?.imageUrl == null ? Icon(Icons.sports_cricket, color: theme.colorScheme.onSurface.withValues(alpha: 0.3)) : null,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppText(
-                  text: widget.booking.ground?.name ?? "Venue Name",
-                  textStyle: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                AppText(
-                  text: widget.booking.ground?.address ?? "Location not available",
-                  textStyle: TextStyle(
-                    fontSize: 12,
-                    color: theme.colorScheme.onSurface.withOpacity(0.5),
-                  ),
-                  maxLines: 1,
-                ),
+              color: _getStatusColor(widget.booking.status).withValues(alpha: 0.9),
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4),
               ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: widget.booking.status.toLowerCase() == 'confirmed' || widget.booking.status.toLowerCase() == 'paid' ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
             ),
             child: AppText(
               text: widget.booking.status.toUpperCase(),
-              textStyle: TextStyle(
+              textStyle: const TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
-                color: widget.booking.status.toLowerCase() == 'confirmed' || widget.booking.status.toLowerCase() == 'paid' ? Colors.green : Colors.orange,
+                color: Colors.white,
+                letterSpacing: 0.5,
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
 
-  Widget _buildDetailsRow(BuildContext context) {
-    final dateStr = DateFormat('EEE, d MMM yyyy').format(widget.booking.slotTime);
-    final timeStr = DateFormat('hh:mm a').format(widget.booking.slotTime);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _infoItem(context, Icons.calendar_today_outlined, dateStr),
-          _infoItem(context, Icons.access_time, timeStr),
-          _infoItem(context, Icons.payments_outlined, "₹${widget.booking.amount}"),
-        ],
-      ),
-    );
-  }
-
-  Widget _infoItem(BuildContext context, IconData icon, String label) {
-    final theme = Theme.of(context);
-    return Row(
-      children: [
-        Icon(icon, size: 14, color: theme.colorScheme.primary),
-        const SizedBox(width: 6),
-        AppText(
-          text: label,
-          textStyle: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
+        // Date & Time Overlay
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Colors.black.withValues(alpha: 0.8)],
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.calendar_today_rounded, size: 14, color: Colors.white),
+                const SizedBox(width: 6),
+                AppText(
+                  text: DateFormat('EEE, d MMM').format(widget.booking.slotTime),
+                  textStyle: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(width: 16),
+                const Icon(Icons.access_time_rounded, size: 14, color: Colors.white),
+                const SizedBox(width: 6),
+                AppText(
+                  text: DateFormat('hh:mm a').format(widget.booking.slotTime),
+                  textStyle: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildFooterRow(BuildContext context) {
-    final now = DateTime.now();
-    // Rating button only appears if the booking time has fully passed
-    final isPast = widget.booking.slotTime.isBefore(now);
-
+  Widget _buildInfoSection(BuildContext context, Color onSurface) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.all(14),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Expanded(
-                child: OutlinedButton(
-                  onPressed: () => _viewTicket(context),
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                  ),
-                  child: const AppText(
-                    text: "View Ticket",
-                    textStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                child: AppText(
+                  text: widget.booking.ground?.name ?? "Venue Name",
+                  textStyle: AppTextTheme.black16.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-              if (isPast) ...[
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => _rebook(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryDarkGreen,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      elevation: 0,
-                    ),
-                    child: const AppText(
-                      text: "Rebook",
-                      textStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
-                    ),
-                  ),
+              AppText(
+                text: "₹${widget.booking.amount}",
+                textStyle: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.primaryDarkGreen,
                 ),
-              ],
+              ),
             ],
           ),
-          if (isPast && !_isLoadingRating && !_hasRated) ...[
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () => _showRatingSheet(context),
-                icon: const Icon(Icons.star_rate_rounded, size: 18),
-                label: const Text("Rate Your Match Experience"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.amber.shade700,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  elevation: 0,
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              HugeIcon(
+                icon: HugeIcons.strokeRoundedLocation01,
+                size: 14,
+                color: onSurface.withValues(alpha: 0.5),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: AppText(
+                  text: widget.booking.ground?.address ?? "Location not available",
+                  textStyle: TextStyle(
+                    fontSize: 12,
+                    color: onSurface.withValues(alpha: 0.5),
+                  ),
+                  maxLines: 1,
                 ),
               ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionRow(BuildContext context) {
+    final now = DateTime.now();
+    final isPast = widget.booking.slotTime.isBefore(now);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+      child: Row(
+        children: [
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () => _viewTicket(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
+                foregroundColor: AppColors.primaryDarkGreen,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: const Text("View Ticket", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
             ),
+          ),
+          if (isPast) ...[
+            const SizedBox(width: 12),
+            if (!_hasRated && !_isLoadingRating)
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => _showRatingSheet(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.amber.shade700,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text("Rate Now", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                ),
+              )
+            else
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => _rebook(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryDarkGreen,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text("Rebook", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                ),
+              ),
           ],
         ],
       ),
     );
+  }
+
+  Color _getStatusColor(String status) {
+    final s = status.toLowerCase();
+    if (s == 'confirmed' || s == 'paid') return Colors.green.shade600;
+    if (s == 'pending') return Colors.orange.shade600;
+    if (s == 'cancelled') return Colors.red.shade600;
+    return Colors.blue.shade600;
   }
 
   void _showRatingSheet(BuildContext context) async {
