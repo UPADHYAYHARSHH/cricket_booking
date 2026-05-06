@@ -99,9 +99,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
     final List<Widget> pages = [
       const GroundListScreen(),
       const MyBookingsScreen(),
-      SavedGroundsScreen(
-        onFindGrounds: () => _handleTabSwitch(0),
-      ),
+      const SavedGroundsScreen(),
       const ProfileScreen(),
     ];
 

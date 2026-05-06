@@ -39,6 +39,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:turfpro/common/services/remote_config_service.dart';
 import 'package:turfpro/common/screens/maintenance_screen.dart';
+import 'package:turfpro/user_booking/presentation/screens/splash/app_status_screens.dart';
 
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'user_booking/presentation/screens/splash/splash_screen.dart';
@@ -70,13 +71,15 @@ void main() async {
   await RemoteConfigService().initialize();
 
   // Pass all uncaught "fatal" errors from the framework to Crashlytics
-  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  if (!kIsWeb) {
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
 
-  // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
-  PlatformDispatcher.instance.onError = (error, stack) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-    return true;
-  };
+    // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
+  }
 
   Bloc.observer = AppBlocObserver();
 
@@ -155,12 +158,26 @@ void main() async {
             theme: AppColors.getLightTheme(),
             darkTheme: AppColors.getDarkTheme(),
             navigatorKey: navigatorKey,
-            initialRoute: "/",
             builder: (context, child) {
               return BlocBuilder<ConfigCubit, ConfigState>(
                 builder: (context, configState) {
-                  if (configState is ConfigLoaded && configState.isMaintenanceMode) {
-                    return const MaintenanceScreen();
+                  if (configState is ConfigLoaded) {
+                    if (configState.isMaintenanceMode) {
+                      return const MaintenanceScreen();
+                    }
+                    if (configState.isUpdateRequired) {
+                      return Stack(
+                        children: [
+                          if (child != null) child,
+                          // Dimmed background
+                          Container(color: Colors.black.withValues(alpha: 0.5)),
+                          // Unclosable Dialog
+                          Center(
+                            child: ForceUpdateDialog(updateUrl: configState.updateUrl),
+                          ),
+                        ],
+                      );
+                    }
                   }
                   return BlocBuilder<ConnectivityCubit, ConnectivityState>(
                     builder: (context, connectivityState) {

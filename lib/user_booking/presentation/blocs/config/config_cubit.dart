@@ -8,7 +8,13 @@ class ConfigInitial extends ConfigState {}
 
 class ConfigLoaded extends ConfigState {
   final bool isMaintenanceMode;
-  ConfigLoaded({required this.isMaintenanceMode});
+  final bool isUpdateRequired;
+  final String updateUrl;
+  ConfigLoaded({
+    required this.isMaintenanceMode,
+    required this.isUpdateRequired,
+    required this.updateUrl,
+  });
 }
 
 class ConfigCubit extends Cubit<ConfigState> {
@@ -19,17 +25,32 @@ class ConfigCubit extends Cubit<ConfigState> {
     _init();
   }
 
-  void _init() {
-    emit(ConfigLoaded(isMaintenanceMode: _remoteConfigService.isMaintenanceMode));
+  void _init() async {
+    final isUpdate = await _remoteConfigService.isUpdateRequired();
+    emit(ConfigLoaded(
+      isMaintenanceMode: _remoteConfigService.isMaintenanceMode,
+      isUpdateRequired: isUpdate,
+      updateUrl: _remoteConfigService.updateUrl,
+    ));
 
-    _subscription = _remoteConfigService.maintenanceModeStream.listen((isMaintenance) {
-      emit(ConfigLoaded(isMaintenanceMode: isMaintenance));
+    _subscription = _remoteConfigService.maintenanceModeStream.listen((isMaintenance) async {
+      final isUpdateRequired = await _remoteConfigService.isUpdateRequired();
+      emit(ConfigLoaded(
+        isMaintenanceMode: isMaintenance,
+        isUpdateRequired: isUpdateRequired,
+        updateUrl: _remoteConfigService.updateUrl,
+      ));
     });
   }
 
   Future<void> refresh() async {
     await _remoteConfigService.fetchAndActivate();
-    emit(ConfigLoaded(isMaintenanceMode: _remoteConfigService.isMaintenanceMode));
+    final isUpdate = await _remoteConfigService.isUpdateRequired();
+    emit(ConfigLoaded(
+      isMaintenanceMode: _remoteConfigService.isMaintenanceMode,
+      isUpdateRequired: isUpdate,
+      updateUrl: _remoteConfigService.updateUrl,
+    ));
   }
 
   @override

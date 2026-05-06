@@ -13,8 +13,7 @@ import '../../../constants/widgets/app_sizedBox.dart';
 import '../../../constants/widgets/app_text.dart';
 
 class SavedGroundsScreen extends StatefulWidget {
-  final VoidCallback? onFindGrounds;
-  const SavedGroundsScreen({super.key, this.onFindGrounds});
+  const SavedGroundsScreen({super.key});
 
   @override
   State<SavedGroundsScreen> createState() => _SavedGroundsScreenState();
@@ -67,7 +66,6 @@ class _SavedGroundsScreenState extends State<SavedGroundsScreen> {
                           ),
                         ),
                       ),
-                    SliverToBoxAdapter(child: _buildExploreMore(context)),
                     const SliverToBoxAdapter(child: AppSizedBox(height: 24)),
                   ],
                 );
@@ -130,67 +128,4 @@ class _SavedGroundsScreenState extends State<SavedGroundsScreen> {
     );
   }
 
-  Widget _buildExploreMore(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-          )
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              shape: BoxShape.circle,
-            ),
-            child: HugeIcon(
-              icon: HugeIcons.strokeRoundedDiscoverCircle,
-              size: 28,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-            ),
-          ),
-          const AppSizedBox(height: 10),
-          const AppText(
-            text: "Explore More",
-            textStyle: AppTextTheme.black16,
-          ),
-          const AppSizedBox(height: 4),
-          const AppText(
-            text:
-                "Discover new arenas in your area and\nexpand your favorites.",
-            align: TextAlign.center,
-            textStyle: AppTextTheme.black12,
-          ),
-          const AppSizedBox(height: 16),
-          OutlinedButton(
-            onPressed: widget.onFindGrounds,
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(
-                  color: AppColors.primaryDarkGreen, width: 1.5),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-            ),
-            child: const AppText(
-              text: "Find Grounds",
-              textStyle: TextStyle(
-                color: AppColors.primaryDarkGreen,
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
