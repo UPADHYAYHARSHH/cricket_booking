@@ -66,6 +66,8 @@ class PaymentRepository {
     required String orderId,
     required String paymentId,
     required String signature,
+    String? sportName,
+    String? period,
   }) async {
     debugPrint('PaymentRepository: saveBooking called');
     final user = _supabase.auth.currentUser;
@@ -80,6 +82,8 @@ class PaymentRepository {
       'razorpay_order_id': orderId,
       'razorpay_payment_id': paymentId,
       'razorpay_signature': signature,
+      'sport_name': sportName,
+      'period': period,
     };
     
     debugPrint('PaymentRepository: Inserting booking: $bookingData');
@@ -95,6 +99,8 @@ class PaymentRepository {
     required DateTime date,
     required List<String> slotStartTimes,
     required int amount,
+    String? sportName,
+    String? period,
   }) async {
     debugPrint('PaymentRepository: saveDirectBooking called - Ground: $groundId, Date: $date, Amount: $amount');
     final user = _supabase.auth.currentUser;
@@ -111,6 +117,8 @@ class PaymentRepository {
         'slot_time': date.toIso8601String(),
         'amount': amount,
         'status': 'confirmed',
+        'sport_name': sportName,
+        'period': period,
       };
 
       debugPrint('PaymentRepository: Inserting into bookings... Data: $bookingData');

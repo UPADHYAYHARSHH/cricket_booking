@@ -8,6 +8,7 @@ class FilterCriteria {
   final bool isAvailableNow;
   final bool isNearMe;
   final bool isTopRated;
+  final String? sportId;
 
   FilterCriteria({
     this.sortBy = SortBy.none,
@@ -17,6 +18,7 @@ class FilterCriteria {
     this.isAvailableNow = false,
     this.isNearMe = false,
     this.isTopRated = false,
+    this.sportId = 'all',
   });
 
   FilterCriteria copyWith({
@@ -27,6 +29,7 @@ class FilterCriteria {
     bool? isAvailableNow,
     bool? isNearMe,
     bool? isTopRated,
+    String? sportId,
   }) {
     return FilterCriteria(
       sortBy: sortBy ?? this.sortBy,
@@ -36,6 +39,7 @@ class FilterCriteria {
       isAvailableNow: isAvailableNow ?? this.isAvailableNow,
       isNearMe: isNearMe ?? this.isNearMe,
       isTopRated: isTopRated ?? this.isTopRated,
+      sportId: sportId ?? this.sportId,
     );
   }
 
@@ -46,5 +50,6 @@ class FilterCriteria {
       selectedAmenities.isEmpty &&
       !isAvailableNow &&
       !isNearMe &&
-      !isTopRated;
+      !isTopRated &&
+      (sportId == null || sportId == 'all');
 }

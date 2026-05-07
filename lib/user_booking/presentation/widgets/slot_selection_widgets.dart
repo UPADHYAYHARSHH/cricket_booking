@@ -9,13 +9,13 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:turfpro/user_booking/constants/widgets/app_network_image.dart';
+import '../../constants/widgets/app_network_image.dart';
 import 'package:turfpro/user_booking/domain/models/slot_models.dart';
 import 'package:turfpro/user_booking/data/models/review_model.dart';
 import 'package:turfpro/user_booking/presentation/widgets/review_widgets.dart';
 import 'package:turfpro/utils/toast_util.dart';
-import 'package:turfpro/user_booking/constants/widgets/app_button.dart';
 import 'package:shimmer/shimmer.dart';
+import 'ground_image_carousel.dart';
 
 class SlotSelectionWidgets {
   static const Color kOrange = AppColors.accentOrange;
@@ -120,7 +120,7 @@ class SlotSelectionWidgets {
       decoration: BoxDecoration(
         color: theme.cardColor,
         border: Border(
-            bottom: BorderSide(color: theme.dividerColor.withOpacity(0.1))),
+            bottom: BorderSide(color: theme.dividerColor.withValues(alpha: 0.1))),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -133,7 +133,7 @@ class SlotSelectionWidgets {
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1,
-                color: colorScheme.onSurface.withOpacity(0.5),
+                color: colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ),
           ),
@@ -143,11 +143,11 @@ class SlotSelectionWidgets {
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
                 color: isDark
-                    ? theme.cardColor.withOpacity(0.3)
+                    ? theme.cardColor.withValues(alpha: 0.3)
                     : theme.scaffoldBackgroundColor,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: theme.dividerColor.withOpacity(isDark ? 0.1 : 0.05),
+                  color: theme.dividerColor.withValues(alpha: isDark ? 0.1 : 0.05),
                   width: 1,
                 ),
               ),
@@ -172,15 +172,15 @@ class SlotSelectionWidgets {
                               decoration: BoxDecoration(
                                 color: isSel
                                     ? (isDark
-                                        ? color.withOpacity(0.15)
-                                        : color.withOpacity(0.1))
+                                        ? color.withValues(alpha: 0.15)
+                                        : color.withValues(alpha: 0.1))
                                     : Colors.transparent,
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
                                   color: isSel
-                                      ? color.withOpacity(0.8)
+                                      ? color.withValues(alpha: 0.8)
                                       : colorScheme.onSurface
-                                          .withOpacity(isDark ? 0.2 : 0.1),
+                                          .withValues(alpha: isDark ? 0.2 : 0.1),
                                   width: 1.5,
                                 ),
                               ),
@@ -193,7 +193,7 @@ class SlotSelectionWidgets {
                                     color: isSel
                                         ? color
                                         : colorScheme.onSurface
-                                            .withOpacity(isDark ? 0.5 : 0.4),
+                                            .withValues(alpha: isDark ? 0.5 : 0.4),
                                   ),
                                   const AppSizedBox(width: 10),
                                   Flexible(
@@ -209,7 +209,7 @@ class SlotSelectionWidgets {
                                         color: isSel
                                             ? color
                                             : colorScheme.onSurface
-                                                .withOpacity(
+                                                .withValues(alpha: 
                                                     isDark ? 0.5 : 0.4),
                                       ),
                                     ),
@@ -225,7 +225,7 @@ class SlotSelectionWidgets {
                             height: 24,
                             margin: const EdgeInsets.symmetric(horizontal: 4),
                             color: colorScheme.onSurface
-                                .withOpacity(isDark ? 0.15 : 0.1),
+                                .withValues(alpha: isDark ? 0.15 : 0.1),
                           ),
                       ];
                     })
@@ -263,7 +263,7 @@ class SlotSelectionWidgets {
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1,
-                color: colorScheme.onSurface.withOpacity(0.5),
+                color: colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ),
           ),
@@ -290,16 +290,16 @@ class SlotSelectionWidgets {
                         color: isSelected
                             ? AppColors.primaryDarkGreen
                             : (isAvailable
-                                ? AppColors.primaryDarkGreen.withOpacity(0.05)
-                                : Colors.grey.withOpacity(0.1)),
+                                ? AppColors.primaryDarkGreen.withValues(alpha: 0.05)
+                                : Colors.grey.withValues(alpha: 0.1)),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: isSelected
                               ? AppColors.primaryDarkGreen
                               : (isAvailable
                                   ? AppColors.primaryDarkGreen
-                                      .withOpacity(0.2)
-                                  : Colors.grey.withOpacity(0.3)),
+                                      .withValues(alpha: 0.2)
+                                  : Colors.grey.withValues(alpha: 0.3)),
                           width: 1,
                         ),
                       ),
@@ -337,7 +337,7 @@ class SlotSelectionWidgets {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: Colors.red.withOpacity(0.1),
+                                color: Colors.red.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const AppText(
@@ -373,7 +373,7 @@ class SlotSelectionWidgets {
       decoration: BoxDecoration(
         color: theme.cardColor,
         border: Border(
-            bottom: BorderSide(color: theme.dividerColor.withOpacity(0.1))),
+            bottom: BorderSide(color: theme.dividerColor.withValues(alpha: 0.1))),
       ),
       child: Row(
         children: [
@@ -384,11 +384,11 @@ class SlotSelectionWidgets {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: _getSportColor(state.selectedSport!).withOpacity(0.1),
+                  color: _getSportColor(state.selectedSport!).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                       color: _getSportColor(state.selectedSport!)
-                          .withOpacity(0.3)),
+                          .withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
@@ -418,10 +418,10 @@ class SlotSelectionWidgets {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryDarkGreen.withOpacity(0.1),
+                    color: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                        color: AppColors.primaryDarkGreen.withOpacity(0.3)),
+                        color: AppColors.primaryDarkGreen.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
@@ -469,7 +469,7 @@ class SlotSelectionWidgets {
                             ? Colors.transparent
                             : (isActive || isCompleted
                                 ? AppColors.primaryDarkGreen
-                                : Colors.grey.withOpacity(0.3)),
+                                : Colors.grey.withValues(alpha: 0.3)),
                         thickness: 2)),
                 Container(
                   width: 28,
@@ -484,14 +484,14 @@ class SlotSelectionWidgets {
                     border: Border.all(
                       color: isActive || isCompleted
                           ? AppColors.primaryDarkGreen
-                          : Colors.grey.withOpacity(0.3),
+                          : Colors.grey.withValues(alpha: 0.3),
                       width: 2,
                     ),
                     boxShadow: isActive
                         ? [
                             BoxShadow(
                                 color:
-                                    AppColors.primaryDarkGreen.withOpacity(0.3),
+                                    AppColors.primaryDarkGreen.withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 spreadRadius: 1)
                           ]
@@ -516,7 +516,7 @@ class SlotSelectionWidgets {
                             ? Colors.transparent
                             : (isCompleted && currentStep > index
                                 ? AppColors.primaryDarkGreen
-                                : Colors.grey.withOpacity(0.3)),
+                                : Colors.grey.withValues(alpha: 0.3)),
                         thickness: 2)),
               ],
             ),
@@ -583,13 +583,13 @@ class SlotSelectionWidgets {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        color.withOpacity(0.8),
+                        color.withValues(alpha: 0.8),
                         color,
                       ],
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: color.withOpacity(0.3),
+                        color: color.withValues(alpha: 0.3),
                         blurRadius: 12,
                         offset: const Offset(0, 6),
                       )
@@ -603,7 +603,7 @@ class SlotSelectionWidgets {
                         child: Icon(
                           _getSportIcon(sport),
                           size: 80,
-                          color: Colors.white.withOpacity(0.15),
+                          color: Colors.white.withValues(alpha: 0.15),
                         ),
                       ),
                       Padding(
@@ -614,7 +614,7 @@ class SlotSelectionWidgets {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
+                                color: Colors.white.withValues(alpha: 0.2),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
@@ -679,7 +679,7 @@ class SlotSelectionWidgets {
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
+                        color: Colors.black.withValues(alpha: 0.04),
                         blurRadius: 16,
                         offset: const Offset(0, 4),
                       )
@@ -706,7 +706,7 @@ class SlotSelectionWidgets {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 10, vertical: 6),
                                   decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.5),
+                                    color: Colors.black.withValues(alpha: 0.5),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: const Row(
@@ -782,7 +782,7 @@ class SlotSelectionWidgets {
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
                                   color: AppColors.primaryDarkGreen
-                                      .withOpacity(0.1),
+                                      .withValues(alpha: 0.1),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(Icons.arrow_forward_ios,
@@ -807,31 +807,63 @@ class SlotSelectionWidgets {
   static List<Widget> _getAmenityIcons(List<String>? amenities) {
     if (amenities == null) return [];
     return amenities.map((a) {
-      IconData icon;
-      switch (a.toLowerCase()) {
-        case 'wifi':
-          icon = Icons.wifi;
-          break;
-        case 'parking':
-          icon = Icons.local_parking;
-          break;
-        case 'water':
-          icon = Icons.water_drop;
-          break;
-        case 'washroom':
-          icon = Icons.wc;
-          break;
-        case 'changing room':
-          icon = Icons.door_front_door;
-          break;
-        default:
-          icon = Icons.check_circle_outline;
-      }
       return Padding(
         padding: const EdgeInsets.only(right: 8),
-        child: Icon(icon, size: 14, color: Colors.grey),
+        child: Icon(_getAmenityIconData(a), size: 14, color: Colors.grey),
       );
     }).toList();
+  }
+
+  static IconData _getAmenityIconData(String label) {
+    switch (label.toLowerCase()) {
+      case 'wifi':
+        return Icons.wifi;
+      case 'parking':
+        return Icons.local_parking;
+      case 'water':
+      case 'drinking water':
+        return Icons.water_drop;
+      case 'washroom':
+      case 'toilet':
+        return Icons.wc;
+      case 'changing room':
+        return Icons.door_front_door;
+      case 'cafeteria':
+      case 'canteen':
+        return Icons.restaurant;
+      case 'first aid':
+        return Icons.medical_services;
+      case 'cctv':
+        return Icons.videocam;
+      default:
+        return Icons.check_circle_outline;
+    }
+  }
+
+  static dynamic getAmenityHugeIcon(String label) {
+    switch (label.toLowerCase()) {
+      case 'wifi':
+        return HugeIcons.strokeRoundedWifi01;
+      case 'parking':
+        return HugeIcons.strokeRoundedCarParking01;
+      case 'water':
+      case 'drinking water':
+        return HugeIcons.strokeRoundedDroplet;
+      case 'washroom':
+      case 'toilet':
+        return HugeIcons.strokeRoundedToilet01;
+      case 'changing room':
+        return HugeIcons.strokeRoundedDoor01;
+      case 'cafeteria':
+      case 'canteen':
+        return HugeIcons.strokeRoundedRestaurant01;
+      case 'first aid':
+        return HugeIcons.strokeRoundedFirstAidKit;
+      case 'cctv':
+        return HugeIcons.strokeRoundedCctvCamera;
+      default:
+        return HugeIcons.strokeRoundedCheckList;
+    }
   }
 
   static Color _getSportColor(String sport) {
@@ -892,32 +924,11 @@ class SlotSelectionWidgets {
       ),
       child: Stack(
         children: [
-          // Real Ground Image
-          ClipRRect(
+          GroundImageCarousel(
+            images: ground?.images ?? [],
+            fallbackImageUrl: ground?.imageUrl ?? "",
+            height: 175,
             borderRadius: BorderRadius.circular(16),
-            child: AppNetworkImage(
-              imageUrl: (ground?.imageUrl != null &&
-                      ground!.imageUrl.isNotEmpty)
-                  ? ground.imageUrl
-                  : "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e",
-              height: 175,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
-          ),
-          // Dark overlay for better text contrast if needed
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  Colors.black.withValues(alpha: 0.4),
-                ],
-              ),
-            ),
           ),
           // Badges
           if ((totalReviews ?? ground?.totalReviews ?? 0) > 0)
@@ -1085,69 +1096,61 @@ class SlotSelectionWidgets {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    final periods = ['Midnight', 'Morning', 'Evening', 'Night'];
+    final periods = ['Midnight', 'Day', 'Evening', 'Night'];
 
     return Container(
       color: colorScheme.surface,
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: periods.map((p) {
-            final isSel = p == selectedPeriod;
-            final accentColor = isDark ? AppColors.primaryLightGreen : AppColors.primaryDarkGreen;
-            
-            return Padding(
-              padding: const EdgeInsets.only(right: 24),
-              child: GestureDetector(
-                onTap: () => onSelect(p),
-                behavior: HitTestBehavior.opaque,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Radio Indicator
-                    AnimatedContainer(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: periods.map((p) {
+          final isSel = p == selectedPeriod;
+          final accentColor = isDark ? AppColors.primaryLightGreen : AppColors.primaryDarkGreen;
+          
+          return GestureDetector(
+            onTap: () => onSelect(p),
+            behavior: HitTestBehavior.opaque,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Radio Indicator
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSel ? accentColor : colorScheme.onSurface.withValues(alpha: 0.2),
+                      width: 2,
+                    ),
+                  ),
+                  child: Center(
+                    child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      width: 20,
-                      height: 20,
+                      width: isSel ? 10 : 0,
+                      height: isSel ? 10 : 0,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(
-                          color: isSel ? accentColor : colorScheme.onSurface.withOpacity(0.3),
-                          width: 2,
-                        ),
-                      ),
-                      child: Center(
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          width: isSel ? 10 : 0,
-                          height: isSel ? 10 : 0,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: accentColor,
-                          ),
-                        ),
+                        color: accentColor,
                       ),
                     ),
-                    const AppSizedBox(width: 10),
-                    // Period Text
-                    AppText(
-                      text: p,
-                      textStyle: TextStyle(
-                        fontSize: 14,
-                        fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
-                        color: isSel ? colorScheme.onSurface : colorScheme.onSurface.withOpacity(0.6),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            );
-          }).toList(),
-        ),
+                const AppSizedBox(height: 8),
+                // Period Text
+                AppText(
+                  text: p,
+                  textStyle: TextStyle(
+                    fontSize: 11,
+                    fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
+                    color: isSel ? colorScheme.onSurface : colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
       ),
     );
   }
@@ -1185,6 +1188,82 @@ class SlotSelectionWidgets {
     );
   }
 
+  static Widget buildErrorWidget(BuildContext context, String message, VoidCallback onRetry) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.red.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.wifi_off_rounded,
+              size: 48,
+              color: Colors.red,
+            ),
+          ),
+          const AppSizedBox(height: 24),
+          AppText(
+            text: "Connection Error",
+            textStyle: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const AppSizedBox(height: 12),
+          AppText(
+            text: message,
+            textStyle: TextStyle(
+              fontSize: 14,
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
+              height: 1.5,
+            ),
+            align: TextAlign.center,
+          ),
+          const AppSizedBox(height: 32),
+          SizedBox(
+            width: 160,
+            child: ElevatedButton(
+              onPressed: onRetry,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryDarkGreen,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.refresh_rounded, size: 20),
+                  SizedBox(width: 8),
+                  AppText(
+                    text: "Retry",
+                    textStyle: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   static Widget buildSlotShimmer(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -1194,9 +1273,9 @@ class SlotSelectionWidgets {
       margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.all(16),
       child: Shimmer.fromColors(
-        baseColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[300]!,
+        baseColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[300]!,
         highlightColor:
-            isDark ? Colors.white.withOpacity(0.1) : Colors.grey[100]!,
+            isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey[100]!,
         child: GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -1284,9 +1363,9 @@ class SlotSelectionWidgets {
       priceColor = AppColors.accentOrange;
     } else if (isBooked) {
       borderColor = Colors.transparent;
-      timeColor = colorScheme.onSurface.withOpacity(0.35);
-      subColor = colorScheme.onSurface.withOpacity(0.25);
-      priceColor = colorScheme.onSurface.withOpacity(0.25);
+      timeColor = colorScheme.onSurface.withValues(alpha: 0.35);
+      subColor = colorScheme.onSurface.withValues(alpha: 0.25);
+      priceColor = colorScheme.onSurface.withValues(alpha: 0.25);
       statusIcon = null;
       iconColor = null;
     } else if (isAdvance) {
@@ -1296,7 +1375,7 @@ class SlotSelectionWidgets {
     } else {
       // Available
       borderColor =
-          AppColors.slotAvailableBorder.withOpacity(isDark ? 0.3 : 0.15);
+          AppColors.slotAvailableBorder.withValues(alpha: isDark ? 0.3 : 0.15);
       statusIcon = Icons.check_circle;
       iconColor = AppColors.slotAvailableBorder;
     }
@@ -1319,8 +1398,8 @@ class SlotSelectionWidgets {
         decoration: BoxDecoration(
           color: isBooked
               ? (isDark
-                  ? Colors.white.withOpacity(0.05)
-                  : Colors.grey.withOpacity(0.08))
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : Colors.grey.withValues(alpha: 0.08))
               : colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
@@ -1335,7 +1414,7 @@ class SlotSelectionWidgets {
                 ]
               : [
                   BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.03),
+                    color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.03),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   )
@@ -1425,7 +1504,7 @@ class SlotSelectionWidgets {
         boxShadow: [
           BoxShadow(
             color: Colors.black
-                .withOpacity(theme.brightness == Brightness.dark ? 0.3 : 0.1),
+                .withValues(alpha: theme.brightness == Brightness.dark ? 0.3 : 0.1),
             blurRadius: 16,
             offset: const Offset(0, -4),
           )
@@ -1444,7 +1523,7 @@ class SlotSelectionWidgets {
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1,
-                  color: colorScheme.onSurface.withOpacity(0.5),
+                  color: colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
               ),
               AppText(
@@ -1453,7 +1532,7 @@ class SlotSelectionWidgets {
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1,
-                  color: colorScheme.onSurface.withOpacity(0.5),
+                  color: colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
               ),
             ],
@@ -1584,62 +1663,42 @@ class SlotSelectionWidgets {
           Wrap(
             spacing: 12,
             runSpacing: 12,
-            children: amenities.map((a) => _amenityChip(context, a)).toList(),
+            children: amenities.map((a) => amenityChip(context, a)).toList(),
           ),
         ],
       ),
     );
   }
 
-  static Widget _amenityChip(BuildContext context, String label) {
+  static Widget amenityChip(BuildContext context, String label) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    dynamic icon;
-    switch (label.toLowerCase()) {
-      case 'parking':
-        icon = HugeIcons.strokeRoundedLocation01; // Use a known working one
-        break;
-      case 'washroom':
-      case 'toilet':
-        icon = HugeIcons.strokeRoundedLocation01;
-        break;
-      case 'water':
-      case 'drinking water':
-        icon = HugeIcons.strokeRoundedLocation01;
-        break;
-      case 'changing room':
-        icon = HugeIcons.strokeRoundedLocation01;
-        break;
-      case 'cafeteria':
-      case 'canteen':
-        icon = HugeIcons.strokeRoundedLocation01;
-        break;
-      case 'first aid':
-        icon = HugeIcons.strokeRoundedLocation01;
-        break;
-      default:
-        icon = HugeIcons.strokeRoundedLocation01;
-    }
+    final icon = getAmenityHugeIcon(label);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: theme.dividerColor),
+        color: AppColors.primaryDarkGreen.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          HugeIcon(icon: icon, size: 16, color: kOrange),
+          HugeIcon(
+            icon: icon,
+            size: 16,
+            color: AppColors.primaryDarkGreen,
+          ),
           const AppSizedBox(width: 8),
           AppText(
             text: label,
-            align: TextAlign.left,
             textStyle: TextStyle(
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: colorScheme.onSurface,
+              color: colorScheme.onSurface.withValues(alpha: 0.8),
             ),
           ),
         ],
@@ -1898,7 +1957,7 @@ class SlotSelectionWidgets {
                     text: 'Average Rating',
                     textStyle: TextStyle(
                       fontSize: 12,
-                      color: colorScheme.onSurface.withOpacity(0.5),
+                      color: colorScheme.onSurface.withValues(alpha: 0.5),
                       fontWeight: FontWeight.w500,
                     ),
                   ),

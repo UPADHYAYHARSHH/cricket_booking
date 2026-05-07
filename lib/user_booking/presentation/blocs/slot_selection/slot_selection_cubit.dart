@@ -39,7 +39,7 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
   static String _getCurrentPeriod() {
     final hour = DateTime.now().hour;
     if (hour < 6) return 'Midnight';
-    if (hour < 12) return 'Morning';
+    if (hour < 12) return 'Day';
     if (hour < 18) return 'Evening';
     return 'Night';
   }
@@ -82,7 +82,7 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
   }
 
   Future<void> initFacility(GroundModel initialGround) async {
-    emit(state.copyWith(isLoading: true, selectedTurf: initialGround));
+    emit(state.copyWith(isLoading: true, selectedTurf: initialGround, errorMessage: null));
 
     try {
       final grounds = await groundRepository.fetchGrounds();

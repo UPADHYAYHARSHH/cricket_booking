@@ -33,6 +33,11 @@ class _GroundListScreenState extends State<GroundListScreen> {
 
   final List<Map<String, dynamic>> _sportCategories = [
     {
+      'id': 'all',
+      'name': 'All',
+      'icon': HugeIcons.strokeRoundedDashboardSquare01,
+    },
+    {
       'id': 'cricket',
       'name': 'Cricket',
       'icon': HugeIcons.strokeRoundedCricketBat,
@@ -86,7 +91,6 @@ class _GroundListScreenState extends State<GroundListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final locationCubit = context.read<LocationCubit>();
 
     return BlocListener<LocationCubit, LocationState>(
       listenWhen: (previous, current) =>
@@ -155,7 +159,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
                       color: Theme.of(context)
                           .colorScheme
                           .onSurface
-                          .withOpacity(0.5),
+                          .withValues(alpha: 0.5),
                       size: 20,
                     ),
                   ],
@@ -309,7 +313,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
                                   color: Theme.of(context)
                                       .colorScheme
                                       .onSurface
-                                      .withOpacity(0.4),
+                                      .withValues(alpha: 0.5),
                                 ),
                                 const AppSizedBox(width: 10),
                                 AppText(
@@ -318,7 +322,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
                                     color: Theme.of(context)
                                         .colorScheme
                                         .onSurface
-                                        .withOpacity(0.4),
+                                        .withValues(alpha: 0.4),
                                     fontSize: 14,
                                   ),
                                 ),
@@ -351,7 +355,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
                                   boxShadow: [
                                     BoxShadow(
                                       color: AppColors.primaryDarkGreen
-                                          .withOpacity(0.3),
+                                          .withValues(alpha: 0.4),
                                       blurRadius: 10,
                                       offset: const Offset(0, 4),
                                     ),
@@ -440,7 +444,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
                                       color: Theme.of(context)
                                           .colorScheme
                                           .onSurface
-                                          .withOpacity(0.05),
+                                          .withValues(alpha: 0.05),
                                       shape: BoxShape.circle,
                                     ),
                                     child: const HugeIcon(
@@ -472,7 +476,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
                                 color: Theme.of(context)
                                     .colorScheme
                                     .onSurface
-                                    .withOpacity(0.5),
+                                    .withValues(alpha: 0.5),
                               ),
                             ).animate().fadeIn(delay: 500.ms),
                           ],
@@ -528,59 +532,89 @@ class _GroundListScreenState extends State<GroundListScreen> {
   }
 
   Widget _buildSportSelection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const AppText(
-            text: "Popular Sports",
-            textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const AppSizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: _sportCategories.map((sport) {
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.pushNamed(
-                      context,
-                      AppRoutes.categoryGrounds,
-                      arguments: sport['name'],
-                    );
-                  },
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryDarkGreen.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: HugeIcon(
-                          icon: sport['icon'],
-                          color: AppColors.primaryDarkGreen,
-                          size: 28,
-                        ),
+    return BlocBuilder<GroundCubit, GroundState>(
+      builder: (context, state) {
+        final currentSportId = (state is GroundLoaded) 
+            ? (state.criteria.sportId ?? 'all') 
+            : 'all';
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: AppText(
+                text: "Popular Sports",
+                textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const AppSizedBox(height: 16),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                children: _sportCategories.map((sport) {
+                  final isSelected = currentSportId == sport['id'];
+                  
+                  return GestureDetector(
+                    onTap: () {
+                      if (state is GroundLoaded) {
+                        final locationState = context.read<LocationCubit>().state;
+                        context.read<GroundCubit>().applyFilters(
+                          state.criteria.copyWith(sportId: sport['id']),
+                          userLat: locationState.hasGpsLocation ? locationState.latitude : null,
+                          userLng: locationState.hasGpsLocation ? locationState.longitude : null,
+                        );
+                      }
+                    },
+                    child: Container(
+                      width: 85,
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Column(
+                        children: [
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isSelected 
+                                  ? AppColors.primaryDarkGreen 
+                                  : AppColors.primaryDarkGreen.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                              boxShadow: isSelected ? [
+                                BoxShadow(
+                                  color: AppColors.primaryDarkGreen.withValues(alpha: 0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                )
+                              ] : null,
+                            ),
+                            child: HugeIcon(
+                              icon: sport['icon'],
+                              color: isSelected ? Colors.white : AppColors.primaryDarkGreen,
+                              size: 28,
+                            ),
+                          ),
+                          const AppSizedBox(height: 8),
+                          AppText(
+                            text: sport['name'],
+                            textStyle: TextStyle(
+                              fontSize: 12,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                              color: isSelected 
+                                  ? AppColors.primaryDarkGreen 
+                                  : Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                        ],
                       ),
-                      const AppSizedBox(height: 8),
-                      AppText(
-                        text: sport['name'],
-                        textStyle: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

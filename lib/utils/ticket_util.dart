@@ -50,6 +50,9 @@ class TicketUtil {
     required String orderId,
     required int displayId,
     required double totalPrice,
+    required String sportName,
+    required String selectedPeriod,
+    List<String>? amenities,
     VoidCallback? onLoadingStarted,
     VoidCallback? onLoadingFinished,
   }) async {
@@ -65,6 +68,9 @@ class TicketUtil {
         orderId: orderId,
         displayId: displayId,
         totalPrice: totalPrice,
+        sportName: sportName,
+        selectedPeriod: selectedPeriod,
+        amenities: amenities,
       );
 
       final fileName =
@@ -140,6 +146,9 @@ class TicketUtil {
     required String orderId,
     required int displayId,
     required double totalPrice,
+    required String sportName,
+    required String selectedPeriod,
+    List<String>? amenities,
   }) async {
     final pdf = pw.Document();
 
@@ -299,10 +308,57 @@ class TicketUtil {
                           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                           children: [
                             _pdfInfoBlock('BOOKING ID', '#$shortId'),
+                            _pdfInfoBlock('SPORT', sportName.toUpperCase(),
+                                alignRight: true),
+                          ],
+                        ),
+                        pw.SizedBox(height: 24),
+                        pw.Row(
+                          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                          children: [
+                            _pdfInfoBlock('PERIOD', selectedPeriod.toUpperCase()),
                             _pdfInfoBlock('PRICE PAID', formattedPrice,
                                 alignRight: true),
                           ],
                         ),
+                        if (amenities != null && amenities.isNotEmpty) ...[
+                          pw.SizedBox(height: 24),
+                          pw.Container(
+                            width: double.infinity,
+                            child: pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.start,
+                              children: [
+                                pw.Text(
+                                  'AMENITIES',
+                                  style: pw.TextStyle(
+                                      color: _kGrey,
+                                      fontSize: 8,
+                                      fontWeight: pw.FontWeight.bold,
+                                      letterSpacing: 1),
+                                ),
+                                pw.SizedBox(height: 8),
+                                pw.Wrap(
+                                  spacing: 12,
+                                  runSpacing: 8,
+                                  children: amenities.take(6).map((amenity) {
+                                    return pw.Container(
+                                      padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: pw.BoxDecoration(
+                                        color: _kBg,
+                                        borderRadius: pw.BorderRadius.circular(4),
+                                        border: pw.Border.all(color: _kBorder, width: 0.5),
+                                      ),
+                                      child: pw.Text(
+                                        amenity,
+                                        style: pw.TextStyle(color: _kGreen, fontSize: 8, fontWeight: pw.FontWeight.bold),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                         pw.SizedBox(height: 24),
                         pw.Container(
                           width: double.infinity,

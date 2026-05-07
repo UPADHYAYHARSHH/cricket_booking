@@ -15,7 +15,8 @@ import 'package:turfpro/utils/toast_util.dart';
 import 'package:turfpro/utils/ticket_util.dart'; // Add TicketUtil
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:turfpro/utils/id_util.dart';
-import 'package:turfpro/user_booking/presentation/widgets/slot_selection_widgets.dart';
+import '../../widgets/ground_image_carousel.dart';
+import '../../widgets/slot_selection_widgets.dart';
 
 class BookingConfirmationScreen extends StatefulWidget {
   const BookingConfirmationScreen({super.key});
@@ -37,6 +38,9 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
     String orderId,
     int displayId,
     double totalPrice,
+    String sportName,
+    String selectedPeriod,
+    List<String>? amenities,
   ) async {
     await TicketUtil.downloadTicket(
       context,
@@ -48,6 +52,9 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
       orderId: orderId,
       displayId: displayId,
       totalPrice: totalPrice,
+      sportName: sportName,
+      selectedPeriod: selectedPeriod,
+      amenities: amenities,
       onLoadingStarted: () => setState(() => _isSaving = true),
       onLoadingFinished: () {
         if (mounted) setState(() => _isSaving = false);
@@ -202,6 +209,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                 totalPrice: totalPrice,
                 groundAddress: ground.address,
                 sportName: args.sportName,
+                period: args.selectedPeriod,
               ),
 
               const AppSizedBox(height: 20),
@@ -230,6 +238,9 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                           orderId,
                           displayId,
                           totalPrice,
+                          args.sportName,
+                          args.selectedPeriod,
+                          ground.amenities,
                         ),
                 icon: _isSaving
                     ? const SizedBox(
@@ -383,21 +394,11 @@ class _VenueCard extends StatelessWidget {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             child: Stack(
               children: [
-                SizedBox(
+                GroundImageCarousel(
+                  images: ground.images ?? [],
+                  fallbackImageUrl: ground.imageUrl ?? "",
                   height: 160,
-                  width: double.infinity,
-                  child: Image.network(
-                    ground.imageUrl ??
-                        "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e",
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      color: Colors.grey.shade200,
-                      child: const Center(
-                        child: Icon(Icons.sports_cricket,
-                            size: 40, color: Colors.grey),
-                      ),
-                    ),
-                  ),
+                  borderRadius: BorderRadius.zero,
                 ),
                 Container(
                   height: 160,
@@ -459,19 +460,15 @@ class _VenueCard extends StatelessWidget {
               ],
             ),
           ),
-          if (ground.amenities.isNotEmpty)
+          if (ground.amenities != null && ground.amenities.isNotEmpty)
             Padding(
               padding: const EdgeInsets.all(16),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: ground.amenities.map<Widget>((amenity) {
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 16),
-                      child: _buildAmenity(_getAmenityIcon(amenity), amenity),
-                    );
-                  }).toList(),
-                ),
+              child: Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: (ground.amenities as List<dynamic>).map<Widget>((amenity) {
+                  return _buildAmenity(amenity.toString());
+                }).toList(),
               ),
             ),
         ],
@@ -479,26 +476,22 @@ class _VenueCard extends StatelessWidget {
     );
   }
 
-  IconData _getAmenityIcon(String amenity) {
-    final lower = amenity.toLowerCase();
-    if (lower.contains('wifi')) return Icons.wifi;
-    if (lower.contains('parking')) return Icons.local_parking;
-    if (lower.contains('washroom') || lower.contains('toilet')) return Icons.wc;
-    if (lower.contains('water')) return Icons.local_drink;
-    if (lower.contains('cctv')) return Icons.videocam;
-    if (lower.contains('cafeteria') || lower.contains('food')) return Icons.restaurant;
-    return Icons.check_circle_outline;
-  }
-
-  Widget _buildAmenity(IconData icon, String label) {
+  Widget _buildAmenity(String label) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: AppColors.primaryDarkGreen),
+        HugeIcon(
+          icon: SlotSelectionWidgets.getAmenityHugeIcon(label),
+          size: 14,
+          color: AppColors.primaryDarkGreen,
+        ),
         const AppSizedBox(width: 6),
         AppText(
           text: label,
-          textStyle: AppTextTheme.grey11.copyWith(
+          textStyle: TextStyle(
+            fontSize: 11,
             fontWeight: FontWeight.w600,
+            color: Colors.grey.withValues(alpha: 0.8),
           ),
         ),
       ],
@@ -514,6 +507,7 @@ class _BookingDetailsCard extends StatelessWidget {
   final double totalPrice;
   final String sportName;
   final String groundAddress;
+  final String period;
 
   const _BookingDetailsCard({
     required this.date,
@@ -523,6 +517,7 @@ class _BookingDetailsCard extends StatelessWidget {
     required this.totalPrice,
     required this.groundAddress,
     required this.sportName,
+    required this.period,
   });
 
   @override
@@ -550,11 +545,25 @@ class _BookingDetailsCard extends StatelessWidget {
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Divider(height: 1),
           ),
-          _buildDetailRow(
-            context,
-            "Sport selected",
-            sportName,
-            Icons.sports_cricket_outlined,
+          Row(
+            children: [
+              Expanded(
+                child: _buildDetailRow(
+                  context,
+                  "Sport",
+                  sportName,
+                  Icons.sports_cricket_outlined,
+                ),
+              ),
+              Expanded(
+                child: _buildDetailRow(
+                  context,
+                  "Period",
+                  period,
+                  Icons.wb_sunny_outlined,
+                ),
+              ),
+            ],
           ),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
@@ -595,14 +604,14 @@ class _BookingDetailsCard extends StatelessWidget {
             children: [
               AppText(
                 text: "Total Amount",
-                textStyle: AppTextTheme.black15.copyWith(
+                textStyle: TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: colorScheme.onSurface.withOpacity(0.6),
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
               AppText(
                 text: "₹${totalPrice.toStringAsFixed(0)}",
-                textStyle: AppTextTheme.black18.copyWith(
+                textStyle: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
                   color: AppColors.primaryDarkGreen,
@@ -614,6 +623,7 @@ class _BookingDetailsCard extends StatelessWidget {
       ),
     );
   }
+
 
   Widget _buildDetailRow(
       BuildContext context, String label, String value, IconData icon) {

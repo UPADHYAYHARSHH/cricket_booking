@@ -8,8 +8,8 @@ class BookingSuccessArguments {
   final String orderId;
   final int displayId;
   final double totalPrice;
-
   final String sportName;
+  final String selectedPeriod;
 
   BookingSuccessArguments({
     required this.ground,
@@ -19,6 +19,25 @@ class BookingSuccessArguments {
     required this.displayId,
     required this.totalPrice,
     required this.sportName,
+    required this.selectedPeriod,
+  });
+}
+
+class BookingSummaryArguments {
+  final GroundModel ground;
+  final String selectedSport;
+  final List<TimeSlot> selectedSlots;
+  final dynamic activeDate;
+  final String selectedPeriod;
+  final double basePrice;
+
+  BookingSummaryArguments({
+    required this.ground,
+    required this.selectedSport,
+    required this.selectedSlots,
+    required this.activeDate,
+    required this.selectedPeriod,
+    required this.basePrice,
   });
 }
 

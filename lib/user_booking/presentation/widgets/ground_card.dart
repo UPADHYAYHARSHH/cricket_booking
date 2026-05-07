@@ -12,9 +12,10 @@ import 'package:turfpro/user_booking/presentation/blocs/saved_ground/saved_groun
 
 import 'package:turfpro/user_booking/constants/route_constants.dart';
 import 'package:turfpro/user_booking/constants/text_theme.dart';
-import 'package:turfpro/user_booking/constants/widgets/app_network_image.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import 'package:turfpro/user_booking/data/models/ground_model.dart';
+import 'package:turfpro/user_booking/presentation/widgets/ground_image_carousel.dart';
+import 'package:turfpro/user_booking/presentation/widgets/slot_selection_widgets.dart';
 
 class GroundCard extends StatefulWidget {
   final GroundModel ground;
@@ -29,15 +30,6 @@ class GroundCard extends StatefulWidget {
 }
 
 class _GroundCardState extends State<GroundCard> {
-  final PageController _pageController = PageController();
-  int _currentPage = 0;
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -50,7 +42,8 @@ class _GroundCardState extends State<GroundCard> {
         boxShadow: [
           BoxShadow(
             blurRadius: 10,
-            color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.2 : 0.06),
+            color: Colors.black.withValues(
+                alpha: theme.brightness == Brightness.dark ? 0.2 : 0.06),
             offset: const Offset(0, 4),
           )
         ],
@@ -80,82 +73,14 @@ class _GroundCardState extends State<GroundCard> {
   }
 
   Widget _buildImageSlider(BuildContext context) {
-    final displayImages = widget.ground.images.isNotEmpty 
-        ? widget.ground.images 
-        : [widget.ground.imageUrl.isNotEmpty ? widget.ground.imageUrl : "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e"];
-
     return Stack(
       children: [
-        SizedBox(
+        GroundImageCarousel(
+          images: widget.ground.images,
+          fallbackImageUrl: widget.ground.imageUrl,
           height: 160,
-          child: ClipRRect(
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(18),
-            ),
-            child: PageView.builder(
-              controller: _pageController,
-              onPageChanged: (index) {
-                setState(() {
-                  _currentPage = index;
-                });
-              },
-              itemCount: displayImages.length,
-              itemBuilder: (context, index) {
-                return AppNetworkImage(
-                  imageUrl: displayImages[index],
-                  height: 160,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                );
-              },
-            ),
-          ),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
         ),
-        
-        // Smooth dark gradient overlay for text/badges readability
-        Positioned.fill(
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  Colors.black.withOpacity(0.1),
-                  Colors.black.withOpacity(0.6),
-                ],
-                stops: const [0.0, 0.5, 1.0],
-              ),
-            ),
-          ),
-        ),
-
-        // Custom Dot Indicator
-        if (displayImages.length > 1)
-          Positioned(
-            bottom: 12,
-            right: 0,
-            left: 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                displayImages.length,
-                (index) => AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  height: 6,
-                  width: _currentPage == index ? 16 : 6,
-                  decoration: BoxDecoration(
-                    color: _currentPage == index 
-                        ? AppColors.white 
-                        : AppColors.white.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                ),
-              ),
-            ),
-          ),
 
         // Favorite Button
         Positioned(
@@ -182,11 +107,11 @@ class _GroundCardState extends State<GroundCard> {
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor.withOpacity(0.9),
+                    color: Theme.of(context).cardColor.withValues(alpha: 0.9),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 6,
                       ),
                     ],
@@ -199,7 +124,7 @@ class _GroundCardState extends State<GroundCard> {
                         )
                       : HugeIcon(
                           icon: HugeIcons.strokeRoundedFavourite,
-                          color: Colors.grey.withOpacity(0.5),
+                          color: Colors.grey.withValues(alpha: 0.5),
                           size: 18,
                         ),
                 ),
@@ -208,7 +133,6 @@ class _GroundCardState extends State<GroundCard> {
           ),
         ),
 
-        
         // Distance Badge
         Positioned(
           bottom: 12,
@@ -226,11 +150,12 @@ class _GroundCardState extends State<GroundCard> {
                   widget.ground.longitude,
                 );
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.65),
+                    color: Colors.black.withValues(alpha: 0.65),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.white.withOpacity(0.2)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
                   ),
                   child: Row(
                     children: [
@@ -278,13 +203,14 @@ class _GroundCardState extends State<GroundCard> {
                 ),
               ),
               const AppSizedBox(width: 8),
-              
+
               // Rating Badge
               if (widget.ground.totalReviews > 0)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.goldenYellow.withOpacity(0.12),
+                    color: AppColors.goldenYellow.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Row(
@@ -300,8 +226,8 @@ class _GroundCardState extends State<GroundCard> {
                         textStyle: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w800,
-                          color: theme.brightness == Brightness.dark 
-                              ? AppColors.goldenYellow 
+                          color: theme.brightness == Brightness.dark
+                              ? AppColors.goldenYellow
                               : const Color(0xFF856404),
                         ),
                       ),
@@ -310,7 +236,7 @@ class _GroundCardState extends State<GroundCard> {
                 ),
             ],
           ),
-          
+
           if (widget.ground.categories.isNotEmpty) ...[
             const AppSizedBox(height: 8),
             Wrap(
@@ -318,11 +244,13 @@ class _GroundCardState extends State<GroundCard> {
               runSpacing: 6,
               children: widget.ground.categories.map((category) {
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryDarkGreen.withOpacity(0.1),
+                    color: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: AppColors.primaryDarkGreen.withOpacity(0.2)),
+                    border: Border.all(
+                        color: AppColors.primaryDarkGreen.withValues(alpha: 0.2)),
                   ),
                   child: AppText(
                     text: category,
@@ -345,14 +273,14 @@ class _GroundCardState extends State<GroundCard> {
               HugeIcon(
                 icon: HugeIcons.strokeRoundedLocation01,
                 size: 14,
-                color: onSurface.withOpacity(0.5),
+                color: onSurface.withValues(alpha: 0.5),
               ),
               const AppSizedBox(width: 4),
               Expanded(
                 child: AppText(
                   text: widget.ground.address,
                   textStyle: AppTextTheme.black12.copyWith(
-                    color: onSurface.withOpacity(0.5),
+                    color: onSurface.withValues(alpha: 0.5),
                   ),
                 ),
               ),
@@ -367,14 +295,18 @@ class _GroundCardState extends State<GroundCard> {
                   padding: const EdgeInsets.only(right: 12),
                   child: Row(
                     children: [
-                      Icon(_getAmenityIcon(amenity), size: 12, color: AppColors.primaryDarkGreen),
+                      HugeIcon(
+                        icon: SlotSelectionWidgets.getAmenityHugeIcon(amenity),
+                        size: 14,
+                        color: AppColors.primaryDarkGreen,
+                      ),
                       const AppSizedBox(width: 4),
                       AppText(
                         text: amenity,
                         textStyle: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
-                          color: onSurface.withOpacity(0.6),
+                          color: onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                     ],
@@ -393,10 +325,10 @@ class _GroundCardState extends State<GroundCard> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                   AppText(
+                  AppText(
                     text: "Price",
                     textStyle: AppTextTheme.black12.copyWith(
-                      color: onSurface.withOpacity(0.5),
+                      color: onSurface.withValues(alpha: 0.5),
                     ),
                   ),
                   AppText(
@@ -415,16 +347,6 @@ class _GroundCardState extends State<GroundCard> {
     );
   }
 
-  IconData _getAmenityIcon(String amenity) {
-    final lower = amenity.toLowerCase();
-    if (lower.contains('wifi')) return Icons.wifi;
-    if (lower.contains('parking')) return Icons.local_parking;
-    if (lower.contains('washroom') || lower.contains('toilet')) return Icons.wc;
-    if (lower.contains('water')) return Icons.local_drink;
-    if (lower.contains('cctv')) return Icons.videocam;
-    if (lower.contains('cafeteria') || lower.contains('food')) return Icons.restaurant;
-    return Icons.check_circle_outline;
-  }
 
   double _calculateDistance(
       double lat1, double lon1, double lat2, double lon2) {

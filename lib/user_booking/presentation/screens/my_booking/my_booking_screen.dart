@@ -21,7 +21,7 @@ import 'package:turfpro/user_booking/di/get_it/get_it.dart';
 import 'package:turfpro/user_booking/domain/repositories/review_repository.dart';
 import 'package:turfpro/user_booking/presentation/widgets/add_review_bottom_sheet.dart';
 import 'package:turfpro/user_booking/presentation/widgets/slot_selection_widgets.dart';
-import 'package:turfpro/user_booking/constants/widgets/app_network_image.dart';
+import 'package:turfpro/user_booking/presentation/widgets/ground_image_carousel.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MyBookingsScreen extends StatefulWidget {
@@ -289,11 +289,11 @@ class _BookingCardState extends State<_BookingCard> {
   Widget _buildTopSection(BuildContext context) {
     return Stack(
       children: [
-        AppNetworkImage(
-          imageUrl: widget.booking.ground?.imageUrl ?? "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e",
+        GroundImageCarousel(
+          images: widget.booking.ground?.images ?? [],
+          fallbackImageUrl: widget.booking.ground?.imageUrl ?? "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e",
           height: 160,
-          width: double.infinity,
-          fit: BoxFit.cover,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
         ),
         
         // Status Badge
@@ -343,13 +343,26 @@ class _BookingCardState extends State<_BookingCard> {
                   text: DateFormat('EEE, d MMM').format(widget.booking.slotTime),
                   textStyle: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
                 const Icon(Icons.access_time_rounded, size: 14, color: Colors.white),
                 const SizedBox(width: 6),
                 AppText(
                   text: DateFormat('hh:mm a').format(widget.booking.slotTime),
                   textStyle: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                 ),
+                const Spacer(),
+                if (widget.booking.period != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.accentOrange,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: AppText(
+                      text: widget.booking.period!.toUpperCase(),
+                      textStyle: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -367,11 +380,34 @@ class _BookingCardState extends State<_BookingCard> {
           Row(
             children: [
               Expanded(
-                child: AppText(
-                  text: widget.booking.ground?.name ?? "Venue Name",
-                  textStyle: AppTextTheme.black16.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppText(
+                      text: widget.booking.ground?.name ?? "Venue Name",
+                      textStyle: AppTextTheme.black16.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (widget.booking.sportName != null) ...[
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: AppText(
+                          text: widget.booking.sportName!.toUpperCase(),
+                          textStyle: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primaryDarkGreen,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               AppText(
@@ -384,7 +420,7 @@ class _BookingCardState extends State<_BookingCard> {
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Row(
             children: [
               HugeIcon(
@@ -409,6 +445,7 @@ class _BookingCardState extends State<_BookingCard> {
       ),
     );
   }
+
 
   Widget _buildActionRow(BuildContext context) {
     final now = DateTime.now();
@@ -510,6 +547,9 @@ class _BookingCardState extends State<_BookingCard> {
             price: widget.booking.amount,
             imageUrl: widget.booking.ground?.imageUrl ?? "",
             isPaid: widget.booking.status == 'paid' || widget.booking.status == 'confirmed',
+            sportName: widget.booking.sportName ?? "Sport",
+            period: widget.booking.period ?? "Day",
+            amenities: widget.booking.ground?.amenities,
           ),
         ),
       ),
@@ -550,6 +590,9 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
       orderId: widget.ticket.bookingId,
       displayId: widget.ticket.displayId,
       totalPrice: widget.ticket.price,
+      sportName: widget.ticket.sportName,
+      selectedPeriod: widget.ticket.period,
+      amenities: widget.ticket.amenities,
       onLoadingStarted: () => setState(() => _isSaving = true),
       onLoadingFinished: () {
         if (mounted) setState(() => _isSaving = false);
@@ -881,6 +924,9 @@ class TicketModel {
   final double price;
   final String imageUrl;
   final bool isPaid;
+  final String sportName;
+  final String period;
+  final List<String>? amenities;
 
   TicketModel({
     required this.bookingId,
@@ -896,5 +942,8 @@ class TicketModel {
     required this.price,
     required this.imageUrl,
     required this.isPaid,
+    this.sportName = "Sport",
+    this.period = "Day",
+    this.amenities,
   });
 }

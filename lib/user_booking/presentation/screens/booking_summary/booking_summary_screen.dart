@@ -9,6 +9,10 @@ import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import 'package:turfpro/user_booking/data/models/ground_model.dart';
 import 'package:turfpro/user_booking/domain/models/slot_models.dart';
+import 'package:turfpro/user_booking/domain/models/booking_arguments.dart';
+import 'package:turfpro/user_booking/presentation/widgets/ground_image_carousel.dart';
+import 'package:turfpro/user_booking/presentation/widgets/slot_selection_widgets.dart';
+
 import 'package:turfpro/user_booking/presentation/blocs/slot_selection/slot_selection_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/slot_selection/slot_selection_state.dart';
 
@@ -20,14 +24,26 @@ class BookingSummaryScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
+    final rawArgs = ModalRoute.of(context)?.settings.arguments;
+
+    if (rawArgs == null || rawArgs is! BookingSummaryArguments) {
+      return Scaffold(
+        body: Center(
+          child: AppText(text: "Invalid booking data"),
+        ),
+      );
+    }
+
+    final args = rawArgs;
+    final ground = args.ground;
+    final selectedSlots = args.selectedSlots;
+    final basePrice = args.basePrice;
+    final activeDate = args.activeDate;
+    final selectedSport = args.selectedSport;
+    final selectedPeriod = args.selectedPeriod;
 
     return BlocBuilder<SlotSelectionCubit, SlotSelectionState>(
       builder: (context, state) {
-        final selectedSlots = state.slots.where((s) => s.status == SlotStatus.selected).toList();
-        final basePrice = selectedSlots.fold<double>(0, (sum, s) => sum + s.price);
-        final activeDate = state.dates.firstWhere((d) => d.isSelected);
-        final ground = ModalRoute.of(context)?.settings.arguments as GroundModel?;
-
         const double platformFee = 25.0;
 
         // Loyalty Points Logic
@@ -94,20 +110,14 @@ class BookingSummaryScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Large Header Image
+                        // Carousel Header
                         Stack(
                           children: [
-                            Image.network(
-                              ground?.imageUrl ?? "",
-                              height: 160,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
-                                height: 160,
-                                width: double.infinity,
-                                color: colorScheme.surfaceContainerHighest,
-                                child: const Icon(Icons.sports_cricket, size: 48, color: Colors.grey),
-                              ),
+                            GroundImageCarousel(
+                              images: ground.images,
+                              fallbackImageUrl: ground.imageUrl,
+                              height: 180,
+                              borderRadius: BorderRadius.zero,
                             ),
                             Positioned.fill(
                               child: Container(
@@ -146,7 +156,7 @@ class BookingSummaryScreen extends StatelessWidget {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.2),
+                                      color: AppColors.accentOrange,
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: AppText(
@@ -174,30 +184,26 @@ class BookingSummaryScreen extends StatelessWidget {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         AppText(
-                                          text: ground?.name ?? "Venue Name",
+                                          text: ground.name,
                                           textStyle: TextStyle(
                                             fontSize: 18,
                                             fontWeight: FontWeight.bold,
                                             color: colorScheme.onSurface,
                                           ),
                                         ),
-                                        const SizedBox(height: 4),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(6),
-                                            border: Border.all(color: AppColors.primaryDarkGreen.withValues(alpha: 0.2)),
-                                          ),
-                                          child: AppText(
-                                            text: state.selectedSport?.toUpperCase() ?? "SPORT",
-                                            textStyle: const TextStyle(
-                                              fontSize: 9,
-                                              fontWeight: FontWeight.w800,
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            _buildBadge(
+                                              text: selectedSport.toUpperCase(),
                                               color: AppColors.primaryDarkGreen,
-                                              letterSpacing: 0.5,
                                             ),
-                                          ),
+                                            const SizedBox(width: 8),
+                                            _buildBadge(
+                                              text: selectedPeriod.toUpperCase(),
+                                              color: AppColors.accentOrange,
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),
@@ -213,7 +219,7 @@ class BookingSummaryScreen extends StatelessWidget {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 6),
+                              const SizedBox(height: 12),
                               Row(
                                 children: [
                                   HugeIcon(
@@ -224,7 +230,7 @@ class BookingSummaryScreen extends StatelessWidget {
                                   const SizedBox(width: 4),
                                   Expanded(
                                     child: AppText(
-                                      text: ground?.address ?? "Venue Address",
+                                      text: ground.address,
                                       maxLines: 1,
                                       textStyle: TextStyle(
                                         fontSize: 12,
@@ -234,27 +240,23 @@ class BookingSummaryScreen extends StatelessWidget {
                                   ),
                                 ],
                               ),
-                              if (ground?.amenities.isNotEmpty ?? false) ...[
-                                const SizedBox(height: 12),
+                              if (ground.amenities.isNotEmpty) ...[
+                                const SizedBox(height: 16),
+                                AppText(
+                                  text: "AMENITIES",
+                                  textStyle: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.5,
+                                    color: colorScheme.onSurface.withValues(alpha: 0.4),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
                                 Wrap(
-                                  spacing: 6,
-                                  runSpacing: 6,
-                                  children: ground!.amenities.take(4).map((amenity) {
-                                    return Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: AppText(
-                                        text: amenity,
-                                        textStyle: const TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.primaryDarkGreen,
-                                        ),
-                                      ),
-                                    );
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: ground.amenities.take(4).map((amenity) {
+                                    return SlotSelectionWidgets.amenityChip(context, amenity);
                                   }).toList(),
                                 ),
                               ],
@@ -521,27 +523,23 @@ class BookingSummaryScreen extends StatelessWidget {
     );
   }
 
-  Widget _summaryRow(BuildContext context, {required String label, required String value, bool isBold = false}) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        AppText(
-          text: label,
-          textStyle: TextStyle(
-            fontSize: 14,
-            color: colorScheme.onSurface.withValues(alpha: 0.6),
-          ),
+  Widget _buildBadge({required String text, required Color color}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: AppText(
+        text: text,
+        textStyle: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.w800,
+          color: color,
+          letterSpacing: 0.5,
         ),
-        AppText(
-          text: value,
-          textStyle: TextStyle(
-            fontSize: 14,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-            color: colorScheme.onSurface,
-          ),
-        ),
-      ],
+      ),
     );
   }
 

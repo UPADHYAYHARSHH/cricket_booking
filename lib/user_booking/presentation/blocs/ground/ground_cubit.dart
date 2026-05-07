@@ -92,7 +92,15 @@ class GroundCubit extends Cubit<GroundState> {
         filteredList = filteredList.where((g) => g.rating >= 4.0).toList();
       }
 
-      // 6. Sort
+      // 6. Filter by Sport Category
+      if (criteria.sportId != null && criteria.sportId != 'all') {
+        filteredList = filteredList.where((g) {
+          return g.categories.any((c) =>
+              c.toLowerCase() == criteria.sportId!.toLowerCase());
+        }).toList();
+      }
+
+      // 7. Sort
       switch (criteria.sortBy) {
         case SortBy.priceLowToHigh:
           filteredList.sort((a, b) => a.pricePerHour.compareTo(b.pricePerHour));

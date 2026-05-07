@@ -82,6 +82,8 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
           orderId: response.orderId!,
           paymentId: response.paymentId!,
           signature: response.signature!,
+          sportName: context.read<SlotSelectionCubit>().state.selectedSport,
+          period: context.read<SlotSelectionCubit>().state.selectedPeriod,
         );
 
         final int displayId = bookingData['display_id'] ?? 0;
@@ -99,6 +101,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
             displayId: displayId,
             totalPrice: _pendingAmount!,
             sportName: context.read<SlotSelectionCubit>().state.selectedSport ?? "Sport",
+            selectedPeriod: context.read<SlotSelectionCubit>().state.selectedPeriod,
           ),
         );
       } else {
@@ -194,6 +197,8 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
         date: _pendingDate!,
         slotStartTimes: selectedSlots.map((s) => s.startTime).toList(),
         amount: totalPrice.toInt(),
+        sportName: context.read<SlotSelectionCubit>().state.selectedSport,
+        period: context.read<SlotSelectionCubit>().state.selectedPeriod,
       );
 
       final int displayId = bookingData['display_id'] ?? 0;
@@ -218,6 +223,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
           displayId: displayId,
           totalPrice: totalPrice,
           sportName: context.read<SlotSelectionCubit>().state.selectedSport ?? "Sport",
+          selectedPeriod: context.read<SlotSelectionCubit>().state.selectedPeriod,
         ),
       );
     } catch (e) {
@@ -231,7 +237,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
   }
 
   String _getSlotPeriod(String? time) {
-    if (time == null || time.isEmpty) return 'Morning';
+    if (time == null || time.isEmpty) return 'Day';
     try {
       final timeParts = time.split(' ');
       final timeH = timeParts[0].split(':');
@@ -240,11 +246,11 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
       if (ampm == 'PM' && hour != 12) hour += 12;
       if (ampm == 'AM' && hour == 12) hour = 0;
       if (hour < 6) return 'Midnight';
-      if (hour < 12) return 'Morning';
+      if (hour < 12) return 'Day';
       if (hour < 18) return 'Evening';
       return 'Night';
     } catch (_) {
-      return 'Morning';
+      return 'Day';
     }
   }
 
@@ -363,7 +369,14 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                     if (state.selectedTurf == null) return;
                     final result = await Navigator.pushNamed(
                         context, AppRoutes.bookingSummary,
-                        arguments: state.selectedTurf);
+                        arguments: BookingSummaryArguments(
+                          ground: state.selectedTurf!,
+                          selectedSport: state.selectedSport ?? "Sport",
+                          selectedSlots: selectedSlots,
+                          activeDate: activeDate,
+                          selectedPeriod: state.selectedPeriod,
+                          basePrice: totalPrice,
+                        ));
                     if (result != null && result is Map<String, dynamic>) {
                       _onConfirmBooking(result['finalAmount'], activeDate, selectedSlots,
                           appliedPoints: result['appliedPoints'],
@@ -379,8 +392,20 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
   }
 
   Widget _buildEmptyState(BuildContext context, SlotSelectionState state) {
+    if (state.errorMessage != null) {
+      return SlotSelectionWidgets.buildErrorWidget(
+        context,
+        state.errorMessage!,
+        () {
+          if (_ground != null) {
+            context.read<SlotSelectionCubit>().initFacility(_ground!);
+          }
+        },
+      );
+    }
+
     return Container(
-      height: 300, // Fixed height to show in the scrollable view
+      height: 300,
       alignment: Alignment.center,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -397,7 +422,8 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
             text: state.selectedSport == null
                 ? "Please select a sport first"
                 : "Select a ground to see slots",
-            textStyle: TextStyle(color: Colors.grey.withValues(alpha: 0.7), fontSize: 16),
+            textStyle:
+                TextStyle(color: Colors.grey.withValues(alpha: 0.7), fontSize: 16),
           ),
         ],
       ),
@@ -426,10 +452,17 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
         if (state.isLoading)
           SlotSelectionWidgets.buildSlotShimmer(context)
         else if (state.errorMessage != null)
-          Center(
-              child: AppText(
-                  text: state.errorMessage!,
-                  textStyle: const TextStyle(color: Colors.red)))
+          SlotSelectionWidgets.buildErrorWidget(
+            context,
+            state.errorMessage!,
+            () => cubit.loadSlots(
+              currentTurf.id,
+              state.selectedDate ?? DateTime.now(),
+              openingTime: currentTurf.openingTime,
+              closingTime: currentTurf.closingTime,
+              pricePerSlot: currentTurf.pricePerHour.toDouble(),
+            ),
+          )
         else ...[
           Builder(builder: (context) {
             final filtered = state.slots
