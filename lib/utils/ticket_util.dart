@@ -204,7 +204,7 @@ class TicketUtil {
                               top: pw.Radius.circular(20)),
                           gradient: pw.LinearGradient(
                             colors: [
-                              PdfColors.black.withAlpha(204), // 0.8 opacity
+                              PdfColors.black.withAlpha(0.8),
                               const PdfColor.fromInt(0x00000000), // transparent
                             ],
                             begin: pw.Alignment.bottomCenter,
@@ -223,7 +223,7 @@ class TicketUtil {
                               padding: const pw.EdgeInsets.symmetric(
                                   horizontal: 10, vertical: 4),
                               decoration: pw.BoxDecoration(
-                                color: _kWhite.withAlpha(51), // 0.2 opacity
+                                color: _kWhite.withAlpha(0.2),
                                 borderRadius: pw.BorderRadius.circular(6),
                               ),
                               child: pw.Text(
@@ -277,7 +277,7 @@ class TicketUtil {
                                     groundAddress,
                                     style: pw.TextStyle(
                                         color: _kWhite
-                                            .withAlpha(204), // 0.8 opacity
+                                            .withAlpha(0.8),
                                         fontSize: 10),
                                     maxLines: 1,
                                   ),
