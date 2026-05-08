@@ -546,6 +546,7 @@ class _BookingCardState extends State<_BookingCard> {
             longitude: widget.booking.ground?.longitude ?? 0.0,
             price: widget.booking.amount,
             imageUrl: widget.booking.ground?.imageUrl ?? "",
+            images: widget.booking.ground?.images ?? [],
             isPaid: widget.booking.status == 'paid' || widget.booking.status == 'confirmed',
             sportName: widget.booking.sportName ?? "Sport",
             period: widget.booking.period ?? "Day",
@@ -723,27 +724,15 @@ class _TicketCard extends StatelessWidget {
   }
 
   Widget _buildVenueImage(BuildContext context) {
-    final theme = Theme.of(context);
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       child: Stack(
         children: [
-          Image.network(
-            ticket.imageUrl,
-            height: 150,
-            width: double.infinity,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(color: theme.brightness == Brightness.dark ? Colors.white10 : Colors.black.withOpacity(0.05), height: 150),
-          ),
-          Container(
-            height: 150,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.transparent, Colors.black.withOpacity(0.6)],
-              ),
-            ),
+          GroundImageCarousel(
+            images: ticket.images,
+            fallbackImageUrl: ticket.imageUrl,
+            height: 180,
+            borderRadius: BorderRadius.zero,
           ),
           Positioned(
             bottom: 12,
@@ -923,6 +912,7 @@ class TicketModel {
   final double longitude;
   final double price;
   final String imageUrl;
+  final List<String> images;
   final bool isPaid;
   final String sportName;
   final String period;
@@ -941,6 +931,7 @@ class TicketModel {
     required this.longitude,
     required this.price,
     required this.imageUrl,
+    required this.images,
     required this.isPaid,
     this.sportName = "Sport",
     this.period = "Day",

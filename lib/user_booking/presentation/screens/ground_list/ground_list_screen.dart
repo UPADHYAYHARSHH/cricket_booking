@@ -551,7 +551,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
             const AppSizedBox(height: 16),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: _sportCategories.map((sport) {
                   final isSelected = currentSportId == sport['id'];
@@ -568,8 +568,8 @@ class _GroundListScreenState extends State<GroundListScreen> {
                       }
                     },
                     child: Container(
-                      width: 85,
-                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      width: 75,
+                      margin: const EdgeInsets.only(right: 12),
                       child: Column(
                         children: [
                           AnimatedContainer(

@@ -119,17 +119,6 @@ class BookingSummaryScreen extends StatelessWidget {
                               height: 180,
                               borderRadius: BorderRadius.zero,
                             ),
-                            Positioned.fill(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
-                                  ),
-                                ),
-                              ),
-                            ),
                             Positioned(
                               bottom: 12,
                               left: 14,

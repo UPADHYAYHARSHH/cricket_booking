@@ -100,8 +100,10 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
             orderId: response.orderId!,
             displayId: displayId,
             totalPrice: _pendingAmount!,
-            sportName: context.read<SlotSelectionCubit>().state.selectedSport ?? "Sport",
-            selectedPeriod: context.read<SlotSelectionCubit>().state.selectedPeriod,
+            sportName: context.read<SlotSelectionCubit>().state.selectedSport ??
+                "Sport",
+            selectedPeriod:
+                context.read<SlotSelectionCubit>().state.selectedPeriod,
           ),
         );
       } else {
@@ -157,7 +159,9 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
 
   void _onConfirmBooking(
       double totalPrice, dynamic activeDate, List<TimeSlot> selectedSlots,
-      {int appliedPoints = 0, double appliedWallet = 0.0, bool fromRetry = false}) async {
+      {int appliedPoints = 0,
+      double appliedWallet = 0.0,
+      bool fromRetry = false}) async {
     HapticFeedback.mediumImpact();
     if (selectedSlots.isEmpty || _ground == null) return;
 
@@ -202,7 +206,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
       );
 
       final int displayId = bookingData['display_id'] ?? 0;
-      
+
       if (FeatureConfig.isLoyaltyEnabled) {
         if (appliedPoints > 0) await _loyaltyRepo.redeemPoints(appliedPoints);
         final pointsEarned = (totalPrice / 10).floor();
@@ -222,8 +226,10 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
           orderId: 'DIRECT_${DateTime.now().millisecondsSinceEpoch}',
           displayId: displayId,
           totalPrice: totalPrice,
-          sportName: context.read<SlotSelectionCubit>().state.selectedSport ?? "Sport",
-          selectedPeriod: context.read<SlotSelectionCubit>().state.selectedPeriod,
+          sportName:
+              context.read<SlotSelectionCubit>().state.selectedSport ?? "Sport",
+          selectedPeriod:
+              context.read<SlotSelectionCubit>().state.selectedPeriod,
         ),
       );
     } catch (e) {
@@ -266,27 +272,33 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
 
   Future<bool> _showClearSelectionDialog(BuildContext context) async {
     return await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const AppText(
-          text: "Clear Selection?",
-          textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-        ),
-        content: const AppText(
-          text: "Changing sport or ground will clear your currently selected slots. Do you want to proceed?",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const AppText(text: "Cancel", textStyle: TextStyle(color: Colors.grey)),
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const AppText(
+              text: "Clear Selection?",
+              textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            content: const AppText(
+              text:
+                  "Changing sport or ground will clear your currently selected slots. Do you want to proceed?",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const AppText(
+                    text: "Cancel", textStyle: TextStyle(color: Colors.grey)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const AppText(
+                    text: "Clear & Proceed",
+                    textStyle: TextStyle(
+                        color: Colors.red, fontWeight: FontWeight.bold)),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const AppText(text: "Clear & Proceed", textStyle: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    ) ?? false;
+        ) ??
+        false;
   }
 
   void _shareGround() {
@@ -305,9 +317,15 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
       body: BlocBuilder<SlotSelectionCubit, SlotSelectionState>(
         builder: (context, state) {
           final cubit = context.read<SlotSelectionCubit>();
-          final selectedSlots = state.slots.where((s) => s.status == SlotStatus.selected).toList();
-          final totalPrice = selectedSlots.fold<double>(0, (sum, s) => sum + s.price);
-          final activeDate = state.dates.isNotEmpty ? state.dates.firstWhere((d) => d.isSelected, orElse: () => state.dates.first) : null;
+          final selectedSlots = state.slots
+              .where((s) => s.status == SlotStatus.selected)
+              .toList();
+          final totalPrice =
+              selectedSlots.fold<double>(0, (sum, s) => sum + s.price);
+          final activeDate = state.dates.isNotEmpty
+              ? state.dates.firstWhere((d) => d.isSelected,
+                  orElse: () => state.dates.first)
+              : null;
 
           return Column(
             children: [
@@ -322,7 +340,8 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                 context,
                 state,
                 onSportChanged: (sport) async {
-                  if (selectedSlots.isNotEmpty && sport != state.selectedSport) {
+                  if (selectedSlots.isNotEmpty &&
+                      sport != state.selectedSport) {
                     final proceed = await _showClearSelectionDialog(context);
                     if (!proceed) return;
                     cubit.clearSelections();
@@ -344,8 +363,10 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                         context,
                         state,
                         onTurfChanged: (turf) async {
-                          if (selectedSlots.isNotEmpty && turf.id != state.selectedTurf?.id) {
-                            final proceed = await _showClearSelectionDialog(context);
+                          if (selectedSlots.isNotEmpty &&
+                              turf.id != state.selectedTurf?.id) {
+                            final proceed =
+                                await _showClearSelectionDialog(context);
                             if (!proceed) return;
                             cubit.clearSelections();
                           }
@@ -365,25 +386,25 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
               // Fixed Bottom Bar
               if (activeDate != null)
                 SlotSelectionWidgets.buildBottomBar(
-                  context, selectedSlots, activeDate, totalPrice, () async {
-                    if (state.selectedTurf == null) return;
-                    final result = await Navigator.pushNamed(
-                        context, AppRoutes.bookingSummary,
-                        arguments: BookingSummaryArguments(
-                          ground: state.selectedTurf!,
-                          selectedSport: state.selectedSport ?? "Sport",
-                          selectedSlots: selectedSlots,
-                          activeDate: activeDate,
-                          selectedPeriod: state.selectedPeriod,
-                          basePrice: totalPrice,
-                        ));
-                    if (result != null && result is Map<String, dynamic>) {
-                      _onConfirmBooking(result['finalAmount'], activeDate, selectedSlots,
-                          appliedPoints: result['appliedPoints'],
-                          appliedWallet: result['appliedWallet'] ?? 0.0);
-                    }
+                    context, selectedSlots, activeDate, totalPrice, () async {
+                  if (state.selectedTurf == null) return;
+                  final result = await Navigator.pushNamed(
+                      context, AppRoutes.bookingSummary,
+                      arguments: BookingSummaryArguments(
+                        ground: state.selectedTurf!,
+                        selectedSport: state.selectedSport ?? "Sport",
+                        selectedSlots: selectedSlots,
+                        activeDate: activeDate,
+                        selectedPeriod: state.selectedPeriod,
+                        basePrice: totalPrice,
+                      ));
+                  if (result != null && result is Map<String, dynamic>) {
+                    _onConfirmBooking(
+                        result['finalAmount'], activeDate, selectedSlots,
+                        appliedPoints: result['appliedPoints'],
+                        appliedWallet: result['appliedWallet'] ?? 0.0);
                   }
-                ),
+                }),
             ],
           );
         },
@@ -422,33 +443,31 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
             text: state.selectedSport == null
                 ? "Please select a sport first"
                 : "Select a ground to see slots",
-            textStyle:
-                TextStyle(color: Colors.grey.withValues(alpha: 0.7), fontSize: 16),
+            textStyle: TextStyle(
+                color: Colors.grey.withValues(alpha: 0.7), fontSize: 16),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSlotSelectionContent(BuildContext context, SlotSelectionState state,
-      SlotSelectionCubit cubit) {
+  Widget _buildSlotSelectionContent(BuildContext context,
+      SlotSelectionState state, SlotSelectionCubit cubit) {
     final currentTurf = state.selectedTurf!;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SlotSelectionWidgets.buildTurfImage(context, currentTurf,
-            rating: currentTurf.rating,
-            totalReviews: currentTurf.totalReviews),
-        SlotSelectionWidgets.buildDateSelector(context, state.dates,
-            (index) {
+            rating: currentTurf.rating, totalReviews: currentTurf.totalReviews),
+        SlotSelectionWidgets.buildDateSelector(context, state.dates, (index) {
           cubit.selectDate(index, currentTurf.id,
               openingTime: currentTurf.openingTime,
               closingTime: currentTurf.closingTime,
               pricePerSlot: currentTurf.pricePerHour.toDouble());
         }),
-        SlotSelectionWidgets.buildPeriodFilter(context,
-            state.selectedPeriod, (p) => cubit.changePeriod(p)),
+        SlotSelectionWidgets.buildPeriodFilter(
+            context, state.selectedPeriod, (p) => cubit.changePeriod(p)),
         if (state.isLoading)
           SlotSelectionWidgets.buildSlotShimmer(context)
         else if (state.errorMessage != null)
@@ -469,19 +488,20 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                 .asMap()
                 .entries
                 .where((e) =>
-                    _getSlotPeriod(e.value.startTime) ==
-                    state.selectedPeriod)
+                    _getSlotPeriod(e.value.startTime) == state.selectedPeriod)
                 .toList();
 
             if (filtered.isEmpty) {
               return Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.05)),
+                  border: Border.all(
+                      color: Theme.of(context).dividerColor.withOpacity(0.05)),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -518,7 +538,6 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                 filtered.map((e) => e.value).toList(),
                 (i) => cubit.toggleSlot(filtered[i].key));
           }),
-          const AppSizedBox(height: 20),
         ],
         SlotSelectionWidgets.buildDescriptionSection(
             context, currentTurf.description),

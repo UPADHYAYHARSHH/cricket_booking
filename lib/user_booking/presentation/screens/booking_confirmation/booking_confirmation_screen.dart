@@ -397,21 +397,8 @@ class _VenueCard extends StatelessWidget {
                 GroundImageCarousel(
                   images: ground.images ?? [],
                   fallbackImageUrl: ground.imageUrl ?? "",
-                  height: 160,
+                  height: 180,
                   borderRadius: BorderRadius.zero,
-                ),
-                Container(
-                  height: 160,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withValues(alpha: 0.6),
-                      ],
-                    ),
-                  ),
                 ),
                 Positioned(
                   bottom: 16,

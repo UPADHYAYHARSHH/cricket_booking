@@ -21,7 +21,10 @@ class SlotSelectionWidgets {
   static const Color kOrange = AppColors.accentOrange;
 
   static Widget buildHeader(BuildContext context, GroundModel? ground,
-      {bool isSaved = false, VoidCallback? onToggleFav, VoidCallback? onShare, String? title}) {
+      {bool isSaved = false,
+      VoidCallback? onToggleFav,
+      VoidCallback? onShare,
+      String? title}) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -107,7 +110,8 @@ class SlotSelectionWidgets {
     );
   }
 
-  static Widget buildSportSelection(BuildContext context, SlotSelectionState state,
+  static Widget buildSportSelection(
+      BuildContext context, SlotSelectionState state,
       {required Function(String) onSportChanged}) {
     if (state.availableSports.isEmpty) return const SizedBox.shrink();
 
@@ -120,7 +124,8 @@ class SlotSelectionWidgets {
       decoration: BoxDecoration(
         color: theme.cardColor,
         border: Border(
-            bottom: BorderSide(color: theme.dividerColor.withValues(alpha: 0.1))),
+            bottom:
+                BorderSide(color: theme.dividerColor.withValues(alpha: 0.1))),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,7 +152,8 @@ class SlotSelectionWidgets {
                     : theme.scaffoldBackgroundColor,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: theme.dividerColor.withValues(alpha: isDark ? 0.1 : 0.05),
+                  color:
+                      theme.dividerColor.withValues(alpha: isDark ? 0.1 : 0.05),
                   width: 1,
                 ),
               ),
@@ -179,8 +185,8 @@ class SlotSelectionWidgets {
                                 border: Border.all(
                                   color: isSel
                                       ? color.withValues(alpha: 0.8)
-                                      : colorScheme.onSurface
-                                          .withValues(alpha: isDark ? 0.2 : 0.1),
+                                      : colorScheme.onSurface.withValues(
+                                          alpha: isDark ? 0.2 : 0.1),
                                   width: 1.5,
                                 ),
                               ),
@@ -192,8 +198,8 @@ class SlotSelectionWidgets {
                                     size: 16,
                                     color: isSel
                                         ? color
-                                        : colorScheme.onSurface
-                                            .withValues(alpha: isDark ? 0.5 : 0.4),
+                                        : colorScheme.onSurface.withValues(
+                                            alpha: isDark ? 0.5 : 0.4),
                                   ),
                                   const AppSizedBox(width: 10),
                                   Flexible(
@@ -208,9 +214,8 @@ class SlotSelectionWidgets {
                                             : FontWeight.w600,
                                         color: isSel
                                             ? color
-                                            : colorScheme.onSurface
-                                                .withValues(alpha: 
-                                                    isDark ? 0.5 : 0.4),
+                                            : colorScheme.onSurface.withValues(
+                                                alpha: isDark ? 0.5 : 0.4),
                                       ),
                                     ),
                                   ),
@@ -290,7 +295,8 @@ class SlotSelectionWidgets {
                         color: isSelected
                             ? AppColors.primaryDarkGreen
                             : (isAvailable
-                                ? AppColors.primaryDarkGreen.withValues(alpha: 0.05)
+                                ? AppColors.primaryDarkGreen
+                                    .withValues(alpha: 0.05)
                                 : Colors.grey.withValues(alpha: 0.1)),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
@@ -373,7 +379,8 @@ class SlotSelectionWidgets {
       decoration: BoxDecoration(
         color: theme.cardColor,
         border: Border(
-            bottom: BorderSide(color: theme.dividerColor.withValues(alpha: 0.1))),
+            bottom:
+                BorderSide(color: theme.dividerColor.withValues(alpha: 0.1))),
       ),
       child: Row(
         children: [
@@ -384,7 +391,8 @@ class SlotSelectionWidgets {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: _getSportColor(state.selectedSport!).withValues(alpha: 0.1),
+                  color: _getSportColor(state.selectedSport!)
+                      .withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                       color: _getSportColor(state.selectedSport!)
@@ -421,7 +429,8 @@ class SlotSelectionWidgets {
                     color: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                        color: AppColors.primaryDarkGreen.withValues(alpha: 0.3)),
+                        color:
+                            AppColors.primaryDarkGreen.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
@@ -490,8 +499,8 @@ class SlotSelectionWidgets {
                     boxShadow: isActive
                         ? [
                             BoxShadow(
-                                color:
-                                    AppColors.primaryDarkGreen.withValues(alpha: 0.3),
+                                color: AppColors.primaryDarkGreen
+                                    .withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 spreadRadius: 1)
                           ]
@@ -1099,60 +1108,78 @@ class SlotSelectionWidgets {
     final periods = ['Midnight', 'Day', 'Evening', 'Night'];
 
     return Container(
+      width: double.infinity,
       color: colorScheme.surface,
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: periods.map((p) {
-          final isSel = p == selectedPeriod;
-          final accentColor = isDark ? AppColors.primaryLightGreen : AppColors.primaryDarkGreen;
-          
-          return GestureDetector(
-            onTap: () => onSelect(p),
-            behavior: HitTestBehavior.opaque,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Radio Indicator
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 20,
-                  height: 20,
+            final isSel = p == selectedPeriod;
+            final accentColor = isDark ? AppColors.primaryLightGreen : AppColors.primaryDarkGreen;
+
+            return Padding(
+              padding: const EdgeInsets.only(right: 10),
+              child: GestureDetector(
+                onTap: () => onSelect(p),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    shape: BoxShape.circle,
+                    color: isSel 
+                        ? accentColor 
+                        : accentColor.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isSel ? accentColor : colorScheme.onSurface.withValues(alpha: 0.2),
-                      width: 2,
+                      color: isSel 
+                          ? accentColor 
+                          : accentColor.withValues(alpha: 0.1),
+                      width: 1.2,
                     ),
                   ),
-                  child: Center(
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: isSel ? 10 : 0,
-                      height: isSel ? 10 : 0,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: accentColor,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _getPeriodIcon(p),
+                        size: 14,
+                        color: isSel 
+                            ? (isDark ? Colors.black : Colors.white)
+                            : colorScheme.onSurface.withValues(alpha: 0.4),
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      AppText(
+                        text: p,
+                        textStyle: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isSel ? FontWeight.w700 : FontWeight.w600,
+                          color: isSel 
+                              ? (isDark ? Colors.black : Colors.white) 
+                              : colorScheme.onSurface.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const AppSizedBox(height: 8),
-                // Period Text
-                AppText(
-                  text: p,
-                  textStyle: TextStyle(
-                    fontSize: 11,
-                    fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
-                    color: isSel ? colorScheme.onSurface : colorScheme.onSurface.withValues(alpha: 0.5),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }).toList(),
-      ),
-    );
+              ),
+            );
+          }).toList(),
+        ),
+      );
+    }
+
+  static IconData _getPeriodIcon(String period) {
+    switch (period.toLowerCase()) {
+      case 'midnight':
+        return Icons.nights_stay;
+      case 'day':
+        return Icons.wb_sunny;
+      case 'evening':
+        return Icons.wb_twilight;
+      case 'night':
+        return Icons.bedtime;
+      default:
+        return Icons.access_time;
+    }
   }
 
   // ── Slot Section ──────────────────────────────────────────────────────────
@@ -1188,10 +1215,11 @@ class SlotSelectionWidgets {
     );
   }
 
-  static Widget buildErrorWidget(BuildContext context, String message, VoidCallback onRetry) {
+  static Widget buildErrorWidget(
+      BuildContext context, String message, VoidCallback onRetry) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 24),
@@ -1273,7 +1301,8 @@ class SlotSelectionWidgets {
       margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.all(16),
       child: Shimmer.fromColors(
-        baseColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[300]!,
+        baseColor:
+            isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[300]!,
         highlightColor:
             isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey[100]!,
         child: GridView.builder(
@@ -1503,8 +1532,8 @@ class SlotSelectionWidgets {
         color: colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black
-                .withValues(alpha: theme.brightness == Brightness.dark ? 0.3 : 0.1),
+            color: Colors.black.withValues(
+                alpha: theme.brightness == Brightness.dark ? 0.3 : 0.1),
             blurRadius: 16,
             offset: const Offset(0, -4),
           )
@@ -1809,8 +1838,7 @@ class SlotSelectionWidgets {
                             markers: {
                               Marker(
                                 markerId: const MarkerId('ground'),
-                                position:
-                                    LatLng(latitude, longitude),
+                                position: LatLng(latitude, longitude),
                               ),
                             },
                             zoomControlsEnabled: false,
@@ -1824,8 +1852,7 @@ class SlotSelectionWidgets {
                         Positioned.fill(
                           child: Center(
                             child: GestureDetector(
-                              onTap: () =>
-                                  _openMap(latitude, longitude),
+                              onTap: () => _openMap(latitude, longitude),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 16, vertical: 8),
