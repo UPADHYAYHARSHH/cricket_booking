@@ -1111,28 +1111,32 @@ class SlotSelectionWidgets {
       width: double.infinity,
       color: colorScheme.surface,
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: periods.map((p) {
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: periods.asMap().entries.map((entry) {
+            final p = entry.value;
+            final index = entry.key;
             final isSel = p == selectedPeriod;
-            final accentColor = isDark ? AppColors.primaryLightGreen : AppColors.primaryDarkGreen;
+            final accentColor =
+                isDark ? AppColors.primaryLightGreen : AppColors.primaryDarkGreen;
 
             return Padding(
-              padding: const EdgeInsets.only(right: 10),
+              padding: EdgeInsets.only(
+                  right: index == periods.length - 1 ? 0 : 10),
               child: GestureDetector(
                 onTap: () => onSelect(p),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 250),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: isSel 
-                        ? accentColor 
-                        : accentColor.withValues(alpha: 0.05),
+                    color: isSel ? accentColor : accentColor.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isSel 
-                          ? accentColor 
-                          : accentColor.withValues(alpha: 0.1),
+                      color: isSel ? accentColor : accentColor.withValues(alpha: 0.1),
                       width: 1.2,
                     ),
                   ),
@@ -1142,7 +1146,7 @@ class SlotSelectionWidgets {
                       Icon(
                         _getPeriodIcon(p),
                         size: 14,
-                        color: isSel 
+                        color: isSel
                             ? (isDark ? Colors.black : Colors.white)
                             : colorScheme.onSurface.withValues(alpha: 0.4),
                       ),
@@ -1152,8 +1156,8 @@ class SlotSelectionWidgets {
                         textStyle: TextStyle(
                           fontSize: 12,
                           fontWeight: isSel ? FontWeight.w700 : FontWeight.w600,
-                          color: isSel 
-                              ? (isDark ? Colors.black : Colors.white) 
+                          color: isSel
+                              ? (isDark ? Colors.black : Colors.white)
                               : colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
@@ -1164,8 +1168,9 @@ class SlotSelectionWidgets {
             );
           }).toList(),
         ),
-      );
-    }
+      ),
+    );
+  }
 
   static IconData _getPeriodIcon(String period) {
     switch (period.toLowerCase()) {
