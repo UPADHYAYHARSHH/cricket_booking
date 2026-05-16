@@ -262,11 +262,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
 
   void _scrollToTop() {
     if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        0,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
+      _scrollController.jumpTo(0);
     }
   }
 
@@ -355,7 +351,6 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
               Expanded(
                 child: SingleChildScrollView(
                   controller: _scrollController,
-                  physics: const BouncingScrollPhysics(),
                   child: Column(
                     children: [
                       // Ground Selection (Now Scrollable)

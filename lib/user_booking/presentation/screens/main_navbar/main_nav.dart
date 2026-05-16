@@ -84,11 +84,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
     setState(() {
       currentIndex = index;
     });
-    _pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+    _pageController.jumpToPage(index);
   }
 
   @override

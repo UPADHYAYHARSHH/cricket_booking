@@ -2,6 +2,9 @@ class AppRoutes {
   static const splash = "/";
   static const login = "/login";
   static const signUp = "/signup";
+  static const completeProfile = "/completeProfile";
+  static const waitingVerification = "/waitingVerification";
+  static const setPassword = "/setPassword";
   static const otp = "/otp";
   static const nav = "/nav";
   static const search = "/search";

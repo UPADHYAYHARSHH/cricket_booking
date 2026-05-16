@@ -11,11 +11,14 @@ import 'package:turfpro/user_booking/presentation/screens/login/login_screen.dar
 import 'package:turfpro/user_booking/presentation/screens/login/forgot_password_screen.dart';
 import 'package:turfpro/user_booking/presentation/screens/main_navbar/main_nav.dart';
 import 'package:turfpro/user_booking/presentation/screens/my_booking/my_booking_screen.dart';
-import 'package:turfpro/user_booking/presentation/screens/otp/otp_screen.dart';
+
 import 'package:turfpro/user_booking/presentation/screens/profile_screen/edit_profile.dart';
 import 'package:turfpro/user_booking/presentation/screens/payment_status/payment_failed_screen.dart';
 import 'package:turfpro/user_booking/presentation/screens/slot_selection/slot_slection.dart';
 import 'package:turfpro/user_booking/presentation/screens/signup/signup_screen.dart';
+import 'package:turfpro/user_booking/presentation/screens/signup/complete_profile_screen.dart';
+import 'package:turfpro/user_booking/presentation/screens/signup/email_verification_waiting_screen.dart';
+import 'package:turfpro/user_booking/presentation/screens/signup/set_password_screen.dart';
 import 'package:turfpro/user_booking/presentation/screens/search/search_screen.dart';
 import 'package:turfpro/user_booking/presentation/screens/split_payment/split_setup_screen.dart';
 import 'package:turfpro/user_booking/presentation/screens/split_payment/split_share_screen.dart';
@@ -54,11 +57,13 @@ import 'package:turfpro/user_booking/presentation/blocs/booking/booking_cubit.da
 import 'package:turfpro/common/constants/colors.dart';
 import 'package:turfpro/user_booking/data/services/deep_link_service.dart';
 import 'package:turfpro/user_booking/data/services/shorebird_service.dart';
+import 'package:turfpro/utils/app_scroll_behavior.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  debugPrint("DEBUG: [Main] App starting. Full URL: ${Uri.base}");
   
   // Silent OTA updates
   ShorebirdService.checkForUpdates();
@@ -87,6 +92,7 @@ void main() async {
     url: const String.fromEnvironment('SUPABASE_URL'),
     anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY'),
   );
+  debugPrint("DEBUG: [Main] Supabase Initialized.");
   SystemChrome.setPreferredOrientations(
     [
       DeviceOrientation.portraitUp,
@@ -94,17 +100,20 @@ void main() async {
   );
 
   if (kIsWeb) {
+    debugPrint("DEBUG: [Main] Initializing Hive for Web.");
     await Hive.initFlutter();
   } else {
+    debugPrint("DEBUG: [Main] Initializing Hive for Mobile.");
     final appDocumentDir = await path_provider.getApplicationDocumentsDirectory();
-
     Hive.init(appDocumentDir.path);
   }
 
   // Open settings box for Theme persistence
   await Hive.openBox('settings');
 
+  debugPrint("DEBUG: [Main] Initializing DI.");
   await di.init();
+  debugPrint("DEBUG: [Main] Initializing DeepLinkService.");
   DeepLinkService().init();
 
   runApp(
@@ -154,6 +163,7 @@ void main() async {
         builder: (context, state) {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
+            scrollBehavior: const AppScrollBehavior(),
             themeMode: state.themeMode,
             theme: AppColors.getLightTheme(),
             darkTheme: AppColors.getDarkTheme(),
@@ -194,11 +204,13 @@ void main() async {
               );
             },
             routes: {
-              "/": (context) => const SplashScreen(),
-              "/login": (context) => const LoginScreen(),
-              "/signup": (context) => const SignUpScreen(),
-              "/otp": (context) => const OtpScreen(),
-              "/nav": (context) => const MainNavScreen(),
+              AppRoutes.splash: (context) => const SplashScreen(),
+              AppRoutes.login: (context) => const LoginScreen(),
+              AppRoutes.signUp: (context) => const SignUpScreen(),
+              AppRoutes.completeProfile: (context) => const CompleteProfileScreen(),
+              AppRoutes.waitingVerification: (context) => const EmailVerificationWaitingScreen(),
+              AppRoutes.setPassword: (context) => const SetPasswordScreen(),
+              AppRoutes.nav: (context) => const MainNavScreen(),
               "/search": (context) => const SearchScreen(),
               "/slotSelection": (context) => const SlotSelectionScreen(),
               "/bookingConfirmationScreen": (context) => const BookingConfirmationScreen(),

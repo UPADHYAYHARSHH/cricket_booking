@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 abstract class UserRepository {
   Future<void> upsertUser({
@@ -32,14 +33,14 @@ class UserRepositoryImpl implements UserRepository {
     String? photoUrl,
     String? username,
   }) async {
-    final user = supabase.auth.currentUser;
+    final user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
       throw Exception("User not logged in");
     }
 
     final data = {
-      'id': user.id,
+      'id': user.uid,
       'name': name,
       'email': user.email,
       'gender': gender,
@@ -71,14 +72,14 @@ class UserRepositoryImpl implements UserRepository {
 
   @override
   Future<Map<String, dynamic>?> fetchUserProfile() async {
-    final user = supabase.auth.currentUser;
-    debugPrint("[USER_REPO] Fetching profile for ID: ${user?.id}");
+    final user = FirebaseAuth.instance.currentUser;
+    debugPrint("[USER_REPO] Fetching profile for ID: ${user?.uid}");
     if (user == null) return null;
 
     final response = await supabase
         .from('users')
         .select()
-        .eq('id', user.id)
+        .eq('id', user.uid)
         .maybeSingle();
     
     debugPrint("[USER_REPO] Profile Data Received: $response");
@@ -87,10 +88,10 @@ class UserRepositoryImpl implements UserRepository {
 
   @override
   Future<String?> uploadProfileImage(Uint8List imageBytes) async {
-    final user = supabase.auth.currentUser;
+    final user = FirebaseAuth.instance.currentUser;
     if (user == null) return null;
 
-    final fileName = '${user.id}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final fileName = '${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
     final path = 'profile_images/$fileName';
 
     try {
@@ -112,10 +113,10 @@ class UserRepositoryImpl implements UserRepository {
   /// FETCH PERSISTED CITY FROM SUPABASE USERS TABLE
   @override
   Future<String?> getUserCity() async {
-    final user = supabase.auth.currentUser;
+    final user = FirebaseAuth.instance.currentUser;
     if (user == null) return null;
 
-    final data = await supabase.from('users').select('city').eq('id', user.id).maybeSingle();
+    final data = await supabase.from('users').select('city').eq('id', user.uid).maybeSingle();
 
     return data?['city'];
   }
@@ -123,11 +124,11 @@ class UserRepositoryImpl implements UserRepository {
   /// SAVE OR UPDATE CITY IN SUPABASE USERS TABLE
   @override
   Future<void> updateUserCity(String city) async {
-    final user = supabase.auth.currentUser;
+    final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
     await supabase.from('users').upsert({
-      'id': user.id,
+      'id': user.uid,
       'city': city,
     });
   }
@@ -145,15 +146,11 @@ class UserRepositoryImpl implements UserRepository {
   @override
   Future<List<Map<String, dynamic>>> searchUsersByUsername(String query) async {
     print("[DEBUG] UserRepository: Executing Supabase search for username: '%$query%'");
-    // Removed photo_url to prevent crash if column is missing. 
-    // You should add the column via SQL to see photos.
     final response = await supabase
         .from('users')
         .select('id, name, username') 
         .ilike('username', '%$query%')
         .limit(20);
-    print("[DEBUG] UserRepository: Supabase Response Type: ${response.runtimeType}");
-    print("[DEBUG] UserRepository: Supabase Raw Result: $response");
     return List<Map<String, dynamic>>.from(response);
   }
 }

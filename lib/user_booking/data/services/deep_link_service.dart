@@ -24,11 +24,13 @@ class DeepLinkService {
   }
 
   void _listenToAuthChanges() {
+    debugPrint("DEBUG: [DeepLinkService] Starting auth listener.");
     Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       final event = data.event;
+      debugPrint("DEBUG: [DeepLinkService] Auth Event: $event");
       if (event == AuthChangeEvent.signedIn) {
         if (_pendingGroundId != null) {
-          debugPrint('Auth signed in, processing pending ground: $_pendingGroundId');
+          debugPrint('DEBUG: [DeepLinkService] Auth signed in, processing pending ground: $_pendingGroundId');
           _navigateToGround(_pendingGroundId!);
           clearPendingGroundId();
         }

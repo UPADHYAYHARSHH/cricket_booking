@@ -1,7 +1,5 @@
 import 'package:turfpro/common/constants/colors.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
-import 'package:turfpro/common/services/notification_service.dart';
-import 'package:flutter/services.dart';
 import 'package:turfpro/user_booking/presentation/screens/ground_list/widgets/city_search_bottomsheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -212,78 +210,6 @@ class _GroundListScreenState extends State<GroundListScreen> {
         body: CustomScrollView(
           controller: _scrollController,
           slivers: [
-            /// 🔑 FCM TOKEN DISPLAY
-            SliverToBoxAdapter(
-              child: FutureBuilder<String?>(
-                future: NotificationService.getLocalToken(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData && snapshot.data != null) {
-                    return Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                      child: GestureDetector(
-                        onTap: () {
-                          Clipboard.setData(
-                              ClipboardData(text: snapshot.data!));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("FCM Token copied to clipboard!"),
-                              backgroundColor: AppColors.primaryDarkGreen,
-                            ),
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                                color: Colors.blue.withValues(alpha: 0.3)),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.key_rounded,
-                                  color: Colors.blue, size: 20),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      "Your FCM Token (Tap to copy)",
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.blue,
-                                      ),
-                                    ),
-                                    Text(
-                                      snapshot.data!,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withValues(alpha: 0.7),
-                                        fontFamily: 'monospace',
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Icon(Icons.copy_rounded,
-                                  color: Colors.blue, size: 16),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-                  return const SizedBox.shrink();
-                },
-              ),
-            ),
 
             /// 🔍 SEARCH & FILTER
             SliverToBoxAdapter(
@@ -634,11 +560,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
               );
           // Scroll to top when filters are applied
           if (_scrollController.hasClients) {
-            _scrollController.animateTo(
-              0,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOut,
-            );
+            _scrollController.jumpTo(0);
           }
         },
       ),

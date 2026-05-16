@@ -1,13 +1,8 @@
-
 import 'package:turfpro/user_booking/presentation/blocs/auth/auth_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/auth/auth_state.dart';
-import 'package:turfpro/user_booking/data/repositories/user_repository_impl.dart';
 import 'package:turfpro/utils/toast_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
-
-import 'package:turfpro/user_booking/di/get_it/get_it.dart' as di;
 
 import '../../../constants/route_constants.dart';
 import '../../../constants/widgets/app_button.dart';
@@ -23,44 +18,34 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  final TextEditingController nameController = TextEditingController();
-  String? nameError;
-  String selectedGender = "Male";
-  DateTime? selectedDate;
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  String? emailError;
+  String? passwordError;
 
   bool _validateFields() {
     setState(() {
-      nameError = null;
+      emailError = null;
+      passwordError = null;
     });
 
-    final name = nameController.text.trim();
+    final email = emailController.text.trim();
+    final password = passwordController.text;
+
     bool isValid = true;
 
-    if (name.isEmpty) {
-      setState(() => nameError = "Name is required");
+    if (email.isEmpty || !email.contains('@')) {
+      setState(() => emailError = "Enter a valid email");
       isValid = false;
     }
 
-    if (selectedDate == null) {
-      ToastUtil.show(context, message: "Please select your date of birth", type: ToastType.warning);
+    if (password.isEmpty || password.length < 6) {
+      setState(() => passwordError = "Password must be at least 6 characters");
       isValid = false;
     }
 
     return isValid;
-  }
-
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now().subtract(const Duration(days: 365 * 18)),
-      firstDate: DateTime(1900),
-      lastDate: DateTime.now(),
-    );
-    if (picked != null && picked != selectedDate) {
-      setState(() {
-        selectedDate = picked;
-      });
-    }
   }
 
   @override
@@ -70,8 +55,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
-        if (state is AuthSuccess) {
-          Navigator.pushReplacementNamed(context, AppRoutes.nav);
+        if (state is AuthSuccess || state is AuthProfileIncomplete) {
+          Navigator.pushReplacementNamed(
+            context,
+            state is AuthProfileIncomplete ? AppRoutes.completeProfile : AppRoutes.nav,
+          );
+        }
+        if (state is AuthEmailOtpRequired) {
+          Navigator.pushNamed(context, AppRoutes.waitingVerification, arguments: state.email);
         }
         if (state is AuthError) {
           ToastUtil.show(context, message: state.message, type: ToastType.error);
@@ -81,10 +72,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
         builder: (context, state) {
           final isLoading = state is AuthLoading;
 
-          return Theme(
-            data: AppColors.getLightTheme(),
-            child: Scaffold(
-              backgroundColor: const Color(0xffECECEC),
+          return Scaffold(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               body: SafeArea(
               child: Center(
                 child: SingleChildScrollView(
@@ -94,13 +83,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       children: [
                         const AppSizedBox(height: 30),
                         const AppText(
-                          text: "Complete Your Profile",
+                          text: "Create Account",
                           size: 26,
                           weight: FontWeight.w700,
                         ),
                         const AppSizedBox(height: 6),
                         const AppText(
-                          text: "Just a few more details to get started",
+                          text: "Join TurfPro to start booking",
                           size: 14,
                           color: Colors.grey,
                         ),
@@ -108,7 +97,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         Container(
                           padding: const EdgeInsets.all(22),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Theme.of(context).cardColor,
                             borderRadius: BorderRadius.circular(18),
                             boxShadow: [
                               BoxShadow(
@@ -121,18 +110,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const AppText(
-                                text: "Full Name",
+                                text: "Email Address",
                                 size: 12,
                                 weight: FontWeight.w600,
                                 color: Colors.black54,
                               ),
                               const AppSizedBox(height: 8),
                               TextField(
-                                controller: nameController,
-                                style: const TextStyle(color: Colors.black87),
+                                controller: emailController,
+                                keyboardType: TextInputType.emailAddress,
+                                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                                 decoration: InputDecoration(
-                                  hintText: "Enter your name",
-                                  errorText: nameError,
+                                  hintText: "Enter your email",
+                                  errorText: emailError,
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),
@@ -140,71 +130,57 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               ),
                               const AppSizedBox(height: 18),
                               const AppText(
-                                text: "Gender",
+                                text: "Password",
                                 size: 12,
                                 weight: FontWeight.w600,
                                 color: Colors.black54,
                               ),
                               const AppSizedBox(height: 8),
-                              Row(
-                                children: [
-                                  ChoiceChip(
-                                    label: const Text("Male"),
-                                    selected: selectedGender == "Male",
-                                    onSelected: (val) => setState(() => selectedGender = "Male"),
-                                  ),
-                                  const AppSizedBox(width: 8),
-                                  ChoiceChip(
-                                    label: const Text("Female"),
-                                    selected: selectedGender == "Female",
-                                    onSelected: (val) => setState(() => selectedGender = "Female"),
-                                  ),
-                                ],
-                              ),
-                              const AppSizedBox(height: 18),
-                              const AppText(
-                                text: "Date of Birth",
-                                size: 12,
-                                weight: FontWeight.w600,
-                                color: Colors.black54,
-                              ),
-                              const AppSizedBox(height: 8),
-                              GestureDetector(
-                                onTap: () => _selectDate(context),
-                                child: Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.grey.shade300),
+                              TextField(
+                                controller: passwordController,
+                                obscureText: true,
+                                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                                decoration: InputDecoration(
+                                  hintText: "Create a password",
+                                  errorText: passwordError,
+                                  border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      AppText(
-                                        text: selectedDate == null
-                                            ? "Select Date"
-                                            : DateFormat('dd/MM/yyyy').format(selectedDate!),
-                                        color: selectedDate == null ? Colors.black38 : Colors.black87,
-                                      ),
-                                      const Icon(Icons.calendar_today, size: 18),
-                                    ],
                                   ),
                                 ),
                               ),
                               const AppSizedBox(height: 30),
                               AppButton(
-                                title: "Save & Continue",
+                                title: "Sign Up",
                                 isLoading: isLoading,
                                 onTap: () {
                                   if (_validateFields()) {
-                                    context.read<AuthCubit>().completeProfile(
-                                          name: nameController.text.trim(),
-                                          gender: selectedGender,
-                                          dob: selectedDate!,
-                                          userRepository: di.getIt<UserRepository>(),
+                                    context.read<AuthCubit>().signUpWithEmail(
+                                          email: emailController.text.trim(),
+                                          password: passwordController.text,
                                         );
                                   }
                                 },
+                              ),
+                              const AppSizedBox(height: 20),
+                              Center(
+                                child: GestureDetector(
+                                  onTap: () => Navigator.pop(context),
+                                  child: RichText(
+                                    text: const TextSpan(
+                                      text: "Already have an account? ",
+                                      style: TextStyle(color: Colors.grey, fontSize: 13),
+                                      children: [
+                                        TextSpan(
+                                          text: "Login",
+                                          style: TextStyle(
+                                            color: Colors.green,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               ),
                             ],
                           ),
@@ -215,7 +191,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
               ),
             ),
-          ),
           );
         },
       ),

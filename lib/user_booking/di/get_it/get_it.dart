@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:turfpro/user_booking/data/repositories/auth_repositories_impl.dart';
 import 'package:turfpro/user_booking/presentation/blocs/connectivity/connectivity_cubit.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -44,16 +45,20 @@ final getIt = GetIt.instance;
 
 Future<void> init() async {
   final supabase = Supabase.instance.client;
+  final firebaseAuth = FirebaseAuth.instance;
 
   /// Register Supabase
   getIt.registerLazySingleton<SupabaseClient>(() => supabase);
+
+  /// Register Firebase Auth
+  getIt.registerLazySingleton<FirebaseAuth>(() => firebaseAuth);
 
   /// Register Connectivity
   getIt.registerLazySingleton<Connectivity>(() => Connectivity());
 
   /// Repository (REGISTER FIRST)
   getIt.registerLazySingleton<AuthRepository>(
-    () => AuthRepositoryImpl(getIt<SupabaseClient>()),
+    () => AuthRepositoryImpl(getIt<FirebaseAuth>()),
   );
   getIt.registerLazySingleton<SlotRepository>(
     () => SlotRepositoryImpl(getIt<SupabaseClient>()),

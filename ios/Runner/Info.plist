@@ -66,6 +66,23 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>io.supabase.turfpro</string>
+                <string>com.example.boxCricketNew</string>
+			</array>
+		</dict>
+	</array>
+    <key>com.apple.developer.associated-domains</key>
+    <array>
+        <string>applinks:box-cricket-df427.firebaseapp.com</string>
+        <string>applinks:box-cricket-df427.page.link</string>
+    </array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>This app needs access to location when open to help you find nearby grounds.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>

@@ -20,24 +20,45 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController phoneController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
   String? phoneError;
+  String? emailError;
+  String? passwordError;
+
+  bool isEmailLogin = false;
 
   bool _validateFields() {
     setState(() {
       phoneError = null;
+      emailError = null;
+      passwordError = null;
     });
-
-    final phone = phoneController.text.trim();
 
     bool isValid = true;
 
-    if (phone.isEmpty) {
-      setState(() => phoneError = "Phone number is required");
-      isValid = false;
-    } else if (phone.length != 10) {
-      setState(() => phoneError = "Enter a valid 10-digit number");
-      isValid = false;
+    if (isEmailLogin) {
+      final email = emailController.text.trim();
+      final password = passwordController.text;
+
+      if (email.isEmpty || !email.contains('@')) {
+        setState(() => emailError = "Enter a valid email");
+        isValid = false;
+      }
+      if (password.isEmpty) {
+        setState(() => passwordError = "Password is required");
+        isValid = false;
+      }
+    } else {
+      final phone = phoneController.text.trim();
+      if (phone.isEmpty) {
+        setState(() => phoneError = "Phone number is required");
+        isValid = false;
+      } else if (phone.length != 10) {
+        setState(() => phoneError = "Enter a valid 10-digit number");
+        isValid = false;
+      }
     }
 
     return isValid;
@@ -62,16 +83,12 @@ class _LoginScreenState extends State<LoginScreen> {
             Navigator.pushReplacementNamed(context, AppRoutes.nav);
           }
 
-          if (state is AuthOtpRequired) {
-            Navigator.pushNamed(
-              context,
-              AppRoutes.otp,
-              arguments: "+91${phoneController.text.trim()}",
-            );
+          if (state is AuthProfileIncomplete) {
+            Navigator.pushReplacementNamed(context, AppRoutes.completeProfile);
           }
 
-          if (state is AuthProfileIncomplete) {
-            Navigator.pushReplacementNamed(context, AppRoutes.signUp);
+          if (state is AuthEmailOtpRequired) {
+            Navigator.pushNamed(context, AppRoutes.waitingVerification, arguments: state.email);
           }
 
           /// ERROR
@@ -83,10 +100,8 @@ class _LoginScreenState extends State<LoginScreen> {
           builder: (context, state) {
             final isLoading = state is AuthLoading;
 
-            return Theme(
-              data: AppColors.getLightTheme(),
-              child: Scaffold(
-                backgroundColor: const Color(0xffECECEC),
+            return Scaffold(
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                 body: SafeArea(
                 child: Center(
                   child: SingleChildScrollView(
@@ -138,10 +153,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           const AppSizedBox(height: 6),
 
-                          const AppText(
-                            text: "Login with your phone number",
+                          AppText(
+                            text: "Login to your account",
                             size: 14,
-                            color: Colors.grey,
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                           ),
 
                           const AppSizedBox(height: 30),
@@ -150,58 +165,79 @@ class _LoginScreenState extends State<LoginScreen> {
                           Container(
                             padding: const EdgeInsets.all(22),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: Theme.of(context).cardColor,
                               borderRadius: BorderRadius.circular(18),
                               boxShadow: [
                                 BoxShadow(
                                   blurRadius: 10,
-                                  color: Colors.black.withOpacity(.05),
+                                  color: Colors.black.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.05),
                                 )
                               ],
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                /// Phone Number
-                                const AppText(
-                                  text: "Phone Number",
+                                /// Email
+                                AppText(
+                                  text: "Email Address",
                                   size: 12,
                                   weight: FontWeight.w600,
-                                  color: Colors.black54,
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                                 ),
-
                                 const AppSizedBox(height: 8),
-
                                 TextField(
-                                  controller: phoneController,
-                                  keyboardType: TextInputType.phone,
-                                  maxLength: 10,
-                                  style: const TextStyle(color: Colors.black87),
+                                  controller: emailController,
+                                  keyboardType: TextInputType.emailAddress,
+                                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                                   decoration: InputDecoration(
-                                    counterText: "",
-                                    hintText: "Enter 10 digit number",
-                                    hintStyle: const TextStyle(color: Colors.black38),
-                                    errorText: phoneError,
-                                    prefixIcon: Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                                      child: Text(
-                                        "+91",
-                                        style: TextStyle(
-                                          color: Colors.black87,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ),
+                                    hintText: "Enter your email",
+                                    hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
+                                    errorText: emailError,
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide(
-                                          color: Colors.grey.shade300),
+                                      borderSide: BorderSide(color: Theme.of(context).dividerColor),
                                     ),
-                                    enabledBorder: OutlineInputBorder(
+                                  ),
+                                ),
+                                const AppSizedBox(height: 18),
+                                /// Password
+                                AppText(
+                                  text: "Password",
+                                  size: 12,
+                                  weight: FontWeight.w600,
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                                ),
+                                const AppSizedBox(height: 8),
+                                TextField(
+                                  controller: passwordController,
+                                  obscureText: true,
+                                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                                  decoration: InputDecoration(
+                                    hintText: "Enter your password",
+                                    hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
+                                    errorText: passwordError,
+                                    border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide(
-                                          color: Colors.grey.shade300),
+                                      borderSide: BorderSide(color: Theme.of(context).dividerColor),
+                                    ),
+                                  ),
+                                ),
+
+                                const AppSizedBox(height: 12),
+
+                                /// Forgot Password Link
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      Navigator.pushNamed(
+                                          context, AppRoutes.forgotPassword);
+                                    },
+                                    child: const AppText(
+                                      text: "Forgot Password?",
+                                      size: 13,
+                                      color: Colors.green,
+                                      weight: FontWeight.w600,
                                     ),
                                   ),
                                 ),
@@ -210,13 +246,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
                                 /// Login Button
                                 AppButton(
-                                  title: "Send OTP",
+                                  title: "Login",
                                   isLoading: isLoading,
                                   onTap: () {
                                     if (_validateFields()) {
-                                      final phone = "+91${phoneController.text.trim()}";
-                                      print("DEBUG: [LoginScreen] Send OTP button pressed for: $phone");
-                                      context.read<AuthCubit>().signInWithPhone(phone);
+                                      context.read<AuthCubit>().loginWithEmail(
+                                            email: emailController.text.trim(),
+                                            password: passwordController.text,
+                                          );
                                     }
                                   },
                                 ),
@@ -250,15 +287,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                           context, AppRoutes.signUp);
                                     },
                                     child: RichText(
-                                      text: const TextSpan(
+                                      text: TextSpan(
                                         text: "Don't have an account? ",
                                         style: TextStyle(
-                                            color: Colors.grey, fontSize: 13),
+                                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 13),
                                         children: [
                                           TextSpan(
                                             text: "Sign Up",
                                             style: TextStyle(
-                                              color: Colors.green,
+                                              color: Theme.of(context).colorScheme.primary,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
@@ -274,11 +311,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           const AppSizedBox(height: 40),
 
                           /// Terms
-                          const AppText(
+                          AppText(
                             text:
                                 "By continuing, you agree to our Terms of Service and Privacy Policy",
                             size: 12,
-                            color: Colors.grey,
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                             align: TextAlign.center,
                           ),
 
@@ -289,7 +326,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-            ),
             );
           },
         ));
