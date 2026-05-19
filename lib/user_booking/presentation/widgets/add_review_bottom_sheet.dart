@@ -6,6 +6,7 @@ import 'package:turfpro/user_booking/di/get_it/get_it.dart';
 import 'package:turfpro/user_booking/domain/repositories/review_repository.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AddReviewBottomSheet extends StatefulWidget {
   final String groundId;
@@ -35,11 +36,11 @@ class _AddReviewBottomSheetState extends State<AddReviewBottomSheet> {
     setState(() => _isSubmitting = true);
 
     try {
-      final user = Supabase.instance.client.auth.currentUser;
+      final user = FirebaseAuth.instance.currentUser;
       if (user == null) throw Exception("User not logged in");
 
       await getIt<ReviewRepository>().submitReview(
-        userId: user.id,
+        userId: user.uid,
         groundId: widget.groundId,
         rating: _rating,
         reviewText: _reviewController.text,

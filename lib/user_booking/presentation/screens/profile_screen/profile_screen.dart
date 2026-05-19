@@ -41,7 +41,8 @@ class ProfileScreen extends StatelessWidget {
                 }
 
                 return SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                   child: Column(
                     children: [
                       _buildAvatar(context, profileState),
@@ -77,7 +78,10 @@ class ProfileScreen extends StatelessWidget {
             border: Border.all(color: Colors.white, width: 3),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.08),
+                color: Colors.black.withValues(
+                    alpha: Theme.of(context).brightness == Brightness.dark
+                        ? 0.3
+                        : 0.08),
                 blurRadius: 14,
                 offset: const Offset(0, 4),
               ),
@@ -90,12 +94,14 @@ class ProfileScreen extends StatelessWidget {
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => Container(
                       color: Colors.grey.shade200,
-                      child: const Icon(Icons.person, size: 44, color: Colors.grey),
+                      child: const Icon(Icons.person,
+                          size: 44, color: Colors.grey),
                     ),
                   )
                 : Container(
                     color: Colors.grey.shade200,
-                    child: const Icon(Icons.person, size: 44, color: Colors.grey),
+                    child:
+                        const Icon(Icons.person, size: 44, color: Colors.grey),
                   ),
           ),
         ),
@@ -161,9 +167,9 @@ class ProfileScreen extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: isDark 
-            ? [const Color(0xFF1E3A8A), const Color(0xFF1E40AF)] 
-            : [const Color(0xFF3B82F6), const Color(0xFF2563EB)],
+          colors: isDark
+              ? [const Color(0xFF1E3A8A), const Color(0xFF1E40AF)]
+              : [const Color(0xFF3B82F6), const Color(0xFF2563EB)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -184,7 +190,8 @@ class ProfileScreen extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 28),
+            child: const Icon(Icons.account_balance_wallet_rounded,
+                color: Colors.white, size: 28),
           ),
           const SizedBox(width: 20),
           Expanded(
@@ -265,7 +272,8 @@ class ProfileScreen extends StatelessWidget {
         icon: Icons.person_outline_rounded,
         label: "Edit Profile",
         iconBg: AppColors.primaryDarkGreen.withOpacity(isDark ? 0.2 : 0.1),
-        iconColor: isDark ? AppColors.primaryLightGreen : AppColors.primaryDarkGreen,
+        iconColor:
+            isDark ? AppColors.primaryLightGreen : AppColors.primaryDarkGreen,
         isLogout: false,
         onTap: () async {
           await Navigator.pushNamed(context, AppRoutes.editProfileScreen);
@@ -298,9 +306,12 @@ class ProfileScreen extends StatelessWidget {
           onTap: () => Navigator.pushNamed(context, AppRoutes.splitHistory),
         ),
       _MenuItem(
-        icon: isDark ? HugeIcons.strokeRoundedMoon : HugeIcons.strokeRoundedSun01,
+        icon:
+            isDark ? HugeIcons.strokeRoundedMoon : HugeIcons.strokeRoundedSun01,
         label: "Dark Mode",
-        iconBg: isDark ? Colors.blueGrey.withOpacity(0.2) : Colors.amber.withOpacity(0.1),
+        iconBg: isDark
+            ? Colors.blueGrey.withOpacity(0.2)
+            : Colors.amber.withOpacity(0.1),
         iconColor: isDark ? Colors.lightBlueAccent : AppColors.accentOrange,
         isLogout: false,
         trailing: Switch(
@@ -323,7 +334,29 @@ class ProfileScreen extends StatelessWidget {
         iconColor: isDark ? Colors.redAccent : const Color(0xFFD32F2F),
         isLogout: true,
         onTap: () {
-          context.read<AuthCubit>().logout();
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text("Logout"),
+              content: const Text("Are you sure you want to logout?"),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Cancel"),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    context.read<AuthCubit>().logout();
+                  },
+                  child: const Text(
+                    "Logout",
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+              ],
+            ),
+          );
         },
       ),
     ];
@@ -369,7 +402,7 @@ class _MenuTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return GestureDetector(
       onTap: item.onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -382,7 +415,9 @@ class _MenuTile extends StatelessWidget {
                 color: item.iconBg,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: item.icon is IconData ? Icon(item.icon, size: 18, color: item.iconColor) : HugeIcon(icon: item.icon, size: 18, color: item.iconColor),
+              child: item.icon is IconData
+                  ? Icon(item.icon, size: 18, color: item.iconColor)
+                  : HugeIcon(icon: item.icon, size: 18, color: item.iconColor),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -391,7 +426,9 @@ class _MenuTile extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: item.isLogout ? const Color(0xFFD32F2F) : Theme.of(context).colorScheme.onSurface,
+                  color: item.isLogout
+                      ? const Color(0xFFD32F2F)
+                      : Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ),
@@ -401,7 +438,10 @@ class _MenuTile extends StatelessWidget {
               Icon(
                 Icons.chevron_right_rounded,
                 size: 20,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.2),
               ),
           ],
         ),

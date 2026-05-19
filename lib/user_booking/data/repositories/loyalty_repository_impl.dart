@@ -2,13 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/repositories/loyalty_repository.dart';
 import '../models/loyalty_point_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoyaltyRepositoryImpl implements LoyaltyRepository {
   final SupabaseClient _supabase = Supabase.instance.client;
 
   @override
   Future<int> fetchTotalAvailablePoints() async {
-    final userId = _supabase.auth.currentUser?.id;
+    final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) return 0;
 
     try {
@@ -33,7 +34,7 @@ class LoyaltyRepositoryImpl implements LoyaltyRepository {
 
   @override
   Future<void> redeemPoints(int pointsToUse) async {
-    final userId = _supabase.auth.currentUser?.id;
+    final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) return;
 
     try {
@@ -78,7 +79,7 @@ class LoyaltyRepositoryImpl implements LoyaltyRepository {
 
   @override
   Future<void> earnPoints(int pointsEarned) async {
-    final userId = _supabase.auth.currentUser?.id;
+    final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) return;
 
     try {
@@ -97,7 +98,7 @@ class LoyaltyRepositoryImpl implements LoyaltyRepository {
 
   @override
   Future<List<LoyaltyPointModel>> fetchPointsHistory() async {
-    final userId = _supabase.auth.currentUser?.id;
+    final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) return [];
 
     try {

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/models/split_payment_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SplitPaymentRepository {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -11,7 +12,7 @@ class SplitPaymentRepository {
     required List<SplitMemberModel> members,
     File? qrImage,
   }) async {
-    final user = _supabase.auth.currentUser;
+    final user = FirebaseAuth.instance.currentUser;
     if (user == null) throw Exception('User not authenticated');
 
     String? qrUrl;
@@ -19,7 +20,7 @@ class SplitPaymentRepository {
     // 1. Upload QR Code if provided
     if (qrImage != null) {
       final fileName = 'qr_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final path = '${user.id}/$fileName';
+      final path = '${user.uid}/$fileName';
       
       await _supabase.storage.from('qr_codes').upload(path, qrImage);
       qrUrl = _supabase.storage.from('qr_codes').getPublicUrl(path);
@@ -28,7 +29,7 @@ class SplitPaymentRepository {
     // 2. Insert Split Request
     final splitResponse = await _supabase.from('split_requests').insert({
       'booking_id': request.bookingId,
-      'user_id': user.id,
+      'user_id': user.uid,
       'total_amount': request.totalAmount,
       'upi_id': request.upiId,
       'qr_code_url': qrUrl,
@@ -90,14 +91,14 @@ class SplitPaymentRepository {
 
   /// Get all split requests for the current user (as organizer or participant)
   Future<List<SplitRequestModel>> getUserSplits() async {
-    final user = _supabase.auth.currentUser;
+    final user = FirebaseAuth.instance.currentUser;
     if (user == null) return [];
 
     // Fetch splits where user is organizer
     final organizedResponse = await _supabase
         .from('split_requests')
         .select('*, split_members(*)')
-        .eq('user_id', user.id)
+        .eq('user_id', user.uid)
         .order('created_at', ascending: false);
 
     // Fetch splits where user is a member
@@ -105,7 +106,7 @@ class SplitPaymentRepository {
     final memberRecords = await _supabase
         .from('split_members')
         .select('split_request_id')
-        .eq('member_user_id', user.id);
+        .eq('member_user_id', user.uid);
     
     final List<String> participatedIds = (memberRecords as List)
         .map((m) => m['split_request_id'] as String)

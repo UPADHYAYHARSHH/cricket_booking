@@ -27,7 +27,8 @@ class _LoginScreenState extends State<LoginScreen> {
   String? emailError;
   String? passwordError;
 
-  bool isEmailLogin = false;
+  bool isEmailLogin = true;
+  bool isPasswordVisible = false;
 
   bool _validateFields() {
     setState(() {
@@ -210,12 +211,23 @@ class _LoginScreenState extends State<LoginScreen> {
                                 const AppSizedBox(height: 8),
                                 TextField(
                                   controller: passwordController,
-                                  obscureText: true,
+                                  obscureText: !isPasswordVisible,
                                   style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                                   decoration: InputDecoration(
                                     hintText: "Enter your password",
                                     hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
                                     errorText: passwordError,
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          isPasswordVisible = !isPasswordVisible;
+                                        });
+                                      },
+                                    ),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(10),
                                       borderSide: BorderSide(color: Theme.of(context).dividerColor),
@@ -249,7 +261,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   title: "Login",
                                   isLoading: isLoading,
                                   onTap: () {
+                                    debugPrint("DEBUG: [LoginScreen] Login button tapped");
                                     if (_validateFields()) {
+                                      debugPrint("DEBUG: [LoginScreen] Fields validated, attempting login");
                                       context.read<AuthCubit>().loginWithEmail(
                                             email: emailController.text.trim(),
                                             password: passwordController.text,

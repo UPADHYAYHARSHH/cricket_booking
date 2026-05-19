@@ -129,7 +129,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
 
     final timeRange = slots.isEmpty
         ? "No slots selected"
-        : "${slots.first.startTime} - ${slots.last.endTime}";
+        : slots.map((s) => "${s.startTime} - ${s.endTime}").join(", ");
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -406,38 +406,12 @@ class _VenueCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      AppText(
+                       AppText(
                         text: ground.name ?? "PowerPlay Arena",
                         textStyle: AppTextTheme.white15.copyWith(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.5,
-                        ),
-                      ),
-                      const AppSizedBox(height: 4),
-                      GestureDetector(
-                        onTap: () => TicketUtil.openMap(
-                            ground.latitude, ground.longitude),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.location_on,
-                                size: 14, color: Colors.white70),
-                            const AppSizedBox(width: 4),
-                            Expanded(
-                              child: AppText(
-                                text: ground.address ?? "Ahmedabad, Gujarat",
-                                textStyle: AppTextTheme.white10.copyWith(
-                                  fontSize: 12,
-                                  color: Colors.white.withValues(alpha: 0.8),
-                                  decoration: TextDecoration.underline,
-                                  decorationColor:
-                                      Colors.white.withValues(alpha: 0.5),
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
                         ),
                       ),
                     ],
@@ -531,25 +505,11 @@ class _BookingDetailsCard extends StatelessWidget {
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Divider(height: 1),
           ),
-          Row(
-            children: [
-              Expanded(
-                child: _buildDetailRow(
-                  context,
-                  "Sport",
-                  sportName,
-                  Icons.sports_cricket_outlined,
-                ),
-              ),
-              Expanded(
-                child: _buildDetailRow(
-                  context,
-                  "Period",
-                  period,
-                  Icons.wb_sunny_outlined,
-                ),
-              ),
-            ],
+          _buildDetailRow(
+            context,
+            "Sport",
+            sportName,
+            Icons.sports_cricket_outlined,
           ),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),

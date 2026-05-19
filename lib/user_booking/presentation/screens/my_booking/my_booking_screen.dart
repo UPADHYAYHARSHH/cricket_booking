@@ -23,6 +23,8 @@ import 'package:turfpro/user_booking/presentation/widgets/add_review_bottom_shee
 import 'package:turfpro/user_booking/presentation/widgets/slot_selection_widgets.dart';
 import 'package:turfpro/user_booking/presentation/widgets/ground_image_carousel.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:turfpro/user_booking/domain/models/slot_models.dart';
 
 class MyBookingsScreen extends StatefulWidget {
   const MyBookingsScreen({super.key});
@@ -120,7 +122,9 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
           child: AppText(
             text: label,
             textStyle: AppTextTheme.black13.copyWith(
-              color: isSelected ? AppColors.white : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              color: isSelected
+                  ? AppColors.white
+                  : theme.colorScheme.onSurface.withValues(alpha: 0.6),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -138,7 +142,9 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
         }
 
         if (state is BookingError) {
-          return Center(child: AppText(text: state.message, textStyle: AppTextTheme.grey13));
+          return Center(
+              child:
+                  AppText(text: state.message, textStyle: AppTextTheme.grey13));
         }
 
         if (state is BookingLoaded) {
@@ -234,9 +240,10 @@ class _BookingCardState extends State<_BookingCard> {
   }
 
   Future<void> _checkIfRated() async {
-    final user = Supabase.instance.client.auth.currentUser;
+    final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      final rated = await getIt<ReviewRepository>().hasUserRatedGround(user.id, widget.booking.groundId);
+      final rated = await getIt<ReviewRepository>()
+          .hasUserRatedGround(user.uid, widget.booking.groundId);
       if (mounted) {
         setState(() {
           _hasRated = rated;
@@ -277,6 +284,7 @@ class _BookingCardState extends State<_BookingCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildTopSection(context),
+              _buildDateSection(context),
               _buildInfoSection(context, onSurface),
               _buildActionRow(context),
             ],
@@ -291,11 +299,12 @@ class _BookingCardState extends State<_BookingCard> {
       children: [
         GroundImageCarousel(
           images: widget.booking.ground?.images ?? [],
-          fallbackImageUrl: widget.booking.ground?.imageUrl ?? "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e",
+          fallbackImageUrl: widget.booking.ground?.imageUrl ??
+              "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e",
           height: 160,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
         ),
-        
+
         // Status Badge
         Positioned(
           top: 12,
@@ -303,10 +312,12 @@ class _BookingCardState extends State<_BookingCard> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: _getStatusColor(widget.booking.status).withValues(alpha: 0.9),
+              color:
+                  _getStatusColor(widget.booking.status).withValues(alpha: 0.9),
               borderRadius: BorderRadius.circular(10),
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4),
+                BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1), blurRadius: 4),
               ],
             ),
             child: AppText(
@@ -320,54 +331,43 @@ class _BookingCardState extends State<_BookingCard> {
             ),
           ),
         ),
+      ],
+    );
+  }
 
-        // Date & Time Overlay
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.transparent, Colors.black.withValues(alpha: 0.8)],
-              ),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.calendar_today_rounded, size: 14, color: Colors.white),
-                const SizedBox(width: 6),
-                AppText(
-                  text: DateFormat('EEE, d MMM').format(widget.booking.slotTime),
-                  textStyle: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(width: 12),
-                const Icon(Icons.access_time_rounded, size: 14, color: Colors.white),
-                const SizedBox(width: 6),
-                AppText(
-                  text: DateFormat('hh:mm a').format(widget.booking.slotTime),
-                  textStyle: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                ),
-                const Spacer(),
-                if (widget.booking.period != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.accentOrange,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: AppText(
-                      text: widget.booking.period!.toUpperCase(),
-                      textStyle: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-              ],
+  Widget _buildDateSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 16, 14, 0),
+      child: Row(
+        children: [
+          const Icon(Icons.calendar_today_rounded,
+              size: 16, color: AppColors.primaryDarkGreen),
+          const SizedBox(width: 8),
+          AppText(
+            text: DateFormat('EEE, d MMM yyyy').format(widget.booking.slotTime),
+            textStyle: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onSurface,
             ),
           ),
-        ),
-      ],
+          const Spacer(),
+          const Icon(Icons.access_time_rounded,
+              size: 16, color: AppColors.primaryDarkGreen),
+          const SizedBox(width: 8),
+          AppText(
+            text: DateFormat('hh:mm a').format(widget.booking.slotTime),
+            textStyle: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -392,9 +392,11 @@ class _BookingCardState extends State<_BookingCard> {
                     if (widget.booking.sportName != null) ...[
                       const SizedBox(height: 4),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
+                          color:
+                              AppColors.primaryDarkGreen.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: AppText(
@@ -431,7 +433,8 @@ class _BookingCardState extends State<_BookingCard> {
               const SizedBox(width: 4),
               Expanded(
                 child: AppText(
-                  text: widget.booking.ground?.address ?? "Location not available",
+                  text: widget.booking.ground?.address ??
+                      "Location not available",
                   textStyle: TextStyle(
                     fontSize: 12,
                     color: onSurface.withValues(alpha: 0.5),
@@ -446,7 +449,6 @@ class _BookingCardState extends State<_BookingCard> {
     );
   }
 
-
   Widget _buildActionRow(BuildContext context) {
     final now = DateTime.now();
     final isPast = widget.booking.slotTime.isBefore(now);
@@ -459,18 +461,21 @@ class _BookingCardState extends State<_BookingCard> {
             child: ElevatedButton(
               onPressed: () => _viewTicket(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
+                backgroundColor:
+                    AppColors.primaryDarkGreen.withValues(alpha: 0.1),
                 foregroundColor: AppColors.primaryDarkGreen,
                 elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
-              child: const Text("View Ticket", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              child: const Text("View Ticket",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
             ),
           ),
           if (isPast) ...[
-            const SizedBox(width: 12),
-            if (!_hasRated && !_isLoadingRating)
+            const SizedBox(width: 8),
+            if (!_hasRated && !_isLoadingRating) ...[
               Expanded(
                 child: ElevatedButton(
                   onPressed: () => _showRatingSheet(context),
@@ -478,26 +483,31 @@ class _BookingCardState extends State<_BookingCard> {
                     backgroundColor: Colors.amber.shade700,
                     foregroundColor: Colors.white,
                     elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  child: const Text("Rate Now", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                ),
-              )
-            else
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () => _rebook(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryDarkGreen,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  child: const Text("Rebook", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  child: const Text("Rate Now",
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 ),
               ),
+              const SizedBox(width: 8),
+            ],
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () => _rebook(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryDarkGreen,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: const Text("Rebook",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              ),
+            ),
           ],
         ],
       ),
@@ -535,6 +545,7 @@ class _BookingCardState extends State<_BookingCard> {
         builder: (_) => ViewTicketScreen(
           ticket: TicketModel(
             bookingId: widget.booking.id,
+            groundId: widget.booking.groundId,
             displayId: widget.booking.displayId,
             venueName: widget.booking.ground?.name ?? "Venue",
             pitchName: "Main Pitch",
@@ -547,7 +558,8 @@ class _BookingCardState extends State<_BookingCard> {
             price: widget.booking.amount,
             imageUrl: widget.booking.ground?.imageUrl ?? "",
             images: widget.booking.ground?.images ?? [],
-            isPaid: widget.booking.status == 'paid' || widget.booking.status == 'confirmed',
+            isPaid: widget.booking.status == 'paid' ||
+                widget.booking.status == 'confirmed',
             sportName: widget.booking.sportName ?? "Sport",
             period: widget.booking.period ?? "Day",
             amenities: widget.booking.ground?.amenities,
@@ -579,15 +591,118 @@ class ViewTicketScreen extends StatefulWidget {
 
 class _ViewTicketScreenState extends State<ViewTicketScreen> {
   bool _isSaving = false;
+  List<TimeSlot> _bookedSlots = [];
+  bool _isLoadingSlots = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBookedSlots();
+  }
+
+  Future<void> _loadBookedSlots() async {
+    try {
+      final formattedDate = "${widget.ticket.date.year}-${widget.ticket.date.month.toString().padLeft(2, '0')}-${widget.ticket.date.day.toString().padLeft(2, '0')}";
+      final response = await Supabase.instance.client
+          .from('slots')
+          .select('*')
+          .eq('ground_id', widget.ticket.groundId)
+          .eq('date', formattedDate)
+          .eq('status', 'booked');
+
+      final List data = response as List;
+      final slots = data.map((json) {
+        final startTime = _formatTime(json['start_time']);
+        var endTime = _formatTime(json['end_time']);
+        if (endTime.isEmpty && startTime.isNotEmpty) {
+          endTime = _calculateEndTime(startTime);
+        }
+        return TimeSlot(
+          startTime: startTime,
+          endTime: endTime,
+          price: (json['price'] ?? 0).toDouble(),
+          status: SlotStatus.booked,
+        );
+      }).toList();
+
+      if (mounted) {
+        setState(() {
+          _bookedSlots = slots;
+          _isLoadingSlots = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("[VIEW_TICKET] Error loading slots: $e");
+      if (mounted) {
+        setState(() => _isLoadingSlots = false);
+      }
+    }
+  }
+
+  String _calculateEndTime(String startTime) {
+    try {
+      final cleanTime = startTime.trim();
+      final parts = cleanTime.split(' ');
+      if (parts.length != 2) return '';
+      
+      final timeParts = parts[0].split(':');
+      if (timeParts.isEmpty) return '';
+      
+      int hour = int.parse(timeParts[0]);
+      int minute = timeParts.length > 1 ? int.parse(timeParts[1]) : 0;
+      String amPm = parts[1].toUpperCase();
+      
+      hour += 1;
+      if (hour == 12) {
+        amPm = amPm == 'AM' ? 'PM' : 'AM';
+      } else if (hour > 12) {
+        hour -= 12;
+      }
+      
+      final minuteStr = minute.toString().padLeft(2, '0');
+      final hourStr = hour.toString().padLeft(2, '0');
+      return '$hourStr:$minuteStr $amPm';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  String _formatTime(String? timeString) {
+    if (timeString == null || timeString.isEmpty) return '';
+    try {
+      if (timeString.contains('T')) {
+        final date = DateTime.parse(timeString);
+        final hour = date.hour > 12 ? date.hour - 12 : (date.hour == 0 ? 12 : date.hour);
+        final amPm = date.hour >= 12 ? 'PM' : 'AM';
+        final minute = date.minute.toString().padLeft(2, '0');
+        return '$hour:$minute $amPm';
+      } else {
+        final parts = timeString.split(':');
+        if (parts.length < 2) return timeString;
+        int hour = int.parse(parts[0]);
+        final minute = parts[1];
+        final amPm = hour >= 12 ? 'PM' : 'AM';
+        if (hour > 12) hour -= 12;
+        if (hour == 0) hour = 12;
+        return '${hour.toString().padLeft(2, '0')}:$minute $amPm';
+      }
+    } catch (_) {
+      return timeString;
+    }
+  }
 
   Future<void> _generateAndDownload() async {
+    final timeStr = _bookedSlots.isNotEmpty
+        ? _bookedSlots.map((s) => "${s.startTime} - ${s.endTime}").join(', ')
+        : widget.ticket.time;
+
     await TicketUtil.downloadTicket(
       context,
       groundName: widget.ticket.venueName,
       groundAddress: widget.ticket.location,
       groundImageUrl: widget.ticket.imageUrl,
       date: widget.ticket.date,
-      timeRange: widget.ticket.time,
+      timeRange: timeStr,
       orderId: widget.ticket.bookingId,
       displayId: widget.ticket.displayId,
       totalPrice: widget.ticket.price,
@@ -613,7 +728,8 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, size: 20, color: theme.colorScheme.onSurface),
+          icon: Icon(Icons.arrow_back_ios_new,
+              size: 20, color: theme.colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         title: const AppText(
@@ -629,6 +745,8 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
             _TicketCard(
               ticket: widget.ticket,
               onLocationTap: _openMap,
+              bookedSlots: _bookedSlots,
+              isLoadingSlots: _isLoadingSlots,
             ),
             const SizedBox(height: 24),
             SlotSelectionWidgets.buildMapSection(
@@ -658,16 +776,19 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
                 ? const SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                        color: Colors.white, strokeWidth: 2),
                   )
                 : const Icon(Icons.download_rounded, color: Colors.white),
             label: Text(
               _isSaving ? "Generating PDF..." : "Download Ticket",
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.bold),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryDarkGreen,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
           ),
         ),
@@ -677,11 +798,16 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
           height: 52,
           child: OutlinedButton.icon(
             onPressed: () {},
-            icon: const Icon(Icons.share_outlined, color: AppColors.primaryDarkGreen),
-            label: const Text("Share with Friends", style: TextStyle(color: AppColors.primaryDarkGreen, fontWeight: FontWeight.bold)),
+            icon: const Icon(Icons.share_outlined,
+                color: AppColors.primaryDarkGreen),
+            label: const Text("Share with Friends",
+                style: TextStyle(
+                    color: AppColors.primaryDarkGreen,
+                    fontWeight: FontWeight.bold)),
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: AppColors.primaryDarkGreen),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
           ),
         ),
@@ -690,11 +816,26 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
   }
 }
 
-class _TicketCard extends StatelessWidget {
+class _TicketCard extends StatefulWidget {
   final TicketModel ticket;
   final VoidCallback onLocationTap;
+  final List<TimeSlot> bookedSlots;
+  final bool isLoadingSlots;
 
-  const _TicketCard({required this.ticket, required this.onLocationTap});
+  const _TicketCard({
+    required this.ticket,
+    required this.onLocationTap,
+    required this.bookedSlots,
+    required this.isLoadingSlots,
+  });
+
+  @override
+  State<_TicketCard> createState() => _TicketCardState();
+}
+
+class _TicketCardState extends State<_TicketCard> {
+  bool _isExpanded = false;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -705,7 +846,8 @@ class _TicketCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.3 : 0.08),
+            color: Colors.black
+                .withOpacity(theme.brightness == Brightness.dark ? 0.3 : 0.08),
             blurRadius: 20,
             offset: const Offset(0, 10),
           )
@@ -714,6 +856,7 @@ class _TicketCard extends StatelessWidget {
       child: Column(
         children: [
           _buildVenueImage(context),
+          _buildVenueDetails(context),
           _buildTicketInfo(context),
           _buildDashedDivider(context),
           _buildQrSection(context),
@@ -726,43 +869,103 @@ class _TicketCard extends StatelessWidget {
   Widget _buildVenueImage(BuildContext context) {
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      child: Stack(
+      child: GroundImageCarousel(
+        images: widget.ticket.images,
+        fallbackImageUrl: widget.ticket.imageUrl,
+        height: 180,
+        borderRadius: BorderRadius.zero,
+      ),
+    );
+  }
+
+  Widget _buildVenueDetails(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GroundImageCarousel(
-            images: ticket.images,
-            fallbackImageUrl: ticket.imageUrl,
-            height: 180,
-            borderRadius: BorderRadius.zero,
+          Row(
+            children: [
+              Expanded(
+                child: AppText(
+                  text: widget.ticket.venueName,
+                  textStyle: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AppColors.primaryDarkGreen.withValues(alpha: 0.2)),
+                ),
+                child: AppText(
+                  text: widget.ticket.sportName.toUpperCase(),
+                  textStyle: const TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.primaryDarkGreen,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ],
           ),
-          Positioned(
-            bottom: 12,
-            left: 16,
-            child: Column(
+          const SizedBox(height: 8),
+          GestureDetector(
+            onTap: widget.onLocationTap,
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                GestureDetector(
-                  onTap: onLocationTap,
-                  child: Row(
-                    children: [
-                      Icon(Icons.location_on, color: Colors.white.withOpacity(0.8), size: 14),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: AppText(
-                          text: ticket.location,
-                          textStyle: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
-                            fontSize: 12,
-                            decoration: TextDecoration.underline,
-                            decorationColor: Colors.white.withOpacity(0.5),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
+                const Icon(Icons.location_on, size: 16, color: AppColors.primaryDarkGreen),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: AppText(
+                    text: widget.ticket.location,
+                    textStyle: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      decoration: TextDecoration.underline,
+                      decorationColor: theme.colorScheme.onSurface.withOpacity(0.4),
+                    ),
                   ),
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Divider(height: 1),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSlotChip(TimeSlot slot) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.primaryDarkGreen.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: AppColors.primaryDarkGreen.withValues(alpha: 0.15),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.access_time_rounded,
+              size: 10, color: AppColors.primaryDarkGreen),
+          const SizedBox(width: 3),
+          AppText(
+            text: "${slot.startTime} - ${slot.endTime}",
+            textStyle: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primaryDarkGreen,
             ),
           ),
         ],
@@ -771,23 +974,92 @@ class _TicketCard extends StatelessWidget {
   }
 
   Widget _buildTicketInfo(BuildContext context) {
+    final theme = Theme.of(context);
+    final String timeStr;
+    if (widget.bookedSlots.isNotEmpty) {
+      timeStr = widget.bookedSlots.map((s) => "${s.startTime} - ${s.endTime}").join(', ');
+    } else {
+      timeStr = widget.ticket.time;
+    }
+
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _infoColumn(context, "DATE", DateFormat('EEE, d MMM yyyy').format(ticket.date)),
-              _infoColumn(context, "TIME", ticket.time),
+              Expanded(
+                child: _infoColumn(context, "DATE",
+                    DateFormat('EEE, d MMM yyyy').format(widget.ticket.date)),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _infoColumn(
+                  context,
+                  "TIME",
+                  timeStr,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  customValue: widget.bookedSlots.isNotEmpty
+                      ? Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          alignment: WrapAlignment.end,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            _buildSlotChip(widget.bookedSlots.first),
+                            if (_isExpanded)
+                              ...widget.bookedSlots.skip(1).map((slot) => _buildSlotChip(slot)),
+                            if (widget.bookedSlots.length > 1)
+                              GestureDetector(
+                                onTap: () => setState(() => _isExpanded = !_isExpanded),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryDarkGreen.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: AppColors.primaryDarkGreen.withValues(alpha: 0.25),
+                                    ),
+                                  ),
+                                  child: AppText(
+                                    text: _isExpanded
+                                        ? "Show less"
+                                        : "+${widget.bookedSlots.length - 1} more",
+                                    textStyle: const TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.primaryDarkGreen,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        )
+                      : null,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _infoColumn(context, "ORDER ID", "#${IdUtil.formatDisplayId(ticket.displayId)}"),
-              _infoColumn(context, "PRICE", "₹${ticket.price.toStringAsFixed(0)}"),
+              Expanded(
+                child: _infoColumn(context, "ORDER ID",
+                    "#${IdUtil.formatDisplayId(widget.ticket.displayId)}"),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _infoColumn(
+                  context,
+                  "PRICE",
+                  "₹${widget.ticket.price.toStringAsFixed(0)}",
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                ),
+              ),
             ],
           ),
         ],
@@ -795,13 +1067,17 @@ class _TicketCard extends StatelessWidget {
     );
   }
 
-  Widget _infoColumn(BuildContext context, String title, String value) {
+  Widget _infoColumn(BuildContext context, String title, String value,
+      {CrossAxisAlignment crossAxisAlignment = CrossAxisAlignment.start,
+      Widget? customValue}) {
     final theme = Theme.of(context);
+    final isEnd = crossAxisAlignment == CrossAxisAlignment.end;
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: crossAxisAlignment,
       children: [
         AppText(
           text: title,
+          align: isEnd ? TextAlign.end : TextAlign.start,
           textStyle: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.bold,
@@ -809,10 +1085,12 @@ class _TicketCard extends StatelessWidget {
               letterSpacing: 1),
         ),
         const SizedBox(height: 4),
-        AppText(
-          text: value,
-          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-        ),
+        customValue ??
+            AppText(
+              text: value,
+              textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              align: isEnd ? TextAlign.end : TextAlign.start,
+            ),
       ],
     );
   }
@@ -831,7 +1109,12 @@ class _TicketCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: List.generate(
                     (constraints.constrainWidth() / 10).floor(),
-                    (index) => SizedBox(width: 5, height: 1, child: DecoratedBox(decoration: BoxDecoration(color: Theme.of(context).dividerColor))),
+                    (index) => SizedBox(
+                        width: 5,
+                        height: 1,
+                        child: DecoratedBox(
+                            decoration: BoxDecoration(
+                                color: Theme.of(context).dividerColor))),
                   ),
                 );
               },
@@ -870,12 +1153,14 @@ class _TicketCard extends StatelessWidget {
             border: Border.all(color: theme.dividerColor),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: _QrCodePainter(data: ticket.bookingId),
+          child: _QrCodePainter(data: widget.ticket.bookingId),
         ),
         const SizedBox(height: 12),
         AppText(
           text: "Scan at entrance",
-          textStyle: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.4)),
+          textStyle: TextStyle(
+              fontSize: 12,
+              color: theme.colorScheme.onSurface.withOpacity(0.4)),
         ),
       ],
     );
@@ -898,9 +1183,9 @@ class _QrCodePainter extends StatelessWidget {
   }
 }
 
-
 class TicketModel {
   final String bookingId;
+  final String groundId;
   final int displayId;
   final String venueName;
   final String pitchName;
@@ -920,6 +1205,7 @@ class TicketModel {
 
   TicketModel({
     required this.bookingId,
+    required this.groundId,
     required this.displayId,
     required this.venueName,
     required this.pitchName,

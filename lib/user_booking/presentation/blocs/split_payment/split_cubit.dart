@@ -4,6 +4,7 @@ import '../../../data/repositories/split_payment_repository.dart';
 import '../../../domain/models/split_payment_model.dart';
 import 'split_state.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SplitPaymentCubit extends Cubit<SplitPaymentState> {
   final SplitPaymentRepository _repository;
@@ -109,7 +110,7 @@ class SplitPaymentCubit extends Cubit<SplitPaymentState> {
       emit(s.copyWith(isSubmitting: true));
 
       try {
-        final userId = Supabase.instance.client.auth.currentUser!.id;
+        final userId = FirebaseAuth.instance.currentUser!.uid;
         final request = SplitRequestModel(
           bookingId: bookingId,
           userId: userId,

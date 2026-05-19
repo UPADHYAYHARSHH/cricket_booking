@@ -61,11 +61,15 @@ class SlotSelectionWidgets {
                 ),
                 const AppSizedBox(height: 2),
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    HugeIcon(
-                      icon: HugeIcons.strokeRoundedLocation01,
-                      size: 12,
-                      color: colorScheme.onSurface.withValues(alpha: 0.6),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2.0),
+                      child: HugeIcon(
+                        icon: HugeIcons.strokeRoundedLocation01,
+                        size: 12,
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
                     ),
                     const AppSizedBox(width: 4),
                     Flexible(
@@ -953,16 +957,7 @@ class SlotSelectionWidgets {
                 textColor: AppColors.white,
               ),
             ),
-          Positioned(
-            bottom: 12,
-            right: 12,
-            child: _badge(
-              text:
-                  'From ₹${ground?.pricePerHour.toStringAsFixed(0) ?? '0'}/hr',
-              bgColor: kOrange,
-              textColor: Colors.white,
-            ),
-          ),
+
         ],
       ),
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class PaymentRepository {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -70,11 +71,11 @@ class PaymentRepository {
     String? period,
   }) async {
     debugPrint('PaymentRepository: saveBooking called');
-    final user = _supabase.auth.currentUser;
+    final user = FirebaseAuth.instance.currentUser;
     if (user == null) throw Exception('User not authenticated');
 
     final bookingData = {
-      'user_id': user.id,
+      'user_id': user.uid,
       'ground_id': groundId,
       'slot_time': slotTime.toIso8601String(),
       'amount': amount,
@@ -103,7 +104,7 @@ class PaymentRepository {
     String? period,
   }) async {
     debugPrint('PaymentRepository: saveDirectBooking called - Ground: $groundId, Date: $date, Amount: $amount');
-    final user = _supabase.auth.currentUser;
+    final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       debugPrint('PaymentRepository: Error - User not authenticated');
       throw Exception('User not authenticated');
@@ -112,7 +113,7 @@ class PaymentRepository {
     try {
       // 1. Create Booking Record
       final bookingData = {
-        'user_id': user.id,
+        'user_id': user.uid,
         'ground_id': groundId,
         'slot_time': date.toIso8601String(),
         'amount': amount,

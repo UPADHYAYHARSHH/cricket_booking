@@ -11,13 +11,14 @@ import '../../../constants/widgets/app_text.dart';
 import '../../../constants/widgets/app_sizedBox.dart';
 
 import '../../../constants/route_constants.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SplitHistoryScreen extends StatelessWidget {
   const SplitHistoryScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
 
     return BlocProvider(
       create: (context) => getIt<SplitHistoryCubit>()..fetchHistory(),

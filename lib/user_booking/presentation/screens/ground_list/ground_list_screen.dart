@@ -484,12 +484,14 @@ class _GroundListScreenState extends State<GroundListScreen> {
                   
                   return GestureDetector(
                     onTap: () {
-                      if (state is GroundLoaded) {
-                        final locationState = context.read<LocationCubit>().state;
-                        context.read<GroundCubit>().applyFilters(
-                          state.criteria.copyWith(sportId: sport['id']),
-                          userLat: locationState.hasGpsLocation ? locationState.latitude : null,
-                          userLng: locationState.hasGpsLocation ? locationState.longitude : null,
+                      if (sport['id'] == 'all') {
+                        // Do nothing as the main screen already shows all sports
+                        // unless another filter is active.
+                      } else {
+                        Navigator.pushNamed(
+                          context,
+                          AppRoutes.categoryGrounds,
+                          arguments: sport['name'],
                         );
                       }
                     },

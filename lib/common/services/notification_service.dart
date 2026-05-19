@@ -2,6 +2,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class NotificationService {
   static const String _fcmTokenKey = 'fcm_token';
@@ -26,7 +27,7 @@ class NotificationService {
 
   static Future<void> updateFcmToken() async {
     try {
-      final user = Supabase.instance.client.auth.currentUser;
+      final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
 
       // 1. Get FCM Token
@@ -49,7 +50,7 @@ class NotificationService {
 
   static Future<void> _updateTokenInSupabase(String token) async {
     try {
-      final user = Supabase.instance.client.auth.currentUser;
+      final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
 
       // Store locally
@@ -60,7 +61,7 @@ class NotificationService {
       await Supabase.instance.client
           .from('users')
           .update({'fcm_token': token})
-          .eq('id', user.id);
+          .eq('id', user.uid);
     } catch (e) {
       debugPrint("DEBUG: [NotificationService] Failed to update token in Supabase: $e");
     }

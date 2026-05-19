@@ -16,6 +16,7 @@ import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import 'package:turfpro/user_booking/data/models/ground_model.dart';
 import 'package:turfpro/user_booking/presentation/widgets/ground_image_carousel.dart';
 import 'package:turfpro/user_booking/presentation/widgets/slot_selection_widgets.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class GroundCard extends StatefulWidget {
   final GroundModel ground;
@@ -92,11 +93,11 @@ class _GroundCardState extends State<GroundCard> {
               return GestureDetector(
                 onTap: () {
                   HapticFeedback.lightImpact();
-                  final user = Supabase.instance.client.auth.currentUser;
+                  final user = FirebaseAuth.instance.currentUser;
                   if (user != null) {
                     context
                         .read<SavedGroundCubit>()
-                        .toggleFavorite(user.id, widget.ground.id);
+                        .toggleFavorite(user.uid, widget.ground.id);
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(

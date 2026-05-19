@@ -11,12 +11,13 @@ import '../../../../common/constants/colors.dart';
 import '../my_booking/my_booking_screen.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:geolocator/geolocator.dart';
 import '../../blocs/saved_ground/saved_ground_cubit.dart';
 import '../../blocs/location/location_cubit.dart';
 import '../../blocs/notification/notification_cubit.dart';
 import '../../../di/get_it/get_it.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class MainNavScreen extends StatefulWidget {
   const MainNavScreen({super.key});
@@ -28,16 +29,16 @@ class MainNavScreen extends StatefulWidget {
 class _MainNavScreenState extends State<MainNavScreen> {
   int currentIndex = 0;
   late final PageController _pageController;
-  late final StreamSubscription<AuthState> _authSubscription;
+  late final StreamSubscription<User?> _authSubscription;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: 0);
 
-    final user = Supabase.instance.client.auth.currentUser;
+    final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      context.read<SavedGroundCubit>().loadFavorites(user.id);
+      context.read<SavedGroundCubit>().loadFavorites(user.uid);
     }
 
     // Trigger location fetch when main navbar opens
@@ -45,13 +46,11 @@ class _MainNavScreenState extends State<MainNavScreen> {
 
     // Listen for auth state changes (essential for session restoration on restart)
     _authSubscription =
-        Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-      final AuthChangeEvent event = data.event;
-      final Session? session = data.session;
-      final userId = session?.user.id;
+        FirebaseAuth.instance.authStateChanges().listen((user) {
+      final userId = user?.uid;
 
       print(
-          "[AUTH_SYNC] State change detected: $event. User logged in: ${userId != null}");
+          "[AUTH_SYNC] State change detected. User logged in: ${userId != null}");
 
       if (userId != null && mounted) {
         print("[AUTH_SYNC] Restoring favorites for: $userId");

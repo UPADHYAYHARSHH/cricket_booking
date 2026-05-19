@@ -6,6 +6,7 @@ import 'package:turfpro/user_booking/constants/route_constants.dart';
 import 'package:turfpro/user_booking/di/get_it/get_it.dart';
 import 'package:turfpro/user_booking/domain/repositories/ground_repository.dart';
 import 'package:turfpro/main.dart'; // Import to access navigatorKey
+import 'package:firebase_auth/firebase_auth.dart';
 
 class DeepLinkService {
   static final DeepLinkService _instance = DeepLinkService._internal();
@@ -76,7 +77,7 @@ class DeepLinkService {
   }
 
   Future<void> _handleGroundLink(String id) async {
-    final user = Supabase.instance.client.auth.currentUser;
+    final user = FirebaseAuth.instance.currentUser;
     final context = navigatorKey.currentContext;
     if (context == null) return;
 

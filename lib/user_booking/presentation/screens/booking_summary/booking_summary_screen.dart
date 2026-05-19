@@ -187,11 +187,6 @@ class BookingSummaryScreen extends StatelessWidget {
                                               text: selectedSport.toUpperCase(),
                                               color: AppColors.primaryDarkGreen,
                                             ),
-                                            const SizedBox(width: 8),
-                                            _buildBadge(
-                                              text: selectedPeriod.toUpperCase(),
-                                              color: AppColors.accentOrange,
-                                            ),
                                           ],
                                         ),
                                       ],
@@ -210,17 +205,20 @@ class BookingSummaryScreen extends StatelessWidget {
                               ),
                               const SizedBox(height: 12),
                               Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  HugeIcon(
-                                    icon: HugeIcons.strokeRoundedLocation01,
-                                    size: 14,
-                                    color: colorScheme.onSurface.withValues(alpha: 0.5),
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 2.0),
+                                    child: HugeIcon(
+                                      icon: HugeIcons.strokeRoundedLocation01,
+                                      size: 14,
+                                      color: colorScheme.onSurface.withValues(alpha: 0.5),
+                                    ),
                                   ),
                                   const SizedBox(width: 4),
                                   Expanded(
                                     child: AppText(
                                       text: ground.address,
-                                      maxLines: 1,
                                       textStyle: TextStyle(
                                         fontSize: 12,
                                         color: colorScheme.onSurface.withValues(alpha: 0.5),
@@ -287,7 +285,7 @@ class BookingSummaryScreen extends StatelessWidget {
                           const Icon(Icons.access_time_rounded, size: 14, color: AppColors.primaryDarkGreen),
                           const AppSizedBox(width: 6),
                           AppText(
-                            text: slot.startTime,
+                            text: "${slot.startTime} - ${slot.endTime}",
                             textStyle: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
@@ -465,7 +463,7 @@ class BookingSummaryScreen extends StatelessWidget {
                 ],
                 _priceRow(context, label: "Platform Fee", amount: platformFee),
                 const AppSizedBox(height: 12),
-                _priceRow(context, label: "Taxes & Charges", amount: 0, isFree: true),
+                _priceRow(context, label: "Taxes & Charges", amount: 0),
                 const AppSizedBox(height: 20),
                 const Divider(),
                 const AppSizedBox(height: 20),

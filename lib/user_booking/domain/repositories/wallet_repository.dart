@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 abstract class WalletRepository {
   Future<double> getBalance();
@@ -17,19 +18,19 @@ class WalletRepositoryImpl implements WalletRepository {
 
   @override
   Future<double> getBalance() async {
-    final user = _supabase.auth.currentUser;
+    final user = FirebaseAuth.instance.currentUser;
     if (user == null) return 0.0;
 
     final response = await _supabase
         .from('wallets')
         .select('balance')
-        .eq('user_id', user.id)
+        .eq('user_id', user.uid)
         .maybeSingle();
 
     if (response == null) {
       // Create wallet if it doesn't exist
       await _supabase.from('wallets').insert({
-        'user_id': user.id,
+        'user_id': user.uid,
         'balance': 0.0,
       });
       return 0.0;
@@ -40,13 +41,13 @@ class WalletRepositoryImpl implements WalletRepository {
 
   @override
   Future<void> updateBalance(double amount) async {
-    final user = _supabase.auth.currentUser;
+    final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
     await _supabase
         .from('wallets')
         .update({'balance': amount})
-        .eq('user_id', user.id);
+        .eq('user_id', user.uid);
   }
 
   @override
@@ -55,11 +56,11 @@ class WalletRepositoryImpl implements WalletRepository {
     required String type,
     required String description,
   }) async {
-    final user = _supabase.auth.currentUser;
+    final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
     await _supabase.from('wallet_transactions').insert({
-      'user_id': user.id,
+      'user_id': user.uid,
       'amount': amount,
       'type': type, // 'credit' or 'debit'
       'description': description,
