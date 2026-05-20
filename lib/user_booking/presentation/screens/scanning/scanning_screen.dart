@@ -22,11 +22,15 @@ class _ScanningScreenState extends State<ScanningScreen> {
     setState(() => _isProcessing = true);
 
     try {
+      // If code contains concatenations (separated by '|'), parse out the clean booking ID/order ID (first element)
+      final parts = code.split('|');
+      final searchCode = parts.isNotEmpty ? parts[0].trim() : code;
+
       // 1. Try to find the booking by ID or Razorpay Order ID
       final response = await Supabase.instance.client
           .from('bookings')
           .select('id, status, user_id, display_id, grounds(name)')
-          .or('id.eq.$code,razorpay_order_id.eq.$code')
+          .or('id.eq.$searchCode,razorpay_order_id.eq.$searchCode')
           .maybeSingle();
 
       if (response == null) {

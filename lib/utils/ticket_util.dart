@@ -52,6 +52,8 @@ class TicketUtil {
     required double totalPrice,
     required String sportName,
     required String selectedPeriod,
+    required String groundId,
+    required String ownerId,
     List<String>? amenities,
     VoidCallback? onLoadingStarted,
     VoidCallback? onLoadingFinished,
@@ -70,6 +72,8 @@ class TicketUtil {
         totalPrice: totalPrice,
         sportName: sportName,
         selectedPeriod: selectedPeriod,
+        groundId: groundId,
+        ownerId: ownerId,
         amenities: amenities,
       );
 
@@ -148,6 +152,8 @@ class TicketUtil {
     required double totalPrice,
     required String sportName,
     required String selectedPeriod,
+    required String groundId,
+    required String ownerId,
     List<String>? amenities,
   }) async {
     final pdf = pw.Document();
@@ -412,7 +418,7 @@ class TicketUtil {
                                 ),
                                 child: pw.BarcodeWidget(
                                   barcode: pw.Barcode.qrCode(),
-                                  data: orderId,
+                                  data: "$orderId | Ground: $groundName | Owner: $ownerId | Ground ID: $groundId",
                                   width: 100,
                                   height: 100,
                                   color: _kDark,

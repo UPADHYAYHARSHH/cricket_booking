@@ -563,6 +563,7 @@ class _BookingCardState extends State<_BookingCard> {
             sportName: widget.booking.sportName ?? "Sport",
             period: widget.booking.period ?? "Day",
             amenities: widget.booking.ground?.amenities,
+            ownerId: widget.booking.ground?.ownerId ?? "N/A",
           ),
         ),
       ),
@@ -708,6 +709,8 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
       totalPrice: widget.ticket.price,
       sportName: widget.ticket.sportName,
       selectedPeriod: widget.ticket.period,
+      groundId: widget.ticket.groundId,
+      ownerId: widget.ticket.ownerId,
       amenities: widget.ticket.amenities,
       onLoadingStarted: () => setState(() => _isSaving = true),
       onLoadingFinished: () {
@@ -1153,7 +1156,9 @@ class _TicketCardState extends State<_TicketCard> {
             border: Border.all(color: theme.dividerColor),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: _QrCodePainter(data: widget.ticket.bookingId),
+          child: _QrCodePainter(
+            data: "${widget.ticket.bookingId} | Ground: ${widget.ticket.venueName} | Owner: ${widget.ticket.ownerId} | Ground ID: ${widget.ticket.groundId}",
+          ),
         ),
         const SizedBox(height: 12),
         AppText(
@@ -1202,6 +1207,7 @@ class TicketModel {
   final String sportName;
   final String period;
   final List<String>? amenities;
+  final String ownerId;
 
   TicketModel({
     required this.bookingId,
@@ -1222,5 +1228,6 @@ class TicketModel {
     this.sportName = "Sport",
     this.period = "Day",
     this.amenities,
+    this.ownerId = "N/A",
   });
 }

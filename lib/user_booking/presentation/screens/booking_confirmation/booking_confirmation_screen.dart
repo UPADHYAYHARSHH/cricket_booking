@@ -40,6 +40,8 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
     double totalPrice,
     String sportName,
     String selectedPeriod,
+    String groundId,
+    String ownerId,
     List<String>? amenities,
   ) async {
     await TicketUtil.downloadTicket(
@@ -54,6 +56,8 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
       totalPrice: totalPrice,
       sportName: sportName,
       selectedPeriod: selectedPeriod,
+      groundId: groundId,
+      ownerId: ownerId,
       amenities: amenities,
       onLoadingStarted: () => setState(() => _isSaving = true),
       onLoadingFinished: () {
@@ -212,7 +216,10 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
               ),
 
               const AppSizedBox(height: 20),
-              _QRCodeCard(orderId: orderId, displayId: displayId),
+              _QRCodeCard(
+                qrData: "$orderId | Ground: ${ground.name} | Owner: ${ground.ownerId} | Ground ID: ${ground.id}",
+                displayId: displayId,
+              ),
 
               const AppSizedBox(height: 24),
               SlotSelectionWidgets.buildMapSection(
@@ -239,6 +246,8 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                           totalPrice,
                           args.sportName,
                           args.selectedPeriod,
+                          ground.id,
+                          ground.ownerId,
                           ground.amenities,
                         ),
                 icon: _isSaving
@@ -611,9 +620,9 @@ class _BookingDetailsCard extends StatelessWidget {
 }
 
 class _QRCodeCard extends StatelessWidget {
-  final String orderId;
+  final String qrData;
   final int displayId;
-  const _QRCodeCard({required this.orderId, required this.displayId});
+  const _QRCodeCard({required this.qrData, required this.displayId});
 
   @override
   Widget build(BuildContext context) {
@@ -653,7 +662,7 @@ class _QRCodeCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
             ),
             child: QrImageView(
-              data: orderId,
+              data: qrData,
               version: QrVersions.auto,
               size: 160.0,
               backgroundColor: Colors.white,
