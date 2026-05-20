@@ -420,16 +420,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
                             padding: const EdgeInsets.only(bottom: 16),
                             child: GroundCard(
                               ground: state.grounds[index],
-                            )
-                                .animate()
-                                .fadeIn(
-                                    duration: 300.ms,
-                                    delay: (index < 10 ? index * 50 : 0).ms)
-                                .slideY(
-                                    begin: 0.03,
-                                    end: 0,
-                                    duration: 300.ms,
-                                    curve: Curves.easeOutQuad),
+                            ),
                           );
                         },
                         childCount: state.grounds.length,

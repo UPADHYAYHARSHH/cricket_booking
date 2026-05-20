@@ -18,6 +18,7 @@ import 'package:turfpro/user_booking/domain/repositories/review_repository.dart'
 import 'package:turfpro/user_booking/data/models/review_model.dart';
 import 'package:turfpro/user_booking/domain/repositories/loyalty_repository.dart';
 import 'package:turfpro/user_booking/domain/repositories/wallet_repository.dart';
+import 'package:turfpro/user_booking/domain/repositories/slot_repository.dart';
 import 'package:turfpro/common/config/feature_config.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -40,6 +41,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
   double? _pendingAmount;
   List<TimeSlot>? _pendingSlots;
   DateTime? _pendingDate;
+  bool _isBookingInProgress = false;
 
   @override
   void initState() {
@@ -164,6 +166,11 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
       bool fromRetry = false}) async {
     HapticFeedback.mediumImpact();
     if (selectedSlots.isEmpty || _ground == null) return;
+    if (_isBookingInProgress) return;
+
+    setState(() {
+      _isBookingInProgress = true;
+    });
 
     showDialog(
       context: context,
@@ -182,6 +189,62 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
         if (_pendingDate!.isBefore(DateTime(now.year, now.month, now.day))) {
           _pendingDate = DateTime(now.year, now.month + 1, activeDate.date);
         }
+      }
+
+      // 1. Double check availability in DB to prevent duplicate bookings
+      final slotRepo = getIt<SlotRepository>();
+      final dbSlots = await slotRepo.fetchSlotsForGround(_ground!.id, _pendingDate!);
+      
+      final alreadyBookedSlots = <String>[];
+      for (final selectedSlot in selectedSlots) {
+        final matchedDbSlot = dbSlots.firstWhere(
+          (dbSlot) => dbSlot.startTime == selectedSlot.startTime,
+          orElse: () => TimeSlot(startTime: '', endTime: '', price: 0, status: SlotStatus.available),
+        );
+        if (matchedDbSlot.startTime.isNotEmpty && 
+            (matchedDbSlot.status == SlotStatus.booked || matchedDbSlot.status == SlotStatus.blocked)) {
+          alreadyBookedSlots.add(selectedSlot.startTime);
+        }
+      }
+
+      if (alreadyBookedSlots.isNotEmpty) {
+        if (mounted) {
+          Navigator.pop(context); // Pop the progress indicator
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const AppText(
+                text: "Slots Already Booked",
+                textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+              content: AppText(
+                text: "The following slots have already been booked by another user:\n\n${alreadyBookedSlots.join(', ')}\n\nPlease choose different slots.",
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const AppText(
+                    text: "OK",
+                    textStyle: TextStyle(color: AppColors.primaryDarkGreen, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+          );
+
+          // Refresh the slots stream/list to display the newly booked slots
+          context.read<SlotSelectionCubit>().loadSlots(
+            _ground!.id,
+            _pendingDate!,
+            openingTime: _ground!.openingTime,
+            closingTime: _ground!.closingTime,
+            pricePerSlot: _ground!.pricePerHour.toDouble(),
+          );
+        }
+        setState(() {
+          _isBookingInProgress = false;
+        });
+        return;
       }
 
       // Deduct from wallet if used
@@ -233,12 +296,19 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
         ),
       );
     } catch (e) {
-      if (!mounted) return;
-      try {
-        Navigator.pop(context);
-      } catch (_) {}
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Booking Error: $e'), backgroundColor: Colors.red));
+      if (mounted) {
+        try {
+          Navigator.pop(context);
+        } catch (_) {}
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Booking Error: $e'), backgroundColor: Colors.red));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isBookingInProgress = false;
+        });
+      }
     }
   }
 
@@ -308,9 +378,15 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: BlocBuilder<SlotSelectionCubit, SlotSelectionState>(
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          context.read<SlotSelectionCubit>().clearSelections();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: BlocBuilder<SlotSelectionCubit, SlotSelectionState>(
         builder: (context, state) {
           final cubit = context.read<SlotSelectionCubit>();
           final selectedSlots = state.slots
@@ -404,8 +480,9 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
           );
         },
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildEmptyState(BuildContext context, SlotSelectionState state) {
     if (state.errorMessage != null) {
