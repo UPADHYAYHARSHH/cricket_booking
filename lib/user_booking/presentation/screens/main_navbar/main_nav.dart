@@ -100,79 +100,56 @@ class _MainNavScreenState extends State<MainNavScreen> {
 
     return BlocBuilder<NotificationCubit, NotificationState>(
       builder: (context, notificationState) {
-        return BlocListener<LocationCubit, LocationState>(
-            listener: (context, state) {
-              if (state.errorMessage != null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.errorMessage!),
-                    backgroundColor: AppColors.error,
-                    action: SnackBarAction(
-                      label: 'Settings',
-                      textColor: Colors.white,
-                      onPressed: () {
-                        if (state.errorMessage!.contains('permanently')) {
-                          Geolocator.openAppSettings();
-                        } else {
-                          Geolocator.openLocationSettings();
-                        }
-                      },
-                    ),
-                    duration: const Duration(seconds: 5),
-                  ),
-                );
-              }
-            },
-            child: PopScope(
-              canPop: false,
-              onPopInvokedWithResult: (didPop, result) {
-                if (didPop) return;
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop) return;
 
-                if (currentIndex > 0) {
-                  _handleTabSwitch(currentIndex - 1);
-                } else {
-                  _showExitDialog(context);
-                }
+            if (currentIndex > 0) {
+              _handleTabSwitch(currentIndex - 1);
+            } else {
+              _showExitDialog(context);
+            }
+          },
+          child: Scaffold(
+            body: PageView(
+              physics: const NeverScrollableScrollPhysics(),
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() {
+                  currentIndex = index;
+                });
               },
-              child: Scaffold(
-                body: PageView(
-                  physics: const NeverScrollableScrollPhysics(),
-                  controller: _pageController,
-                  onPageChanged: (index) {
-                    setState(() {
-                      currentIndex = index;
-                    });
-                  },
-                  children: pages,
-                ),
-                bottomNavigationBar: Container(
-                  height: 70,
-                  decoration: BoxDecoration(
-                    color: theme.cardColor,
-                    boxShadow: [
-                      BoxShadow(
-                        blurRadius: 10,
-                        color: Colors.black.withOpacity(0.1),
-                      )
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _navItem(HugeIcons.strokeRoundedDiscoverCircle,
-                          "Discover", 0, onSurface,
-                          showBadge: notificationState.unreadCount > 0),
-                      _navItem(HugeIcons.strokeRoundedCalendar01, "Bookings", 1,
-                          onSurface),
-                      _navItem(HugeIcons.strokeRoundedFavourite, "Saved", 2,
-                          onSurface),
-                      _navItem(HugeIcons.strokeRoundedProfile, "Profile", 3,
-                          onSurface),
-                    ],
-                  ),
-                ),
+              children: pages,
+            ),
+            bottomNavigationBar: Container(
+              height: 70,
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                boxShadow: [
+                  BoxShadow(
+                    blurRadius: 10,
+                    color: Colors.black.withOpacity(0.1),
+                  )
+                ],
               ),
-            ));
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _navItem(HugeIcons.strokeRoundedDiscoverCircle,
+                      "Discover", 0, onSurface,
+                      showBadge: notificationState.unreadCount > 0),
+                  _navItem(HugeIcons.strokeRoundedCalendar01, "Bookings", 1,
+                      onSurface),
+                  _navItem(HugeIcons.strokeRoundedFavourite, "Saved", 2,
+                      onSurface),
+                  _navItem(HugeIcons.strokeRoundedProfile, "Profile", 3,
+                      onSurface),
+                ],
+              ),
+            ),
+          ),
+        );
       },
     );
   }

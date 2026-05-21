@@ -160,6 +160,9 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
             }
           }).toList();
 
+          // Sort chronologically: earlier should first (ascending)
+          bookings.sort((a, b) => a.slotTime.compareTo(b.slotTime));
+
           if (bookings.isEmpty) {
             return Center(
               child: Column(
@@ -359,7 +362,9 @@ class _BookingCardState extends State<_BookingCard> {
               size: 16, color: AppColors.primaryDarkGreen),
           const SizedBox(width: 8),
           AppText(
-            text: DateFormat('hh:mm a').format(widget.booking.slotTime),
+            text: widget.booking.period != null && widget.booking.period!.isNotEmpty
+                ? widget.booking.period!
+                : DateFormat('hh:mm a').format(widget.booking.slotTime),
             textStyle: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.bold,
@@ -534,6 +539,11 @@ class _BookingCardState extends State<_BookingCard> {
     );
 
     if (result == true) {
+      if (mounted) {
+        setState(() {
+          _hasRated = true;
+        });
+      }
       _checkIfRated();
     }
   }

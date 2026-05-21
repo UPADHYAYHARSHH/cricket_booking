@@ -94,20 +94,33 @@ class _GroundListScreenState extends State<GroundListScreen> {
       listenWhen: (previous, current) =>
           previous.city != current.city ||
           previous.isLoading != current.isLoading ||
-          previous.latitude != current.latitude ||
-          previous.longitude != current.longitude ||
           previous.hasGpsLocation != current.hasGpsLocation,
       listener: (context, state) {
         if (state.city != null &&
             !state.isLoading &&
             state.city != "Fetching...") {
           final groundCubit = context.read<GroundCubit>();
-          // Avoid redundant fetch if already loading or loaded with same parameters
-          groundCubit.getGrounds(
-            city: state.city,
-            userLat: state.hasGpsLocation ? state.latitude : null,
-            userLng: state.hasGpsLocation ? state.longitude : null,
-          );
+          
+          // Avoid redundant fetch if already loaded with same city
+          final currentState = groundCubit.state;
+          bool shouldFetch = true;
+          if (currentState is GroundLoaded) {
+            final cityName = state.city!.split(',').first.trim().toLowerCase();
+            if (currentState.allGrounds.isNotEmpty) {
+              final firstGroundCity = currentState.allGrounds.first.city.toLowerCase();
+              if (firstGroundCity.contains(cityName) || cityName.contains(firstGroundCity)) {
+                shouldFetch = false;
+              }
+            }
+          }
+
+          if (shouldFetch) {
+            groundCubit.getGrounds(
+              city: state.city,
+              userLat: state.hasGpsLocation ? state.latitude : null,
+              userLng: state.hasGpsLocation ? state.longitude : null,
+            );
+          }
         }
       },
       child: Scaffold(

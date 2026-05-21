@@ -77,6 +77,10 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
       );
 
       if (isValid && _ground != null && _pendingDate != null) {
+        final slotTimesPeriod = (_pendingSlots != null && _pendingSlots!.isNotEmpty)
+            ? _pendingSlots!.map((s) => "${s.startTime} - ${s.endTime}").join(', ')
+            : context.read<SlotSelectionCubit>().state.selectedPeriod;
+
         final bookingData = await _paymentRepo.saveBooking(
           groundId: _ground!.id,
           slotTime: _pendingDate!,
@@ -85,7 +89,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
           paymentId: response.paymentId!,
           signature: response.signature!,
           sportName: context.read<SlotSelectionCubit>().state.selectedSport,
-          period: context.read<SlotSelectionCubit>().state.selectedPeriod,
+          period: slotTimesPeriod,
         );
 
         final int displayId = bookingData['display_id'] ?? 0;
@@ -104,8 +108,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
             totalPrice: _pendingAmount!,
             sportName: context.read<SlotSelectionCubit>().state.selectedSport ??
                 "Sport",
-            selectedPeriod:
-                context.read<SlotSelectionCubit>().state.selectedPeriod,
+            selectedPeriod: slotTimesPeriod,
           ),
         );
       } else {
@@ -259,13 +262,17 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
         );
       }
 
+      final slotTimesPeriod = selectedSlots.isNotEmpty
+          ? selectedSlots.map((s) => "${s.startTime} - ${s.endTime}").join(', ')
+          : context.read<SlotSelectionCubit>().state.selectedPeriod;
+
       final bookingData = await _paymentRepo.saveDirectBooking(
         groundId: _ground!.id,
         date: _pendingDate!,
         slotStartTimes: selectedSlots.map((s) => s.startTime).toList(),
         amount: totalPrice.toInt(),
         sportName: context.read<SlotSelectionCubit>().state.selectedSport,
-        period: context.read<SlotSelectionCubit>().state.selectedPeriod,
+        period: slotTimesPeriod,
       );
 
       final int displayId = bookingData['display_id'] ?? 0;
@@ -291,8 +298,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
           totalPrice: totalPrice,
           sportName:
               context.read<SlotSelectionCubit>().state.selectedSport ?? "Sport",
-          selectedPeriod:
-              context.read<SlotSelectionCubit>().state.selectedPeriod,
+          selectedPeriod: slotTimesPeriod,
         ),
       );
     } catch (e) {
