@@ -25,6 +25,7 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
             dates: _generateDates(),
             slots: [],
             isLoading: false,
+            selectedDate: DateTime.now(),
             selectedPeriod: _getCurrentPeriod(),
           ),
         ) {
@@ -82,7 +83,14 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
   }
 
   Future<void> initFacility(GroundModel initialGround) async {
-    emit(state.copyWith(isLoading: true, selectedTurf: initialGround, errorMessage: null));
+    final todayDates = _generateDates();
+    emit(state.copyWith(
+      isLoading: true,
+      selectedTurf: initialGround,
+      selectedDate: DateTime.now(),
+      dates: todayDates,
+      errorMessage: null,
+    ));
 
     try {
       final grounds = await groundRepository.fetchGrounds();
@@ -92,15 +100,9 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
         return g.ownerId == initialGround.ownerId && g.address == initialGround.address;
       }).toList();
 
-      if (facilityGrounds.isEmpty) {
-        // Fallback if no other grounds found (e.g. current ground only)
-        final sports = List<String>.from(initialGround.categories);
-        emit(state.copyWith(
-          facilityGrounds: [initialGround],
-          availableSports: sports,
-          isLoading: false,
-        ));
-        return;
+      // Ensure the initial ground is present in facility grounds
+      if (facilityGrounds.isEmpty || !facilityGrounds.any((g) => g.id == initialGround.id)) {
+        facilityGrounds.add(initialGround);
       }
 
       // Extract unique sports from all grounds in this facility
@@ -119,18 +121,25 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
         isLoading: false,
       ));
 
-      if (sportsList.isNotEmpty) {
-        final firstSport = sportsList.first;
-        selectSport(firstSport);
-        
-        // Find turfs for this first sport and auto-select the first one
-        final firstSportTurfs = facilityGrounds.where((g) => g.categories.contains(firstSport)).toList();
-        if (firstSportTurfs.isNotEmpty) {
-          selectTurf(firstSportTurfs.first);
-        }
+      // Choose preferred sport based on the initial ground's category
+      String? preferredSport;
+      if (initialGround.categories.isNotEmpty && sportsList.contains(initialGround.categories.first)) {
+        preferredSport = initialGround.categories.first;
+      } else if (sportsList.isNotEmpty) {
+        preferredSport = sportsList.first;
       }
+
+      if (preferredSport != null) {
+        selectSport(preferredSport);
+      }
+
+      // Explicitly select the initial ground and load slots
+      selectTurf(initialGround);
     } catch (e) {
-      emit(state.copyWith(isLoading: false, errorMessage: "Error loading facility data: $e"));
+      emit(state.copyWith(
+        isLoading: false,
+        errorMessage: "Error loading facility data: $e",
+      ));
     }
   }
 
@@ -198,7 +207,15 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
     // Cancel existing subscription if any
     await _slotsSubscription?.cancel();
 
-    // Start listening to real-time updates with robust error handling
+    // 1. Eagerly fetch and emit slots via direct HTTP first to guarantee instant snapshot display
+    try {
+      final initialDbSlots = await repository.fetchSlotsForGround(groundId, date);
+      _processAndEmitSlots(initialDbSlots, openingTime, closingTime, pricePerSlot);
+    } catch (e) {
+      debugPrint('[SLOT_CUBIT] Eager slot fetch failed: $e');
+    }
+
+    // 2. Start listening to real-time updates with robust error handling
     _slotsSubscription = repository.getSlotsStream(groundId, date).listen(
       (dbSlots) {
         _processAndEmitSlots(dbSlots, openingTime, closingTime, pricePerSlot);

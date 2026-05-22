@@ -348,11 +348,17 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
 
               /// BACK TO HOME
               TextButton(
-                onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  '/nav',
-                  (route) => false,
-                ),
+                onPressed: () {
+                  if (Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  } else {
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      '/nav',
+                      (route) => false,
+                    );
+                  }
+                },
                 child: AppText(
                   text: "Back to Home",
                   textStyle: AppTextTheme.black13.copyWith(

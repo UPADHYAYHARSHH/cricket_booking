@@ -41,8 +41,11 @@ class _MainNavScreenState extends State<MainNavScreen> {
       context.read<SavedGroundCubit>().loadFavorites(user.uid);
     }
 
-    // Trigger location fetch when main navbar opens
-    context.read<LocationCubit>().loadCity();
+    // Trigger location fetch when main navbar opens if not already loaded
+    final locationCubit = context.read<LocationCubit>();
+    if (locationCubit.state.city == null || locationCubit.state.city == "Select Location") {
+      locationCubit.loadCity();
+    }
 
     // Listen for auth state changes (essential for session restoration on restart)
     _authSubscription =
