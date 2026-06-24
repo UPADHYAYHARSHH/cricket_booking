@@ -45,7 +45,7 @@ class CategoryGroundsScreen extends StatelessWidget {
             final city = context.read<LocationCubit>().state.city?.split(',').first.trim().toLowerCase();
             
             final filteredGrounds = state.allGrounds.where((g) {
-              final matchesCategory = g.categories.any((c) => c.toLowerCase() == category.toLowerCase());
+              final matchesCategory = g.category.toLowerCase() == category.toLowerCase();
               final matchesCity = city == null || g.city.toLowerCase().contains(city);
               return matchesCategory && matchesCity;
             }).toList();

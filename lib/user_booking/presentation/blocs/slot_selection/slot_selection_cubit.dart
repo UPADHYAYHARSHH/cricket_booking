@@ -95,9 +95,9 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
     try {
       final grounds = await groundRepository.fetchGrounds();
       
-      // Group grounds by ownerId and address to find turfs of the same facility
+      // Group grounds by locationId to find other turfs at the same facility
       final facilityGrounds = grounds.where((g) {
-        return g.ownerId == initialGround.ownerId && g.address == initialGround.address;
+        return g.locationId == initialGround.locationId;
       }).toList();
 
       // Ensure the initial ground is present in facility grounds
@@ -108,13 +108,11 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
       // Extract unique sports from all grounds in this facility
       final sportsSet = <String>{};
       for (var g in facilityGrounds) {
-        for (var cat in g.categories) {
-          sportsSet.add(cat);
-        }
+        if (g.category.isNotEmpty) sportsSet.add(g.category);
       }
 
       final sportsList = sportsSet.toList();
-      
+
       emit(state.copyWith(
         facilityGrounds: facilityGrounds,
         availableSports: sportsList,
@@ -123,8 +121,8 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
 
       // Choose preferred sport based on the initial ground's category
       String? preferredSport;
-      if (initialGround.categories.isNotEmpty && sportsList.contains(initialGround.categories.first)) {
-        preferredSport = initialGround.categories.first;
+      if (initialGround.category.isNotEmpty && sportsList.contains(initialGround.category)) {
+        preferredSport = initialGround.category;
       } else if (sportsList.isNotEmpty) {
         preferredSport = sportsList.first;
       }
@@ -145,7 +143,7 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
 
   void selectSport(String sport) {
     final turfs = state.facilityGrounds.where((g) {
-      return g.categories.contains(sport);
+      return g.category == sport;
     }).toList();
 
     emit(state.copyWith(

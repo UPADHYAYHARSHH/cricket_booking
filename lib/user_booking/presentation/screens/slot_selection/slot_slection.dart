@@ -93,6 +93,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
         );
 
         final int displayId = bookingData['display_id'] ?? 0;
+        final String bookingId = bookingData['id'] as String;
         if (!mounted) return;
         Navigator.pop(context);
 
@@ -103,7 +104,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
             ground: _ground!,
             date: _pendingDate!,
             selectedSlots: _pendingSlots ?? [],
-            orderId: response.orderId!,
+            orderId: bookingId,
             displayId: displayId,
             totalPrice: _pendingAmount!,
             sportName: context.read<SlotSelectionCubit>().state.selectedSport ??
@@ -276,6 +277,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
       );
 
       final int displayId = bookingData['display_id'] ?? 0;
+      final String bookingId = bookingData['id'] as String;
 
       if (FeatureConfig.isLoyaltyEnabled) {
         if (appliedPoints > 0) await _loyaltyRepo.redeemPoints(appliedPoints);
@@ -293,7 +295,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
           ground: _ground!,
           date: _pendingDate!,
           selectedSlots: selectedSlots,
-          orderId: 'DIRECT_${DateTime.now().millisecondsSinceEpoch}',
+          orderId: bookingId,
           displayId: displayId,
           totalPrice: totalPrice,
           sportName:

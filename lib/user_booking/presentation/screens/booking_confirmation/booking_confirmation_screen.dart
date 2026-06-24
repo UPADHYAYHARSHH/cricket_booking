@@ -217,7 +217,8 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
 
               const AppSizedBox(height: 20),
               _QRCodeCard(
-                qrData: "$orderId | Ground: ${ground.name} | Owner: ${ground.ownerId} | Ground ID: ${ground.id}",
+                // Plain booking id so the owner app can scan and look it up directly.
+                qrData: orderId,
                 displayId: displayId,
               ),
 
