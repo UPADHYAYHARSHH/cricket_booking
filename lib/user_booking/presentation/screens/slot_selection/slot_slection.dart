@@ -21,6 +21,7 @@ import 'package:turfpro/user_booking/domain/repositories/wallet_repository.dart'
 import 'package:turfpro/user_booking/domain/repositories/slot_repository.dart';
 import 'package:turfpro/common/config/feature_config.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 class SlotSelectionScreen extends StatefulWidget {
   const SlotSelectionScreen({super.key});
@@ -509,13 +510,17 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            state.selectedSport == null
-                ? Icons.sports_tennis
-                : Icons.location_on_outlined,
-            size: 64,
-            color: Colors.grey.withOpacity(0.3),
-          ),
+          state.selectedSport == null
+              ? Icon(
+                  Icons.sports_tennis,
+                  size: 64,
+                  color: Colors.grey.withOpacity(0.3),
+                )
+              : HugeIcon(
+                  icon: HugeIcons.strokeRoundedLocation01,
+                  size: 64,
+                  color: Colors.grey.withOpacity(0.3),
+                ),
           const AppSizedBox(height: 16),
           AppText(
             text: state.selectedSport == null

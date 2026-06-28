@@ -41,9 +41,9 @@ class GroundModel {
 
   factory GroundModel.fromJson(Map<String, dynamic> json) {
     return GroundModel(
-      id: json['id'],
-      name: json['name'],
-      address: json['address'],
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      address: json['address']?.toString() ?? '',
       latitude: (json['latitude'] as num).toDouble(),
       longitude: (json['longitude'] as num).toDouble(),
       pricePerHour: json['price_per_hour'] ?? 0,
@@ -56,7 +56,19 @@ class GroundModel {
       description: json['description'] ?? '',
       amenities: (json['amenities'] as List?)?.map((e) => e.toString()).toList() ?? [],
       images: (json['images'] as List?)?.map((e) => e.toString()).toList() ?? [],
-      categories: (json['categories'] as List?)?.map((e) => e.toString()).toList() ?? [],
+      categories: () {
+        final list = <String>[];
+        if (json['categories'] is List) {
+          list.addAll((json['categories'] as List).map((e) => e.toString()));
+        }
+        if (json['ground_type'] != null && json['ground_type'].toString().isNotEmpty) {
+          list.add(json['ground_type'].toString());
+        }
+        if (json['category'] != null && json['category'].toString().isNotEmpty) {
+          list.add(json['category'].toString());
+        }
+        return list.toSet().toList();
+      }(),
       ownerId: json['owner_id'] ?? '',
       isAvailable: json['is_available'] ?? true,
     );

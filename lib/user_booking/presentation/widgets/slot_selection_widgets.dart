@@ -146,101 +146,75 @@ class SlotSelectionWidgets {
               ),
             ),
           ),
-          Padding(
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? theme.cardColor.withValues(alpha: 0.3)
-                    : theme.scaffoldBackgroundColor,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color:
-                      theme.dividerColor.withValues(alpha: isDark ? 0.1 : 0.05),
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: state.availableSports
-                    .asMap()
-                    .entries
-                    .map((entry) {
-                      final index = entry.key;
-                      final sport = entry.value;
-                      final isSel = sport == state.selectedSport;
-                      final color = _getSportColor(sport);
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: state.availableSports
+                  .asMap()
+                  .entries
+                  .map((entry) {
+                    final index = entry.key;
+                    final sport = entry.value;
+                    final isSel = sport == state.selectedSport;
+                    final color = _getSportColor(sport);
 
-                      return [
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => onSportChanged(sport),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              decoration: BoxDecoration(
-                                color: isSel
-                                    ? (isDark
-                                        ? color.withValues(alpha: 0.15)
-                                        : color.withValues(alpha: 0.1))
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: isSel
-                                      ? color.withValues(alpha: 0.8)
-                                      : colorScheme.onSurface.withValues(
-                                          alpha: isDark ? 0.2 : 0.1),
-                                  width: 1.5,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    _getSportIcon(sport),
-                                    size: 16,
-                                    color: isSel
-                                        ? color
-                                        : colorScheme.onSurface.withValues(
-                                            alpha: isDark ? 0.5 : 0.4),
-                                  ),
-                                  const AppSizedBox(width: 10),
-                                  Flexible(
-                                    child: AppText(
-                                      text: sport,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      textStyle: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: isSel
-                                            ? FontWeight.w800
-                                            : FontWeight.w600,
-                                        color: isSel
-                                            ? color
-                                            : colorScheme.onSurface.withValues(
-                                                alpha: isDark ? 0.5 : 0.4),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: GestureDetector(
+                        onTap: () => onSportChanged(sport),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: isSel
+                                ? (isDark
+                                    ? color.withValues(alpha: 0.15)
+                                    : color.withValues(alpha: 0.1))
+                                : theme.cardColor,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isSel
+                                  ? color.withValues(alpha: 0.8)
+                                  : colorScheme.onSurface.withValues(
+                                      alpha: isDark ? 0.2 : 0.1),
+                              width: 1.5,
                             ),
                           ),
-                        ),
-                        if (index < state.availableSports.length - 1)
-                          Container(
-                            width: 1,
-                            height: 24,
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            color: colorScheme.onSurface
-                                .withValues(alpha: isDark ? 0.15 : 0.1),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                _getSportIcon(sport),
+                                size: 16,
+                                color: isSel
+                                    ? color
+                                    : colorScheme.onSurface.withValues(
+                                        alpha: isDark ? 0.5 : 0.4),
+                              ),
+                              const AppSizedBox(width: 8),
+                              AppText(
+                                text: sport,
+                                textStyle: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: isSel
+                                      ? FontWeight.w800
+                                      : FontWeight.w600,
+                                  color: isSel
+                                      ? color
+                                      : colorScheme.onSurface.withValues(
+                                          alpha: isDark ? 0.5 : 0.4),
+                                ),
+                              ),
+                            ],
                           ),
-                      ];
-                    })
-                    .expand((x) => x)
-                    .toList(),
-              ),
+                        ),
+                      ),
+                    );
+                  })
+                  .toList(),
             ),
           ),
         ],
@@ -316,8 +290,8 @@ class SlotSelectionWidgets {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.location_on,
+                          HugeIcon(
+                            icon: HugeIcons.strokeRoundedLocation01,
                             size: 16,
                             color: isSelected
                                 ? Colors.white
@@ -438,7 +412,7 @@ class SlotSelectionWidgets {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.location_on,
+                      const HugeIcon(icon: HugeIcons.strokeRoundedLocation01,
                           size: 16, color: AppColors.primaryDarkGreen),
                       const AppSizedBox(width: 8),
                       Expanded(

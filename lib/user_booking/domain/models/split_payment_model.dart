@@ -25,11 +25,11 @@ class SplitRequestModel {
 
   factory SplitRequestModel.fromJson(Map<String, dynamic> json) {
     return SplitRequestModel(
-      id: json['id'],
-      bookingId: json['booking_id'],
-      userId: json['user_id'],
-      totalAmount: (json['total_amount'] as num).toDouble(),
-      upiId: json['upi_id'],
+      id: json['id']?.toString(),
+      bookingId: json['booking_id']?.toString() ?? '',
+      userId: json['user_id']?.toString() ?? '',
+      totalAmount: (json['total_amount'] as num?)?.toDouble() ?? 0.0,
+      upiId: json['upi_id']?.toString(),
       qrCodeUrl: json['qr_code_url'],
       status: json['status'] == 'settled'
           ? SplitStatus.settled
@@ -76,12 +76,12 @@ class SplitMemberModel {
 
   factory SplitMemberModel.fromJson(Map<String, dynamic> json) {
     return SplitMemberModel(
-      id: json['id'],
-      splitRequestId: json['split_request_id'],
-      name: json['name'],
-      amount: (json['amount'] as num).toDouble(),
+      id: json['id']?.toString(),
+      splitRequestId: json['split_request_id']?.toString(),
+      name: json['name']?.toString() ?? '',
+      amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
       isReceived: json['is_received'] ?? false,
-      memberUserId: json['member_user_id'],
+      memberUserId: json['member_user_id']?.toString(),
     );
   }
 

@@ -30,6 +30,7 @@ import 'package:turfpro/user_booking/presentation/screens/category_grounds/categ
 import 'package:turfpro/user_booking/presentation/screens/notification/notification_screen.dart';
 import 'package:turfpro/user_booking/presentation/screens/booking_summary/booking_summary_screen.dart';
 import 'package:turfpro/user_booking/presentation/blocs/notification/notification_cubit.dart';
+import 'package:turfpro/user_booking/presentation/blocs/location_list/location_list_cubit.dart';
 import 'package:turfpro/user_booking/constants/route_constants.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -157,6 +158,9 @@ void main() async {
         ),
         BlocProvider<ConfigCubit>(
           create: (_) => di.getIt<ConfigCubit>(),
+        ),
+        BlocProvider<LocationListCubit>(
+          create: (_) => di.getIt<LocationListCubit>()..fetchLocations(),
         ),
       ],
       child: BlocBuilder<ThemeCubit, ThemeState>(

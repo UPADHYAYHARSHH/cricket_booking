@@ -106,7 +106,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                         Container(
                           padding: const EdgeInsets.all(22),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Theme.of(context).cardColor,
                             borderRadius: BorderRadius.circular(18),
                             boxShadow: [
                               BoxShadow(
@@ -118,16 +118,16 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const AppText(
+                              AppText(
                                 text: "Full Name",
                                 size: 12,
                                 weight: FontWeight.w600,
-                                color: Colors.black54,
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                               ),
                               const AppSizedBox(height: 8),
                               TextField(
                                 controller: nameController,
-                                style: const TextStyle(color: Colors.black87),
+                                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                                 decoration: InputDecoration(
                                   hintText: "Enter your name",
                                   errorText: nameError,
@@ -137,11 +137,11 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                                 ),
                               ),
                               const AppSizedBox(height: 18),
-                              const AppText(
+                              AppText(
                                 text: "Gender",
                                 size: 12,
                                 weight: FontWeight.w600,
-                                color: Colors.black54,
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                               ),
                               const AppSizedBox(height: 8),
                               Row(
@@ -160,11 +160,11 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                                 ],
                               ),
                               const AppSizedBox(height: 18),
-                              const AppText(
+                              AppText(
                                 text: "Date of Birth",
                                 size: 12,
                                 weight: FontWeight.w600,
-                                color: Colors.black54,
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                               ),
                               const AppSizedBox(height: 8),
                               GestureDetector(
@@ -182,7 +182,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                                         text: selectedDate == null
                                             ? "Select Date"
                                             : DateFormat('dd/MM/yyyy').format(selectedDate!),
-                                        color: selectedDate == null ? Colors.black38 : Colors.black87,
+                                        color: selectedDate == null ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4) : Theme.of(context).colorScheme.onSurface,
                                       ),
                                       const Icon(Icons.calendar_today, size: 18),
                                     ],

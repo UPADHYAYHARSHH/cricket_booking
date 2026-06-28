@@ -11,6 +11,7 @@ import 'package:turfpro/common/config/feature_config.dart';
 
 import 'package:turfpro/user_booking/presentation/blocs/profile/profile_cubit.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:turfpro/user_booking/di/get_it/get_it.dart';
 
@@ -21,48 +22,76 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => getIt<ProfileCubit>()..loadProfile(),
-      child: BlocListener<AuthCubit, AuthState>(
-        listener: (context, state) {
-          if (state is AuthInitial) {
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              AppRoutes.login,
-              (route) => false,
-            );
-          }
-        },
-        child: Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          body: SafeArea(
-            child: BlocBuilder<ProfileCubit, ProfileState>(
-              builder: (context, profileState) {
-                if (profileState.isLoading && profileState.name == null) {
-                  return const Center(child: CircularProgressIndicator());
+        child: MultiBlocListener(
+          listeners: [
+            BlocListener<AuthCubit, AuthState>(
+              listener: (context, state) {
+                if (state is AuthInitial) {
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    AppRoutes.login,
+                    (route) => false,
+                  );
                 }
-
-                return SingleChildScrollView(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                  child: Column(
-                    children: [
-                      _buildAvatar(context, profileState),
-                      const SizedBox(height: 14),
-                      _buildNameSection(context, profileState),
-                      if (FeatureConfig.isWalletEnabled) ...[
-                        const SizedBox(height: 24),
-                        _buildWalletCard(context, profileState),
-                      ],
-                      const SizedBox(height: 28),
-                      _buildMenuList(context),
-                      const SizedBox(height: 16),
-                    ],
-                  ),
-                );
               },
+            ),
+            BlocListener<ProfileCubit, ProfileState>(
+              listenWhen: (prev, curr) => prev.isDeleted != curr.isDeleted || prev.error != curr.error,
+              listener: (context, state) {
+                if (state.isDeleted) {
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    AppRoutes.login,
+                    (route) => false,
+                  );
+                  return;
+                }
+                
+                if (state.error != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(state.error!),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+            ),
+          ],
+          child: Scaffold(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            body: SafeArea(
+              child: BlocBuilder<ProfileCubit, ProfileState>(
+                builder: (context, profileState) {
+                  debugPrint("[PROFILE_SCREEN] State: isLoading=${profileState.isLoading}, name=${profileState.name}, error=${profileState.error}");
+                  
+                  if (profileState.isLoading && profileState.name == null) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  return SingleChildScrollView(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                    child: Column(
+                      children: [
+                        _buildAvatar(context, profileState),
+                        const SizedBox(height: 14),
+                        _buildNameSection(context, profileState),
+                        if (FeatureConfig.isWalletEnabled) ...[
+                          const SizedBox(height: 24),
+                          _buildWalletCard(context, profileState),
+                        ],
+                        const SizedBox(height: 28),
+                        _buildMenuList(context),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
           ),
         ),
-      ),
     );
   }
 
@@ -134,6 +163,11 @@ class ProfileScreen extends StatelessWidget {
     final image = await picker.pickImage(source: ImageSource.gallery);
 
     if (image != null && context.mounted) {
+      if (kIsWeb) {
+        context.read<ProfileCubit>().uploadImage(XFile(image.path));
+        return;
+      }
+
       final croppedFile = await ImageCropper().cropImage(
         sourcePath: image.path,
         aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
@@ -148,6 +182,10 @@ class ProfileScreen extends StatelessWidget {
             title: 'Crop Profile Picture',
             aspectRatioLockEnabled: true,
             resetAspectRatioEnabled: false,
+          ),
+          WebUiSettings(
+            context: context,
+            presentStyle: WebPresentStyle.page,
           ),
         ],
       );
@@ -353,6 +391,37 @@ class ProfileScreen extends StatelessWidget {
                     "Logout",
                     style: TextStyle(color: Colors.red),
                   ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+      _MenuItem(
+        icon: Icons.delete_outline_rounded,
+        label: "Delete Account",
+        iconBg: Colors.red.withOpacity(isDark ? 0.2 : 0.1),
+        iconColor: isDark ? Colors.redAccent : const Color(0xFFD32F2F),
+        isLogout: true,
+        onTap: () {
+          showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text("Delete Account"),
+              content: const Text(
+                  "Are you sure you want to permanently delete your account and all associated data? This action cannot be undone."),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    context.read<ProfileCubit>().deleteAccount();
+                  },
+                  child: const Text("Delete", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),

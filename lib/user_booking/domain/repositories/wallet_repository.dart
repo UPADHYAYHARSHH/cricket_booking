@@ -21,22 +21,27 @@ class WalletRepositoryImpl implements WalletRepository {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return 0.0;
 
-    final response = await _supabase
-        .from('wallets')
-        .select('balance')
-        .eq('user_id', user.uid)
-        .maybeSingle();
+    try {
+      final response = await _supabase
+          .from('wallets')
+          .select('balance')
+          .eq('user_id', user.uid)
+          .maybeSingle()
+          .timeout(const Duration(seconds: 10));
 
-    if (response == null) {
-      // Create wallet if it doesn't exist
-      await _supabase.from('wallets').insert({
-        'user_id': user.uid,
-        'balance': 0.0,
-      });
+      if (response == null) {
+        // Create wallet if it doesn't exist
+        await _supabase.from('wallets').insert({
+          'user_id': user.uid,
+          'balance': 0.0,
+        });
+        return 0.0;
+      }
+
+      return (response['balance'] as num).toDouble();
+    } catch (e) {
       return 0.0;
     }
-
-    return (response['balance'] as num).toDouble();
   }
 
   @override

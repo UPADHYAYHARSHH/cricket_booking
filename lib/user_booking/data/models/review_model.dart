@@ -26,15 +26,15 @@ class ReviewModel {
     final userData = json['users'] as Map<String, dynamic>?;
     
     return ReviewModel(
-      id: json['id'],
-      userId: json['user_id'],
-      userName: userData?['name'] ?? 'User',
-      userImage: userData?['photo_url'] ?? '',
-      groundId: json['ground_id'],
-      rating: (json['rating'] as num).toDouble(),
-      reviewText: json['review_text'] ?? '',
+      id: json['id']?.toString() ?? '',
+      userId: json['user_id']?.toString() ?? '',
+      userName: userData?['name']?.toString() ?? 'User',
+      userImage: userData?['photo_url']?.toString() ?? '',
+      groundId: json['ground_id']?.toString() ?? '',
+      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+      reviewText: json['review_text']?.toString() ?? '',
       mediaUrls: (json['media_urls'] as List?)?.map((e) => e.toString()).toList() ?? [],
-      createdAt: DateTime.parse(json['created_at']),
+      createdAt: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
     );
   }
 

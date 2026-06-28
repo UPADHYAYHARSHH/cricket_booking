@@ -1,6 +1,8 @@
 import 'package:turfpro/common/constants/colors.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
 import 'package:turfpro/user_booking/presentation/screens/ground_list/widgets/city_search_bottomsheet.dart';
+import 'package:turfpro/user_booking/presentation/blocs/location_list/location_list_cubit.dart';
+import 'package:turfpro/user_booking/presentation/widgets/location_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -128,6 +130,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
 
         /// APP BAR
         appBar: AppBar(
+          automaticallyImplyLeading: false,
           centerTitle: false,
           title: BlocBuilder<LocationCubit, LocationState>(
             builder: (context, state) {
@@ -345,6 +348,61 @@ class _GroundListScreenState extends State<GroundListScreen> {
             /// 📋 LIST (DYNAMIC)
             BlocBuilder<GroundCubit, GroundState>(
               builder: (context, state) {
+                final currentSportId = (state is GroundLoaded) 
+                    ? (state.criteria.sportId ?? 'all') 
+                    : 'all';
+
+                if (currentSportId == 'all') {
+                  return BlocBuilder<LocationListCubit, LocationListState>(
+                    builder: (context, locState) {
+                      if (locState is LocationListLoading || locState is LocationListInitial) {
+                        return SliverPadding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          sliver: SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) => const Padding(
+                                padding: EdgeInsets.only(bottom: 16),
+                                child: GroundSkeleton(), // Reusing skeleton for now
+                              ),
+                              childCount: 5,
+                            ),
+                          ),
+                        );
+                      }
+                      
+                      if (locState is LocationListLoaded) {
+                        if (locState.locations.isEmpty) {
+                          return SliverFillRemaining(
+                            hasScrollBody: false,
+                            child: Center(
+                              child: AppText(text: "No Locations Found"),
+                            ),
+                          );
+                        }
+                        
+                        return SliverPadding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          sliver: SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: LocationCard(
+                                    location: locState.locations[index],
+                                  ),
+                                );
+                              },
+                              childCount: locState.locations.length,
+                            ),
+                          ),
+                        );
+                      }
+                      
+                      return const SliverToBoxAdapter(child: SizedBox());
+                    },
+                  );
+                }
+
                 /// 🔄 Loading or Initial
                 if (state is GroundLoading || state is GroundInitial) {
                   return SliverPadding(

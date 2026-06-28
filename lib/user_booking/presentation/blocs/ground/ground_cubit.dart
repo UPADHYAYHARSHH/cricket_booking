@@ -19,27 +19,34 @@ class GroundCubit extends Cubit<GroundState> {
 
     try {
       var grounds = await repository.fetchGrounds();
+      print("🚀 GroundCubit: Fetched ${grounds.length} grounds from DB.");
 
       // Filter by city if selected
       if (city != null && city != "Select Location" && city != "Fetching...") {
         final cityName = city.split(',').first.trim().toLowerCase();
+        print("🌍 GroundCubit: Filtering by city -> '$cityName'");
         grounds = grounds
-            .where((g) => g.city.toLowerCase().contains(cityName))
+            .where((g) => g.city.toLowerCase().contains(cityName) || cityName.contains(g.city.toLowerCase()))
             .toList();
       }
+      
+      print("✅ GroundCubit: Total grounds after city filter: ${grounds.length}");
 
       final criteria = FilterCriteria();
 
-      // Initial sort: Near Me
-      if (userLat != null && userLng != null) {
-        grounds.sort((a, b) {
-          final distA =
-              _calculateDistance(userLat, userLng, a.latitude, a.longitude);
-          final distB =
-              _calculateDistance(userLat, userLng, b.latitude, b.longitude);
+      // Initial sort: Rating (Descending), fallback to Near Me
+      grounds.sort((a, b) {
+        int ratingComparison = b.rating.compareTo(a.rating);
+        if (ratingComparison != 0) {
+          return ratingComparison;
+        }
+        if (userLat != null && userLng != null) {
+          final distA = _calculateDistance(userLat, userLng, a.latitude, a.longitude);
+          final distB = _calculateDistance(userLat, userLng, b.latitude, b.longitude);
           return distA.compareTo(distB);
-        });
-      }
+        }
+        return 0;
+      });
 
       analytics.logGroundView(groundId: 'all', groundName: 'Fetch List');
 
@@ -110,16 +117,19 @@ class GroundCubit extends Cubit<GroundState> {
           break;
         case SortBy.none:
         default:
-          // Maintain distance sort if location is available and no other sort is selected
-          if (userLat != null && userLng != null) {
-            filteredList.sort((a, b) {
-              final distA =
-                  _calculateDistance(userLat, userLng, a.latitude, a.longitude);
-              final distB =
-                  _calculateDistance(userLat, userLng, b.latitude, b.longitude);
+          // Maintain rating sort if no other sort is selected
+          filteredList.sort((a, b) {
+            int ratingComparison = b.rating.compareTo(a.rating);
+            if (ratingComparison != 0) {
+              return ratingComparison;
+            }
+            if (userLat != null && userLng != null) {
+              final distA = _calculateDistance(userLat, userLng, a.latitude, a.longitude);
+              final distB = _calculateDistance(userLat, userLng, b.latitude, b.longitude);
               return distA.compareTo(distB);
-            });
-          }
+            }
+            return 0;
+          });
           break;
       }
 

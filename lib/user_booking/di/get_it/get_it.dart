@@ -37,6 +37,7 @@ import 'package:turfpro/user_booking/presentation/blocs/split_payment/split_cubi
 import 'package:turfpro/user_booking/presentation/blocs/user_search/user_search_cubit.dart';
 import 'package:turfpro/user_booking/data/repositories/notification_repository.dart';
 import 'package:turfpro/user_booking/presentation/blocs/notification/notification_cubit.dart';
+import 'package:turfpro/user_booking/presentation/blocs/location_list/location_list_cubit.dart';
 
 import 'package:turfpro/user_booking/presentation/blocs/config/config_cubit.dart';
 import 'package:turfpro/common/services/remote_config_service.dart';
@@ -138,6 +139,9 @@ Future<void> init() async {
   );
   getIt.registerLazySingleton<NotificationCubit>(
     () => NotificationCubit(getIt<NotificationRepository>()),
+  );
+  getIt.registerLazySingleton<LocationListCubit>(
+    () => LocationListCubit(getIt<GroundRepository>()),
   );
 
   getIt.registerFactory(
