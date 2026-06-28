@@ -105,7 +105,7 @@ class _AddReviewBottomSheetState extends State<AddReviewBottomSheet> {
                         textStyle: TextStyle(
                             fontSize: 20, fontWeight: FontWeight.bold)),
                     AppText(
-                        text: widget.groundName,
+                        text: "How was your experience at ${widget.groundName}?",
                         textStyle: TextStyle(
                             fontSize: 14,
                             color:

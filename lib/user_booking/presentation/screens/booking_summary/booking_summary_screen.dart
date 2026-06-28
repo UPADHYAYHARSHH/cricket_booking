@@ -218,7 +218,7 @@ class BookingSummaryScreen extends StatelessWidget {
                                   const SizedBox(width: 4),
                                   Expanded(
                                     child: AppText(
-                                      text: ground.address,
+                                      text: ground.address.isNotEmpty ? ground.address : (ground.city.isNotEmpty ? ground.city : 'Location unavailable'),
                                       textStyle: TextStyle(
                                         fontSize: 12,
                                         color: colorScheme.onSurface.withValues(alpha: 0.5),

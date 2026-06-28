@@ -139,14 +139,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         centerTitle: true,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios,
-            color: colorScheme.onSurface,
-            size: 20,
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
+        automaticallyImplyLeading: false,
         title: AppText(
           text: "Booking Status",
           textStyle: AppTextTheme.black16.copyWith(
@@ -210,7 +203,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                 orderId: orderId,
                 displayId: displayId,
                 totalPrice: totalPrice,
-                groundAddress: ground.address,
+                groundAddress: ground.address.isNotEmpty ? ground.address : (ground.city.isNotEmpty ? ground.city : 'Location unavailable'),
                 sportName: args.sportName,
                 period: args.selectedPeriod,
               ),
@@ -226,7 +219,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                 context,
                 latitude: ground.latitude,
                 longitude: ground.longitude,
-                address: ground.address,
+                address: ground.address.isNotEmpty ? ground.address : (ground.city.isNotEmpty ? ground.city : 'Location unavailable'),
               ),
 
               const AppSizedBox(height: 32),
@@ -237,7 +230,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                     ? null
                     : () => _captureAndSave(
                           ground.name,
-                          ground.address,
+                          ground.address.isNotEmpty ? ground.address : (ground.city.isNotEmpty ? ground.city : 'Location unavailable'),
                           ground.imageUrl,
                           date,
                           timeRange,
@@ -300,8 +293,8 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                     final Event event = Event(
                       title: 'Cricket Booking @ ${ground.name}',
                       description:
-                          'Your turf booking is confirmed.\nOrder ID: #${IdUtil.formatDisplayId(displayId)}\nVenue: ${ground.name}\nAddress: ${ground.address}',
-                      location: ground.address,
+                          'Your turf booking is confirmed.\nOrder ID: #${IdUtil.formatDisplayId(displayId)}\nVenue: ${ground.name}\nAddress: ${ground.address.isNotEmpty ? ground.address : (ground.city.isNotEmpty ? ground.city : 'Location unavailable')}',
+                      location: ground.address.isNotEmpty ? ground.address : (ground.city.isNotEmpty ? ground.city : 'Location unavailable'),
                       startDate: eventStart,
                       endDate: eventEnd,
                     );

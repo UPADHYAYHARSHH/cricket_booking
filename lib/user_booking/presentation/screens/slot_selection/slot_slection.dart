@@ -11,6 +11,7 @@ import 'package:turfpro/user_booking/di/get_it/get_it.dart';
 import 'package:turfpro/user_booking/constants/route_constants.dart';
 import 'package:turfpro/user_booking/presentation/widgets/slot_selection_widgets.dart';
 import 'package:turfpro/user_booking/data/models/ground_model.dart';
+import 'package:turfpro/user_booking/data/models/location_model.dart';
 import 'package:turfpro/user_booking/presentation/blocs/slot_selection/slot_selection_cubit.dart';
 import 'package:turfpro/user_booking/domain/models/booking_arguments.dart';
 import 'package:turfpro/user_booking/presentation/blocs/slot_selection/slot_selection_state.dart';
@@ -142,6 +143,8 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
         _ground = args;
         context.read<SlotSelectionCubit>().initFacility(_ground!);
         _loadReviews();
+      } else if (args is LocationModel) {
+        context.read<SlotSelectionCubit>().initForLocation(args);
       }
       _isInitialized = true;
     }
@@ -169,7 +172,8 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
       double appliedWallet = 0.0,
       bool fromRetry = false}) async {
     HapticFeedback.mediumImpact();
-    if (selectedSlots.isEmpty || _ground == null) return;
+    final currentGround = _ground ?? context.read<SlotSelectionCubit>().state.selectedTurf;
+    if (selectedSlots.isEmpty || currentGround == null) return;
     if (_isBookingInProgress) return;
 
     setState(() {
@@ -197,7 +201,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
 
       // 1. Double check availability in DB to prevent duplicate bookings
       final slotRepo = getIt<SlotRepository>();
-      final dbSlots = await slotRepo.fetchSlotsForGround(_ground!.id, _pendingDate!);
+      final dbSlots = await slotRepo.fetchSlotsForGround(currentGround.id, _pendingDate!);
       
       final alreadyBookedSlots = <String>[];
       for (final selectedSlot in selectedSlots) {
@@ -238,11 +242,11 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
 
           // Refresh the slots stream/list to display the newly booked slots
           context.read<SlotSelectionCubit>().loadSlots(
-            _ground!.id,
+            currentGround.id,
             _pendingDate!,
-            openingTime: _ground!.openingTime,
-            closingTime: _ground!.closingTime,
-            pricePerSlot: _ground!.pricePerHour.toDouble(),
+            openingTime: currentGround.openingTime,
+            closingTime: currentGround.closingTime,
+            pricePerSlot: currentGround.pricePerHour.toDouble(),
           );
         }
         setState(() {
@@ -259,7 +263,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
         await walletRepo.addTransaction(
           amount: appliedWallet,
           type: 'debit',
-          description: 'Used for booking @ ${_ground!.name}',
+          description: 'Used for booking @ ${currentGround.name}',
         );
       }
 
@@ -268,7 +272,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
           : context.read<SlotSelectionCubit>().state.selectedPeriod;
 
       final bookingData = await _paymentRepo.saveDirectBooking(
-        groundId: _ground!.id,
+        groundId: currentGround.id,
         date: _pendingDate!,
         slotStartTimes: selectedSlots.map((s) => s.startTime).toList(),
         amount: totalPrice.toInt(),
@@ -291,7 +295,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
         context,
         AppRoutes.bookingConfirmationScreen,
         arguments: BookingSuccessArguments(
-          ground: _ground!,
+          ground: currentGround,
           date: _pendingDate!,
           selectedSlots: selectedSlots,
           orderId: 'DIRECT_${DateTime.now().millisecondsSinceEpoch}',
@@ -412,75 +416,93 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
               SlotSelectionWidgets.buildHeader(
                   context, state.selectedTurf ?? _ground,
                   title: state.selectedTurf?.name ?? "Book Slots",
-                  onShare: _shareGround),
+                  onShare: _shareGround,
+                  ),
 
-              // Fixed Sport Selection
-              SlotSelectionWidgets.buildSportSelection(
-                context,
-                state,
-                onSportChanged: (sport) async {
-                  if (selectedSlots.isNotEmpty &&
-                      sport != state.selectedSport) {
-                    final proceed = await _showClearSelectionDialog(context);
-                    if (!proceed) return;
-                    cubit.clearSelections();
-                  }
-                  cubit.selectSport(sport);
-                  _scrollToTop();
-                },
-              ),
+              if (state.isLoading && state.availableSports.isEmpty)
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const NeverScrollableScrollPhysics(),
+                    child: SlotSelectionWidgets.buildSportGroundShimmer(context),
+                  ),
+                )
+              else ...[
+                // Fixed Sport Selection
+                SlotSelectionWidgets.buildSportSelection(
+                  context,
+                  state,
+                  onSportChanged: (sport) async {
+                    if (selectedSlots.isNotEmpty &&
+                        sport != state.selectedSport) {
+                      final proceed = await _showClearSelectionDialog(context);
+                      if (!proceed) return;
+                      cubit.clearSelections();
+                    }
+                    cubit.selectSport(sport);
+                    _scrollToTop();
+                  },
+                ),
 
-              // Scrollable Content
-              Expanded(
-                child: SingleChildScrollView(
-                  controller: _scrollController,
-                  child: Column(
-                    children: [
-                      // Ground Selection (Now Scrollable)
-                      SlotSelectionWidgets.buildGroundSelection(
-                        context,
-                        state,
-                        onTurfChanged: (turf) async {
-                          if (selectedSlots.isNotEmpty &&
-                              turf.id != state.selectedTurf?.id) {
-                            final proceed =
-                                await _showClearSelectionDialog(context);
-                            if (!proceed) return;
-                            cubit.clearSelections();
-                          }
-                          cubit.selectTurf(turf);
-                        },
-                      ),
+                // Scrollable Content
+                Expanded(
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    child: Column(
+                      children: [
+                        // Ground Selection (Now Scrollable)
+                        SlotSelectionWidgets.buildGroundSelection(
+                          context,
+                          state,
+                          onTurfChanged: (turf) async {
+                            if (selectedSlots.isNotEmpty &&
+                                turf.id != state.selectedTurf?.id) {
+                              final proceed =
+                                  await _showClearSelectionDialog(context);
+                              if (!proceed) return;
+                              cubit.clearSelections();
+                            }
+                            cubit.selectTurf(turf);
+                          },
+                        ),
 
-                      if (state.selectedTurf == null)
-                        _buildEmptyState(context, state)
-                      else
-                        _buildSlotSelectionContent(context, state, cubit),
-                    ],
+                        if (state.selectedTurf == null)
+                          _buildEmptyState(context, state)
+                        else
+                          _buildSlotSelectionContent(context, state, cubit),
+                      ],
+                    ),
                   ),
                 ),
-              ),
+              ],
 
               // Fixed Bottom Bar
               if (activeDate != null)
                 SlotSelectionWidgets.buildBottomBar(
                     context, selectedSlots, activeDate, totalPrice, () async {
-                  if (state.selectedTurf == null) return;
-                  final result = await Navigator.pushNamed(
-                      context, AppRoutes.bookingSummary,
-                      arguments: BookingSummaryArguments(
-                        ground: state.selectedTurf!,
-                        selectedSport: state.selectedSport ?? "Sport",
-                        selectedSlots: selectedSlots,
-                        activeDate: activeDate,
-                        selectedPeriod: state.selectedPeriod,
-                        basePrice: totalPrice,
-                      ));
-                  if (result != null && result is Map<String, dynamic>) {
-                    _onConfirmBooking(
-                        result['finalAmount'], activeDate, selectedSlots,
-                        appliedPoints: result['appliedPoints'],
-                        appliedWallet: result['appliedWallet'] ?? 0.0);
+                  if (state.selectedTurf == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Error: No turf selected")));
+                    return;
+                  }
+                  try {
+                    final result = await Navigator.pushNamed(
+                        context, AppRoutes.bookingSummary,
+                        arguments: BookingSummaryArguments(
+                          ground: state.selectedTurf!,
+                          selectedSport: state.selectedSport ?? "Sport",
+                          selectedSlots: selectedSlots,
+                          activeDate: activeDate,
+                          selectedPeriod: state.selectedPeriod,
+                          basePrice: totalPrice,
+                        ));
+                    if (result != null && result is Map<String, dynamic>) {
+                      _onConfirmBooking(
+                          result['finalAmount'], activeDate, selectedSlots,
+                          appliedPoints: result['appliedPoints'],
+                          appliedWallet: result['appliedWallet'] ?? 0.0);
+                    }
+                  } catch (e, st) {
+                    debugPrint("Error pushing BookingSummaryScreen: $e\n$st");
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
                   }
                 }),
             ],

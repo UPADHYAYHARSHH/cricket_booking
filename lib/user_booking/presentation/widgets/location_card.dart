@@ -6,8 +6,7 @@ import 'package:turfpro/user_booking/constants/text_theme.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import 'package:turfpro/user_booking/data/models/location_model.dart';
-import 'package:turfpro/user_booking/presentation/blocs/location/location_cubit.dart';
-import 'package:turfpro/user_booking/presentation/blocs/ground/ground_cubit.dart';
+import 'package:turfpro/user_booking/constants/route_constants.dart';
 
 class LocationCard extends StatelessWidget {
   final LocationModel location;
@@ -21,17 +20,10 @@ class LocationCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        // When tapped, update the app's location to this city
-        context.read<LocationCubit>().setCity(
-          location.city,
-          lat: location.latitude,
-          lng: location.longitude,
-        );
-        // Refresh grounds for this location
-        context.read<GroundCubit>().getGrounds(
-          city: location.city,
-          userLat: location.latitude,
-          userLng: location.longitude,
+        Navigator.pushNamed(
+          context,
+          AppRoutes.slotSelection,
+          arguments: location,
         );
       },
       child: Container(

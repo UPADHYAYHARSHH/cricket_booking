@@ -24,6 +24,7 @@ class SlotSelectionWidgets {
       {bool isSaved = false,
       VoidCallback? onToggleFav,
       VoidCallback? onShare,
+      VoidCallback? onLocationTap,
       String? title}) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -60,29 +61,43 @@ class SlotSelectionWidgets {
                   ),
                 ),
                 const AppSizedBox(height: 2),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2.0),
-                      child: HugeIcon(
-                        icon: HugeIcons.strokeRoundedLocation01,
-                        size: 12,
-                        color: colorScheme.onSurface.withValues(alpha: 0.6),
-                      ),
-                    ),
-                    const AppSizedBox(width: 4),
-                    Flexible(
-                      child: AppText(
-                        text: ground?.address ?? 'Loading Address...',
-                        align: TextAlign.left,
-                        textStyle: TextStyle(
-                          fontSize: 12,
-                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                GestureDetector(
+                  onTap: onLocationTap,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2.0),
+                        child: HugeIcon(
+                          icon: HugeIcons.strokeRoundedLocation01,
+                          size: 12,
+                          color: onLocationTap != null ? AppColors.primaryDarkGreen : colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
-                    ),
-                  ],
+                      const AppSizedBox(width: 4),
+                      Flexible(
+                        child: AppText(
+                          text: (ground?.address != null && ground!.address.isNotEmpty) 
+                              ? ground.address 
+                              : (ground != null && ground.city.isNotEmpty ? ground.city : 'Location unavailable'),
+                          align: TextAlign.left,
+                          textStyle: TextStyle(
+                            fontSize: 12,
+                            color: onLocationTap != null ? AppColors.primaryDarkGreen : colorScheme.onSurface.withValues(alpha: 0.6),
+                            fontWeight: onLocationTap != null ? FontWeight.w600 : FontWeight.normal,
+                          ),
+                        ),
+                      ),
+                      if (onLocationTap != null) ...[
+                        const AppSizedBox(width: 4),
+                        HugeIcon(
+                          icon: HugeIcons.strokeRoundedArrowDown01,
+                          size: 14,
+                          color: AppColors.primaryDarkGreen,
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -215,6 +230,89 @@ class SlotSelectionWidgets {
                     );
                   })
                   .toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static Widget buildSportGroundShimmer(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
+    final highlightColor = isDark ? Colors.grey[700]! : Colors.grey[100]!;
+
+    return Shimmer.fromColors(
+      baseColor: baseColor,
+      highlightColor: highlightColor,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Sport Selection Shimmer
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              border: Border(bottom: BorderSide(color: theme.dividerColor.withOpacity(0.1))),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Container(width: 100, height: 12, color: Colors.white),
+                ),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  child: Row(
+                    children: List.generate(4, (index) => Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: Container(
+                        width: 100,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                    )),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Ground Selection Shimmer
+          Container(
+            width: double.infinity,
+            color: theme.cardColor,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Container(width: 120, height: 12, color: Colors.white),
+                ),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  child: Row(
+                    children: List.generate(3, (index) => Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: Container(
+                        width: 150,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                    )),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
