@@ -14,7 +14,8 @@ class GroundModel {
   final String description;
   final List<String> amenities;
   final List<String> images;
-  final List<String> categories;
+  final String category;
+  final String locationId;
   final String ownerId;
   final bool isAvailable;
 
@@ -34,12 +35,14 @@ class GroundModel {
     this.description = '',
     this.amenities = const [],
     this.images = const [],
-    this.categories = const [],
+    this.category = '',
+    this.locationId = '',
     this.ownerId = '',
     this.isAvailable = true,
   });
 
   factory GroundModel.fromJson(Map<String, dynamic> json) {
+    final location = json['locations'] as Map<String, dynamic>?;
     return GroundModel(
       id: json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
@@ -51,10 +54,13 @@ class GroundModel {
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       openingTime: json['opening_time'] ?? '00:00:00',
       closingTime: json['closing_time'] ?? '00:00:00',
-      city: json['city'] ?? '',
+      city: location?['city'] ?? json['city'] ?? '',
       totalReviews: json['total_reviews'] ?? 0,
       description: json['description'] ?? '',
-      amenities: (json['amenities'] as List?)?.map((e) => e.toString()).toList() ?? [],
+      amenities: ((location?['amenities'] ?? json['amenities']) as List?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
       images: (json['images'] as List?)?.map((e) => e.toString()).toList() ?? [],
       categories: () {
         final list = <String>[];
@@ -69,6 +75,8 @@ class GroundModel {
         }
         return list.toSet().toList();
       }(),
+      category: json['category'] ?? '',
+      locationId: json['location_id'] ?? '',
       ownerId: json['owner_id'] ?? '',
       isAvailable: json['is_available'] ?? true,
     );
@@ -91,7 +99,8 @@ class GroundModel {
       'description': description,
       'amenities': amenities,
       'images': images,
-      'categories': categories,
+      'category': category,
+      'location_id': locationId,
       'owner_id': ownerId,
       'is_available': isAvailable,
     };

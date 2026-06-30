@@ -102,8 +102,7 @@ class GroundCubit extends Cubit<GroundState> {
       // 6. Filter by Sport Category
       if (criteria.sportId != null && criteria.sportId != 'all') {
         filteredList = filteredList.where((g) {
-          return g.categories.any((c) =>
-              c.toLowerCase() == criteria.sportId!.toLowerCase());
+          return g.category.toLowerCase() == criteria.sportId!.toLowerCase();
         }).toList();
       }
 

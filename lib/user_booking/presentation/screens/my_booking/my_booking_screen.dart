@@ -1181,7 +1181,8 @@ class _TicketCardState extends State<_TicketCard> {
             borderRadius: BorderRadius.circular(12),
           ),
           child: _QrCodePainter(
-            data: "${widget.ticket.bookingId} | Ground: ${widget.ticket.venueName} | Owner: ${widget.ticket.ownerId} | Ground ID: ${widget.ticket.groundId}",
+            // Plain booking id so the owner app can scan and look it up directly.
+            data: widget.ticket.bookingId,
           ),
         ),
         const SizedBox(height: 12),

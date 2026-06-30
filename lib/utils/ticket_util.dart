@@ -418,7 +418,8 @@ class TicketUtil {
                                 ),
                                 child: pw.BarcodeWidget(
                                   barcode: pw.Barcode.qrCode(),
-                                  data: "$orderId | Ground: $groundName | Owner: $ownerId | Ground ID: $groundId",
+                                  // Plain booking id so the owner app can scan and look it up directly.
+                                  data: orderId,
                                   width: 100,
                                   height: 100,
                                   color: _kDark,
