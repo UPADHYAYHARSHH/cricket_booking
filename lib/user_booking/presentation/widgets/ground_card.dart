@@ -61,12 +61,27 @@ class _GroundCardState extends State<GroundCard> {
               arguments: widget.ground,
             );
           },
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildImageSlider(context),
-              _buildInfo(context, onSurface),
-            ],
+          child: Builder(
+            builder: (context) {
+              try {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildImageSlider(context),
+                    _buildInfo(context, onSurface),
+                  ],
+                );
+              } catch (e, st) {
+                print("💥 UI CRASH GroundCard ${widget.ground.id}: $e\n$st");
+                return Container(
+                  height: 100,
+                  color: Colors.red.withOpacity(0.1),
+                  child: Center(
+                    child: Text("Error: $e", style: const TextStyle(color: Colors.red)),
+                  ),
+                );
+              }
+            }
           ),
         ),
       ),

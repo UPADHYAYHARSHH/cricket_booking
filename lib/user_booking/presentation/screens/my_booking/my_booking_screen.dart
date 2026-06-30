@@ -244,18 +244,25 @@ class _BookingCardState extends State<_BookingCard> {
 
   Future<void> _checkIfRated() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      final rated = await getIt<ReviewRepository>()
-          .hasUserRatedGround(user.uid, widget.booking.groundId);
-      if (mounted) {
-        setState(() {
-          _hasRated = rated;
-          _isLoadingRating = false;
-        });
+    final groundId = widget.booking.groundId;
+    
+    if (user != null && groundId.isNotEmpty) {
+      try {
+        final rated = await getIt<ReviewRepository>()
+            .hasUserRatedGround(user.uid, groundId);
+        if (mounted) {
+          setState(() {
+            _hasRated = rated;
+            _isLoadingRating = false;
+          });
+        }
+        return;
+      } catch (e) {
+        debugPrint("Error checking user ground rating: $e");
       }
-    } else {
-      if (mounted) setState(() => _isLoadingRating = false);
     }
+    
+    if (mounted) setState(() => _isLoadingRating = false);
   }
 
   @override
@@ -492,7 +499,7 @@ class _BookingCardState extends State<_BookingCard> {
                         borderRadius: BorderRadius.circular(10)),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  child: const Text("Rate Now",
+                  child: const Text("Rate Venue",
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 ),
               ),
@@ -528,6 +535,13 @@ class _BookingCardState extends State<_BookingCard> {
   }
 
   void _showRatingSheet(BuildContext context) async {
+    if (widget.booking.groundId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Venue information not available.")),
+      );
+      return;
+    }
+
     final result = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,

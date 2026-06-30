@@ -33,12 +33,12 @@ class BookingModel {
 
   factory BookingModel.fromJson(Map<String, dynamic> json) {
     return BookingModel(
-      id: json['id'],
-      userId: json['user_id'],
-      groundId: json['ground_id'],
-      slotTime: DateTime.parse(json['slot_time']),
-      amount: (json['amount'] as num).toDouble(),
-      status: json['status'],
+      id: json['id']?.toString() ?? '',
+      userId: json['user_id']?.toString() ?? '',
+      groundId: json['ground_id']?.toString() ?? '',
+      slotTime: DateTime.parse(json['slot_time'] ?? DateTime.now().toIso8601String()),
+      amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
+      status: json['status']?.toString() ?? '',
       razorpayOrderId: json['razorpay_order_id'] ?? '',
       razorpayPaymentId: json['razorpay_payment_id'] ?? '',
       razorpaySignature: json['razorpay_signature'] ?? '',

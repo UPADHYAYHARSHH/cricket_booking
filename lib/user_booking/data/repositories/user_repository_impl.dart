@@ -18,6 +18,7 @@ abstract class UserRepository {
   Future<void> updateUserCity(String city);
   Future<bool> isUsernameAvailable(String username);
   Future<List<Map<String, dynamic>>> searchUsersByUsername(String query);
+  Future<void> deleteUserAccount();
 }
 
 class UserRepositoryImpl implements UserRepository {
@@ -76,14 +77,20 @@ class UserRepositoryImpl implements UserRepository {
     debugPrint("[USER_REPO] Fetching profile for ID: ${user?.uid}");
     if (user == null) return null;
 
-    final response = await supabase
-        .from('users')
-        .select()
-        .eq('id', user.uid)
-        .maybeSingle();
-    
-    debugPrint("[USER_REPO] Profile Data Received: $response");
-    return response;
+    try {
+      final response = await supabase
+          .from('users')
+          .select()
+          .eq('id', user.uid)
+          .maybeSingle()
+          .timeout(const Duration(seconds: 10));
+      
+      debugPrint("[USER_REPO] Profile Data Received: $response");
+      return response;
+    } catch (e) {
+      debugPrint("[USER_REPO] Error in fetchUserProfile: $e");
+      rethrow;
+    }
   }
 
   @override
@@ -152,5 +159,39 @@ class UserRepositoryImpl implements UserRepository {
         .ilike('username', '%$query%')
         .limit(20);
     return List<Map<String, dynamic>>.from(response);
+  }
+
+  @override
+  Future<void> deleteUserAccount() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw Exception("User not logged in");
+    }
+
+    final uid = user.uid;
+
+    try {
+      // 1. Delete associated data from Supabase atomically via RPC
+      // This bypasses RLS constraints using SECURITY DEFINER and handles all FKs
+      try {
+        await supabase.rpc('delete_user_and_data', params: {'user_id_text': uid});
+      } catch (e) {
+        print('Supabase RPC delete error: $e');
+        throw Exception('Database deletion failed: $e');
+      }
+
+      // 2. Delete from Firebase Auth
+      await user.delete();
+      
+      // 4. Ensure sign out
+      await FirebaseAuth.instance.signOut();
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'requires-recent-login') {
+        throw Exception('For security reasons, please log out and log back in before deleting your account.');
+      }
+      throw Exception('Failed to delete account: ${e.message}');
+    } catch (e) {
+      throw Exception('Failed to delete account data: $e');
+    }
   }
 }

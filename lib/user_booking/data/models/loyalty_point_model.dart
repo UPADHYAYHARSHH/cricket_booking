@@ -17,11 +17,11 @@ class LoyaltyPointModel {
 
   factory LoyaltyPointModel.fromJson(Map<String, dynamic> json) {
     return LoyaltyPointModel(
-      id: json['id'],
-      userId: json['user_id'],
-      points: json['points'],
-      expiryDate: DateTime.parse(json['expiry_date']),
-      createdAt: DateTime.parse(json['created_at']),
+      id: json['id']?.toString() ?? '',
+      userId: json['user_id']?.toString() ?? '',
+      points: json['points'] ?? 0,
+      expiryDate: DateTime.tryParse(json['expiry_date'] ?? '') ?? DateTime.now(),
+      createdAt: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
       isUsed: json['is_used'] ?? false,
     );
   }

@@ -84,4 +84,37 @@ class ReviewRepositoryImpl implements ReviewRepository {
       return false;
     }
   }
+
+  @override
+  Future<void> submitLocationReview({
+    required String userId,
+    required String locationId,
+    required double rating,
+    required String reviewText,
+  }) async {
+    // Insert into location_reviews
+    await _supabase.from('location_reviews').insert({
+      'user_id': userId,
+      'location_id': locationId,
+      'rating': rating,
+      'review_text': reviewText,
+    });
+  }
+
+  @override
+  Future<bool> hasUserRatedLocation(String userId, String locationId) async {
+    try {
+      final response = await _supabase
+          .from('location_reviews')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('location_id', locationId)
+          .maybeSingle();
+
+      return response != null;
+    } catch (e) {
+      print("Error checking user location rating: $e");
+      return false;
+    }
+  }
 }

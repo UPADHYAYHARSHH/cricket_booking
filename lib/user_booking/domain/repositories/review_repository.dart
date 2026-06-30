@@ -13,4 +13,14 @@ abstract class ReviewRepository {
 
   Future<List<ReviewModel>> fetchGroundReviews(String groundId);
   Future<bool> hasUserRatedGround(String userId, String groundId);
+
+  // Location ratings
+  Future<void> submitLocationReview({
+    required String userId,
+    required String locationId,
+    required double rating,
+    required String reviewText,
+  });
+
+  Future<bool> hasUserRatedLocation(String userId, String locationId);
 }

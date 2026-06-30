@@ -17,6 +17,7 @@ class ProfileState {
   final bool? isUsernameAvailable;
   final String? lastCheckedUsername;
   final double walletBalance;
+  final bool isDeleted;
 
   ProfileState({
     this.isLoading = false,
@@ -30,6 +31,7 @@ class ProfileState {
     this.isUsernameAvailable,
     this.lastCheckedUsername,
     this.walletBalance = 0.0,
+    this.isDeleted = false,
   });
 
   ProfileState copyWith({
@@ -44,6 +46,7 @@ class ProfileState {
     bool? isUsernameAvailable,
     String? lastCheckedUsername,
     double? walletBalance,
+    bool? isDeleted,
   }) {
     return ProfileState(
       isLoading: isLoading ?? this.isLoading,
@@ -57,6 +60,7 @@ class ProfileState {
       isUsernameAvailable: isUsernameAvailable ?? this.isUsernameAvailable,
       lastCheckedUsername: lastCheckedUsername ?? this.lastCheckedUsername,
       walletBalance: walletBalance ?? this.walletBalance,
+      isDeleted: isDeleted ?? this.isDeleted,
     );
   }
 }
@@ -139,8 +143,8 @@ class ProfileCubit extends Cubit<ProfileState> {
         name: name,
         gender: gender,
         dob: dob,
-        photoUrl: photoUrl,
-        username: username,
+        photoUrl: photoUrl ?? state.photoUrl,
+        username: username ?? state.username,
       );
 
       emit(state.copyWith(
@@ -160,19 +164,23 @@ class ProfileCubit extends Cubit<ProfileState> {
     }
   }
 
-  Future<void> uploadImage(XFile file) async {
+  Future<void> uploadImage(XFile file, {bool isDirectUpdate = true}) async {
     emit(state.copyWith(isLoading: true, error: null));
     try {
       final bytes = await file.readAsBytes();
       final url = await userRepository.uploadProfileImage(bytes);
       if (url != null) {
-        await saveProfile(
-          name: state.name ?? '',
-          gender: state.gender ?? 'Other',
-          dob: state.dob,
-          photoUrl: url,
-          username: state.username,
-        );
+        if (isDirectUpdate) {
+          await saveProfile(
+            name: state.name ?? '',
+            gender: state.gender ?? 'Other',
+            dob: state.dob,
+            photoUrl: url,
+            username: state.username,
+          );
+        } else {
+          emit(state.copyWith(isLoading: false, photoUrl: url));
+        }
       } else {
         emit(state.copyWith(isLoading: false, error: "Failed to upload image"));
       }
@@ -219,6 +227,16 @@ class ProfileCubit extends Cubit<ProfileState> {
               .toInt();
       final candidate = '${base}_$random';
       if (await userRepository.isUsernameAvailable(candidate)) return candidate;
+    }
+  }
+
+  Future<void> deleteAccount() async {
+    emit(state.copyWith(isLoading: true, error: null));
+    try {
+      await userRepository.deleteUserAccount();
+      emit(state.copyWith(isLoading: false, isDeleted: true));
+    } catch (e) {
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 }

@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:image_cropper/image_cropper.dart';
 
+import 'package:turfpro/user_booking/constants/route_constants.dart';
 import '../../../di/get_it/get_it.dart';
 import '../../blocs/profile/profile_cubit.dart';
 
@@ -59,8 +61,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       create: (_) => getIt<ProfileCubit>()..loadProfile(),
       child: BlocConsumer<ProfileCubit, ProfileState>(
         listenWhen: (prev, curr) =>
-            prev.isSuccess != curr.isSuccess || curr.error != null,
+            prev.isSuccess != curr.isSuccess ||
+            curr.error != null ||
+            curr.isDeleted,
         listener: (context, state) {
+          if (state.isDeleted) {
+            Navigator.of(context).pushNamedAndRemoveUntil(
+              AppRoutes.login,
+              (route) => false,
+            );
+            return;
+          }
+
           if (state.isSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Profile updated successfully!')),
@@ -201,32 +213,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   _buildDatePicker(theme),
                   const SizedBox(height: 48),
                   SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: state.isLoading ||
-                              (state.isUsernameAvailable == false &&
-                                  _usernameController.text.trim() !=
-                                      state.username)
-                          ? null
-                          : () => _saveChanges(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryDarkGreen,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: state.isLoading ||
+                                (state.isUsernameAvailable == false &&
+                                    _usernameController.text.trim() !=
+                                        state.username)
+                            ? null
+                            : () => _saveChanges(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryDarkGreen,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
-                      ),
-                      child: state.isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text(
-                              "Save Changes",
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                    ),
-                  )
+                        child: state.isLoading
+                            ? const CircularProgressIndicator(
+                                color: Colors.white)
+                            : const Text(
+                                "Save Changes",
+                                style: TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                      ))
                 ],
               ),
             ),
@@ -300,6 +312,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final image = await picker.pickImage(source: ImageSource.gallery);
 
     if (image != null && context.mounted) {
+      if (kIsWeb) {
+        context
+            .read<ProfileCubit>()
+            .uploadImage(XFile(image.path), isDirectUpdate: false);
+        return;
+      }
+
       final croppedFile = await ImageCropper().cropImage(
         sourcePath: image.path,
         aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
@@ -315,11 +334,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             aspectRatioLockEnabled: true,
             resetAspectRatioEnabled: false,
           ),
+          WebUiSettings(
+            context: context,
+            presentStyle: WebPresentStyle.page,
+          ),
         ],
       );
 
       if (croppedFile != null && context.mounted) {
-        context.read<ProfileCubit>().uploadImage(XFile(croppedFile.path));
+        context
+            .read<ProfileCubit>()
+            .uploadImage(XFile(croppedFile.path), isDirectUpdate: false);
       }
     }
   }

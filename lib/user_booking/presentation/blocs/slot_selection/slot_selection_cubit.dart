@@ -1,4 +1,5 @@
 import 'package:turfpro/user_booking/data/models/ground_model.dart';
+import 'package:turfpro/user_booking/data/models/location_model.dart';
 import 'package:turfpro/user_booking/domain/models/slot_models.dart';
 import 'package:flutter/foundation.dart';
 import 'package:turfpro/user_booking/domain/repositories/slot_repository.dart';
@@ -137,6 +138,61 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
       emit(state.copyWith(
         isLoading: false,
         errorMessage: "Error loading facility data: $e",
+      ));
+    }
+  }
+
+  Future<void> initForLocation(LocationModel location) async {
+    final todayDates = _generateDates();
+    emit(state.copyWith(
+      isLoading: true,
+      selectedTurf: null,
+      selectedDate: DateTime.now(),
+      dates: todayDates,
+      errorMessage: null,
+      availableSports: const [],
+      availableTurfs: const [],
+    ));
+
+    try {
+      debugPrint("[SLOT_CUBIT] Fetching grounds for location: ${location.city}");
+      // Revert to fetchGrounds since grounds table uses city instead of location_id
+      final grounds = await groundRepository.fetchGrounds();
+      
+      final cityName = location.city.split(',').first.trim().toLowerCase();
+      
+      final locationGrounds = grounds.where((g) {
+        return g.city.toLowerCase().contains(cityName) || cityName.contains(g.city.toLowerCase());
+      }).toList();
+      
+      debugPrint("[SLOT_CUBIT] Found ${locationGrounds.length} grounds for this location.");
+
+      // Extract unique sports from all grounds in this location
+      final sportsSet = <String>{};
+      for (var g in locationGrounds) {
+        debugPrint("[SLOT_CUBIT] Ground ${g.name} has categories: ${g.categories}");
+        for (var cat in g.categories) {
+          sportsSet.add(cat);
+        }
+      }
+
+      final sportsList = sportsSet.toList();
+      debugPrint("[SLOT_CUBIT] Unique sports found: $sportsList");
+      
+      emit(state.copyWith(
+        facilityGrounds: locationGrounds, // Using facilityGrounds to store location grounds for now
+        availableSports: sportsList,
+        isLoading: false,
+      ));
+
+      if (sportsList.isNotEmpty) {
+        selectSport(sportsList.first);
+      }
+    } catch (e, st) {
+      debugPrint("[SLOT_CUBIT] ERROR in initForLocation: $e\n$st");
+      emit(state.copyWith(
+        isLoading: false,
+        errorMessage: "Error loading location data: $e",
       ));
     }
   }

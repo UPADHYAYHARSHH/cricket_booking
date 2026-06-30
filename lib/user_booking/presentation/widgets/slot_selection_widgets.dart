@@ -24,6 +24,7 @@ class SlotSelectionWidgets {
       {bool isSaved = false,
       VoidCallback? onToggleFav,
       VoidCallback? onShare,
+      VoidCallback? onLocationTap,
       String? title}) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -60,29 +61,43 @@ class SlotSelectionWidgets {
                   ),
                 ),
                 const AppSizedBox(height: 2),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2.0),
-                      child: HugeIcon(
-                        icon: HugeIcons.strokeRoundedLocation01,
-                        size: 12,
-                        color: colorScheme.onSurface.withValues(alpha: 0.6),
-                      ),
-                    ),
-                    const AppSizedBox(width: 4),
-                    Flexible(
-                      child: AppText(
-                        text: ground?.address ?? 'Loading Address...',
-                        align: TextAlign.left,
-                        textStyle: TextStyle(
-                          fontSize: 12,
-                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                GestureDetector(
+                  onTap: onLocationTap,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2.0),
+                        child: HugeIcon(
+                          icon: HugeIcons.strokeRoundedLocation01,
+                          size: 12,
+                          color: onLocationTap != null ? AppColors.primaryDarkGreen : colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
-                    ),
-                  ],
+                      const AppSizedBox(width: 4),
+                      Flexible(
+                        child: AppText(
+                          text: (ground?.address != null && ground!.address.isNotEmpty) 
+                              ? ground.address 
+                              : (ground != null && ground.city.isNotEmpty ? ground.city : 'Location unavailable'),
+                          align: TextAlign.left,
+                          textStyle: TextStyle(
+                            fontSize: 12,
+                            color: onLocationTap != null ? AppColors.primaryDarkGreen : colorScheme.onSurface.withValues(alpha: 0.6),
+                            fontWeight: onLocationTap != null ? FontWeight.w600 : FontWeight.normal,
+                          ),
+                        ),
+                      ),
+                      if (onLocationTap != null) ...[
+                        const AppSizedBox(width: 4),
+                        HugeIcon(
+                          icon: HugeIcons.strokeRoundedArrowDown01,
+                          size: 14,
+                          color: AppColors.primaryDarkGreen,
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -146,101 +161,158 @@ class SlotSelectionWidgets {
               ),
             ),
           ),
-          Padding(
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? theme.cardColor.withValues(alpha: 0.3)
-                    : theme.scaffoldBackgroundColor,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color:
-                      theme.dividerColor.withValues(alpha: isDark ? 0.1 : 0.05),
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: state.availableSports
-                    .asMap()
-                    .entries
-                    .map((entry) {
-                      final index = entry.key;
-                      final sport = entry.value;
-                      final isSel = sport == state.selectedSport;
-                      final color = _getSportColor(sport);
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: state.availableSports
+                  .asMap()
+                  .entries
+                  .map((entry) {
+                    final index = entry.key;
+                    final sport = entry.value;
+                    final isSel = sport == state.selectedSport;
+                    final color = _getSportColor(sport);
 
-                      return [
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => onSportChanged(sport),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              decoration: BoxDecoration(
-                                color: isSel
-                                    ? (isDark
-                                        ? color.withValues(alpha: 0.15)
-                                        : color.withValues(alpha: 0.1))
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: isSel
-                                      ? color.withValues(alpha: 0.8)
-                                      : colorScheme.onSurface.withValues(
-                                          alpha: isDark ? 0.2 : 0.1),
-                                  width: 1.5,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    _getSportIcon(sport),
-                                    size: 16,
-                                    color: isSel
-                                        ? color
-                                        : colorScheme.onSurface.withValues(
-                                            alpha: isDark ? 0.5 : 0.4),
-                                  ),
-                                  const AppSizedBox(width: 10),
-                                  Flexible(
-                                    child: AppText(
-                                      text: sport,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      textStyle: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: isSel
-                                            ? FontWeight.w800
-                                            : FontWeight.w600,
-                                        color: isSel
-                                            ? color
-                                            : colorScheme.onSurface.withValues(
-                                                alpha: isDark ? 0.5 : 0.4),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: GestureDetector(
+                        onTap: () => onSportChanged(sport),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: isSel
+                                ? (isDark
+                                    ? color.withValues(alpha: 0.15)
+                                    : color.withValues(alpha: 0.1))
+                                : theme.cardColor,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isSel
+                                  ? color.withValues(alpha: 0.8)
+                                  : colorScheme.onSurface.withValues(
+                                      alpha: isDark ? 0.2 : 0.1),
+                              width: 1.5,
                             ),
                           ),
-                        ),
-                        if (index < state.availableSports.length - 1)
-                          Container(
-                            width: 1,
-                            height: 24,
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            color: colorScheme.onSurface
-                                .withValues(alpha: isDark ? 0.15 : 0.1),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                _getSportIcon(sport),
+                                size: 16,
+                                color: isSel
+                                    ? color
+                                    : colorScheme.onSurface.withValues(
+                                        alpha: isDark ? 0.5 : 0.4),
+                              ),
+                              const AppSizedBox(width: 8),
+                              AppText(
+                                text: sport,
+                                textStyle: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: isSel
+                                      ? FontWeight.w800
+                                      : FontWeight.w600,
+                                  color: isSel
+                                      ? color
+                                      : colorScheme.onSurface.withValues(
+                                          alpha: isDark ? 0.5 : 0.4),
+                                ),
+                              ),
+                            ],
                           ),
-                      ];
-                    })
-                    .expand((x) => x)
-                    .toList(),
-              ),
+                        ),
+                      ),
+                    );
+                  })
+                  .toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static Widget buildSportGroundShimmer(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
+    final highlightColor = isDark ? Colors.grey[700]! : Colors.grey[100]!;
+
+    return Shimmer.fromColors(
+      baseColor: baseColor,
+      highlightColor: highlightColor,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Sport Selection Shimmer
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              border: Border(bottom: BorderSide(color: theme.dividerColor.withOpacity(0.1))),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Container(width: 100, height: 12, color: Colors.white),
+                ),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  child: Row(
+                    children: List.generate(4, (index) => Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: Container(
+                        width: 100,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                    )),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Ground Selection Shimmer
+          Container(
+            width: double.infinity,
+            color: theme.cardColor,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Container(width: 120, height: 12, color: Colors.white),
+                ),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  child: Row(
+                    children: List.generate(3, (index) => Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: Container(
+                        width: 150,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                    )),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -316,8 +388,8 @@ class SlotSelectionWidgets {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.location_on,
+                          HugeIcon(
+                            icon: HugeIcons.strokeRoundedLocation01,
                             size: 16,
                             color: isSelected
                                 ? Colors.white
@@ -438,7 +510,7 @@ class SlotSelectionWidgets {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.location_on,
+                      const HugeIcon(icon: HugeIcons.strokeRoundedLocation01,
                           size: 16, color: AppColors.primaryDarkGreen),
                       const AppSizedBox(width: 8),
                       Expanded(

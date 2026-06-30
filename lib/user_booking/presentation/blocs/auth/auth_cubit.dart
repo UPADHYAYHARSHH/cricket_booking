@@ -51,8 +51,15 @@ class AuthCubit extends Cubit<AuthState> {
       await _checkProfileAndEmit();
     } on fb.FirebaseAuthException catch (e) {
       String errorMessage = e.message ?? "Authentication failed";
-      if (e.code == 'user-not-found' || e.code == 'wrong-password' || e.code == 'invalid-credential') {
-        errorMessage = "Invalid email or password.";
+      if (e.code == 'user-not-found') {
+        errorMessage = "User is not registered. Please sign up.";
+      } else if (e.code == 'wrong-password') {
+        errorMessage = "Incorrect password.";
+      } else if (e.code == 'invalid-credential') {
+        // Fallback for Firebase versions with email enumeration protection enabled
+        errorMessage = "Incorrect password or user not registered.";
+      } else if (e.code == 'invalid-email') {
+        errorMessage = "The email address is badly formatted.";
       }
       emit(AuthError(errorMessage));
     } catch (e) {

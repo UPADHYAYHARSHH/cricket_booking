@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'package:turfpro/user_booking/presentation/screens/ground_list/widgets/city_search_bottomsheet.dart';
 import '../../../../common/constants/colors.dart';
 import '../my_booking/my_booking_screen.dart';
 
@@ -30,6 +31,29 @@ class _MainNavScreenState extends State<MainNavScreen> {
   int currentIndex = 0;
   late final PageController _pageController;
   late final StreamSubscription<User?> _authSubscription;
+  bool _isLocationDialogShowing = false;
+
+  void _checkLocation(LocationState state) {
+    if (!state.isLoading &&
+        (state.city == null || state.city == "Select Location")) {
+      if (!_isLocationDialogShowing) {
+        _isLocationDialogShowing = true;
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          enableDrag: false,
+          isDismissible: false,
+          backgroundColor: Theme.of(context).cardColor,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          builder: (_) => const CitySearchBottomSheet(isMandatory: true),
+        ).then((_) {
+          _isLocationDialogShowing = false;
+        });
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -43,13 +67,13 @@ class _MainNavScreenState extends State<MainNavScreen> {
 
     // Trigger location fetch when main navbar opens if not already loaded
     final locationCubit = context.read<LocationCubit>();
-    if (locationCubit.state.city == null || locationCubit.state.city == "Select Location") {
+    if (locationCubit.state.city == null ||
+        locationCubit.state.city == "Select Location") {
       locationCubit.loadCity();
     }
 
     // Listen for auth state changes (essential for session restoration on restart)
-    _authSubscription =
-        FirebaseAuth.instance.authStateChanges().listen((user) {
+    _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
       final userId = user?.uid;
 
       print(
@@ -70,6 +94,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
         });
         _pageController.jumpToPage(args);
       }
+      _checkLocation(context.read<LocationCubit>().state);
     });
   }
 
@@ -101,60 +126,68 @@ class _MainNavScreenState extends State<MainNavScreen> {
       const ProfileScreen(),
     ];
 
-    return BlocBuilder<NotificationCubit, NotificationState>(
-      builder: (context, notificationState) {
-        return PopScope(
-          canPop: false,
-          onPopInvokedWithResult: (didPop, result) {
-            if (didPop) return;
-
-            if (currentIndex > 0) {
-              _handleTabSwitch(currentIndex - 1);
-            } else {
-              _showExitDialog(context);
-            }
-          },
-          child: Scaffold(
-            body: PageView(
-              physics: const NeverScrollableScrollPhysics(),
-              controller: _pageController,
-              onPageChanged: (index) {
-                setState(() {
-                  currentIndex = index;
-                });
-              },
-              children: pages,
-            ),
-            bottomNavigationBar: Container(
-              height: 70,
-              decoration: BoxDecoration(
-                color: theme.cardColor,
-                boxShadow: [
-                  BoxShadow(
-                    blurRadius: 10,
-                    color: Colors.black.withOpacity(0.1),
-                  )
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _navItem(HugeIcons.strokeRoundedDiscoverCircle,
-                      "Discover", 0, onSurface,
-                      showBadge: notificationState.unreadCount > 0),
-                  _navItem(HugeIcons.strokeRoundedCalendar01, "Bookings", 1,
-                      onSurface),
-                  _navItem(HugeIcons.strokeRoundedFavourite, "Saved", 2,
-                      onSurface),
-                  _navItem(HugeIcons.strokeRoundedProfile, "Profile", 3,
-                      onSurface),
-                ],
-              ),
-            ),
+    return MultiBlocListener(
+        listeners: [
+          BlocListener<LocationCubit, LocationState>(
+            listener: (context, state) {
+              _checkLocation(state);
+            },
           ),
-        );
-      },
-    );
+        ],
+        child: BlocBuilder<NotificationCubit, NotificationState>(
+          builder: (context, notificationState) {
+            return PopScope(
+              canPop: false,
+              onPopInvokedWithResult: (didPop, result) {
+                if (didPop) return;
+
+                if (currentIndex > 0) {
+                  _handleTabSwitch(currentIndex - 1);
+                } else {
+                  _showExitDialog(context);
+                }
+              },
+              child: Scaffold(
+                body: PageView(
+                  physics: const NeverScrollableScrollPhysics(),
+                  controller: _pageController,
+                  onPageChanged: (index) {
+                    setState(() {
+                      currentIndex = index;
+                    });
+                  },
+                  children: pages,
+                ),
+                bottomNavigationBar: Container(
+                  height: 70,
+                  decoration: BoxDecoration(
+                    color: theme.cardColor,
+                    boxShadow: [
+                      BoxShadow(
+                        blurRadius: 10,
+                        color: Colors.black.withOpacity(0.1),
+                      )
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _navItem(HugeIcons.strokeRoundedDiscoverCircle,
+                          "Discover", 0, onSurface,
+                          showBadge: notificationState.unreadCount > 0),
+                      _navItem(HugeIcons.strokeRoundedCalendar01, "Bookings", 1,
+                          onSurface),
+                      _navItem(HugeIcons.strokeRoundedFavourite, "Saved", 2,
+                          onSurface),
+                      _navItem(HugeIcons.strokeRoundedProfile, "Profile", 3,
+                          onSurface),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ));
   }
 
   Future<void> _showExitDialog(BuildContext context) async {
