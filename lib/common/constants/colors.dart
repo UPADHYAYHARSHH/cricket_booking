@@ -65,7 +65,49 @@ class AppColors {
         centerTitle: true,
         iconTheme: IconThemeData(color: textPrimaryLight),
         titleTextStyle: TextStyle(
-            color: textPrimaryLight, fontSize: 18, fontWeight: FontWeight.bold),
+            color: textPrimaryLight, fontSize: 20, fontWeight: FontWeight.w600),
+      ),
+      cardTheme: const CardThemeData(
+        color: surfaceLight,
+        elevation: 2,
+        shadowColor: Color(0x0D000000), // Colors.black.withValues(alpha: 0.05) equivalent
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
+        margin: EdgeInsets.zero,
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryDarkGreen,
+          foregroundColor: white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: surfaceLight,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: borderLight),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: borderLight),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: primaryDarkGreen, width: 2),
+        ),
+        hintStyle: const TextStyle(color: textSecondaryLight),
+      ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: surfaceLight,
+        selectedItemColor: primaryDarkGreen,
+        unselectedItemColor: textSecondaryLight,
+        elevation: 8,
+        type: BottomNavigationBarType.fixed,
       ),
       dividerColor: borderLight,
     );
@@ -97,7 +139,50 @@ class AppColors {
         centerTitle: true,
         iconTheme: IconThemeData(color: textPrimaryDark),
         titleTextStyle: TextStyle(
-            color: textPrimaryDark, fontSize: 18, fontWeight: FontWeight.bold),
+            color: textPrimaryDark, fontSize: 20, fontWeight: FontWeight.w600),
+      ),
+      cardTheme: const CardThemeData(
+        color: surfaceDark,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(16)),
+            side: BorderSide(color: borderDark, width: 1)),
+        margin: EdgeInsets.zero,
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryDarkGreen,
+          foregroundColor: white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: surfaceDark,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: borderDark),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: borderDark),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: primaryDarkGreen, width: 2),
+        ),
+        hintStyle: const TextStyle(color: textSecondaryDark),
+      ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: surfaceDark,
+        selectedItemColor: primaryDarkGreen,
+        unselectedItemColor: textSecondaryDark,
+        elevation: 0,
+        type: BottomNavigationBarType.fixed,
       ),
       dividerColor: borderDark,
     );

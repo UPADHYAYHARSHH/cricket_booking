@@ -40,22 +40,22 @@ class _GroundListScreenState extends State<GroundListScreen> {
     {
       'id': 'cricket',
       'name': 'Cricket',
-      'icon': HugeIcons.strokeRoundedCricketBat,
+      'image': 'assets/images/sports/sport6.png',
     },
     {
-      'id': 'pickleball',
-      'name': 'Pickleball',
-      'icon': HugeIcons.strokeRoundedTennisBall,
-    },
-    {
-      'id': 'badminton',
-      'name': 'Badminton',
-      'icon': HugeIcons.strokeRoundedBadminton,
+      'id': 'football',
+      'name': 'Football',
+      'image': 'assets/images/sports/sport1.png',
     },
     {
       'id': 'volleyball',
       'name': 'Volleyball',
-      'icon': HugeIcons.strokeRoundedVolleyball,
+      'image': 'assets/images/sports/sport3.png',
+    },
+    {
+      'id': 'pickleball',
+      'name': 'Pickleball',
+      'image': 'assets/images/sports/sport4.png',
     },
   ];
 
@@ -358,13 +358,16 @@ class _GroundListScreenState extends State<GroundListScreen> {
                       if (locState is LocationListLoading || locState is LocationListInitial) {
                         return SliverPadding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          sliver: SliverList(
+                          sliver: SliverGrid(
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                              mainAxisExtent: 170,
+                            ),
                             delegate: SliverChildBuilderDelegate(
-                              (context, index) => const Padding(
-                                padding: EdgeInsets.only(bottom: 16),
-                                child: GroundSkeleton(), // Reusing skeleton for now
-                              ),
-                              childCount: 5,
+                              (context, index) => const GroundSkeleton(),
+                              childCount: 4,
                             ),
                           ),
                         );
@@ -382,17 +385,22 @@ class _GroundListScreenState extends State<GroundListScreen> {
                         
                         return SliverPadding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          sliver: SliverList(
+                          sliver: SliverGrid(
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                              mainAxisExtent: 170,
+                            ),
                             delegate: SliverChildBuilderDelegate(
                               (context, index) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 16),
-                                  child: LocationCard(
-                                    location: locState.locations[index],
-                                  ),
+                                return LocationCard(
+                                  location: locState.locations[index],
+                                  showAmenities: false,
+                                  isGrid: true,
                                 );
                               },
-                              childCount: locState.locations.length,
+                              childCount: locState.locations.length > 4 ? 4 : locState.locations.length,
                             ),
                           ),
                         );
@@ -407,13 +415,16 @@ class _GroundListScreenState extends State<GroundListScreen> {
                 if (state is GroundLoading || state is GroundInitial) {
                   return SliverPadding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    sliver: SliverList(
+                    sliver: SliverGrid(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        mainAxisExtent: 280,
+                      ),
                       delegate: SliverChildBuilderDelegate(
-                        (context, index) => const Padding(
-                          padding: EdgeInsets.only(bottom: 16),
-                          child: GroundSkeleton(),
-                        ),
-                        childCount: 5,
+                        (context, index) => const GroundSkeleton(),
+                        childCount: 4,
                       ),
                     ),
                   );
@@ -484,17 +495,22 @@ class _GroundListScreenState extends State<GroundListScreen> {
 
                   return SliverPadding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    sliver: SliverList(
+                    sliver: SliverGrid(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        mainAxisExtent: 280,
+                      ),
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: GroundCard(
-                              ground: state.grounds[index],
-                            ),
+                          return GroundCard(
+                            ground: state.grounds[index],
+                            showAmenities: false,
+                            isGrid: true,
                           );
                         },
-                        childCount: state.grounds.length,
+                        childCount: state.grounds.length > 4 ? 4 : state.grounds.length,
                       ),
                     ),
                   );
@@ -564,7 +580,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
                         children: [
                           AnimatedContainer(
                             duration: const Duration(milliseconds: 300),
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
                               color: isSelected 
                                   ? AppColors.primaryDarkGreen 
@@ -578,11 +594,25 @@ class _GroundListScreenState extends State<GroundListScreen> {
                                 )
                               ] : null,
                             ),
-                            child: HugeIcon(
-                              icon: sport['icon'],
-                              color: isSelected ? Colors.white : AppColors.primaryDarkGreen,
-                              size: 28,
-                            ),
+                            child: sport['icon'] != null
+                                ? Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: HugeIcon(
+                                      icon: sport['icon'],
+                                      color: isSelected ? Colors.white : AppColors.primaryDarkGreen,
+                                      size: 32,
+                                    ),
+                                  )
+                                : ClipOval(
+                                    child: Image.asset(
+                                      sport['image'],
+                                      width: 44,
+                                      height: 44,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) =>
+                                          const Icon(Icons.sports, size: 32),
+                                    ),
+                                  ),
                           ),
                           const AppSizedBox(height: 8),
                           AppText(

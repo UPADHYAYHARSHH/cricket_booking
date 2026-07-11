@@ -989,47 +989,97 @@ class SlotSelectionWidgets {
 
   // ── Turf Image Card ───────────────────────────────────────────────────────
 
-  static Widget buildTurfImage(BuildContext context, GroundModel? ground,
-      {double? rating, int? totalReviews}) {
+  static Widget buildVenueImageCarousel(BuildContext context, GroundModel? venue) {
+    if (venue == null) return const SizedBox.shrink();
+    return GroundImageCarousel(
+      images: venue.images,
+      fallbackImageUrl: venue.imageUrl,
+      height: 220,
+      borderRadius: BorderRadius.zero,
+    );
+  }
+
+  static Widget buildVenueInfoHeader(BuildContext context, GroundModel? venue) {
+    if (venue == null) return const SizedBox.shrink();
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
-      height: 175,
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: theme.brightness == Brightness.dark
-                ? Colors.black.withValues(alpha: 0.3)
-                : Colors.black.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      child: Stack(
+      color: theme.cardColor,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GroundImageCarousel(
-            images: ground?.images ?? [],
-            fallbackImageUrl: ground?.imageUrl ?? "",
-            height: 175,
-            borderRadius: BorderRadius.circular(16),
+          Row(
+            children: [
+              Expanded(
+                child: AppText(
+                  text: venue.name,
+                  textStyle: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ),
+              if (venue.totalReviews > 0)
+                _badge(
+                  icon: HugeIcons.strokeRoundedStar,
+                  iconColor: AppColors.goldenYellow,
+                  text: '${venue.rating.toStringAsFixed(1)} (${venue.totalReviews})',
+                  bgColor: AppColors.goldenYellow.withValues(alpha: 0.1),
+                  textColor: AppColors.goldenYellow,
+                ),
+            ],
           ),
-          // Badges
-          if ((totalReviews ?? ground?.totalReviews ?? 0) > 0)
-            Positioned(
-              bottom: 12,
-              left: 12,
-              child: _badge(
-                icon: HugeIcons.strokeRoundedStar,
-                iconColor: AppColors.goldenYellow,
-                text:
-                    '${(rating ?? ground?.rating ?? 0.0).toStringAsFixed(1)}  (${(totalReviews ?? ground?.totalReviews ?? 0)} REVIEWS)',
-                bgColor: AppColors.black.withValues(alpha: 0.55),
-                textColor: AppColors.white,
+          const AppSizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              HugeIcon(
+                icon: HugeIcons.strokeRoundedLocation01,
+                size: 16,
+                color: colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
+              const AppSizedBox(width: 4),
+              Expanded(
+                child: AppText(
+                  text: venue.address.isNotEmpty ? venue.address : venue.city,
+                  textStyle: TextStyle(
+                    fontSize: 13,
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (venue.categories.isNotEmpty) ...[
+            const AppSizedBox(height: 12),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: venue.categories.map((c) => Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: AppColors.primaryDarkGreen.withValues(alpha: 0.2)),
+                    ),
+                    child: AppText(
+                      text: c,
+                      textStyle: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primaryDarkGreen,
+                      ),
+                    ),
+                  ),
+                )).toList(),
               ),
             ),
-
+          ],
         ],
       ),
     );
@@ -1761,10 +1811,19 @@ class SlotSelectionWidgets {
             ),
           ),
           const AppSizedBox(height: 16),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: amenities.map((a) => amenityChip(context, a)).toList(),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: amenities.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 3.5,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
+            itemBuilder: (context, index) {
+              return amenityChip(context, amenities[index]);
+            },
           ),
         ],
       ),
@@ -2030,7 +2089,34 @@ class SlotSelectionWidgets {
           ),
           const AppSizedBox(height: 16),
           if (isLoading)
-            const Center(child: CircularProgressIndicator(color: kOrange))
+            Shimmer.fromColors(
+              baseColor: theme.brightness == Brightness.dark ? Colors.grey[800]! : Colors.grey[300]!,
+              highlightColor: theme.brightness == Brightness.dark ? Colors.grey[700]! : Colors.grey[100]!,
+              child: Column(
+                children: List.generate(2, (index) => Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(width: 40, height: 40, decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white)),
+                      const AppSizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(width: 120, height: 12, color: Colors.white),
+                            const AppSizedBox(height: 8),
+                            Container(width: double.infinity, height: 12, color: Colors.white),
+                            const AppSizedBox(height: 4),
+                            Container(width: 200, height: 12, color: Colors.white),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+              ),
+            )
           else ...[
             if (reviews.isNotEmpty) ...[
               Row(

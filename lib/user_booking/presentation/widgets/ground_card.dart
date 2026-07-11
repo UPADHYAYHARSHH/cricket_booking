@@ -21,9 +21,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 class GroundCard extends StatefulWidget {
   final GroundModel ground;
 
+  final bool showAmenities;
+  final bool isGrid;
+
   const GroundCard({
     super.key,
     required this.ground,
+    this.showAmenities = true,
+    this.isGrid = false,
   });
 
   @override
@@ -94,7 +99,7 @@ class _GroundCardState extends State<GroundCard> {
         GroundImageCarousel(
           images: widget.ground.images,
           fallbackImageUrl: widget.ground.imageUrl,
-          height: 160,
+          height: widget.isGrid ? 110 : 160,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
         ),
 
@@ -303,7 +308,7 @@ class _GroundCardState extends State<GroundCard> {
             ],
           ),
 
-          if (widget.ground.amenities.isNotEmpty) ...[
+          if (widget.showAmenities && widget.ground.amenities.isNotEmpty) ...[
             const AppSizedBox(height: 10),
             Row(
               children: widget.ground.amenities.take(3).map((amenity) {

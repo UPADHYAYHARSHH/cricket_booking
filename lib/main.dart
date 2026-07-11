@@ -15,6 +15,7 @@ import 'package:turfpro/user_booking/presentation/screens/my_booking/my_booking_
 import 'package:turfpro/user_booking/presentation/screens/profile_screen/edit_profile.dart';
 import 'package:turfpro/user_booking/presentation/screens/payment_status/payment_failed_screen.dart';
 import 'package:turfpro/user_booking/presentation/screens/slot_selection/slot_slection.dart';
+import 'package:turfpro/user_booking/presentation/screens/slot_selection/time_slot_selection_screen.dart';
 import 'package:turfpro/user_booking/presentation/screens/signup/signup_screen.dart';
 import 'package:turfpro/user_booking/presentation/screens/signup/complete_profile_screen.dart';
 import 'package:turfpro/user_booking/presentation/screens/signup/email_verification_waiting_screen.dart';
@@ -216,7 +217,8 @@ void main() async {
               AppRoutes.setPassword: (context) => const SetPasswordScreen(),
               AppRoutes.nav: (context) => const MainNavScreen(),
               "/search": (context) => const SearchScreen(),
-              "/slotSelection": (context) => const SlotSelectionScreen(),
+              AppRoutes.slotSelection: (context) => const SlotSelectionScreen(),
+              AppRoutes.timeSlotSelection: (context) => const TimeSlotSelectionScreen(),
               "/bookingConfirmationScreen": (context) => const BookingConfirmationScreen(),
               "/myBookingScreen": (context) => const MyBookingsScreen(),
               "/paymentFailedScreen": (context) => const PaymentFailedScreen(),

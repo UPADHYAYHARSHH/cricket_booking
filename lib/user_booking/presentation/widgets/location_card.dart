@@ -11,7 +11,15 @@ import 'package:turfpro/user_booking/constants/route_constants.dart';
 class LocationCard extends StatelessWidget {
   final LocationModel location;
   
-  const LocationCard({super.key, required this.location});
+  final bool showAmenities;
+  final bool isGrid;
+  
+  const LocationCard({
+    super.key, 
+    required this.location,
+    this.showAmenities = true,
+    this.isGrid = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +52,7 @@ class LocationCard extends StatelessWidget {
           children: [
             // Image Placeholder for Location
             Container(
-              height: 140,
+              height: isGrid ? 110 : 140,
               width: double.infinity,
               decoration: const BoxDecoration(
                 borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
@@ -103,7 +111,7 @@ class LocationCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  if (location.amenities.isNotEmpty) ...[
+                  if (showAmenities && location.amenities.isNotEmpty) ...[
                     const AppSizedBox(height: 8),
                     Wrap(
                       spacing: 6,

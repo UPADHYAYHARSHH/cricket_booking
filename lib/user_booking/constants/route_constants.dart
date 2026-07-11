@@ -9,6 +9,7 @@ class AppRoutes {
   static const nav = "/nav";
   static const search = "/search";
   static const slotSelection = "/slotSelection";
+  static const timeSlotSelection = "/timeSlotSelection";
   static const bookingConfirmationScreen = "/bookingConfirmationScreen";
   static const myBookingScreen = "/myBookingScreen";
   static const editProfileScreen = "/editProfileScreen";
