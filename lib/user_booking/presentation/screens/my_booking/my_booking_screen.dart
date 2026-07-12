@@ -347,31 +347,20 @@ class _BookingCardState extends State<_BookingCard> {
 
   Widget _buildDateSection(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 16, 14, 0),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.calendar_today_rounded,
-              size: 16, color: AppColors.primaryDarkGreen),
-          const SizedBox(width: 8),
+          const Padding(
+            padding: EdgeInsets.only(top: 2),
+            child: Icon(Icons.calendar_today_rounded,
+                size: 16, color: AppColors.primaryDarkGreen),
+          ),
+          const SizedBox(width: 6),
           AppText(
             text: DateFormat('EEE, d MMM yyyy').format(widget.booking.slotTime),
-            textStyle: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          const Spacer(),
-          const Icon(Icons.access_time_rounded,
-              size: 16, color: AppColors.primaryDarkGreen),
-          const SizedBox(width: 8),
-          AppText(
-            text: widget.booking.period != null && widget.booking.period!.isNotEmpty
-                ? widget.booking.period!
-                : DateFormat('hh:mm a').format(widget.booking.slotTime),
             textStyle: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.bold,

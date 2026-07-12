@@ -344,6 +344,7 @@ class ProfileScreen extends StatelessWidget {
           isLogout: false,
           onTap: () => Navigator.pushNamed(context, AppRoutes.splitHistory),
         ),
+      /*
       _MenuItem(
         icon:
             isDark ? HugeIcons.strokeRoundedMoon : HugeIcons.strokeRoundedSun01,
@@ -359,6 +360,7 @@ class ProfileScreen extends StatelessWidget {
           activeThumbColor: AppColors.accentOrange,
         ),
       ),
+      */
       _MenuItem(
         icon: Icons.help_outline_rounded,
         label: "Help & Support",

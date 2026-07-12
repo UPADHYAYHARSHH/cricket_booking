@@ -54,7 +54,17 @@ class GroundModel {
       city: json['city'] ?? '',
       totalReviews: json['total_reviews'] ?? 0,
       description: json['description'] ?? '',
-      amenities: (json['amenities'] as List?)?.map((e) => e.toString()).toList() ?? [],
+      amenities: () {
+        final list = <String>[];
+        if (json['amenities'] is List) {
+           list.addAll((json['amenities'] as List).map((a) => a.toString()));
+        }
+        if (json['has_parking'] == true) list.add('Parking');
+        if (json['has_washroom'] == true) list.add('Washroom');
+        if (json['has_floodlights'] == true) list.add('Floodlights');
+        if (json['has_drinking_water'] == true) list.add('Drinking Water');
+        return list.toSet().toList();
+      }(),
       images: (json['images'] as List?)?.map((e) => e.toString()).toList() ?? [],
       categories: () {
         final list = <String>[];

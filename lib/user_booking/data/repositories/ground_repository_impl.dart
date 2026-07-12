@@ -54,7 +54,17 @@ class GroundRepositoryImpl implements GroundRepository {
           city: e['city']?.toString() ?? '',
           totalReviews: e['total_reviews'] ?? 0,
           description: e['description']?.toString() ?? '',
-          amenities: (e['amenities'] as List?)?.map((a) => a.toString()).toList() ?? [],
+          amenities: () {
+            final list = <String>[];
+            if (e['amenities'] is List) {
+               list.addAll((e['amenities'] as List).map((a) => a.toString()));
+            }
+            if (e['has_parking'] == true) list.add('Parking');
+            if (e['has_washroom'] == true) list.add('Washroom');
+            if (e['has_floodlights'] == true) list.add('Floodlights');
+            if (e['has_drinking_water'] == true) list.add('Drinking Water');
+            return list.toSet().toList();
+          }(),
           categories: () {
             final list = <String>[];
             if (e['categories'] is List) {
@@ -137,7 +147,17 @@ class GroundRepositoryImpl implements GroundRepository {
           city: e['city']?.toString() ?? '',
           totalReviews: e['total_reviews'] ?? 0,
           description: e['description']?.toString() ?? '',
-          amenities: (e['amenities'] as List?)?.map((a) => a.toString()).toList() ?? [],
+          amenities: () {
+            final list = <String>[];
+            if (e['amenities'] is List) {
+               list.addAll((e['amenities'] as List).map((a) => a.toString()));
+            }
+            if (e['has_parking'] == true) list.add('Parking');
+            if (e['has_washroom'] == true) list.add('Washroom');
+            if (e['has_floodlights'] == true) list.add('Floodlights');
+            if (e['has_drinking_water'] == true) list.add('Drinking Water');
+            return list.toSet().toList();
+          }(),
           categories: () {
             final list = <String>[];
             if (e['categories'] is List) {
@@ -214,7 +234,17 @@ class GroundRepositoryImpl implements GroundRepository {
       city: e['city']?.toString() ?? '',
       totalReviews: e['total_reviews'] ?? 0,
       description: e['description']?.toString() ?? '',
-      amenities: (e['amenities'] as List?)?.map((a) => a.toString()).toList() ?? [],
+      amenities: () {
+        final list = <String>[];
+        if (e['amenities'] is List) {
+           list.addAll((e['amenities'] as List).map((a) => a.toString()));
+        }
+        if (e['has_parking'] == true) list.add('Parking');
+        if (e['has_washroom'] == true) list.add('Washroom');
+        if (e['has_floodlights'] == true) list.add('Floodlights');
+        if (e['has_drinking_water'] == true) list.add('Drinking Water');
+        return list.toSet().toList();
+      }(),
       categories: () {
         final list = <String>[];
         if (e['categories'] is List) {

@@ -162,9 +162,12 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
           builder: (context, state) {
             final isEnabled = state.selectedTurf != null;
             return Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: theme.scaffoldBackgroundColor,
+                border: Border(
+                  top: BorderSide(color: theme.dividerColor.withOpacity(0.1)),
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.05),
@@ -176,7 +179,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
               child: SafeArea(
                 child: SizedBox(
                   width: double.infinity,
-                  height: 50,
+                  height: 56,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryDarkGreen,
@@ -191,12 +194,20 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                             Navigator.pushNamed(context, AppRoutes.timeSlotSelection);
                           }
                         : null,
-                    child: const AppText(
-                      text: "Book",
-                      textStyle: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const AppText(
+                          text: "Book Now",
+                          textStyle: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+                      ],
                     ),
                   ),
                 ),
@@ -250,7 +261,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                       children: [
                         // Venue Info
                         SlotSelectionWidgets.buildVenueImageCarousel(context, displayVenue),
-                        SlotSelectionWidgets.buildVenueInfoHeader(context, displayVenue),
+                        SlotSelectionWidgets.buildQuickSummarySection(context, displayVenue),
 
                         // Sport Selection
                         SlotSelectionWidgets.buildSportSelection(
@@ -280,18 +291,26 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                           },
                         ),
 
-                        // Amenities & Description
-                        SlotSelectionWidgets.buildAmenitiesSection(context, displayVenue?.amenities),
-                        SlotSelectionWidgets.buildDescriptionSection(context, displayVenue?.description),
+                        // Amenities
+                        SlotSelectionWidgets.buildAmenitiesSection(context, state.selectedTurf?.amenities?.isNotEmpty == true ? state.selectedTurf?.amenities : displayVenue?.amenities),
+                        
+                        Container(height: 8, color: const Color(0xFFF4F6F9)),
+
+                        // Description
+                        SlotSelectionWidgets.buildDescriptionSection(context, (state.selectedTurf?.description ?? '').isNotEmpty ? state.selectedTurf?.description : displayVenue?.description),
+
+                        Container(height: 8, color: const Color(0xFFF4F6F9)),
 
                         // Map (if available)
-                        if (displayVenue != null)
+                        if (displayVenue != null) ...[
                           SlotSelectionWidgets.buildMapSection(
                             context,
                             latitude: displayVenue.latitude,
                             longitude: displayVenue.longitude,
                             address: displayVenue.address,
                           ),
+                          Container(height: 8, color: const Color(0xFFF4F6F9)),
+                        ],
 
                         // Reviews (we pass the displayVenue id or ground id to _reviews which are loaded separately)
                         SlotSelectionWidgets.buildReviewSection(context, _reviews, _isLoadingReviews),

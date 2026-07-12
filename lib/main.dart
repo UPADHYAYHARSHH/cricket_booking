@@ -169,7 +169,7 @@ void main() async {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
             scrollBehavior: const AppScrollBehavior(),
-            themeMode: state.themeMode,
+            themeMode: ThemeMode.light,
             theme: AppColors.getLightTheme(),
             darkTheme: AppColors.getDarkTheme(),
             navigatorKey: navigatorKey,

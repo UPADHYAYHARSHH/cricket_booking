@@ -5,6 +5,10 @@ import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import 'package:turfpro/user_booking/data/models/ground_model.dart';
 import 'package:turfpro/user_booking/presentation/blocs/slot_selection/slot_selection_state.dart';
 import 'package:flutter/material.dart';
+import 'dart:math';
+import 'package:turfpro/user_booking/presentation/blocs/location/location_cubit.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart';
@@ -71,20 +75,29 @@ class SlotSelectionWidgets {
                         child: HugeIcon(
                           icon: HugeIcons.strokeRoundedLocation01,
                           size: 12,
-                          color: onLocationTap != null ? AppColors.primaryDarkGreen : colorScheme.onSurface.withValues(alpha: 0.6),
+                          color: onLocationTap != null
+                              ? AppColors.primaryDarkGreen
+                              : colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                       const AppSizedBox(width: 4),
                       Flexible(
                         child: AppText(
-                          text: (ground?.address != null && ground!.address.isNotEmpty) 
-                              ? ground.address 
-                              : (ground != null && ground.city.isNotEmpty ? ground.city : 'Location unavailable'),
+                          text: (ground?.address != null &&
+                                  ground!.address.isNotEmpty)
+                              ? ground.address
+                              : (ground != null && ground.city.isNotEmpty
+                                  ? ground.city
+                                  : 'Location unavailable'),
                           align: TextAlign.left,
                           textStyle: TextStyle(
                             fontSize: 12,
-                            color: onLocationTap != null ? AppColors.primaryDarkGreen : colorScheme.onSurface.withValues(alpha: 0.6),
-                            fontWeight: onLocationTap != null ? FontWeight.w600 : FontWeight.normal,
+                            color: onLocationTap != null
+                                ? AppColors.primaryDarkGreen
+                                : colorScheme.onSurface.withValues(alpha: 0.6),
+                            fontWeight: onLocationTap != null
+                                ? FontWeight.w600
+                                : FontWeight.normal,
                           ),
                         ),
                       ),
@@ -134,103 +147,89 @@ class SlotSelectionWidgets {
       {required Function(String) onSportChanged}) {
     if (state.availableSports.isEmpty) return const SizedBox.shrink();
 
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        border: Border(
-            bottom:
-                BorderSide(color: theme.dividerColor.withValues(alpha: 0.1))),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: AppText(
-              text: "SELECT SPORT",
-              textStyle: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1,
-                color: colorScheme.onSurface.withValues(alpha: 0.5),
-              ),
+          const AppText(
+            text: "SELECT SPORT",
+            textStyle: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.2,
             ),
           ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: state.availableSports
-                  .asMap()
-                  .entries
-                  .map((entry) {
-                    final index = entry.key;
-                    final sport = entry.value;
-                    final isSel = sport == state.selectedSport;
-                    final color = _getSportColor(sport);
+          const SizedBox(height: 16),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 2.5,
+            ),
+            itemCount: state.availableSports.length,
+            itemBuilder: (context, index) {
+              final sport = state.availableSports[index];
+              final isSel = sport == state.selectedSport;
 
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: GestureDetector(
-                        onTap: () => onSportChanged(sport),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                          decoration: BoxDecoration(
-                            color: isSel
-                                ? (isDark
-                                    ? color.withValues(alpha: 0.15)
-                                    : color.withValues(alpha: 0.1))
-                                : theme.cardColor,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: isSel
-                                  ? color.withValues(alpha: 0.8)
-                                  : colorScheme.onSurface.withValues(
-                                      alpha: isDark ? 0.2 : 0.1),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                _getSportIcon(sport),
-                                size: 16,
-                                color: isSel
-                                    ? color
-                                    : colorScheme.onSurface.withValues(
-                                        alpha: isDark ? 0.5 : 0.4),
-                              ),
-                              const AppSizedBox(width: 8),
-                              AppText(
-                                text: sport,
-                                textStyle: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: isSel
-                                      ? FontWeight.w800
-                                      : FontWeight.w600,
-                                  color: isSel
-                                      ? color
-                                      : colorScheme.onSurface.withValues(
-                                          alpha: isDark ? 0.5 : 0.4),
-                                ),
-                              ),
-                            ],
+              return GestureDetector(
+                onTap: () => onSportChanged(sport),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isSel
+                        ? AppColors.primaryDarkGreen.withOpacity(0.05)
+                        : Colors.white,
+                    border: Border.all(
+                      color: isSel
+                          ? AppColors.primaryDarkGreen
+                          : Theme.of(context).dividerColor.withOpacity(0.2),
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: isSel
+                              ? AppColors.primaryDarkGreen
+                              : AppColors.primaryDarkGreen.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: ClipOval(
+                          child: Image.asset(
+                            _getSportImage(sport),
+                            width: 24,
+                            height: 24,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Icon(Icons.sports, size: 18, color: isSel ? Colors.white : AppColors.primaryDarkGreen),
                           ),
                         ),
                       ),
-                    );
-                  })
-                  .toList(),
-            ),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: AppText(
+                          text: sport,
+                          textStyle: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -254,7 +253,9 @@ class SlotSelectionWidgets {
             width: double.infinity,
             decoration: BoxDecoration(
               color: theme.cardColor,
-              border: Border(bottom: BorderSide(color: theme.dividerColor.withOpacity(0.1))),
+              border: Border(
+                  bottom:
+                      BorderSide(color: theme.dividerColor.withOpacity(0.1))),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -267,23 +268,25 @@ class SlotSelectionWidgets {
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                   child: Row(
-                    children: List.generate(4, (index) => Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: Container(
-                        width: 100,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                    )),
+                    children: List.generate(
+                        4,
+                        (index) => Padding(
+                              padding: const EdgeInsets.only(right: 12),
+                              child: Container(
+                                width: 100,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                            )),
                   ),
                 ),
               ],
             ),
           ),
-          
+
           // Ground Selection Shimmer
           Container(
             width: double.infinity,
@@ -299,17 +302,19 @@ class SlotSelectionWidgets {
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                   child: Row(
-                    children: List.generate(3, (index) => Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: Container(
-                        width: 150,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                    )),
+                    children: List.generate(
+                        3,
+                        (index) => Padding(
+                              padding: const EdgeInsets.only(right: 12),
+                              child: Container(
+                                width: 150,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                            )),
                   ),
                 ),
               ],
@@ -327,119 +332,118 @@ class SlotSelectionWidgets {
       return const SizedBox.shrink();
     }
 
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Container(
-      width: double.infinity,
-      color: theme.cardColor,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-            child: AppText(
-              text: "SELECT GROUND",
-              textStyle: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1,
-                color: colorScheme.onSurface.withValues(alpha: 0.5),
-              ),
+          const AppText(
+            text: "SELECT GROUND",
+            textStyle: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.2,
             ),
           ),
+          const SizedBox(height: 16),
           SizedBox(
-            height: 50,
+            height: 80,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              physics: const BouncingScrollPhysics(),
               itemCount: state.availableTurfs.length,
               itemBuilder: (context, index) {
                 final turf = state.availableTurfs[index];
                 final isSelected = state.selectedTurf?.id == turf.id;
                 final isAvailable = turf.isAvailable;
 
-                return Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-                  child: GestureDetector(
-                    onTap: isAvailable ? () => onTurfChanged(turf) : null,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
+                return GestureDetector(
+                  onTap: isAvailable ? () => onTurfChanged(turf) : null,
+                  child: Container(
+                    width: 260,
+                    margin: const EdgeInsets.only(right: 12),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border.all(
                         color: isSelected
                             ? AppColors.primaryDarkGreen
-                            : (isAvailable
-                                ? AppColors.primaryDarkGreen
-                                    .withValues(alpha: 0.05)
-                                : Colors.grey.withValues(alpha: 0.1)),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
+                            : Theme.of(context).dividerColor.withOpacity(0.2),
+                        width: isSelected ? 2 : 1,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.stadium_outlined,
                           color: isSelected
                               ? AppColors.primaryDarkGreen
-                              : (isAvailable
-                                  ? AppColors.primaryDarkGreen
-                                      .withValues(alpha: 0.2)
-                                  : Colors.grey.withValues(alpha: 0.3)),
-                          width: 1,
+                              : Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.6),
+                          size: 24,
                         ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          HugeIcon(
-                            icon: HugeIcons.strokeRoundedLocation01,
-                            size: 16,
-                            color: isSelected
-                                ? Colors.white
-                                : (isAvailable
-                                    ? AppColors.primaryDarkGreen
-                                    : Colors.grey),
-                          ),
-                          const AppSizedBox(width: 8),
-                          AppText(
-                            text: turf.name,
-                            textStyle: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: isSelected
-                                  ? Colors.white
-                                  : (isAvailable
-                                      ? AppColors.primaryDarkGreen
-                                      : Colors.grey),
-                              decoration: isAvailable
-                                  ? null
-                                  : TextDecoration.lineThrough,
-                            ),
-                          ),
-                          if (!isAvailable) ...[
-                            const AppSizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.red.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const AppText(
-                                text: "BOOKED",
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              AppText(
+                                text: turf.name,
                                 textStyle: TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w900,
-                                    color: Colors.red),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: isSelected
+                                      ? AppColors.primaryDarkGreen
+                                      : Theme.of(context).colorScheme.onSurface,
+                                  decoration: isAvailable
+                                      ? null
+                                      : TextDecoration.lineThrough,
+                                ),
+                                maxLines: 1,
+                              ),
+                              AppText(
+                                text: turf.categories.isNotEmpty
+                                    ? turf.categories.first
+                                    : "Turf Pitch",
+                                textStyle: TextStyle(
+                                  fontSize: 12,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withOpacity(0.6),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (isSelected)
+                          const Icon(Icons.check_circle,
+                              color: AppColors.primaryDarkGreen, size: 24)
+                        else
+                          Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Theme.of(context)
+                                    .dividerColor
+                                    .withOpacity(0.3),
+                                width: 2,
                               ),
                             ),
-                          ],
-                        ],
-                      ),
+                          ),
+                      ],
                     ),
                   ),
                 );
               },
             ),
           ),
-          const AppSizedBox(height: 16),
         ],
       ),
     );
@@ -510,8 +514,10 @@ class SlotSelectionWidgets {
                   ),
                   child: Row(
                     children: [
-                      const HugeIcon(icon: HugeIcons.strokeRoundedLocation01,
-                          size: 16, color: AppColors.primaryDarkGreen),
+                      const HugeIcon(
+                          icon: HugeIcons.strokeRoundedLocation01,
+                          size: 16,
+                          color: AppColors.primaryDarkGreen),
                       const AppSizedBox(width: 8),
                       Expanded(
                         child: AppText(
@@ -968,6 +974,26 @@ class SlotSelectionWidgets {
     }
   }
 
+  static String _getSportImage(String sport) {
+    switch (sport.toLowerCase()) {
+      case 'cricket':
+      case 'box_cricket':
+        return 'assets/images/sports/sport6.png';
+      case 'football':
+        return 'assets/images/sports/sport1.png';
+      case 'volleyball':
+        return 'assets/images/sports/sport3.png';
+      case 'pickleball':
+        return 'assets/images/sports/sport4.png';
+      case 'badminton':
+        return 'assets/images/sports/sport5.png'; 
+      case 'tennis':
+        return 'assets/images/sports/sport2.png'; 
+      default:
+        return 'assets/images/sports/sport6.png';
+    }
+  }
+
   static IconData _getSportIcon(String sport) {
     switch (sport.toLowerCase()) {
       case 'cricket':
@@ -989,97 +1015,228 @@ class SlotSelectionWidgets {
 
   // ── Turf Image Card ───────────────────────────────────────────────────────
 
-  static Widget buildVenueImageCarousel(BuildContext context, GroundModel? venue) {
+  static double _calculateDistance(
+      double lat1, double lon1, double lat2, double lon2) {
+    var p = 0.017453292519943295;
+    var a = 0.5 -
+        cos((lat2 - lat1) * p) / 2 +
+        cos(lat1 * p) * cos(lat2 * p) * (1 - cos((lon2 - lon1) * p)) / 2;
+    return 12742 * asin(sqrt(a));
+  }
+
+  static Widget buildVenueImageCarousel(
+      BuildContext context, GroundModel? venue) {
     if (venue == null) return const SizedBox.shrink();
-    return GroundImageCarousel(
-      images: venue.images,
-      fallbackImageUrl: venue.imageUrl,
-      height: 220,
-      borderRadius: BorderRadius.zero,
+    return Stack(
+      children: [
+        SizedBox(
+          height: 320,
+          width: double.infinity,
+          child: GroundImageCarousel(
+            images: venue.images,
+            fallbackImageUrl: venue.imageUrl,
+            height: 320,
+            borderRadius: BorderRadius.zero,
+          ),
+        ),
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                colors: [
+                  Colors.black.withOpacity(0.8),
+                  Colors.transparent,
+                ],
+                stops: const [0.0, 0.5],
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          bottom: 24,
+          left: 24,
+          right: 24,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppText(
+                      text: venue.name,
+                      textStyle: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on,
+                            color: Colors.white, size: 16),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: AppText(
+                            text: venue.address.isNotEmpty
+                                ? venue.address
+                                : venue.city,
+                            textStyle: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white.withOpacity(0.9),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              InkWell(
+                onTap: () async {
+                  final url =
+                      "geo:${venue.latitude},${venue.longitude}?q=${venue.latitude},${venue.longitude}(${Uri.encodeComponent(venue.name)})";
+                  if (await canLaunchUrlString(url)) {
+                    await launchUrlString(url);
+                  } else {
+                    final webUrl =
+                        "https://www.google.com/maps/search/?api=1&query=${venue.latitude},${venue.longitude}";
+                    if (await canLaunchUrlString(webUrl)) {
+                      await launchUrlString(webUrl);
+                    }
+                  }
+                },
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.15),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const HugeIcon(
+                          icon: HugeIcons.strokeRoundedLocation01,
+                          color: AppColors.goldenYellow,
+                          size: 18),
+                      const SizedBox(width: 8),
+                      AppText(
+                        text: "Open in Maps",
+                        textStyle: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
-  static Widget buildVenueInfoHeader(BuildContext context, GroundModel? venue) {
+  static Widget buildQuickSummarySection(
+      BuildContext context, GroundModel? venue) {
     if (venue == null) return const SizedBox.shrink();
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     return Container(
-      color: theme.cardColor,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).dividerColor.withOpacity(0.1),
+          ),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
-              Expanded(
-                child: AppText(
-                  text: venue.name,
-                  textStyle: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: colorScheme.onSurface,
-                  ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.goldenYellow.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              ),
-              if (venue.totalReviews > 0)
-                _badge(
-                  icon: HugeIcons.strokeRoundedStar,
-                  iconColor: AppColors.goldenYellow,
-                  text: '${venue.rating.toStringAsFixed(1)} (${venue.totalReviews})',
-                  bgColor: AppColors.goldenYellow.withValues(alpha: 0.1),
-                  textColor: AppColors.goldenYellow,
-                ),
-            ],
-          ),
-          const AppSizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              HugeIcon(
-                icon: HugeIcons.strokeRoundedLocation01,
-                size: 16,
-                color: colorScheme.onSurface.withValues(alpha: 0.5),
-              ),
-              const AppSizedBox(width: 4),
-              Expanded(
-                child: AppText(
-                  text: venue.address.isNotEmpty ? venue.address : venue.city,
-                  textStyle: TextStyle(
-                    fontSize: 13,
-                    color: colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          if (venue.categories.isNotEmpty) ...[
-            const AppSizedBox(height: 12),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: venue.categories.map((c) => Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: AppColors.primaryDarkGreen.withValues(alpha: 0.2)),
-                    ),
-                    child: AppText(
-                      text: c,
+                child: Row(
+                  children: [
+                    const Icon(Icons.star_rounded,
+                        color: AppColors.goldenYellow, size: 18),
+                    const SizedBox(width: 4),
+                    AppText(
+                      text: venue.rating.toStringAsFixed(1),
                       textStyle: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primaryDarkGreen,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.goldenYellow,
                       ),
                     ),
-                  ),
-                )).toList(),
+                  ],
+                ),
               ),
-            ),
-          ],
+              if (venue.totalReviews > 0) ...[
+                const SizedBox(width: 12),
+                Container(
+                  height: 16,
+                  width: 1,
+                  color: Theme.of(context).dividerColor.withOpacity(0.2),
+                ),
+                const SizedBox(width: 12),
+                AppText(
+                  text: "${venue.totalReviews} Reviews",
+                  textStyle: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.6),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          BlocBuilder<LocationCubit, LocationState>(
+            builder: (context, state) {
+              final double? originLat = state.gpsLatitude ?? state.latitude;
+              final double? originLng = state.gpsLongitude ?? state.longitude;
+
+              if (originLat != null && originLng != null) {
+                final distance = _calculateDistance(
+                  originLat,
+                  originLng,
+                  venue.latitude,
+                  venue.longitude,
+                );
+                return AppText(
+                  text: "${distance.toStringAsFixed(1)} km away",
+                  textStyle: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryDarkGreen,
+                  ),
+                );
+              }
+              return const SizedBox();
+            },
+          ),
         ],
       ),
     );
@@ -1237,12 +1394,13 @@ class SlotSelectionWidgets {
             final p = entry.value;
             final index = entry.key;
             final isSel = p == selectedPeriod;
-            final accentColor =
-                isDark ? AppColors.primaryLightGreen : AppColors.primaryDarkGreen;
+            final accentColor = isDark
+                ? AppColors.primaryLightGreen
+                : AppColors.primaryDarkGreen;
 
             return Padding(
-              padding: EdgeInsets.only(
-                  right: index == periods.length - 1 ? 0 : 10),
+              padding:
+                  EdgeInsets.only(right: index == periods.length - 1 ? 0 : 10),
               child: GestureDetector(
                 onTap: () => onSelect(p),
                 child: AnimatedContainer(
@@ -1250,10 +1408,14 @@ class SlotSelectionWidgets {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: isSel ? accentColor : accentColor.withValues(alpha: 0.05),
+                    color: isSel
+                        ? accentColor
+                        : accentColor.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isSel ? accentColor : accentColor.withValues(alpha: 0.1),
+                      color: isSel
+                          ? accentColor
+                          : accentColor.withValues(alpha: 0.1),
                       width: 1.2,
                     ),
                   ),
@@ -1788,45 +1950,187 @@ class SlotSelectionWidgets {
 
   static Widget buildAmenitiesSection(
       BuildContext context, List<String>? amenities) {
-    if (amenities == null || amenities.isEmpty) return const SizedBox.shrink();
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    if (amenities == null || amenities.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    
+    final displayAmenities = amenities.take(4).toList();
+    final hasMore = amenities.length > 4;
 
     return Container(
-      color: colorScheme.surface,
-      margin: const EdgeInsets.only(top: 12),
-      padding: const EdgeInsets.all(16),
       width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppText(
-            text: 'AMENITIES',
-            align: TextAlign.left,
-            textStyle: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.2,
-              color: colorScheme.onSurface,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              AppText(
+                text: "Amenities",
+                textStyle: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              if (hasMore)
+                GestureDetector(
+                  onTap: () => _showAmenitiesBottomSheet(context, amenities),
+                  child: const AppText(
+                    text: "View all",
+                    textStyle: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryDarkGreen,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+            ],
           ),
-          const AppSizedBox(height: 16),
+          const SizedBox(height: 24),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: amenities.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 3.5,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
+              crossAxisCount: 4,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 16,
+              childAspectRatio: 0.85,
             ),
+            itemCount: displayAmenities.length,
             itemBuilder: (context, index) {
-              return amenityChip(context, amenities[index]);
+              final amenity = displayAmenities[index];
+              return Column(
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEEF2FF),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Center(
+                      child: HugeIcon(
+                        icon: getAmenityHugeIcon(amenity),
+                        color: AppColors.primaryDarkGreen,
+                        size: 28,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: AppText(
+                      text: amenity.toUpperCase(),
+                      align: TextAlign.center,
+                      textStyle: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.8),
+                      ),
+                    ),
+                  ),
+                ],
+              );
             },
           ),
         ],
       ),
+    );
+  }
+
+  static void _showAmenitiesBottomSheet(BuildContext context, List<String> amenities) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const AppText(
+                    text: "All Amenities",
+                    textStyle: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 4,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 0.85,
+                ),
+                itemCount: amenities.length,
+                itemBuilder: (context, index) {
+                  final amenity = amenities[index];
+                  return Column(
+                    children: [
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEEF2FF),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Center(
+                          child: HugeIcon(
+                            icon: getAmenityHugeIcon(amenity),
+                            color: AppColors.primaryDarkGreen,
+                            size: 28,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Expanded(
+                        child: AppText(
+                          text: amenity.toUpperCase(),
+                          align: TextAlign.center,
+                          textStyle: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.8),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -1872,160 +2176,96 @@ class SlotSelectionWidgets {
       {required double latitude,
       required double longitude,
       required String address}) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     return Container(
-      color: colorScheme.surface,
-      margin: const EdgeInsets.only(top: 12),
-      padding: const EdgeInsets.all(16),
-      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppText(
-            text: 'LOCATION',
-            align: TextAlign.left,
+          const AppText(
+            text: "LOCATION",
             textStyle: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.2,
-              color: colorScheme.onSurface,
             ),
           ),
-          const AppSizedBox(height: 12),
-          GestureDetector(
-            onTap: () => _openMap(latitude, longitude),
+          const SizedBox(height: 16),
+          InkWell(
+            onTap: () async {
+              final url =
+                  "geo:$latitude,$longitude?q=$latitude,$longitude(${Uri.encodeComponent(address)})";
+              if (await canLaunchUrlString(url)) {
+                await launchUrlString(url);
+              }
+            },
             child: Container(
-              padding: const EdgeInsets.all(12),
+              height: 160,
+              width: double.infinity,
               decoration: BoxDecoration(
-                color: theme.scaffoldBackgroundColor,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: theme.dividerColor),
+                border: Border.all(
+                    color: Theme.of(context).dividerColor.withOpacity(0.2)),
+                color: Colors.grey.withOpacity(0.1),
               ),
-              child: Column(
+              child: Stack(
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
+                  Positioned.fill(
+                    child: Opacity(
+                      opacity: 0.5,
+                      child: Container(
                         decoration: BoxDecoration(
-                          color: kOrange.withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const HugeIcon(
-                          icon: HugeIcons.strokeRoundedLocation01,
-                          size: 20,
-                          color: kOrange,
-                        ),
-                      ),
-                      const AppSizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            AppText(
-                              text: address,
-                              align: TextAlign.left,
-                              textStyle: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: colorScheme.onSurface,
-                              ),
-                            ),
-                            const AppSizedBox(height: 2),
-                            const AppText(
-                              text: 'Tap to view on Maps',
-                              align: TextAlign.left,
-                              textStyle: TextStyle(
-                                fontSize: 11,
-                                color: kOrange,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      HugeIcon(
-                        icon: HugeIcons.strokeRoundedArrowRight01,
-                        size: 18,
-                        color: colorScheme.onSurface.withValues(alpha: 0.4),
-                      ),
-                    ],
-                  ),
-                  const AppSizedBox(height: 12),
-                  // Static Map Placeholder (Styled to look like a map)
-                  SizedBox(
-                    height: 160,
-                    child: Stack(
-                      children: [
-                        ClipRRect(
                           borderRadius: BorderRadius.circular(16),
-                          child: GoogleMap(
-                            initialCameraPosition: CameraPosition(
-                              target: LatLng(latitude, longitude),
-                              zoom: 15,
-                            ),
-                            markers: {
-                              Marker(
-                                markerId: const MarkerId('ground'),
-                                position: LatLng(latitude, longitude),
-                              ),
-                            },
-                            zoomControlsEnabled: false,
-                            myLocationButtonEnabled: false,
-                            liteModeEnabled:
-                                true, // IMPORTANT for performance in lists/scrolls
+                          image: const DecorationImage(
+                            image: NetworkImage(
+                                "https://maps.googleapis.com/maps/api/staticmap?center=0,0&zoom=15&size=600x300"), // Fallback dummy visual
+                            fit: BoxFit.cover,
                           ),
                         ),
-
-                        /// Overlay Button (Open in Maps)
-                        Positioned.fill(
-                          child: Center(
-                            child: GestureDetector(
-                              onTap: () => _openMap(latitude, longitude),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).cardColor,
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.15),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    )
-                                  ],
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const HugeIcon(
-                                      icon: HugeIcons.strokeRoundedLocation01,
-                                      size: 16,
-                                      color: kOrange,
-                                    ),
-                                    const AppSizedBox(width: 8),
-                                    AppText(
-                                      text: 'Open in Maps',
-                                      align: TextAlign.left,
-                                      textStyle: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w700,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                      ),
+                    ),
+                  ),
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryDarkGreen.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.location_on,
+                              color: Colors.red, size: 16),
+                          const SizedBox(width: 8),
+                          AppText(
+                            text: address.length > 25
+                                ? "${address.substring(0, 25)}..."
+                                : address,
+                            textStyle: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -2048,113 +2288,119 @@ class SlotSelectionWidgets {
     }
   }
 
-  static Widget buildReviewSection(
-      BuildContext context, List<ReviewModel> reviews, bool isLoading) {
-    if (!isLoading && reviews.isEmpty) return const SizedBox.shrink();
-
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+  static Widget _buildReviewCard(BuildContext context, ReviewModel review, int index) {
+    // Dynamic color for avatar background
+    final colors = [AppColors.primaryDarkGreen, Colors.orange, Colors.blue, Colors.purple];
+    final color = colors[index % colors.length];
 
     return Container(
-      color: colorScheme.surface,
-      margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.all(16),
-      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF4F6F9), // Light greyish background from screenshot
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+            color: AppColors.primaryDarkGreen.withOpacity(0.3)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              AppText(
-                text: 'REVIEWS',
-                align: TextAlign.left,
-                textStyle: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2,
-                  color: colorScheme.onSurface,
-                ),
-              ),
-              if (!isLoading)
-                AppText(
-                  text: '${reviews.length} Reviews',
-                  textStyle: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: kOrange,
+              Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: AppText(
+                        text: review.userName.length >= 2 
+                          ? review.userName.substring(0, 2).toUpperCase()
+                          : (review.userName.isNotEmpty ? review.userName[0].toUpperCase() : "?"),
+                        textStyle: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-            ],
-          ),
-          const AppSizedBox(height: 16),
-          if (isLoading)
-            Shimmer.fromColors(
-              baseColor: theme.brightness == Brightness.dark ? Colors.grey[800]! : Colors.grey[300]!,
-              highlightColor: theme.brightness == Brightness.dark ? Colors.grey[700]! : Colors.grey[100]!,
-              child: Column(
-                children: List.generate(2, (index) => Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Row(
+                  const SizedBox(width: 12),
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(width: 40, height: 40, decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white)),
-                      const AppSizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(width: 120, height: 12, color: Colors.white),
-                            const AppSizedBox(height: 8),
-                            Container(width: double.infinity, height: 12, color: Colors.white),
-                            const AppSizedBox(height: 4),
-                            Container(width: 200, height: 12, color: Colors.white),
-                          ],
+                      AppText(
+                        text: review.userName,
+                        textStyle: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      AppText(
+                        text: "Recent", // In a real app, calculate time ago
+                        textStyle: TextStyle(
+                          fontSize: 11,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.5),
                         ),
                       ),
                     ],
                   ),
-                )),
-              ),
-            )
-          else ...[
-            if (reviews.isNotEmpty) ...[
-              Row(
-                children: [
-                  const HugeIcon(
-                    icon: HugeIcons.strokeRoundedStar,
-                    size: 14,
-                    color: AppColors.goldenYellow,
-                  ),
-                  const AppSizedBox(width: 4),
-                  AppText(
-                    text: (reviews.fold<double>(0, (sum, r) => sum + r.rating) /
-                            reviews.length)
-                        .toStringAsFixed(1),
-                    textStyle: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.goldenYellow,
-                    ),
-                  ),
-                  const AppSizedBox(width: 4),
-                  AppText(
-                    text: 'Average Rating',
-                    textStyle: TextStyle(
-                      fontSize: 12,
-                      color: colorScheme.onSurface.withValues(alpha: 0.5),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
                 ],
               ),
-              const AppSizedBox(height: 16),
+              Row(
+                children: List.generate(5, (starIndex) {
+                  return Icon(
+                    Icons.star,
+                    size: 14,
+                    color: starIndex < review.rating
+                        ? AppColors.goldenYellow
+                        : Theme.of(context)
+                            .dividerColor
+                            .withOpacity(0.2),
+                  );
+                }),
+              ),
             ],
-            ReviewList(reviews: reviews.take(3).toList()),
+          ),
+          if (review.reviewText.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            AppText(
+              text: review.reviewText,
+              textStyle: TextStyle(
+                fontSize: 13,
+                height: 1.4,
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withOpacity(0.7),
+              ),
+            ),
           ],
         ],
       ),
     );
+  }
+
+  static Widget buildReviewSection(
+      BuildContext context, List<ReviewModel> reviews, bool isLoading) {
+    if (isLoading) {
+      return const Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (reviews.isEmpty) return const SizedBox.shrink();
+
+    return _ReviewSectionWidget(reviews: reviews);
   }
 }
 
@@ -2236,6 +2482,104 @@ class _ExpandableDescriptionState extends State<_ExpandableDescription> {
           );
         }),
       ],
+    );
+  }
+}
+
+class _ReviewSectionWidget extends StatefulWidget {
+  final List<ReviewModel> reviews;
+  const _ReviewSectionWidget({required this.reviews});
+
+  @override
+  State<_ReviewSectionWidget> createState() => _ReviewSectionWidgetState();
+}
+
+class _ReviewSectionWidgetState extends State<_ReviewSectionWidget> {
+  bool _showAll = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final averageRating =
+        widget.reviews.fold(0.0, (sum, review) => sum + review.rating) /
+            widget.reviews.length;
+    
+    final displayCount = _showAll ? widget.reviews.length : (widget.reviews.length > 2 ? 2 : widget.reviews.length);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              AppText(
+                text: "Reviews",
+                textStyle: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              Row(
+                children: [
+                  const Icon(Icons.star,
+                      color: AppColors.goldenYellow, size: 20),
+                  const SizedBox(width: 6),
+                  AppText(
+                    text: averageRating.toStringAsFixed(1),
+                    textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(width: 4),
+                  AppText(
+                    text: "(${widget.reviews.length})",
+                    textStyle: TextStyle(
+                        fontSize: 14,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.5)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: displayCount,
+            separatorBuilder: (context, index) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              return SlotSelectionWidgets._buildReviewCard(context, widget.reviews[index], index);
+            },
+          ),
+          if (widget.reviews.length > 2 && !_showAll)
+            Padding(
+              padding: const EdgeInsets.only(top: 24),
+              child: Center(
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _showAll = true;
+                    });
+                  },
+                  child: AppText(
+                    text: "View all ${widget.reviews.length} reviews",
+                    textStyle: const TextStyle(
+                      color: AppColors.primaryDarkGreen,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
