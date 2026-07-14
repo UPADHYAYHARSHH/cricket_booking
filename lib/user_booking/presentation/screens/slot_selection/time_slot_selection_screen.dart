@@ -384,7 +384,9 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
                                 color: Theme.of(context).colorScheme.surface,
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                    color: Theme.of(context).dividerColor.withOpacity(0.05)),
+                                    color: Theme.of(context).dividerColor.withOpacity(0.3),
+                                    width: 1.5,
+                                ),
                               ),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,

@@ -244,7 +244,9 @@ class _GroundListScreenState extends State<GroundListScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 12),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).cardColor,
+                              color: Theme.of(context).brightness == Brightness.light 
+                                  ? const Color(0xFFF5F7FA) 
+                                  : Theme.of(context).cardColor,
                               borderRadius: BorderRadius.circular(30),
                             ),
                             child: Row(

@@ -9,7 +9,7 @@ class AppColors {
   static const Color goldenYellow = Color(0xFFFFD600); // Advance Paid / Ratings
 
   // --- LIGHT THEME COLORS ---
-  static const Color bgLight = Color(0xFFF5F7FA);
+  static const Color bgLight = Color(0xFFFFFFFF);
   static const Color surfaceLight = Color(0xFFFFFFFF);
   static const Color textPrimaryLight = Color(0xFF212121);
   static const Color textSecondaryLight = Color(0xFF616161);
@@ -69,9 +69,11 @@ class AppColors {
       ),
       cardTheme: const CardThemeData(
         color: surfaceLight,
-        elevation: 2,
-        shadowColor: Color(0x0D000000), // Colors.black.withValues(alpha: 0.05) equivalent
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(16)),
+          side: BorderSide(color: borderLight, width: 1.5),
+        ),
         margin: EdgeInsets.zero,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -86,15 +88,15 @@ class AppColors {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: surfaceLight,
+        fillColor: const Color(0xFFF5F7FA), // Soft gray for inputs to stand out on white bg
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: borderLight),
+          borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: borderLight),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -106,7 +108,7 @@ class AppColors {
         backgroundColor: surfaceLight,
         selectedItemColor: primaryDarkGreen,
         unselectedItemColor: textSecondaryLight,
-        elevation: 8,
+        elevation: 20, // Increased elevation for shadow on white bg
         type: BottomNavigationBarType.fixed,
       ),
       dividerColor: borderLight,

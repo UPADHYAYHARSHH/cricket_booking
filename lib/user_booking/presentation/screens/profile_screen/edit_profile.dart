@@ -125,62 +125,88 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 children: [
                   _buildAvatar(context, state),
                   const SizedBox(height: 32),
-                  TextField(
-                    controller: _nameController,
-                    style: TextStyle(color: colorScheme.onSurface),
-                    decoration: InputDecoration(
-                      labelText: 'Full Name',
-                      labelStyle: TextStyle(
-                          color: colorScheme.onSurface.withValues(alpha: 0.6)),
-                      hintText: 'Enter your name',
-                      filled: true,
-                      fillColor: theme.cardColor,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide.none,
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.06),
+                          blurRadius: 12,
+                          spreadRadius: 1,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: TextField(
+                      controller: _nameController,
+                      style: TextStyle(color: colorScheme.onSurface),
+                      decoration: InputDecoration(
+                        labelText: 'Full Name',
+                        labelStyle: TextStyle(
+                            color: colorScheme.onSurface.withValues(alpha: 0.6)),
+                        hintText: 'Enter your name',
+                        filled: true,
+                        fillColor: theme.cardColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(
+                              color: AppColors.primaryDarkGreen, width: 2),
+                        ),
+                        prefixIcon: Icon(Icons.person_outline,
+                            color: colorScheme.primary),
                       ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(
-                            color: AppColors.primaryDarkGreen, width: 2),
-                      ),
-                      prefixIcon: Icon(Icons.person_outline,
-                          color: colorScheme.primary),
                     ),
                   ),
                   const SizedBox(height: 24),
 
                   /// USERNAME FIELD
-                  TextField(
-                    controller: _usernameController,
-                    style: TextStyle(color: colorScheme.onSurface),
-                    onChanged: (value) {
-                      if (_debounce?.isActive ?? false) _debounce!.cancel();
-                      _debounce = Timer(const Duration(milliseconds: 500), () {
-                        context
-                            .read<ProfileCubit>()
-                            .checkUsernameAvailability(value.trim());
-                      });
-                    },
-                    decoration: InputDecoration(
-                      labelText: 'Username',
-                      labelStyle: TextStyle(
-                          color: colorScheme.onSurface.withValues(alpha: 0.6)),
-                      hintText: 'Unique username',
-                      filled: true,
-                      fillColor: theme.cardColor,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide.none,
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.06),
+                          blurRadius: 12,
+                          spreadRadius: 1,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: TextField(
+                      controller: _usernameController,
+                      style: TextStyle(color: colorScheme.onSurface),
+                      onChanged: (value) {
+                        if (_debounce?.isActive ?? false) _debounce!.cancel();
+                        _debounce = Timer(const Duration(milliseconds: 500), () {
+                          context
+                              .read<ProfileCubit>()
+                              .checkUsernameAvailability(value.trim());
+                        });
+                      },
+                      decoration: InputDecoration(
+                        labelText: 'Username',
+                        labelStyle: TextStyle(
+                            color: colorScheme.onSurface.withValues(alpha: 0.6)),
+                        hintText: 'Unique username',
+                        filled: true,
+                        fillColor: theme.cardColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(
+                              color: AppColors.primaryDarkGreen, width: 2),
+                        ),
+                        prefixIcon: Icon(Icons.alternate_email,
+                            color: colorScheme.primary),
+                        suffixIcon: _buildUsernameStatus(state),
                       ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(
-                            color: AppColors.primaryDarkGreen, width: 2),
-                      ),
-                      prefixIcon: Icon(Icons.alternate_email,
-                          color: colorScheme.primary),
-                      suffixIcon: _buildUsernameStatus(state),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -225,7 +251,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryDarkGreen,
                           foregroundColor: Colors.white,
-                          elevation: 0,
+                          elevation: 6,
+                          shadowColor: AppColors.primaryDarkGreen.withValues(alpha: 0.4),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -260,8 +287,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               border: Border.all(color: Colors.white, width: 4),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 10,
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 16,
+                  spreadRadius: 2,
                   offset: const Offset(0, 5),
                 ),
               ],
@@ -366,9 +394,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               border: Border.all(
                 color: isSelected
                     ? AppColors.primaryDarkGreen
-                    : theme.dividerColor,
+                    : theme.dividerColor.withValues(alpha: 0.5),
                 width: 1.5,
               ),
+              boxShadow: [
+                if (!isSelected)
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 2),
+                  ),
+                if (isSelected)
+                  BoxShadow(
+                    color: AppColors.primaryDarkGreen.withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    spreadRadius: 1,
+                    offset: const Offset(0, 4),
+                  ),
+              ],
             ),
             child: Text(
               gender,
@@ -395,7 +439,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         decoration: BoxDecoration(
           color: theme.cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: theme.dividerColor, width: 1.5),
+          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 10,
+              spreadRadius: 1,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,

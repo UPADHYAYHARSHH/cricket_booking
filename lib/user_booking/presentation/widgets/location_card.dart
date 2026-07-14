@@ -7,6 +7,7 @@ import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import 'package:turfpro/user_booking/data/models/location_model.dart';
 import 'package:turfpro/user_booking/constants/route_constants.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_network_image.dart';
 
 class LocationCard extends StatelessWidget {
   final LocationModel location;
@@ -51,17 +52,19 @@ class LocationCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Image Placeholder for Location
-            Container(
+            SizedBox(
               height: isGrid ? 110 : 140,
               width: double.infinity,
-              decoration: const BoxDecoration(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-                image: DecorationImage(
-                  image: NetworkImage("https://images.unsplash.com/photo-1577903273397-28564db4a6d1?w=800"), // Generic city/location image
-                  fit: BoxFit.cover,
-                ),
-              ),
-              child: Container(
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: AppNetworkImage(
+                      imageUrl: "",
+                      fit: BoxFit.cover,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+                    ),
+                  ),
+                  Container(
                 decoration: BoxDecoration(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
                   gradient: LinearGradient(
@@ -83,10 +86,12 @@ class LocationCard extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
+                ),
+              ],
             ),
+          ),
             
-            // Location Info
+          // Location Info
             Padding(
               padding: const EdgeInsets.all(14),
               child: Column(

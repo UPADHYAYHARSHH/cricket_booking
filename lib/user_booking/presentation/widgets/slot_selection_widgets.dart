@@ -185,7 +185,7 @@ class SlotSelectionWidgets {
                     border: Border.all(
                       color: isSel
                           ? AppColors.primaryDarkGreen
-                          : Theme.of(context).dividerColor.withOpacity(0.2),
+                          : Theme.of(context).dividerColor.withValues(alpha: 0.5),
                       width: 2,
                     ),
                     borderRadius: BorderRadius.circular(12),
@@ -347,7 +347,7 @@ class SlotSelectionWidgets {
           ),
           const SizedBox(height: 16),
           SizedBox(
-            height: 80,
+            height: 60,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
@@ -360,32 +360,41 @@ class SlotSelectionWidgets {
                 return GestureDetector(
                   onTap: isAvailable ? () => onTurfChanged(turf) : null,
                   child: Container(
-                    width: 260,
-                    margin: const EdgeInsets.only(right: 12),
-                    padding: const EdgeInsets.all(16),
+                    width: 180,
+                    margin: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       border: Border.all(
                         color: isSelected
                             ? AppColors.primaryDarkGreen
-                            : Theme.of(context).dividerColor.withOpacity(0.2),
-                        width: isSelected ? 2 : 1,
+                            : Theme.of(context).dividerColor.withValues(alpha: 0.5),
+                        width: isSelected ? 2 : 1.5,
                       ),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.stadium_outlined,
-                          color: isSelected
-                              ? AppColors.primaryDarkGreen
-                              : Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withOpacity(0.6),
-                          size: 24,
+                        Container(
+                          width: 28,
+                          height: 28,
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppColors.primaryDarkGreen.withValues(alpha: 0.1)
+                                : Theme.of(context).dividerColor.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: ClipOval(
+                            child: Image.asset(
+                              _getSportImage(state.selectedSport ?? ''),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Icon(Icons.stadium_outlined, size: 16, color: isSelected ? AppColors.primaryDarkGreen : Colors.grey),
+                            ),
+                          ),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -394,7 +403,7 @@ class SlotSelectionWidgets {
                               AppText(
                                 text: turf.name,
                                 textStyle: TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.bold,
                                   color: isSelected
                                       ? AppColors.primaryDarkGreen
@@ -410,7 +419,7 @@ class SlotSelectionWidgets {
                                     ? turf.categories.first
                                     : "Turf Pitch",
                                 textStyle: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 10,
                                   color: Theme.of(context)
                                       .colorScheme
                                       .onSurface
@@ -422,11 +431,11 @@ class SlotSelectionWidgets {
                         ),
                         if (isSelected)
                           const Icon(Icons.check_circle,
-                              color: AppColors.primaryDarkGreen, size: 24)
+                              color: AppColors.primaryDarkGreen, size: 20)
                         else
                           Container(
-                            width: 24,
-                            height: 24,
+                            width: 20,
+                            height: 20,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
@@ -768,9 +777,13 @@ class SlotSelectionWidgets {
                   decoration: BoxDecoration(
                     color: theme.cardColor,
                     borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: theme.dividerColor.withValues(alpha: 0.3),
+                      width: 1.5,
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 16,
                         offset: const Offset(0, 4),
                       )
@@ -1688,7 +1701,7 @@ class SlotSelectionWidgets {
     } else {
       // Available
       borderColor =
-          AppColors.slotAvailableBorder.withValues(alpha: isDark ? 0.3 : 0.15);
+          AppColors.slotAvailableBorder.withValues(alpha: isDark ? 0.3 : 0.5);
       statusIcon = Icons.check_circle;
       iconColor = AppColors.slotAvailableBorder;
     }
@@ -1727,7 +1740,7 @@ class SlotSelectionWidgets {
                 ]
               : [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.03),
+                    color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   )

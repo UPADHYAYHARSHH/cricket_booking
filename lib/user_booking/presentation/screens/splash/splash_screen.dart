@@ -1,12 +1,10 @@
+import 'dart:math' as math;
 import 'package:turfpro/user_booking/constants/route_constants.dart';
-import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
-import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import 'package:turfpro/user_booking/di/get_it/get_it.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hugeicons/hugeicons.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-import '../../../../common/constants/colors.dart';
 import '../../blocs/splash/splash_cubit.dart';
 import 'app_status_screens.dart';
 import 'package:turfpro/common/screens/maintenance_screen.dart';
@@ -21,109 +19,150 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
   late SplashCubit splashCubit;
 
-  late AnimationController _logoController;
-  late AnimationController _textController;
-  late AnimationController _progressController;
+  late AnimationController _controller;
 
-  late Animation<double> _logoScale;
-  late Animation<double> _logoOpacity;
-  late Animation<double> _textOpacity;
-  late Animation<Offset> _textSlide;
-  late Animation<double> _progressValue;
+  // Pitch line
+  late Animation<double> _pitchLineHeight;
+  
+  // Stumps
+  late Animation<double> _stump1Offset;
+  late Animation<double> _stump2Offset;
+  late Animation<double> _stump3Offset;
 
-  String _statusText = 'SYNCING TURF GROUNDS';
-  int _progressPercent = 0;
+  late Animation<double> _stump1Opacity;
+  late Animation<double> _stump2Opacity;
+  late Animation<double> _stump3Opacity;
+
+  // Bail
+  late Animation<double> _bailOpacity;
+
+  // Ball
+  late Animation<double> _ballTop;
+  late Animation<double> _ballLeft;
+  late Animation<double> _ballRotation;
+  late Animation<double> _ballOpacity;
+
+  // Flash
+  late Animation<double> _flashOpacity;
+
+  // Brand
+  late Animation<double> _brandOpacity;
+
+  // Loader
+  late Animation<double> _loaderOpacity;
 
   @override
   void initState() {
     super.initState();
-
     splashCubit = getIt<SplashCubit>();
 
-    Future.delayed(const Duration(milliseconds: 2500), () {
-      splashCubit.checkStatus(); 
-    });
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2800),
+    );
 
     _setupAnimations();
-    _startSequence();
+
+    _controller.forward();
+
+    _controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        splashCubit.checkStatus();
+      }
+    });
   }
 
   void _setupAnimations() {
-    _logoController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 700),
-    );
-
-    _logoScale = CurvedAnimation(
-      parent: _logoController,
-      curve: Curves.elasticOut,
-    );
-
-    _logoOpacity = Tween<double>(begin: 0, end: 1).animate(
+    // 0.1s to 0.6s (Pitch Line) => 100/2800 = 0.0357, 600/2800 = 0.2143
+    _pitchLineHeight = Tween<double>(begin: 0, end: 110).animate(
       CurvedAnimation(
-        parent: _logoController,
-        curve: const Interval(0, 0.4, curve: Curves.easeIn),
+        parent: _controller,
+        curve: const Interval(0.0357, 0.2143, curve: Curves.ease),
       ),
     );
 
-    _textController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
+    // Stumps
+    // Stump 1: 0.35s to 0.85s => 0.125 to 0.3035
+    _stump1Offset = Tween<double>(begin: 70, end: 0).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.125, 0.3035, curve: Cubic(0.2, 0.9, 0.3, 1.2))),
+    );
+    _stump1Opacity = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.125, 0.3035, curve: Curves.ease)),
     );
 
-    _textOpacity = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _textController, curve: Curves.easeOut),
+    // Stump 2: 0.45s to 0.95s => 0.1607 to 0.3393
+    _stump2Offset = Tween<double>(begin: 70, end: 0).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.1607, 0.3393, curve: Cubic(0.2, 0.9, 0.3, 1.2))),
+    );
+    _stump2Opacity = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.1607, 0.3393, curve: Curves.ease)),
     );
 
-    _textSlide = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _textController, curve: Curves.easeOut),
+    // Stump 3: 0.55s to 1.05s => 0.1964 to 0.375
+    _stump3Offset = Tween<double>(begin: 70, end: 0).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.1964, 0.375, curve: Cubic(0.2, 0.9, 0.3, 1.2))),
+    );
+    _stump3Opacity = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.1964, 0.375, curve: Curves.ease)),
     );
 
-    _progressController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2200),
+    // Bail: 0.85s to 1.15s => 0.3035 to 0.4107
+    _bailOpacity = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.3035, 0.4107, curve: Curves.ease)),
     );
 
-    _progressValue = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _progressController, curve: Curves.easeInOut),
+    // Ball: 1.05s to 2.15s => 0.375 to 0.7678
+    // 0% -> 60% -> 100% inside this interval
+    _ballTop = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween<double>(begin: 120, end: 460).chain(CurveTween(curve: Curves.easeInQuad)), weight: 60),
+      TweenSequenceItem(tween: Tween<double>(begin: 460, end: 270).chain(CurveTween(curve: Curves.easeOutQuad)), weight: 40),
+    ]).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.375, 0.7678, curve: Cubic(0.3, 0.6, 0.2, 1.0))),
+    );
+    
+    _ballLeft = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween<double>(begin: -30, end: 180).chain(CurveTween(curve: Curves.linear)), weight: 60),
+      TweenSequenceItem(tween: Tween<double>(begin: 180, end: 198).chain(CurveTween(curve: Curves.linear)), weight: 40),
+    ]).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.375, 0.7678, curve: Cubic(0.3, 0.6, 0.2, 1.0))),
     );
 
-    _progressController.addListener(() {
-      setState(() {
-        _progressPercent = (_progressController.value * 100).round();
+    _ballRotation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween<double>(begin: 0, end: 360), weight: 60),
+      TweenSequenceItem(tween: Tween<double>(begin: 360, end: 540), weight: 40),
+    ]).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.375, 0.7678, curve: Cubic(0.3, 0.6, 0.2, 1.0))),
+    );
+    
+    _ballOpacity = TweenSequence<double>([
+      TweenSequenceItem(tween: ConstantTween<double>(1), weight: 95),
+      TweenSequenceItem(tween: Tween<double>(begin: 1, end: 0), weight: 5),
+    ]).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.375, 0.7678)),
+    );
 
-        if (_progressPercent < 30) {
-          _statusText = 'SYNCING TURF GROUNDS';
-        } else if (_progressPercent < 65) {
-          _statusText = 'LOADING LOCATIONS';
-        } else if (_progressPercent < 90) {
-          _statusText = 'FETCHING SLOTS';
-        } else {
-          _statusText = 'ALMOST READY';
-        }
-      });
-    });
-  }
+    // Flash: 2.05s to 2.33s => 0.7321 to 0.8321
+    _flashOpacity = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween<double>(begin: 0, end: 0.85).chain(CurveTween(curve: Curves.easeOut)), weight: 40),
+      TweenSequenceItem(tween: Tween<double>(begin: 0.85, end: 0).chain(CurveTween(curve: Curves.easeIn)), weight: 60),
+    ]).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.7321, 0.8321)),
+    );
 
-  Future<void> _startSequence() async {
-    await Future.delayed(const Duration(milliseconds: 200));
-    _logoController.forward();
+    // Brand: 2.15s to 2.65s => 0.7678 to 0.9464
+    _brandOpacity = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.7678, 0.9464, curve: Curves.ease)),
+    );
 
-    await Future.delayed(const Duration(milliseconds: 600));
-    _textController.forward();
-
-    await Future.delayed(const Duration(milliseconds: 400));
-    _progressController.forward();
+    // Loader: 2.4s to 2.8s => 0.8571 to 1.0
+    _loaderOpacity = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.8571, 1.0, curve: Curves.ease)),
+    );
   }
 
   @override
   void dispose() {
-    _logoController.dispose();
-    _textController.dispose();
-    _progressController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -158,173 +197,247 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
           }
         },
         child: Scaffold(
-          backgroundColor: AppColors.primaryDarkGreen,
-          body: LayoutBuilder(
-            builder: (context, constraints) {
-              final isDesktop = constraints.maxWidth > 900;
-              final isTablet = constraints.maxWidth > 600;
-
-              final logoSize = isDesktop
-                  ? 120
-                  : isTablet
-                      ? 100
-                      : 88;
-
-              final titleSize = isDesktop
-                  ? 42
-                  : isTablet
-                      ? 36
-                      : 30;
-
-              final padding = isDesktop ? constraints.maxWidth * .25 : 32.0;
-
-              return SafeArea(
-                child: Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: padding),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        /// LOGO
-                        FadeTransition(
-                          opacity: _logoOpacity,
-                          child: ScaleTransition(
-                            scale: _logoScale,
-                            child: _LogoCard(size: logoSize.toDouble()),
+          backgroundColor: const Color(0xFF173D2B), // --turf
+          body: Center(
+            child: SizedBox(
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height,
+              child: FittedBox(
+                fit: BoxFit.cover,
+                child: SizedBox(
+                  width: 390,
+                  height: 844,
+                  child: Stack(
+                    children: [
+                      // Stage Background
+                      Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Color(0xFF173D2B), Color(0xFF0F2B1E)],
                           ),
                         ),
-
-                        const AppSizedBox(height: 30),
-
-                        /// TEXT
-                        FadeTransition(
-                          opacity: _textOpacity,
-                          child: SlideTransition(
-                            position: _textSlide,
-                            child: _BrandText(titleSize: titleSize.toDouble()),
+                      ),
+                      Container(
+                        decoration: const BoxDecoration(
+                          gradient: RadialGradient(
+                            center: Alignment(0, -0.6), // 50% 20% -> y=-0.6
+                            radius: 0.55,
+                            colors: [Color(0x0DFFFFFF), Colors.transparent], // rgba(255,255,255,0.05)
                           ),
                         ),
+                      ),
 
-                        const AppSizedBox(height: 60),
+                      // Pitch Line
+                      AnimatedBuilder(
+                        animation: _pitchLineHeight,
+                        builder: (context, child) {
+                          return Positioned(
+                            bottom: 210,
+                            left: 194, // 390/2 - 2/2 = 194
+                            child: Container(
+                              width: 2,
+                              height: _pitchLineHeight.value,
+                              color: const Color(0x59F7F5EE), // rgba(247,245,238,0.35)
+                            ),
+                          );
+                        },
+                      ),
 
-
-                        const AppSizedBox(height: 20),
-
-                        AnimatedBuilder(
-                          animation: _progressController,
-                          builder: (_, __) => _ProgressBar(value: _progressValue.value),
-                        ),
-
-                        const AppSizedBox(height: 10),
-
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      // Stumps
+                      Positioned(
+                        bottom: 210,
+                        left: 177, // 390/2 - (18+18)/2 = 195 - 18 = 177
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            AppText(
-                              text: _statusText,
-                              textStyle: TextStyle(
-                                color: AppColors.white.withValues(alpha: 0.6),
-                                fontSize: 12,
-                              ),
-                            ),
-                            AppText(
-                              text: '$_progressPercent%',
-                              textStyle: TextStyle(
-                                color: AppColors.white.withValues(alpha: 0.6),
-                                fontSize: 12,
-                              ),
-                            ),
+                            _buildStump(_stump1Offset, _stump1Opacity, 64),
+                            const SizedBox(width: 9),
+                            _buildStump(_stump2Offset, _stump2Opacity, 70),
+                            const SizedBox(width: 9),
+                            _buildStump(_stump3Offset, _stump3Opacity, 64),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+
+                      // Bail
+                      AnimatedBuilder(
+                        animation: _bailOpacity,
+                        builder: (context, child) {
+                          return Positioned(
+                            bottom: 274,
+                            left: 182, // 390/2 - 26/2 = 182
+                            child: Opacity(
+                              opacity: _bailOpacity.value,
+                              child: Container(
+                                width: 26,
+                                height: 4,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEADFC4),
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // Ball
+                      AnimatedBuilder(
+                        animation: _controller,
+                        builder: (context, child) {
+                          return Positioned(
+                            top: _ballTop.value,
+                            left: _ballLeft.value,
+                            child: Opacity(
+                              opacity: _ballOpacity.value,
+                              child: Transform.rotate(
+                                angle: _ballRotation.value * math.pi / 180,
+                                child: Container(
+                                  width: 16,
+                                  height: 16,
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: RadialGradient(
+                                      center: Alignment(-0.3, -0.4),
+                                      colors: [Color(0xFFFF8358), Color(0xFFE8622C)],
+                                      stops: [0.0, 0.7],
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Color(0x4D000000), // rgba(0,0,0,0.3)
+                                        blurRadius: 14,
+                                        offset: Offset(0, 6),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // Flash
+                      AnimatedBuilder(
+                        animation: _flashOpacity,
+                        builder: (context, child) {
+                          return Positioned.fill(
+                            child: IgnorePointer(
+                              child: Opacity(
+                                opacity: _flashOpacity.value,
+                                child: Container(
+                                  color: const Color(0xFFF7F5EE), // --chalk
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // Brand & Tagline
+                      AnimatedBuilder(
+                        animation: _controller,
+                        builder: (context, child) {
+                          return Positioned.fill(
+                            child: Opacity(
+                              opacity: _brandOpacity.value,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  RichText(
+                                    text: TextSpan(
+                                      style: GoogleFonts.spaceGrotesk(
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 36,
+                                        letterSpacing: -0.72, // -0.02em
+                                        color: const Color(0xFFF7F5EE),
+                                      ),
+                                      children: const [
+                                        TextSpan(text: 'TURF'),
+                                        TextSpan(
+                                          text: 'PRO',
+                                          style: TextStyle(color: Color(0xFFE8622C)),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    'YOUR GROUND, ONE TAP AWAY',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      letterSpacing: 1.82, // 0.14em
+                                      color: const Color(0x8CF7F5EE), // rgba(247,245,238,0.55)
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // Loader
+                      AnimatedBuilder(
+                        animation: _loaderOpacity,
+                        builder: (context, child) {
+                          return Positioned(
+                            bottom: 70,
+                            left: 178, // 390/2 - 34/2 = 178
+                            child: Opacity(
+                              opacity: _loaderOpacity.value,
+                              child: SizedBox(
+                                width: 34,
+                                height: 34,
+                                child: const CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFE8622C)),
+                                  backgroundColor: Color(0x40F7F5EE), // rgba(247,245,238,0.25)
+                                  strokeWidth: 2.5,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
-              );
-            },
+              ),
+            ),
           ),
         ),
       ),
     );
   }
-}
 
-class _LogoCard extends StatelessWidget {
-  final double size;
-
-  const _LogoCard({required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(size * .25),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.black.withValues(alpha: .18),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-          )
-        ],
-      ),
-      child: HugeIcon(
-        icon: HugeIcons.strokeRoundedCricketHelmet,
-        color: AppColors.success,
-        size: size * .45,
-      ),
-    );
-  }
-}
-
-class _BrandText extends StatelessWidget {
-  final double titleSize;
-
-  const _BrandText({required this.titleSize});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        AppText(
-          text: 'TURFPRO',
-          textStyle: TextStyle(
-            color: AppColors.white,
-            fontSize: titleSize,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 4,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ProgressBar extends StatelessWidget {
-  final double value;
-
-  const _ProgressBar({required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (_, constraints) {
-        return Container(
-          height: 4,
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: AppColors.white.withValues(alpha: .2),
-            borderRadius: BorderRadius.circular(3),
-          ),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 100),
-              width: constraints.maxWidth * value,
-              height: 4,
-              color: AppColors.white,
+  Widget _buildStump(Animation<double> offset, Animation<double> opacity, double height) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, offset.value),
+          child: Opacity(
+            opacity: opacity.value.clamp(0.0, 1.0),
+            child: Container(
+              width: 6,
+              height: height,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFFEADFC4), Color(0xFFC9B98E)],
+                ),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(3),
+                  topRight: Radius.circular(3),
+                  bottomLeft: Radius.circular(1),
+                  bottomRight: Radius.circular(1),
+                ),
+              ),
             ),
           ),
         );

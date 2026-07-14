@@ -23,6 +23,8 @@ import 'package:turfpro/user_booking/domain/repositories/slot_repository.dart';
 import 'package:turfpro/common/config/feature_config.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:turfpro/user_booking/presentation/blocs/saved_ground/saved_ground_cubit.dart';
 
 class SlotSelectionScreen extends StatefulWidget {
   const SlotSelectionScreen({super.key});
@@ -58,8 +60,12 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
       if (args is GroundModel) {
         _ground = args;
         context.read<SlotSelectionCubit>().initFacility(_ground!);
+        _loadReviews(_ground!.id);
       } else if (args is LocationModel) {
         context.read<SlotSelectionCubit>().initForLocation(args);
+        setState(() => _isLoadingReviews = false);
+      } else {
+        setState(() => _isLoadingReviews = false);
       }
       _isInitialized = true;
     }
@@ -239,11 +245,32 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
           return Column(
             children: [
               // Fixed Header
-              SlotSelectionWidgets.buildHeader(
-                  context, state.selectedTurf ?? _ground,
-                  title: state.selectedTurf?.name ?? "Book Slots",
-                  onShare: _shareGround,
-                  ),
+              BlocBuilder<SavedGroundCubit, SavedGroundState>(
+                builder: (context, savedState) {
+                  final displayVenueId = (state.selectedTurf ?? _ground)?.id;
+                  final isSaved = displayVenueId != null ? savedState.favoriteIds.contains(displayVenueId) : false;
+                  return SlotSelectionWidgets.buildHeader(
+                    context, state.selectedTurf ?? _ground,
+                    title: state.selectedTurf?.name ?? "Book Slots",
+                    isSaved: isSaved,
+                    onToggleFav: () {
+                      if (displayVenueId == null) return;
+                      HapticFeedback.lightImpact();
+                      final user = FirebaseAuth.instance.currentUser;
+                      if (user != null) {
+                        context
+                            .read<SavedGroundCubit>()
+                            .toggleFavorite(user.uid, displayVenueId);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Please login to save grounds")),
+                        );
+                      }
+                    },
+                    onShare: _shareGround,
+                  );
+                },
+              ),
 
               if (state.isLoading && state.availableSports.isEmpty)
                 Expanded(

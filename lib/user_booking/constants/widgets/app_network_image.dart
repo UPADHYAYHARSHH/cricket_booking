@@ -19,8 +19,9 @@ class AppNetworkImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final validUrl = imageUrl.isNotEmpty ? imageUrl : "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e";
     Widget image = Image.network(
-      imageUrl,
+      validUrl,
       height: height,
       width: width,
       fit: fit,

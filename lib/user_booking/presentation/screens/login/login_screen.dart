@@ -117,8 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
                               image: const DecorationImage(
-                                image: NetworkImage(
-                                    "https://images.unsplash.com/photo-1584464491033-06628f3a6b7b"),
+                                image: AssetImage("assets/images/login_bg.jpg"),
                                 fit: BoxFit.cover,
                               ),
                             ),
@@ -171,7 +170,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               boxShadow: [
                                 BoxShadow(
                                   blurRadius: 10,
-                                  color: Colors.black.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.05),
+                                  color: Colors.black.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.1),
                                 )
                               ],
                             ),
