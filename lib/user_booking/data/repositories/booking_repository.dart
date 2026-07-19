@@ -10,24 +10,13 @@ class BookingRepository {
     final user = fb.FirebaseAuth.instance.currentUser;
     if (user == null) throw Exception('User not authenticated');
 
-    final response = await _supabase
-        .from('bookings')
-        .select('*, grounds(*, ground_images(image_url))')
-        .eq('user_id', user.uid)
-        .order('slot_time', ascending: false);
+    debugPrint("[BOOKING_REPO] Fetching bookings via RPC for user: ${user.uid}");
+    final response = await _supabase.rpc('get_user_bookings', params: {
+      'p_user_id': user.uid,
+    });
 
-    debugPrint("[BOOKING_REPO] Bookings found for ${user.uid}: ${response.length}");
     final List data = response as List;
-    return data.map((json) {
-      // Extract ground image if available
-      if (json['grounds'] != null) {
-        final groundData = json['grounds'] as Map<String, dynamic>;
-        final images = groundData['ground_images'] as List?;
-        if (images != null && images.isNotEmpty) {
-          groundData['imageUrl'] = images[0]['image_url'];
-        }
-      }
-      return BookingModel.fromJson(json);
-    }).toList();
+    debugPrint("[BOOKING_REPO] Bookings found: ${data.length}");
+    return data.map((json) => BookingModel.fromJson(json)).toList();
   }
 }

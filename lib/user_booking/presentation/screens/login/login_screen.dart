@@ -9,7 +9,6 @@ import '../../../constants/route_constants.dart';
 import '../../../constants/widgets/app_button.dart';
 import '../../../constants/widgets/app_sizedBox.dart';
 import '../../../constants/widgets/app_text.dart';
-import '../../../../common/constants/colors.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -78,198 +77,231 @@ class _LoginScreenState extends State<LoginScreen> {
             ? screenWidth * .15
             : 20.0;
 
-    return BlocListener<AuthCubit, AuthState>(
-        listener: (context, state) {
-          if (state is AuthSuccess) {
-            Navigator.pushReplacementNamed(context, AppRoutes.nav);
-          }
+    return BlocListener<AuthCubit, AuthState>(listener: (context, state) {
+      if (state is AuthSuccess) {
+        Navigator.pushReplacementNamed(context, AppRoutes.nav);
+      }
 
-          if (state is AuthProfileIncomplete) {
-            Navigator.pushReplacementNamed(context, AppRoutes.completeProfile);
-          }
+      if (state is AuthProfileIncomplete) {
+        Navigator.pushReplacementNamed(context, AppRoutes.completeProfile);
+      }
 
-          if (state is AuthEmailOtpRequired) {
-            Navigator.pushNamed(context, AppRoutes.waitingVerification, arguments: state.email);
-          }
+      if (state is AuthEmailOtpRequired) {
+        Navigator.pushNamed(context, AppRoutes.waitingVerification,
+            arguments: state.email);
+      }
 
-          /// ERROR
-          if (state is AuthError) {
-            ToastUtil.show(context, message: state.message, type: ToastType.error);
-          }
-        },
-        child: BlocBuilder<AuthCubit, AuthState>(
-          builder: (context, state) {
-            final isLoading = state is AuthLoading;
+      /// ERROR
+      if (state is AuthError) {
+        ToastUtil.show(context, message: state.message, type: ToastType.error);
+      }
+    }, child: BlocBuilder<AuthCubit, AuthState>(
+      builder: (context, state) {
+        final isLoading = state is AuthLoading;
 
-            return Scaffold(
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                body: SafeArea(
-                child: Center(
-                  child: SingleChildScrollView(
-                    child: Padding(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: horizontalPadding),
-                      child: Column(
-                        children: [
-                          /// Turf Image
-                          Container(
-                            height: isDesktop ? 220 : 160,
+        return Scaffold(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          body: SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                  child: Column(
+                    children: [
+                      /// Turf Image
+                      Container(
+                        height: isDesktop ? 220 : 160,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          image: const DecorationImage(
+                            image: AssetImage("assets/images/login_bg.jpg"),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        child: Align(
+                          alignment: Alignment.bottomLeft,
+                          child: Container(
+                            margin: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
-                              image: const DecorationImage(
-                                image: AssetImage("assets/images/login_bg.jpg"),
-                                fit: BoxFit.cover,
+                              color: Colors.orange,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const AppText(
+                              text: "PREMIUM TURFS",
+                              size: 10,
+                              weight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const AppSizedBox(height: 30),
+
+                      /// Title
+                      const AppText(
+                        text: "Welcome Back!",
+                        size: 26,
+                        weight: FontWeight.w700,
+                        textStyle: AppTextTheme.black17,
+                      ),
+
+                      const AppSizedBox(height: 6),
+
+                      AppText(
+                        text: "Login to your account",
+                        size: 14,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6),
+                      ),
+
+                      const AppSizedBox(height: 30),
+
+                      /// Login Card
+                      Container(
+                        padding: const EdgeInsets.all(22),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor,
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: [
+                            BoxShadow(
+                              blurRadius: 10,
+                              color: Colors.black.withValues(
+                                  alpha: Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? 0.3
+                                      : 0.1),
+                            )
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            /// Email
+                            AppText(
+                              text: "Email Address",
+                              size: 12,
+                              weight: FontWeight.w600,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.6),
+                            ),
+                            const AppSizedBox(height: 8),
+                            TextField(
+                              controller: emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              style: TextStyle(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface),
+                              decoration: InputDecoration(
+                                hintText: "Enter your email",
+                                hintStyle: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.4)),
+                                errorText: emailError,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: BorderSide(
+                                      color: Theme.of(context).dividerColor),
+                                ),
                               ),
                             ),
-                            child: Align(
-                              alignment: Alignment.bottomLeft,
-                              child: Container(
-                                margin: const EdgeInsets.all(12),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.orange,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: const AppText(
-                                  text: "PREMIUM TURFS",
-                                  size: 10,
-                                  weight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
+                            const AppSizedBox(height: 18),
+
+                            /// Password
+                            AppText(
+                              text: "Password",
+                              size: 12,
+                              weight: FontWeight.w600,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.6),
                             ),
-                          ),
-
-                          const AppSizedBox(height: 30),
-
-                          /// Title
-                          const AppText(
-                            text: "Welcome Back!",
-                            size: 26,
-                            weight: FontWeight.w700,
-                            textStyle: AppTextTheme.black17,
-                          ),
-
-                          const AppSizedBox(height: 6),
-
-                          AppText(
-                            text: "Login to your account",
-                            size: 14,
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                          ),
-
-                          const AppSizedBox(height: 30),
-
-                          /// Login Card
-                          Container(
-                            padding: const EdgeInsets.all(22),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).cardColor,
-                              borderRadius: BorderRadius.circular(18),
-                              boxShadow: [
-                                BoxShadow(
-                                  blurRadius: 10,
-                                  color: Colors.black.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.1),
-                                )
-                              ],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                /// Email
-                                AppText(
-                                  text: "Email Address",
-                                  size: 12,
-                                  weight: FontWeight.w600,
-                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                                ),
-                                const AppSizedBox(height: 8),
-                                TextField(
-                                  controller: emailController,
-                                  keyboardType: TextInputType.emailAddress,
-                                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                                  decoration: InputDecoration(
-                                    hintText: "Enter your email",
-                                    hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
-                                    errorText: emailError,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide(color: Theme.of(context).dividerColor),
-                                    ),
+                            const AppSizedBox(height: 8),
+                            TextField(
+                              controller: passwordController,
+                              obscureText: !isPasswordVisible,
+                              style: TextStyle(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface),
+                              decoration: InputDecoration(
+                                hintText: "Enter your password",
+                                hintStyle: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.4)),
+                                errorText: passwordError,
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    isPasswordVisible
+                                        ? Icons.visibility
+                                        : Icons.visibility_off,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.6),
                                   ),
-                                ),
-                                const AppSizedBox(height: 18),
-                                /// Password
-                                AppText(
-                                  text: "Password",
-                                  size: 12,
-                                  weight: FontWeight.w600,
-                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                                ),
-                                const AppSizedBox(height: 8),
-                                TextField(
-                                  controller: passwordController,
-                                  obscureText: !isPasswordVisible,
-                                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                                  decoration: InputDecoration(
-                                    hintText: "Enter your password",
-                                    hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
-                                    errorText: passwordError,
-                                    suffixIcon: IconButton(
-                                      icon: Icon(
-                                        isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                                      ),
-                                      onPressed: () {
-                                        setState(() {
-                                          isPasswordVisible = !isPasswordVisible;
-                                        });
-                                      },
-                                    ),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide(color: Theme.of(context).dividerColor),
-                                    ),
-                                  ),
-                                ),
-
-                                const AppSizedBox(height: 12),
-
-                                /// Forgot Password Link
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      Navigator.pushNamed(
-                                          context, AppRoutes.forgotPassword);
-                                    },
-                                    child: const AppText(
-                                      text: "Forgot Password?",
-                                      size: 13,
-                                      color: Colors.green,
-                                      weight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-
-                                const AppSizedBox(height: 30),
-
-                                /// Login Button
-                                AppButton(
-                                  title: "Login",
-                                  isLoading: isLoading,
-                                  onTap: () {
-                                    debugPrint("DEBUG: [LoginScreen] Login button tapped");
-                                    if (_validateFields()) {
-                                      debugPrint("DEBUG: [LoginScreen] Fields validated, attempting login");
-                                      context.read<AuthCubit>().loginWithEmail(
-                                            email: emailController.text.trim(),
-                                            password: passwordController.text,
-                                          );
-                                    }
+                                  onPressed: () {
+                                    setState(() {
+                                      isPasswordVisible = !isPasswordVisible;
+                                    });
                                   },
                                 ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: BorderSide(
+                                      color: Theme.of(context).dividerColor),
+                                ),
+                              ),
+                            ),
+
+                            const AppSizedBox(height: 12),
+
+                            /// Forgot Password Link
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: GestureDetector(
+                                onTap: () {
+                                  Navigator.pushNamed(
+                                      context, AppRoutes.forgotPassword);
+                                },
+                                child: const AppText(
+                                  text: "Forgot Password?",
+                                  size: 13,
+                                  color: Colors.green,
+                                  weight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+
+                            const AppSizedBox(height: 30),
+
+                            /// Login Button
+                            AppButton(
+                              title: "Login",
+                              isLoading: isLoading,
+                              onTap: () {
+                                debugPrint(
+                                    "DEBUG: [LoginScreen] Login button tapped");
+                                if (_validateFields()) {
+                                  debugPrint(
+                                      "DEBUG: [LoginScreen] Fields validated, attempting login");
+                                  context.read<AuthCubit>().loginWithEmail(
+                                        email: emailController.text.trim(),
+                                        password: passwordController.text,
+                                      );
+                                }
+                              },
+                            ),
 
 /*
                                 /// Forgot Password Link
@@ -290,57 +322,66 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
 */
 
-                                const AppSizedBox(height: 20),
+                            const AppSizedBox(height: 20),
 
-                                /// Go to Signup
-                                Center(
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      Navigator.pushNamed(
-                                          context, AppRoutes.signUp);
-                                    },
-                                    child: RichText(
-                                      text: TextSpan(
-                                        text: "Don't have an account? ",
+                            /// Go to Signup
+                            Center(
+                              child: GestureDetector(
+                                onTap: () {
+                                  Navigator.pushNamed(
+                                      context, AppRoutes.signUp);
+                                },
+                                child: RichText(
+                                  text: TextSpan(
+                                    text: "Don't have an account? ",
+                                    style: TextStyle(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.6),
+                                        fontSize: 13),
+                                    children: [
+                                      TextSpan(
+                                        text: "Sign Up",
                                         style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 13),
-                                        children: [
-                                          TextSpan(
-                                            text: "Sign Up",
-                                            style: TextStyle(
-                                              color: Theme.of(context).colorScheme.primary,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
-                                    ),
+                                    ],
                                   ),
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
-
-                          const AppSizedBox(height: 40),
-
-                          /// Terms
-                          AppText(
-                            text:
-                                "By continuing, you agree to our Terms of Service and Privacy Policy",
-                            size: 12,
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-                            align: TextAlign.center,
-                          ),
-
-                          const AppSizedBox(height: 20),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
+
+                      const AppSizedBox(height: 40),
+
+                      /// Terms
+                      AppText(
+                        text:
+                            "By continuing, you agree to our Terms of Service and Privacy Policy",
+                        size: 12,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.4),
+                        align: TextAlign.center,
+                      ),
+
+                      const AppSizedBox(height: 20),
+                    ],
                   ),
                 ),
               ),
-            );
-          },
-        ));
+            ),
+          ),
+        );
+      },
+    ));
   }
 }

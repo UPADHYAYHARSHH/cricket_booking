@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:turfpro/common/constants/colors.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import 'package:turfpro/user_booking/presentation/screens/ground_list/ground_list_screen.dart';
 import 'package:turfpro/user_booking/presentation/screens/profile_screen/profile_screen.dart';
@@ -8,16 +9,12 @@ import 'package:flutter/services.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'package:turfpro/user_booking/presentation/screens/ground_list/widgets/city_search_bottomsheet.dart';
-import '../../../../common/constants/colors.dart';
 import '../my_booking/my_booking_screen.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' hide User;
-import 'package:geolocator/geolocator.dart';
 import '../../blocs/saved_ground/saved_ground_cubit.dart';
 import '../../blocs/location/location_cubit.dart';
 import '../../blocs/notification/notification_cubit.dart';
-import '../../../di/get_it/get_it.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class MainNavScreen extends StatefulWidget {
@@ -29,9 +26,15 @@ class MainNavScreen extends StatefulWidget {
 
 class _MainNavScreenState extends State<MainNavScreen> {
   int currentIndex = 0;
-  late final PageController _pageController;
   late final StreamSubscription<User?> _authSubscription;
   bool _isLocationDialogShowing = false;
+
+  static const List<Widget> _pages = [
+    GroundListScreen(),
+    MyBookingsScreen(),
+    SavedGroundsScreen(),
+    ProfileScreen(),
+  ];
 
   void _checkLocation(LocationState state) {
     if (!state.isLoading &&
@@ -58,52 +61,39 @@ class _MainNavScreenState extends State<MainNavScreen> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: 0);
 
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       context.read<SavedGroundCubit>().loadFavorites(user.uid);
     }
 
-    // Trigger location fetch when main navbar opens if not already loaded
     final locationCubit = context.read<LocationCubit>();
     if (locationCubit.state.city == null ||
         locationCubit.state.city == "Select Location") {
       locationCubit.loadCity();
     }
 
-    // Listen for auth state changes (essential for session restoration on restart)
     _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
       final userId = user?.uid;
-
-      print(
-          "[AUTH_SYNC] State change detected. User logged in: ${userId != null}");
-
       if (userId != null && mounted) {
-        print("[AUTH_SYNC] Restoring favorites for: $userId");
         context.read<SavedGroundCubit>().loadFavorites(userId);
       }
     });
 
-    // Check for initial index in arguments
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final args = ModalRoute.of(context)?.settings.arguments;
       if (args is int) {
         setState(() {
           currentIndex = args;
         });
-        _pageController.jumpToPage(args);
       }
       _checkLocation(context.read<LocationCubit>().state);
     });
   }
 
-  // Removed unused _mapNavbarToPage
-
   @override
   void dispose() {
     _authSubscription.cancel();
-    _pageController.dispose();
     super.dispose();
   }
 
@@ -111,21 +101,10 @@ class _MainNavScreenState extends State<MainNavScreen> {
     setState(() {
       currentIndex = index;
     });
-    _pageController.jumpToPage(index);
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final onSurface = theme.colorScheme.onSurface;
-
-    final List<Widget> pages = [
-      const GroundListScreen(),
-      const MyBookingsScreen(),
-      const SavedGroundsScreen(),
-      const ProfileScreen(),
-    ];
-
     return MultiBlocListener(
         listeners: [
           BlocListener<LocationCubit, LocationState>(
@@ -137,10 +116,9 @@ class _MainNavScreenState extends State<MainNavScreen> {
         child: BlocBuilder<NotificationCubit, NotificationState>(
           builder: (context, notificationState) {
             return PopScope(
-              canPop: false,
+              canPop: currentIndex == 0,
               onPopInvokedWithResult: (didPop, result) {
                 if (didPop) return;
-
                 if (currentIndex > 0) {
                   _handleTabSwitch(currentIndex - 1);
                 } else {
@@ -148,40 +126,71 @@ class _MainNavScreenState extends State<MainNavScreen> {
                 }
               },
               child: Scaffold(
-                body: PageView(
-                  physics: const NeverScrollableScrollPhysics(),
-                  controller: _pageController,
-                  onPageChanged: (index) {
-                    setState(() {
-                      currentIndex = index;
-                    });
+                body: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 350),
+                  transitionBuilder: (child, animation) {
+                    return FadeTransition(
+                      opacity: animation,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0.02, 0),
+                          end: Offset.zero,
+                        ).animate(
+                          CurvedAnimation(
+                            parent: animation,
+                            curve: Curves.easeOutCubic,
+                          ),
+                        ),
+                        child: child,
+                      ),
+                    );
                   },
-                  children: pages,
+                  child: _pages[currentIndex],
                 ),
                 bottomNavigationBar: Container(
-                  height: 70,
                   decoration: BoxDecoration(
-                    color: theme.cardColor,
+                    color: AppColors.surfaceLight,
                     boxShadow: [
                       BoxShadow(
-                        blurRadius: 10,
-                        color: Colors.black.withOpacity(0.1),
-                      )
+                        color: Colors.black.withValues(alpha: 0.06),
+                        blurRadius: 16,
+                        offset: const Offset(0, -4),
+                      ),
                     ],
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _navItem(HugeIcons.strokeRoundedDiscoverCircle,
-                          "Discover", 0, onSurface,
-                          showBadge: notificationState.unreadCount > 0),
-                      _navItem(HugeIcons.strokeRoundedCalendar01, "Bookings", 1,
-                          onSurface),
-                      _navItem(HugeIcons.strokeRoundedFavourite, "Saved", 2,
-                          onSurface),
-                      _navItem(HugeIcons.strokeRoundedProfile, "Profile", 3,
-                          onSurface),
-                    ],
+                  child: SafeArea(
+                    child: SizedBox(
+                      height: 68,
+                      child: Row(
+                        children: [
+                          _NavItem(
+                            icon: HugeIcons.strokeRoundedDiscoverCircle,
+                            label: "Discover",
+                            selected: currentIndex == 0,
+                            onTap: () => _handleTabSwitch(0),
+                            showBadge: notificationState.unreadCount > 0,
+                          ),
+                          _NavItem(
+                            icon: HugeIcons.strokeRoundedCalendar01,
+                            label: "Bookings",
+                            selected: currentIndex == 1,
+                            onTap: () => _handleTabSwitch(1),
+                          ),
+                          _NavItem(
+                            icon: HugeIcons.strokeRoundedFavourite,
+                            label: "Saved",
+                            selected: currentIndex == 2,
+                            onTap: () => _handleTabSwitch(2),
+                          ),
+                          _NavItem(
+                            icon: HugeIcons.strokeRoundedProfile,
+                            label: "Profile",
+                            selected: currentIndex == 3,
+                            onTap: () => _handleTabSwitch(3),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -200,11 +209,12 @@ class _MainNavScreenState extends State<MainNavScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const AppText(
           text: "Exit App",
-          textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          size: 18,
+          weight: FontWeight.bold,
         ),
         content: const AppText(
           text: "Are you sure you want to close the app?",
-          textStyle: TextStyle(fontSize: 14),
+          size: 14,
         ),
         actions: [
           OutlinedButton(
@@ -216,9 +226,9 @@ class _MainNavScreenState extends State<MainNavScreen> {
             ),
             child: const AppText(
               text: "Cancel",
-              textStyle: TextStyle(
-                  color: AppColors.primaryDarkGreen,
-                  fontWeight: FontWeight.w600),
+              size: 14,
+              weight: FontWeight.w600,
+              color: AppColors.primaryDarkGreen,
             ),
           ),
           ElevatedButton(
@@ -230,66 +240,112 @@ class _MainNavScreenState extends State<MainNavScreen> {
             ),
             child: const AppText(
               text: "Exit",
-              textStyle:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              size: 14,
+              weight: FontWeight.bold,
+              color: AppColors.white,
             ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _navItem(dynamic icon, String label, int index, Color onSurface,
-      {bool showBadge = false}) {
-    final bool isActive = currentIndex == index;
-    const Color activeColor = AppColors.primaryDarkGreen;
-    final Color inactiveColor = onSurface.withValues(alpha: 0.4);
+class _NavItem extends StatelessWidget {
+  final dynamic icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final bool showBadge;
 
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.showBadge = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _handleTabSwitch(index),
-          highlightColor: Colors.transparent,
-          splashColor: Colors.transparent,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  HugeIcon(
-                    icon: icon,
-                    color: isActive ? activeColor : inactiveColor,
-                    size: 24,
-                  ),
-                  if (showBadge)
-                    Positioned(
-                      right: -4,
-                      top: -4,
-                      child: Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
+      child: InkWell(
+        onTap: onTap,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        child: TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.0, end: selected ? 1.0 : 0.0),
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
+          builder: (context, value, child) {
+            final color = Color.lerp(
+              AppColors.textSecondaryLight,
+              AppColors.primaryDarkGreen,
+              value,
+            )!;
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Transform.scale(
+                      scale: 1.0 + (0.15 * value),
+                      child: HugeIcon(
+                        icon: icon as dynamic,
+                        color: color,
+                        size: 22,
                       ),
                     ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              AppText(
-                text: label,
-                textStyle: TextStyle(
-                  fontSize: 11,
-                  fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                  color: isActive ? activeColor : inactiveColor,
+                    if (showBadge)
+                      Positioned(
+                        right: -4,
+                        top: -4,
+                        child: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: AppColors.error,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppColors.surfaceLight,
+                              width: 2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.error.withValues(alpha: 0.4),
+                                blurRadius: 4,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-              )
-            ],
-          ),
+                const SizedBox(height: 4),
+                AppText(
+                  text: label,
+                  size: 11,
+                  weight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: color,
+                ),
+                const SizedBox(height: 2),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOutCubic,
+                  width: selected ? 20 : 0,
+                  height: 2,
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? AppColors.primaryDarkGreen
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(1),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

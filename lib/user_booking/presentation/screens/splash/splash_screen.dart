@@ -16,14 +16,15 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with TickerProviderStateMixin {
   late SplashCubit splashCubit;
 
   late AnimationController _controller;
 
   // Pitch line
   late Animation<double> _pitchLineHeight;
-  
+
   // Stumps
   late Animation<double> _stump1Offset;
   late Animation<double> _stump2Offset;
@@ -84,79 +85,129 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     // Stumps
     // Stump 1: 0.35s to 0.85s => 0.125 to 0.3035
     _stump1Offset = Tween<double>(begin: 70, end: 0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.125, 0.3035, curve: Cubic(0.2, 0.9, 0.3, 1.2))),
+      CurvedAnimation(
+          parent: _controller,
+          curve:
+              const Interval(0.125, 0.3035, curve: Cubic(0.2, 0.9, 0.3, 1.2))),
     );
     _stump1Opacity = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.125, 0.3035, curve: Curves.ease)),
+      CurvedAnimation(
+          parent: _controller,
+          curve: const Interval(0.125, 0.3035, curve: Curves.ease)),
     );
 
     // Stump 2: 0.45s to 0.95s => 0.1607 to 0.3393
     _stump2Offset = Tween<double>(begin: 70, end: 0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.1607, 0.3393, curve: Cubic(0.2, 0.9, 0.3, 1.2))),
+      CurvedAnimation(
+          parent: _controller,
+          curve:
+              const Interval(0.1607, 0.3393, curve: Cubic(0.2, 0.9, 0.3, 1.2))),
     );
     _stump2Opacity = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.1607, 0.3393, curve: Curves.ease)),
+      CurvedAnimation(
+          parent: _controller,
+          curve: const Interval(0.1607, 0.3393, curve: Curves.ease)),
     );
 
     // Stump 3: 0.55s to 1.05s => 0.1964 to 0.375
     _stump3Offset = Tween<double>(begin: 70, end: 0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.1964, 0.375, curve: Cubic(0.2, 0.9, 0.3, 1.2))),
+      CurvedAnimation(
+          parent: _controller,
+          curve:
+              const Interval(0.1964, 0.375, curve: Cubic(0.2, 0.9, 0.3, 1.2))),
     );
     _stump3Opacity = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.1964, 0.375, curve: Curves.ease)),
+      CurvedAnimation(
+          parent: _controller,
+          curve: const Interval(0.1964, 0.375, curve: Curves.ease)),
     );
 
     // Bail: 0.85s to 1.15s => 0.3035 to 0.4107
     _bailOpacity = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.3035, 0.4107, curve: Curves.ease)),
+      CurvedAnimation(
+          parent: _controller,
+          curve: const Interval(0.3035, 0.4107, curve: Curves.ease)),
     );
 
     // Ball: 1.05s to 2.15s => 0.375 to 0.7678
     // 0% -> 60% -> 100% inside this interval
     _ballTop = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween<double>(begin: 120, end: 460).chain(CurveTween(curve: Curves.easeInQuad)), weight: 60),
-      TweenSequenceItem(tween: Tween<double>(begin: 460, end: 270).chain(CurveTween(curve: Curves.easeOutQuad)), weight: 40),
+      TweenSequenceItem(
+          tween: Tween<double>(begin: 120, end: 460)
+              .chain(CurveTween(curve: Curves.easeInQuad)),
+          weight: 60),
+      TweenSequenceItem(
+          tween: Tween<double>(begin: 460, end: 270)
+              .chain(CurveTween(curve: Curves.easeOutQuad)),
+          weight: 40),
     ]).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.375, 0.7678, curve: Cubic(0.3, 0.6, 0.2, 1.0))),
+      CurvedAnimation(
+          parent: _controller,
+          curve:
+              const Interval(0.375, 0.7678, curve: Cubic(0.3, 0.6, 0.2, 1.0))),
     );
-    
+
     _ballLeft = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween<double>(begin: -30, end: 180).chain(CurveTween(curve: Curves.linear)), weight: 60),
-      TweenSequenceItem(tween: Tween<double>(begin: 180, end: 198).chain(CurveTween(curve: Curves.linear)), weight: 40),
+      TweenSequenceItem(
+          tween: Tween<double>(begin: -30, end: 180)
+              .chain(CurveTween(curve: Curves.linear)),
+          weight: 60),
+      TweenSequenceItem(
+          tween: Tween<double>(begin: 180, end: 198)
+              .chain(CurveTween(curve: Curves.linear)),
+          weight: 40),
     ]).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.375, 0.7678, curve: Cubic(0.3, 0.6, 0.2, 1.0))),
+      CurvedAnimation(
+          parent: _controller,
+          curve:
+              const Interval(0.375, 0.7678, curve: Cubic(0.3, 0.6, 0.2, 1.0))),
     );
 
     _ballRotation = TweenSequence<double>([
       TweenSequenceItem(tween: Tween<double>(begin: 0, end: 360), weight: 60),
       TweenSequenceItem(tween: Tween<double>(begin: 360, end: 540), weight: 40),
     ]).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.375, 0.7678, curve: Cubic(0.3, 0.6, 0.2, 1.0))),
+      CurvedAnimation(
+          parent: _controller,
+          curve:
+              const Interval(0.375, 0.7678, curve: Cubic(0.3, 0.6, 0.2, 1.0))),
     );
-    
+
     _ballOpacity = TweenSequence<double>([
       TweenSequenceItem(tween: ConstantTween<double>(1), weight: 95),
       TweenSequenceItem(tween: Tween<double>(begin: 1, end: 0), weight: 5),
     ]).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.375, 0.7678)),
+      CurvedAnimation(
+          parent: _controller, curve: const Interval(0.375, 0.7678)),
     );
 
     // Flash: 2.05s to 2.33s => 0.7321 to 0.8321
     _flashOpacity = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween<double>(begin: 0, end: 0.85).chain(CurveTween(curve: Curves.easeOut)), weight: 40),
-      TweenSequenceItem(tween: Tween<double>(begin: 0.85, end: 0).chain(CurveTween(curve: Curves.easeIn)), weight: 60),
+      TweenSequenceItem(
+          tween: Tween<double>(begin: 0, end: 0.85)
+              .chain(CurveTween(curve: Curves.easeOut)),
+          weight: 40),
+      TweenSequenceItem(
+          tween: Tween<double>(begin: 0.85, end: 0)
+              .chain(CurveTween(curve: Curves.easeIn)),
+          weight: 60),
     ]).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.7321, 0.8321)),
+      CurvedAnimation(
+          parent: _controller, curve: const Interval(0.7321, 0.8321)),
     );
 
     // Brand: 2.15s to 2.65s => 0.7678 to 0.9464
     _brandOpacity = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.7678, 0.9464, curve: Curves.ease)),
+      CurvedAnimation(
+          parent: _controller,
+          curve: const Interval(0.7678, 0.9464, curve: Curves.ease)),
     );
 
     // Loader: 2.4s to 2.8s => 0.8571 to 1.0
     _loaderOpacity = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.8571, 1.0, curve: Curves.ease)),
+      CurvedAnimation(
+          parent: _controller,
+          curve: const Interval(0.8571, 1.0, curve: Curves.ease)),
     );
   }
 
@@ -224,7 +275,10 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                           gradient: RadialGradient(
                             center: Alignment(0, -0.6), // 50% 20% -> y=-0.6
                             radius: 0.55,
-                            colors: [Color(0x0DFFFFFF), Colors.transparent], // rgba(255,255,255,0.05)
+                            colors: [
+                              Color(0x0DFFFFFF),
+                              Colors.transparent
+                            ], // rgba(255,255,255,0.05)
                           ),
                         ),
                       ),
@@ -239,7 +293,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                             child: Container(
                               width: 2,
                               height: _pitchLineHeight.value,
-                              color: const Color(0x59F7F5EE), // rgba(247,245,238,0.35)
+                              color: const Color(
+                                  0x59F7F5EE), // rgba(247,245,238,0.35)
                             ),
                           );
                         },
@@ -302,12 +357,16 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                                     shape: BoxShape.circle,
                                     gradient: RadialGradient(
                                       center: Alignment(-0.3, -0.4),
-                                      colors: [Color(0xFFFF8358), Color(0xFFE8622C)],
+                                      colors: [
+                                        Color(0xFFFF8358),
+                                        Color(0xFFE8622C)
+                                      ],
                                       stops: [0.0, 0.7],
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Color(0x4D000000), // rgba(0,0,0,0.3)
+                                        color: Color(
+                                            0x4D000000), // rgba(0,0,0,0.3)
                                         blurRadius: 14,
                                         offset: Offset(0, 6),
                                       ),
@@ -359,7 +418,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                                         TextSpan(text: 'TURF'),
                                         TextSpan(
                                           text: 'PRO',
-                                          style: TextStyle(color: Color(0xFFE8622C)),
+                                          style: TextStyle(
+                                              color: Color(0xFFE8622C)),
                                         ),
                                       ],
                                     ),
@@ -370,7 +430,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                                     style: GoogleFonts.inter(
                                       fontSize: 13,
                                       letterSpacing: 1.82, // 0.14em
-                                      color: const Color(0x8CF7F5EE), // rgba(247,245,238,0.55)
+                                      color: const Color(
+                                          0x8CF7F5EE), // rgba(247,245,238,0.55)
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -390,12 +451,14 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                             left: 178, // 390/2 - 34/2 = 178
                             child: Opacity(
                               opacity: _loaderOpacity.value,
-                              child: SizedBox(
+                              child: const SizedBox(
                                 width: 34,
                                 height: 34,
-                                child: const CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFE8622C)),
-                                  backgroundColor: Color(0x40F7F5EE), // rgba(247,245,238,0.25)
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Color(0xFFE8622C)),
+                                  backgroundColor: Color(
+                                      0x40F7F5EE), // rgba(247,245,238,0.25)
                                   strokeWidth: 2.5,
                                 ),
                               ),
@@ -414,7 +477,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     );
   }
 
-  Widget _buildStump(Animation<double> offset, Animation<double> opacity, double height) {
+  Widget _buildStump(
+      Animation<double> offset, Animation<double> opacity, double height) {
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {

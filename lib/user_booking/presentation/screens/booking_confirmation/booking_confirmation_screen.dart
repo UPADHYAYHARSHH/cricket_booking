@@ -90,7 +90,8 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
       if (amPm == 'PM' && hour < 12) hour += 12;
       if (amPm == 'AM' && hour == 12) hour = 0;
 
-      return DateTime(baseDate.year, baseDate.month, baseDate.day, hour, minute);
+      return DateTime(
+          baseDate.year, baseDate.month, baseDate.day, hour, minute);
     } catch (e) {
       debugPrint("Error parsing slot time '$timeStr': $e");
       return baseDate;
@@ -203,14 +204,19 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                 orderId: orderId,
                 displayId: displayId,
                 totalPrice: totalPrice,
-                groundAddress: ground.address.isNotEmpty ? ground.address : (ground.city.isNotEmpty ? ground.city : 'Location unavailable'),
+                groundAddress: ground.address.isNotEmpty
+                    ? ground.address
+                    : (ground.city.isNotEmpty
+                        ? ground.city
+                        : 'Location unavailable'),
                 sportName: args.sportName,
                 period: args.selectedPeriod,
               ),
 
               const AppSizedBox(height: 20),
               _QRCodeCard(
-                qrData: "$orderId | Ground: ${ground.name} | Owner: ${ground.ownerId} | Ground ID: ${ground.id}",
+                qrData:
+                    "$orderId | Ground: ${ground.name} | Owner: ${ground.ownerId} | Ground ID: ${ground.id}",
                 displayId: displayId,
               ),
 
@@ -219,7 +225,11 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                 context,
                 latitude: ground.latitude,
                 longitude: ground.longitude,
-                address: ground.address.isNotEmpty ? ground.address : (ground.city.isNotEmpty ? ground.city : 'Location unavailable'),
+                address: ground.address.isNotEmpty
+                    ? ground.address
+                    : (ground.city.isNotEmpty
+                        ? ground.city
+                        : 'Location unavailable'),
               ),
 
               const AppSizedBox(height: 32),
@@ -230,7 +240,11 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                     ? null
                     : () => _captureAndSave(
                           ground.name,
-                          ground.address.isNotEmpty ? ground.address : (ground.city.isNotEmpty ? ground.city : 'Location unavailable'),
+                          ground.address.isNotEmpty
+                              ? ground.address
+                              : (ground.city.isNotEmpty
+                                  ? ground.city
+                                  : 'Location unavailable'),
                           ground.imageUrl,
                           date,
                           timeRange,
@@ -294,7 +308,11 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                       title: 'Cricket Booking @ ${ground.name}',
                       description:
                           'Your turf booking is confirmed.\nOrder ID: #${IdUtil.formatDisplayId(displayId)}\nVenue: ${ground.name}\nAddress: ${ground.address.isNotEmpty ? ground.address : (ground.city.isNotEmpty ? ground.city : 'Location unavailable')}',
-                      location: ground.address.isNotEmpty ? ground.address : (ground.city.isNotEmpty ? ground.city : 'Location unavailable'),
+                      location: ground.address.isNotEmpty
+                          ? ground.address
+                          : (ground.city.isNotEmpty
+                              ? ground.city
+                              : 'Location unavailable'),
                       startDate: eventStart,
                       endDate: eventEnd,
                     );
@@ -414,7 +432,7 @@ class _VenueCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                       AppText(
+                      AppText(
                         text: ground.name ?? "PowerPlay Arena",
                         textStyle: AppTextTheme.white15.copyWith(
                           fontSize: 20,
@@ -434,7 +452,8 @@ class _VenueCard extends StatelessWidget {
               child: Wrap(
                 spacing: 12,
                 runSpacing: 8,
-                children: (ground.amenities as List<dynamic>).map<Widget>((amenity) {
+                children:
+                    (ground.amenities as List<dynamic>).map<Widget>((amenity) {
                   return _buildAmenity(amenity.toString());
                 }).toList(),
               ),
@@ -565,7 +584,7 @@ class _BookingDetailsCard extends StatelessWidget {
               ),
               AppText(
                 text: "₹${totalPrice.toStringAsFixed(0)}",
-                textStyle: TextStyle(
+                textStyle: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
                   color: AppColors.primaryDarkGreen,
@@ -577,7 +596,6 @@ class _BookingDetailsCard extends StatelessWidget {
       ),
     );
   }
-
 
   Widget _buildDetailRow(
       BuildContext context, String label, String value, IconData icon) {
@@ -671,7 +689,7 @@ class _QRCodeCard extends StatelessWidget {
           const AppSizedBox(height: 16),
           AppText(
             text: "#${IdUtil.formatDisplayId(displayId)}",
-            textStyle: TextStyle(
+            textStyle: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w800,
               letterSpacing: 2,
@@ -683,4 +701,3 @@ class _QRCodeCard extends StatelessWidget {
     );
   }
 }
-

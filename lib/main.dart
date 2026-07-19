@@ -48,12 +48,12 @@ import 'package:turfpro/user_booking/presentation/screens/splash/app_status_scre
 
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'user_booking/presentation/screens/splash/splash_screen.dart';
-import 'package:turfpro/user_booking/presentation/screens/splash/app_status_screens.dart';
 import 'package:turfpro/user_booking/presentation/blocs/ground/ground_cubit.dart';
 import 'user_booking/presentation/blocs/location/location_cubit.dart';
 import 'user_booking/presentation/blocs/saved_ground/saved_ground_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/theme/theme_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/config/config_cubit.dart';
+import 'package:turfpro/user_booking/presentation/blocs/sport/sport_cubit.dart';
 import 'package:turfpro/user_booking/presentation/screens/scanning/scanning_screen.dart';
 import 'package:turfpro/user_booking/presentation/blocs/booking/booking_cubit.dart';
 import 'package:turfpro/common/constants/colors.dart';
@@ -66,7 +66,7 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   debugPrint("DEBUG: [Main] App starting. Full URL: ${Uri.base}");
-  
+
   // Silent OTA updates
   ShorebirdService.checkForUpdates();
 
@@ -91,8 +91,14 @@ void main() async {
   Bloc.observer = AppBlocObserver();
 
   await Supabase.initialize(
-    url: const String.fromEnvironment('SUPABASE_URL'),
-    anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY'),
+    url: const String.fromEnvironment(
+      'SUPABASE_URL',
+      defaultValue: 'https://qcybnzopffyzmpiaxwbc.supabase.co',
+    ),
+    anonKey: const String.fromEnvironment(
+      'SUPABASE_ANON_KEY',
+      defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjeWJuem9wZmZ5em1waWF4d2JjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxMDYyNzMsImV4cCI6MjA4OTY4MjI3M30.cRnvZzQhbwI26PhRkdjnptVa5yiWo6oBIGZlZU7JEgg',
+    ),
   );
   debugPrint("DEBUG: [Main] Supabase Initialized.");
   SystemChrome.setPreferredOrientations(
@@ -106,7 +112,8 @@ void main() async {
     await Hive.initFlutter();
   } else {
     debugPrint("DEBUG: [Main] Initializing Hive for Mobile.");
-    final appDocumentDir = await path_provider.getApplicationDocumentsDirectory();
+    final appDocumentDir =
+        await path_provider.getApplicationDocumentsDirectory();
     Hive.init(appDocumentDir.path);
   }
 
@@ -163,6 +170,9 @@ void main() async {
         BlocProvider<LocationListCubit>(
           create: (_) => di.getIt<LocationListCubit>()..fetchLocations(),
         ),
+        BlocProvider<SportCubit>(
+          create: (_) => di.getIt<SportCubit>()..fetchSports(),
+        ),
       ],
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, state) {
@@ -188,7 +198,8 @@ void main() async {
                           Container(color: Colors.black.withValues(alpha: 0.5)),
                           // Unclosable Dialog
                           Center(
-                            child: ForceUpdateDialog(updateUrl: configState.updateUrl),
+                            child: ForceUpdateDialog(
+                                updateUrl: configState.updateUrl),
                           ),
                         ],
                       );
@@ -212,14 +223,18 @@ void main() async {
               AppRoutes.splash: (context) => const SplashScreen(),
               AppRoutes.login: (context) => const LoginScreen(),
               AppRoutes.signUp: (context) => const SignUpScreen(),
-              AppRoutes.completeProfile: (context) => const CompleteProfileScreen(),
-              AppRoutes.waitingVerification: (context) => const EmailVerificationWaitingScreen(),
+              AppRoutes.completeProfile: (context) =>
+                  const CompleteProfileScreen(),
+              AppRoutes.waitingVerification: (context) =>
+                  const EmailVerificationWaitingScreen(),
               AppRoutes.setPassword: (context) => const SetPasswordScreen(),
               AppRoutes.nav: (context) => const MainNavScreen(),
               "/search": (context) => const SearchScreen(),
               AppRoutes.slotSelection: (context) => const SlotSelectionScreen(),
-              AppRoutes.timeSlotSelection: (context) => const TimeSlotSelectionScreen(),
-              "/bookingConfirmationScreen": (context) => const BookingConfirmationScreen(),
+              AppRoutes.timeSlotSelection: (context) =>
+                  const TimeSlotSelectionScreen(),
+              "/bookingConfirmationScreen": (context) =>
+                  const BookingConfirmationScreen(),
               "/myBookingScreen": (context) => const MyBookingsScreen(),
               "/paymentFailedScreen": (context) => const PaymentFailedScreen(),
               AppRoutes.editProfileScreen: (context) => BlocProvider(
@@ -230,11 +245,14 @@ void main() async {
               AppRoutes.splitShare: (context) => const SplitShareScreen(),
               AppRoutes.splitOverview: (context) => const SplitOverviewScreen(),
               AppRoutes.splitHistory: (context) => const SplitHistoryScreen(),
-              AppRoutes.forgotPassword: (context) => const ForgotPasswordScreen(),
+              AppRoutes.forgotPassword: (context) =>
+                  const ForgotPasswordScreen(),
               AppRoutes.scan: (context) => const ScanningScreen(),
-              AppRoutes.categoryGrounds: (context) => const CategoryGroundsScreen(),
+              AppRoutes.categoryGrounds: (context) =>
+                  const CategoryGroundsScreen(),
               AppRoutes.notification: (context) => const NotificationScreen(),
-              AppRoutes.bookingSummary: (context) => const BookingSummaryScreen(),
+              AppRoutes.bookingSummary: (context) =>
+                  const BookingSummaryScreen(),
             },
           );
         },

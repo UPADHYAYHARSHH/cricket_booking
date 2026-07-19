@@ -4,6 +4,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:math';
+import 'package:turfpro/common/widgets/status_badge.dart';
 import 'package:turfpro/utils/ticket_util.dart';
 import 'package:turfpro/utils/id_util.dart';
 
@@ -63,14 +64,32 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   }
 
   Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-      child: AppText(
-        text: "My Bookings",
-        textStyle: AppTextTheme.black18.copyWith(
-          fontSize: 26,
-          fontWeight: FontWeight.w700,
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF0B8457), Color(0xFF065B3C)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const AppText(
+            text: "My Bookings",
+            size: 26,
+            weight: FontWeight.w700,
+            color: AppColors.white,
+          ),
+          const SizedBox(height: 6),
+          AppText(
+            text: "View and manage your reservations",
+            size: 14,
+            color: AppColors.white.withValues(alpha: 0.7),
+          ),
+        ],
       ),
     );
   }
@@ -245,7 +264,7 @@ class _BookingCardState extends State<_BookingCard> {
   Future<void> _checkIfRated() async {
     final user = FirebaseAuth.instance.currentUser;
     final groundId = widget.booking.groundId;
-    
+
     if (user != null && groundId.isNotEmpty) {
       try {
         final rated = await getIt<ReviewRepository>()
@@ -261,7 +280,7 @@ class _BookingCardState extends State<_BookingCard> {
         debugPrint("Error checking user ground rating: $e");
       }
     }
-    
+
     if (mounted) setState(() => _isLoadingRating = false);
   }
 
@@ -319,27 +338,7 @@ class _BookingCardState extends State<_BookingCard> {
         Positioned(
           top: 12,
           right: 12,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color:
-                  _getStatusColor(widget.booking.status).withValues(alpha: 0.9),
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1), blurRadius: 4),
-              ],
-            ),
-            child: AppText(
-              text: widget.booking.status.toUpperCase(),
-              textStyle: const TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
+          child: StatusBadge(status: widget.booking.status),
         ),
       ],
     );
@@ -415,7 +414,7 @@ class _BookingCardState extends State<_BookingCard> {
               ),
               AppText(
                 text: "₹${widget.booking.amount}",
-                textStyle: TextStyle(
+                textStyle: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
                   color: AppColors.primaryDarkGreen,
@@ -489,7 +488,8 @@ class _BookingCardState extends State<_BookingCard> {
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                   child: const Text("Rate Venue",
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 ),
               ),
               const SizedBox(width: 8),
@@ -506,21 +506,14 @@ class _BookingCardState extends State<_BookingCard> {
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
                 child: const Text("Rebook",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               ),
             ),
           ],
         ],
       ),
     );
-  }
-
-  Color _getStatusColor(String status) {
-    final s = status.toLowerCase();
-    if (s == 'confirmed' || s == 'paid') return Colors.green.shade600;
-    if (s == 'pending') return Colors.orange.shade600;
-    if (s == 'cancelled') return Colors.red.shade600;
-    return Colors.blue.shade600;
   }
 
   void _showRatingSheet(BuildContext context) async {
@@ -616,7 +609,8 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
 
   Future<void> _loadBookedSlots() async {
     try {
-      final formattedDate = "${widget.ticket.date.year}-${widget.ticket.date.month.toString().padLeft(2, '0')}-${widget.ticket.date.day.toString().padLeft(2, '0')}";
+      final formattedDate =
+          "${widget.ticket.date.year}-${widget.ticket.date.month.toString().padLeft(2, '0')}-${widget.ticket.date.day.toString().padLeft(2, '0')}";
       final response = await Supabase.instance.client
           .from('slots')
           .select('*')
@@ -658,21 +652,21 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
       final cleanTime = startTime.trim();
       final parts = cleanTime.split(' ');
       if (parts.length != 2) return '';
-      
+
       final timeParts = parts[0].split(':');
       if (timeParts.isEmpty) return '';
-      
+
       int hour = int.parse(timeParts[0]);
       int minute = timeParts.length > 1 ? int.parse(timeParts[1]) : 0;
       String amPm = parts[1].toUpperCase();
-      
+
       hour += 1;
       if (hour == 12) {
         amPm = amPm == 'AM' ? 'PM' : 'AM';
       } else if (hour > 12) {
         hour -= 12;
       }
-      
+
       final minuteStr = minute.toString().padLeft(2, '0');
       final hourStr = hour.toString().padLeft(2, '0');
       return '$hourStr:$minuteStr $amPm';
@@ -686,7 +680,8 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
     try {
       if (timeString.contains('T')) {
         final date = DateTime.parse(timeString);
-        final hour = date.hour > 12 ? date.hour - 12 : (date.hour == 0 ? 12 : date.hour);
+        final hour =
+            date.hour > 12 ? date.hour - 12 : (date.hour == 0 ? 12 : date.hour);
         final amPm = date.hour >= 12 ? 'PM' : 'AM';
         final minute = date.minute.toString().padLeft(2, '0');
         return '$hour:$minute $amPm';
@@ -863,7 +858,7 @@ class _TicketCardState extends State<_TicketCard> {
         boxShadow: [
           BoxShadow(
             color: Colors.black
-                .withOpacity(theme.brightness == Brightness.dark ? 0.3 : 0.08),
+                .withValues(alpha: theme.brightness == Brightness.dark ? 0.3 : 0.08),
             blurRadius: 20,
             offset: const Offset(0, 10),
           )
@@ -917,7 +912,8 @@ class _TicketCardState extends State<_TicketCard> {
                 decoration: BoxDecoration(
                   color: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: AppColors.primaryDarkGreen.withValues(alpha: 0.2)),
+                  border: Border.all(
+                      color: AppColors.primaryDarkGreen.withValues(alpha: 0.2)),
                 ),
                 child: AppText(
                   text: widget.ticket.sportName.toUpperCase(),
@@ -937,16 +933,18 @@ class _TicketCardState extends State<_TicketCard> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.location_on, size: 16, color: AppColors.primaryDarkGreen),
+                const Icon(Icons.location_on,
+                    size: 16, color: AppColors.primaryDarkGreen),
                 const SizedBox(width: 4),
                 Expanded(
                   child: AppText(
                     text: widget.ticket.location,
                     textStyle: TextStyle(
                       fontSize: 12,
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       decoration: TextDecoration.underline,
-                      decorationColor: theme.colorScheme.onSurface.withOpacity(0.4),
+                      decorationColor:
+                          theme.colorScheme.onSurface.withValues(alpha: 0.4),
                     ),
                   ),
                 ),
@@ -993,7 +991,9 @@ class _TicketCardState extends State<_TicketCard> {
     final theme = Theme.of(context);
     final String timeStr;
     if (widget.bookedSlots.isNotEmpty) {
-      timeStr = widget.bookedSlots.map((s) => "${s.startTime} - ${s.endTime}").join(', ');
+      timeStr = widget.bookedSlots
+          .map((s) => "${s.startTime} - ${s.endTime}")
+          .join(', ');
     } else {
       timeStr = widget.ticket.time;
     }
@@ -1027,17 +1027,23 @@ class _TicketCardState extends State<_TicketCard> {
                           children: [
                             _buildSlotChip(widget.bookedSlots.first),
                             if (_isExpanded)
-                              ...widget.bookedSlots.skip(1).map((slot) => _buildSlotChip(slot)),
+                              ...widget.bookedSlots
+                                  .skip(1)
+                                  .map((slot) => _buildSlotChip(slot)),
                             if (widget.bookedSlots.length > 1)
                               GestureDetector(
-                                onTap: () => setState(() => _isExpanded = !_isExpanded),
+                                onTap: () =>
+                                    setState(() => _isExpanded = !_isExpanded),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: AppColors.primaryDarkGreen.withValues(alpha: 0.12),
+                                    color: AppColors.primaryDarkGreen
+                                        .withValues(alpha: 0.12),
                                     borderRadius: BorderRadius.circular(6),
                                     border: Border.all(
-                                      color: AppColors.primaryDarkGreen.withValues(alpha: 0.25),
+                                      color: AppColors.primaryDarkGreen
+                                          .withValues(alpha: 0.25),
                                     ),
                                   ),
                                   child: AppText(
@@ -1097,14 +1103,15 @@ class _TicketCardState extends State<_TicketCard> {
           textStyle: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface.withOpacity(0.4),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
               letterSpacing: 1),
         ),
         const SizedBox(height: 4),
         customValue ??
             AppText(
               text: value,
-              textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              textStyle:
+                  const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
               align: isEnd ? TextAlign.end : TextAlign.start,
             ),
       ],
@@ -1170,7 +1177,8 @@ class _TicketCardState extends State<_TicketCard> {
             borderRadius: BorderRadius.circular(12),
           ),
           child: _QrCodePainter(
-            data: "${widget.ticket.bookingId} | Ground: ${widget.ticket.venueName} | Owner: ${widget.ticket.ownerId} | Ground ID: ${widget.ticket.groundId}",
+            data:
+                "${widget.ticket.bookingId} | Ground: ${widget.ticket.venueName} | Owner: ${widget.ticket.ownerId} | Ground ID: ${widget.ticket.groundId}",
           ),
         ),
         const SizedBox(height: 12),
@@ -1178,7 +1186,7 @@ class _TicketCardState extends State<_TicketCard> {
           text: "Scan at entrance",
           textStyle: TextStyle(
               fontSize: 12,
-              color: theme.colorScheme.onSurface.withOpacity(0.4)),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
         ),
       ],
     );

@@ -102,13 +102,16 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                   /// SORT BY
                   const AppText(
                     text: "Sort By",
-                    textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    textStyle:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   const AppSizedBox(height: 12),
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
-                      children: SortBy.values.where((s) => s != SortBy.none).map((sort) {
+                      children: SortBy.values
+                          .where((s) => s != SortBy.none)
+                          .map((sort) {
                         final isSelected = _sortBy == sort;
                         return Padding(
                           padding: const EdgeInsets.only(right: 8),
@@ -116,15 +119,17 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                             label: Text(_getSortLabel(sort)),
                             selected: isSelected,
                             onSelected: (selected) {
-                              setState(() => _sortBy = selected ? sort : SortBy.none);
+                              setState(() =>
+                                  _sortBy = selected ? sort : SortBy.none);
                             },
                             selectedColor: AppColors.primaryDarkGreen,
                             labelStyle: TextStyle(
                               color: isSelected
                                   ? Colors.white
                                   : Theme.of(context).colorScheme.onSurface,
-                              fontWeight:
-                                  isSelected ? FontWeight.bold : FontWeight.normal,
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
                             ),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(20)),
@@ -141,7 +146,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     children: [
                       const AppText(
                         text: "Price Range",
-                        textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        textStyle: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                       AppText(
                         text: "₹${_minPrice.toInt()} - ₹${_maxPrice.toInt()}",
@@ -157,9 +163,10 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     max: 5000,
                     divisions: 50,
                     activeColor: AppColors.primaryDarkGreen,
-                    inactiveColor: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
-                    labels:
-                        RangeLabels("₹${_minPrice.toInt()}", "₹${_maxPrice.toInt()}"),
+                    inactiveColor:
+                        AppColors.primaryDarkGreen.withValues(alpha: 0.1),
+                    labels: RangeLabels(
+                        "₹${_minPrice.toInt()}", "₹${_maxPrice.toInt()}"),
                     onChanged: (values) {
                       setState(() {
                         _minPrice = values.start;
@@ -170,10 +177,12 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                   const AppSizedBox(height: 24),
 
                   /// AMENITIES
-                  if (widget.suggestedAmenities != null && widget.suggestedAmenities!.isNotEmpty) ...[
+                  if (widget.suggestedAmenities != null &&
+                      widget.suggestedAmenities!.isNotEmpty) ...[
                     const AppText(
                       text: "Amenities & Features",
-                      textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      textStyle:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                     const AppSizedBox(height: 12),
                     Wrap(
@@ -199,14 +208,20 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                             color: isSelected
                                 ? Colors.white
                                 : Theme.of(context).colorScheme.onSurface,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                             fontSize: 13,
                           ),
-                          backgroundColor: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
+                          backgroundColor:
+                              AppColors.primaryDarkGreen.withValues(alpha: 0.1),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
                             side: BorderSide(
-                              color: isSelected ? Colors.transparent : AppColors.primaryDarkGreen.withValues(alpha: 0.2),
+                              color: isSelected
+                                  ? Colors.transparent
+                                  : AppColors.primaryDarkGreen
+                                      .withValues(alpha: 0.2),
                             ),
                           ),
                         );
@@ -250,15 +265,15 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             height: 56,
             child: ElevatedButton(
               onPressed: () {
-                  final criteria = FilterCriteria(
-                    sortBy: _sortBy,
-                    minPrice: _minPrice,
-                    maxPrice: _maxPrice,
-                    selectedAmenities: _selectedAmenities,
-                    isAvailableNow: _isAvailableNow,
-                    isNearMe: _isNearMe,
-                    isTopRated: _isTopRated,
-                  );
+                final criteria = FilterCriteria(
+                  sortBy: _sortBy,
+                  minPrice: _minPrice,
+                  maxPrice: _maxPrice,
+                  selectedAmenities: _selectedAmenities,
+                  isAvailableNow: _isAvailableNow,
+                  isNearMe: _isNearMe,
+                  isTopRated: _isTopRated,
+                );
                 widget.onApply(criteria);
                 Navigator.pop(context);
               },
@@ -298,13 +313,15 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             children: [
               AppText(
                 text: title,
-                textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                textStyle:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               AppText(
                 text: subtitle,
                 textStyle: TextStyle(
                   fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                 ),
               ),
             ],
@@ -312,7 +329,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
         ),
         Switch(
           value: value,
-          activeColor: AppColors.primaryDarkGreen,
+          activeThumbColor: AppColors.primaryDarkGreen,
           onChanged: onChanged,
         ),
       ],

@@ -184,6 +184,7 @@ class AuthCubit extends Cubit<AuthState> {
       await NotificationService.initialize();
       emit(AuthSuccess());
     } catch (e) {
+      debugPrint("DEBUG: [AuthCubit] completeProfile error: ${e.toString()}");
       emit(AuthError("Failed to complete profile: ${e.toString()}"));
     }
   }

@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -40,6 +39,8 @@ class UserRepositoryImpl implements UserRepository {
       throw Exception("User not logged in");
     }
 
+    debugPrint("[USER_REPO] Supabase URL: ${supabase.rest.url}");
+
     final data = {
       'id': user.uid,
       'name': name,
@@ -57,17 +58,25 @@ class UserRepositoryImpl implements UserRepository {
       data['username'] = username;
     }
 
+    // Primary: Use SECURITY DEFINER RPC function to bypass RLS.
+    // The RLS policy on `users` requires auth.email() which returns null
+    // for Firebase Auth users, so direct upserts are blocked by RLS.
     try {
-      await supabase.from('users').upsert(data);
-    } catch (e) {
-      // Fallback in case "photo_url" column does not exist yet.
-      if (photoUrl != null && e.toString().contains('photo_url')) {
-        print("Warning: photo_url column missing, falling back to without it.");
-        data.remove('photo_url');
-        await supabase.from('users').upsert(data);
-      } else {
-        rethrow;
-      }
+      await supabase.rpc('upsert_user_profile', params: {
+        'p_id': user.uid,
+        'p_name': name,
+        'p_email': user.email ?? '',
+        'p_gender': gender,
+        'p_dob': dob?.toIso8601String() ?? '',
+      });
+      return;
+    } catch (rpcError) {
+      debugPrint("[USER_REPO] RPC upsert_user_profile failed: $rpcError");
+      // If the RPC function doesn't exist, throw a clear actionable error
+      throw Exception(
+        "The upsert_user_profile database function is missing or not deployed. "
+        "Please run the SQL in supabase/upsert_user_function.sql in your Supabase SQL Editor.",
+      );
     }
   }
 
@@ -84,7 +93,7 @@ class UserRepositoryImpl implements UserRepository {
           .eq('id', user.uid)
           .maybeSingle()
           .timeout(const Duration(seconds: 10));
-      
+
       debugPrint("[USER_REPO] Profile Data Received: $response");
       return response;
     } catch (e) {
@@ -103,17 +112,20 @@ class UserRepositoryImpl implements UserRepository {
 
     try {
       await supabase.storage.from('avatars').uploadBinary(
-        path,
-        imageBytes,
-        fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true),
-      );
+            path,
+            imageBytes,
+            fileOptions:
+                const FileOptions(contentType: 'image/jpeg', upsert: true),
+          );
 
-      final String publicUrl = supabase.storage.from('avatars').getPublicUrl(path);
+      final String publicUrl =
+          supabase.storage.from('avatars').getPublicUrl(path);
       // Ensure url is returning with a cache buster if it's updated rapidly
       return "$publicUrl?t=${DateTime.now().millisecondsSinceEpoch}";
     } catch (e) {
       print("Storage Upload Error: $e");
-      throw Exception("Failed to upload image. Make sure 'avatars' bucket exists and RLS allows it.");
+      throw Exception(
+          "Failed to upload image. Make sure 'avatars' bucket exists and RLS allows it.");
     }
   }
 
@@ -123,7 +135,11 @@ class UserRepositoryImpl implements UserRepository {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return null;
 
-    final data = await supabase.from('users').select('city').eq('id', user.uid).maybeSingle();
+    final data = await supabase
+        .from('users')
+        .select('city')
+        .eq('id', user.uid)
+        .maybeSingle();
 
     return data?['city'];
   }
@@ -152,10 +168,11 @@ class UserRepositoryImpl implements UserRepository {
 
   @override
   Future<List<Map<String, dynamic>>> searchUsersByUsername(String query) async {
-    print("[DEBUG] UserRepository: Executing Supabase search for username: '%$query%'");
+    print(
+        "[DEBUG] UserRepository: Executing Supabase search for username: '%$query%'");
     final response = await supabase
         .from('users')
-        .select('id, name, username') 
+        .select('id, name, username')
         .ilike('username', '%$query%')
         .limit(20);
     return List<Map<String, dynamic>>.from(response);
@@ -174,7 +191,8 @@ class UserRepositoryImpl implements UserRepository {
       // 1. Delete associated data from Supabase atomically via RPC
       // This bypasses RLS constraints using SECURITY DEFINER and handles all FKs
       try {
-        await supabase.rpc('delete_user_and_data', params: {'user_id_text': uid});
+        await supabase
+            .rpc('delete_user_and_data', params: {'user_id_text': uid});
       } catch (e) {
         print('Supabase RPC delete error: $e');
         throw Exception('Database deletion failed: $e');
@@ -182,12 +200,13 @@ class UserRepositoryImpl implements UserRepository {
 
       // 2. Delete from Firebase Auth
       await user.delete();
-      
+
       // 4. Ensure sign out
       await FirebaseAuth.instance.signOut();
     } on FirebaseAuthException catch (e) {
       if (e.code == 'requires-recent-login') {
-        throw Exception('For security reasons, please log out and log back in before deleting your account.');
+        throw Exception(
+            'For security reasons, please log out and log back in before deleting your account.');
       }
       throw Exception('Failed to delete account: ${e.message}');
     } catch (e) {

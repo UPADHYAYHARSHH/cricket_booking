@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
-class GroundSkeleton extends StatelessWidget {
-  const GroundSkeleton({super.key});
+class LocationSkeleton extends StatelessWidget {
+  const LocationSkeleton({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,12 +16,13 @@ class GroundSkeleton extends StatelessWidget {
           color: isDark ? Colors.grey[900] : Colors.white,
           borderRadius: BorderRadius.circular(16),
         ),
+        clipBehavior: Clip.hardEdge,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Image placeholder
             Container(
-              height: 110,
+              height: 85,
               width: double.infinity,
               decoration: const BoxDecoration(
                 color: Colors.white,
@@ -33,51 +34,27 @@ class GroundSkeleton extends StatelessWidget {
 
             // Info section
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Name
+                  // Address
                   Container(
-                    width: 120,
-                    height: 14,
+                    width: double.infinity,
+                    height: 12,
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
 
-                  // Category chips
+                  // Distance
                   Row(
                     children: [
                       Container(
-                        width: 50,
-                        height: 16,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Container(
-                        width: 60,
-                        height: 16,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Address
-                  Row(
-                    children: [
-                      Container(
-                        width: 12,
-                        height: 12,
+                        width: 10,
+                        height: 10,
                         decoration: const BoxDecoration(
                           color: Colors.white,
                           shape: BoxShape.circle,
@@ -85,7 +62,7 @@ class GroundSkeleton extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Container(
-                        width: 140,
+                        width: 70,
                         height: 10,
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -94,16 +71,38 @@ class GroundSkeleton extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 4),
 
-                  // Price
-                  Container(
-                    width: 80,
-                    height: 18,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
+                  // Amenities chips
+                  Row(
+                    children: [
+                      Container(
+                        width: 45,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Container(
+                        width: 55,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Container(
+                        width: 40,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

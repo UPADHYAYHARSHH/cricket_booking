@@ -32,7 +32,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, size: 20, color: theme.colorScheme.onSurface),
+          icon: Icon(Icons.arrow_back_ios_new,
+              size: 20, color: theme.colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         title: const AppText(
@@ -43,8 +44,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
         actions: [
           BlocBuilder<NotificationCubit, NotificationState>(
             builder: (context, state) {
-              if (state is! NotificationLoaded || state.notifications.isEmpty) return const SizedBox();
-              
+              if (state is! NotificationLoaded || state.notifications.isEmpty)
+                return const SizedBox();
+
               return PopupMenuButton<String>(
                 onSelected: (value) {
                   if (value == 'mark_read') {
@@ -69,9 +71,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     value: 'clear_all',
                     child: Row(
                       children: [
-                        Icon(Icons.delete_sweep, size: 20, color: AppColors.error),
+                        Icon(Icons.delete_sweep,
+                            size: 20, color: AppColors.error),
                         SizedBox(width: 12),
-                        Text("Clear all", style: TextStyle(color: AppColors.error)),
+                        Text("Clear all",
+                            style: TextStyle(color: AppColors.error)),
                       ],
                     ),
                   ),
@@ -107,30 +111,30 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     direction: DismissDirection.horizontal,
                     confirmDismiss: (direction) async {
                       if (direction == DismissDirection.startToEnd) {
-                        context.read<NotificationCubit>().markAsRead(notification.id);
+                        context
+                            .read<NotificationCubit>()
+                            .markAsRead(notification.id);
                         return false; // Do not dismiss for "Read"
                       }
                       return true; // Dismiss for "Delete"
                     },
                     onDismissed: (direction) {
                       if (direction == DismissDirection.endToStart) {
-                        context.read<NotificationCubit>().deleteNotification(notification.id);
+                        context
+                            .read<NotificationCubit>()
+                            .deleteNotification(notification.id);
                       }
                     },
-                    background: _buildSwipeBackground(
-                      context, 
-                      alignment: Alignment.centerLeft,
-                      color: Colors.green,
-                      icon: Icons.done,
-                      label: "Read"
-                    ),
-                    secondaryBackground: _buildSwipeBackground(
-                      context, 
-                      alignment: Alignment.centerRight,
-                      color: AppColors.error,
-                      icon: Icons.delete_outline,
-                      label: "Delete"
-                    ),
+                    background: _buildSwipeBackground(context,
+                        alignment: Alignment.centerLeft,
+                        color: Colors.green,
+                        icon: Icons.done,
+                        label: "Read"),
+                    secondaryBackground: _buildSwipeBackground(context,
+                        alignment: Alignment.centerRight,
+                        color: AppColors.error,
+                        icon: Icons.delete_outline,
+                        label: "Delete"),
                     child: _NotificationTile(notification: notification),
                   );
                 },
@@ -142,11 +146,17 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    HugeIcon(icon: HugeIcons.strokeRoundedAlert01, color: AppColors.error, size: 48),
+                    const HugeIcon(
+                        icon: HugeIcons.strokeRoundedAlert01,
+                        color: AppColors.error,
+                        size: 48),
                     const SizedBox(height: 16),
-                    AppText(text: state.message, textStyle: AppTextTheme.grey13),
+                    AppText(
+                        text: state.message, textStyle: AppTextTheme.grey13),
                     TextButton(
-                      onPressed: () => context.read<NotificationCubit>().fetchNotifications(),
+                      onPressed: () => context
+                          .read<NotificationCubit>()
+                          .fetchNotifications(),
                       child: const Text("Retry"),
                     ),
                   ],
@@ -161,12 +171,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
-  Widget _buildSwipeBackground(BuildContext context, {
-    required Alignment alignment, 
-    required Color color, 
-    required IconData icon,
-    required String label
-  }) {
+  Widget _buildSwipeBackground(BuildContext context,
+      {required Alignment alignment,
+      required Color color,
+      required IconData icon,
+      required String label}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       alignment: alignment,
@@ -179,7 +188,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
         children: [
           Icon(icon, color: Colors.white, size: 24),
           const SizedBox(height: 4),
-          Text(label, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+          Text(label,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -213,7 +226,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
           const AppSizedBox(height: 24),
           AppText(
             text: "All caught up!",
-            textStyle: AppTextTheme.black8718.copyWith(fontWeight: FontWeight.bold),
+            textStyle:
+                AppTextTheme.black8718.copyWith(fontWeight: FontWeight.bold),
           ),
           const AppSizedBox(height: 8),
           AppText(
@@ -224,12 +238,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
           ),
           const AppSizedBox(height: 32),
           ElevatedButton.icon(
-            onPressed: () => context.read<NotificationCubit>().addDummyNotifications(),
+            onPressed: () =>
+                context.read<NotificationCubit>().addDummyNotifications(),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryDarkGreen,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             icon: const Icon(Icons.add_circle_outline),
             label: const Text("Add Dummy Notifications"),
@@ -260,12 +276,13 @@ class _NotificationTile extends StatelessWidget {
           duration: const Duration(milliseconds: 300),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isUnread 
-                ? config.color.withOpacity(theme.brightness == Brightness.dark ? 0.15 : 0.08)
+            color: isUnread
+                ? config.color.withOpacity(
+                    theme.brightness == Brightness.dark ? 0.15 : 0.08)
                 : theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isUnread 
+              color: isUnread
                   ? config.color.withOpacity(0.2)
                   : theme.dividerColor.withOpacity(0.1),
               width: 1,
@@ -306,7 +323,8 @@ class _NotificationTile extends StatelessWidget {
                           child: AppText(
                             text: notification.title,
                             textStyle: TextStyle(
-                              fontWeight: isUnread ? FontWeight.w800 : FontWeight.w600,
+                              fontWeight:
+                                  isUnread ? FontWeight.w800 : FontWeight.w600,
                               fontSize: 15,
                               color: theme.colorScheme.onSurface,
                             ),
@@ -327,8 +345,10 @@ class _NotificationTile extends StatelessWidget {
                       textStyle: TextStyle(
                         fontSize: 13,
                         height: 1.5,
-                        color: theme.colorScheme.onSurface.withOpacity(isUnread ? 0.9 : 0.6),
-                        fontWeight: isUnread ? FontWeight.w500 : FontWeight.normal,
+                        color: theme.colorScheme.onSurface
+                            .withOpacity(isUnread ? 0.9 : 0.6),
+                        fontWeight:
+                            isUnread ? FontWeight.w500 : FontWeight.normal,
                       ),
                     ),
                   ],
@@ -360,7 +380,7 @@ class _NotificationTile extends StatelessWidget {
 
   void _handleTap(BuildContext context) {
     context.read<NotificationCubit>().markAsRead(notification.id);
-    
+
     // Custom navigation based on type
     switch (notification.type) {
       case 'split_payment':

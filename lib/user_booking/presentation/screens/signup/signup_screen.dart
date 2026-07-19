@@ -8,7 +8,6 @@ import '../../../constants/route_constants.dart';
 import '../../../constants/widgets/app_button.dart';
 import '../../../constants/widgets/app_sizedBox.dart';
 import '../../../constants/widgets/app_text.dart';
-import '../../../../common/constants/colors.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -20,12 +19,13 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
 
   String? emailError;
   String? passwordError;
   String? confirmPasswordError;
-  
+
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
@@ -70,14 +70,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
         if (state is AuthSuccess || state is AuthProfileIncomplete) {
           Navigator.pushReplacementNamed(
             context,
-            state is AuthProfileIncomplete ? AppRoutes.completeProfile : AppRoutes.nav,
+            state is AuthProfileIncomplete
+                ? AppRoutes.completeProfile
+                : AppRoutes.nav,
           );
         }
         if (state is AuthEmailOtpRequired) {
-          Navigator.pushNamed(context, AppRoutes.waitingVerification, arguments: state.email);
+          Navigator.pushNamed(context, AppRoutes.waitingVerification,
+              arguments: state.email);
         }
         if (state is AuthError) {
-          ToastUtil.show(context, message: state.message, type: ToastType.error);
+          ToastUtil.show(context,
+              message: state.message, type: ToastType.error);
         }
       },
       child: BlocBuilder<AuthCubit, AuthState>(
@@ -86,11 +90,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
           return Scaffold(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              body: SafeArea(
+            body: SafeArea(
               child: Center(
                 child: SingleChildScrollView(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                    padding:
+                        EdgeInsets.symmetric(horizontal: horizontalPadding),
                     child: Column(
                       children: [
                         const AppSizedBox(height: 30),
@@ -125,13 +130,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 text: "Email Address",
                                 size: 12,
                                 weight: FontWeight.w600,
-                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.6),
                               ),
                               const AppSizedBox(height: 8),
                               TextField(
                                 controller: emailController,
                                 keyboardType: TextInputType.emailAddress,
-                                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                                style: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface),
                                 decoration: InputDecoration(
                                   hintText: "Enter your email",
                                   errorText: emailError,
@@ -145,13 +156,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 text: "Password",
                                 size: 12,
                                 weight: FontWeight.w600,
-                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.6),
                               ),
                               const AppSizedBox(height: 8),
                               TextField(
                                 controller: passwordController,
                                 obscureText: _obscurePassword,
-                                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                                style: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface),
                                 decoration: InputDecoration(
                                   hintText: "Create a password",
                                   errorText: passwordError,
@@ -160,7 +177,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   ),
                                   suffixIcon: IconButton(
                                     icon: Icon(
-                                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                      _obscurePassword
+                                          ? Icons.visibility_off
+                                          : Icons.visibility,
                                       color: Colors.grey,
                                     ),
                                     onPressed: () {
@@ -176,13 +195,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 text: "Confirm Password",
                                 size: 12,
                                 weight: FontWeight.w600,
-                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.6),
                               ),
                               const AppSizedBox(height: 8),
                               TextField(
                                 controller: confirmPasswordController,
                                 obscureText: _obscureConfirmPassword,
-                                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                                style: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface),
                                 decoration: InputDecoration(
                                   hintText: "Confirm your password",
                                   errorText: confirmPasswordError,
@@ -191,12 +216,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   ),
                                   suffixIcon: IconButton(
                                     icon: Icon(
-                                      _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                                      _obscureConfirmPassword
+                                          ? Icons.visibility_off
+                                          : Icons.visibility,
                                       color: Colors.grey,
                                     ),
                                     onPressed: () {
                                       setState(() {
-                                        _obscureConfirmPassword = !_obscureConfirmPassword;
+                                        _obscureConfirmPassword =
+                                            !_obscureConfirmPassword;
                                       });
                                     },
                                   ),
@@ -222,7 +250,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   child: RichText(
                                     text: const TextSpan(
                                       text: "Already have an account? ",
-                                      style: TextStyle(color: Colors.grey, fontSize: 13),
+                                      style: TextStyle(
+                                          color: Colors.grey, fontSize: 13),
                                       children: [
                                         TextSpan(
                                           text: "Login",
@@ -238,7 +267,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               ),
                               const AppSizedBox(height: 24),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
                                 decoration: BoxDecoration(
                                   color: Colors.orange.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
@@ -246,13 +276,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.info_outline, size: 14, color: Colors.orange.shade700),
+                                    Icon(Icons.info_outline,
+                                        size: 14,
+                                        color: Colors.orange.shade700),
                                     const SizedBox(width: 6),
                                     Expanded(
                                       child: AppText(
-                                        text: "Verification email may be sent to your spam folder.",
+                                        text:
+                                            "Verification email may be sent to your spam folder.",
                                         size: 11,
-                                        color: Theme.of(context).brightness == Brightness.dark ? Colors.orange.shade300 : Colors.orange.shade800,
+                                        color: Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.orange.shade300
+                                            : Colors.orange.shade800,
                                         weight: FontWeight.w500,
                                       ),
                                     ),

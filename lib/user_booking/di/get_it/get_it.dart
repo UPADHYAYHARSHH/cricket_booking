@@ -19,7 +19,6 @@ import 'package:turfpro/user_booking/data/repositories/slot_repository_impl.dart
 import 'package:turfpro/user_booking/domain/repositories/slot_repository.dart';
 import 'package:turfpro/user_booking/data/repositories/review_repository_impl.dart';
 import 'package:turfpro/user_booking/domain/repositories/review_repository.dart';
-import 'package:turfpro/user_booking/domain/repositories/loyalty_repository.dart';
 import 'package:turfpro/user_booking/data/repositories/loyalty_repository_impl.dart';
 
 import 'package:turfpro/user_booking/domain/repositories/ground_repository.dart';
@@ -41,6 +40,8 @@ import 'package:turfpro/user_booking/presentation/blocs/location_list/location_l
 
 import 'package:turfpro/user_booking/presentation/blocs/config/config_cubit.dart';
 import 'package:turfpro/common/services/remote_config_service.dart';
+import 'package:turfpro/user_booking/data/repositories/sport_repository.dart';
+import 'package:turfpro/user_booking/presentation/blocs/sport/sport_cubit.dart';
 
 final getIt = GetIt.instance;
 
@@ -154,6 +155,13 @@ Future<void> init() async {
 
   getIt.registerLazySingleton<ConfigCubit>(
     () => ConfigCubit(RemoteConfigService()),
+  );
+
+  getIt.registerLazySingleton<SportRepository>(
+    () => SportRepository(getIt<SupabaseClient>()),
+  );
+  getIt.registerLazySingleton<SportCubit>(
+    () => SportCubit(getIt<SportRepository>()),
   );
 
   /// Services

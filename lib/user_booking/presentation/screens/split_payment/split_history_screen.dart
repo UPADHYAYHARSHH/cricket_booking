@@ -3,7 +3,6 @@ import 'package:turfpro/user_booking/domain/models/split_payment_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../blocs/split_history/split_history_cubit.dart';
 import '../../../di/get_it/get_it.dart';
 
