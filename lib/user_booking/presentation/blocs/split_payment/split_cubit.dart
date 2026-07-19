@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../data/repositories/split_payment_repository.dart';
 import '../../../domain/models/split_payment_model.dart';
 import 'split_state.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class SplitPaymentCubit extends Cubit<SplitPaymentState> {
@@ -24,10 +23,11 @@ class SplitPaymentCubit extends Cubit<SplitPaymentState> {
     if (state is SplitPaymentFormState) {
       final s = state as SplitPaymentFormState;
       final newMembers = List<SplitMemberModel>.from(s.members);
-      
+
       newMembers.add(SplitMemberModel(name: name, amount: 0));
-      
-      final updatedMembers = _recalculateAmounts(newMembers, s.totalAmount, s.isEqualSplit);
+
+      final updatedMembers =
+          _recalculateAmounts(newMembers, s.totalAmount, s.isEqualSplit);
       emit(s.copyWith(members: updatedMembers));
     }
   }
@@ -36,10 +36,12 @@ class SplitPaymentCubit extends Cubit<SplitPaymentState> {
     if (state is SplitPaymentFormState) {
       final s = state as SplitPaymentFormState;
       final newMembers = List<SplitMemberModel>.from(s.members);
-      
-      newMembers.add(SplitMemberModel(name: name, amount: 0, memberUserId: userId));
-      
-      final updatedMembers = _recalculateAmounts(newMembers, s.totalAmount, s.isEqualSplit);
+
+      newMembers
+          .add(SplitMemberModel(name: name, amount: 0, memberUserId: userId));
+
+      final updatedMembers =
+          _recalculateAmounts(newMembers, s.totalAmount, s.isEqualSplit);
       emit(s.copyWith(members: updatedMembers));
     }
   }
@@ -49,8 +51,9 @@ class SplitPaymentCubit extends Cubit<SplitPaymentState> {
       final s = state as SplitPaymentFormState;
       final newMembers = List<SplitMemberModel>.from(s.members);
       newMembers.removeAt(index);
-      
-      final updatedMembers = _recalculateAmounts(newMembers, s.totalAmount, s.isEqualSplit);
+
+      final updatedMembers =
+          _recalculateAmounts(newMembers, s.totalAmount, s.isEqualSplit);
       emit(s.copyWith(members: updatedMembers));
     }
   }
@@ -64,7 +67,7 @@ class SplitPaymentCubit extends Cubit<SplitPaymentState> {
         amount: amount,
         isReceived: newMembers[index].isReceived,
       );
-      
+
       emit(s.copyWith(members: newMembers, isEqualSplit: false));
     }
   }
@@ -72,7 +75,8 @@ class SplitPaymentCubit extends Cubit<SplitPaymentState> {
   void toggleSplitMode(bool isEqual) {
     if (state is SplitPaymentFormState) {
       final s = state as SplitPaymentFormState;
-      final updatedMembers = _recalculateAmounts(s.members, s.totalAmount, isEqual);
+      final updatedMembers =
+          _recalculateAmounts(s.members, s.totalAmount, isEqual);
       emit(s.copyWith(isEqualSplit: isEqual, members: updatedMembers));
     }
   }
@@ -94,14 +98,16 @@ class SplitPaymentCubit extends Cubit<SplitPaymentState> {
   List<SplitMemberModel> _recalculateAmounts(
       List<SplitMemberModel> members, double totalAmount, bool isEqual) {
     if (!isEqual) return members;
-    
+
     // totalAmount / (teammates + booker)
     final share = totalAmount / (members.length + 1);
-    return members.map((m) => SplitMemberModel(
-      name: m.name,
-      amount: double.parse(share.toStringAsFixed(2)),
-      isReceived: m.isReceived,
-    )).toList();
+    return members
+        .map((m) => SplitMemberModel(
+              name: m.name,
+              amount: double.parse(share.toStringAsFixed(2)),
+              isReceived: m.isReceived,
+            ))
+        .toList();
   }
 
   Future<void> submitSplit(String bookingId) async {
@@ -153,10 +159,10 @@ class SplitPaymentCubit extends Cubit<SplitPaymentState> {
     if (state is SplitPaymentOverviewLoaded) {
       final s = state as SplitPaymentOverviewLoaded;
       emit(SplitPaymentOverviewLoaded(s.splitRequest, isUpdating: true));
-      
+
       try {
         await _repository.updateMemberStatus(memberId, received);
-        
+
         // Refresh local state
         final updatedMembers = s.splitRequest.members.map((m) {
           if (m.id == memberId) {

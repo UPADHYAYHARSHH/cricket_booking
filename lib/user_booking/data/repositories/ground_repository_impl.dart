@@ -267,7 +267,8 @@ class GroundRepositoryImpl implements GroundRepository {
 
   @override
   Future<List<LocationModel>> fetchLocations() async {
-    final response = await supabase.from('locations').select('*');
-    return (response as List).map((e) => LocationModel.fromJson(e)).toList();
+    final response = await supabase.rpc('get_locations_with_grounds');
+    final List data = response as List;
+    return data.map((e) => LocationModel.fromJson(e)).toList();
   }
 }

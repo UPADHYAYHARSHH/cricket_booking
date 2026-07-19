@@ -1,12 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:turfpro/user_booking/presentation/blocs/config/config_cubit.dart';
 import 'package:turfpro/common/constants/colors.dart';
-import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
-import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
-
 
 class ForceUpdateDialog extends StatelessWidget {
   final String updateUrl;
@@ -32,7 +26,9 @@ class ForceUpdateDialog extends StatelessWidget {
             },
             child: const Text(
               "Update Now",
-              style: TextStyle(color: AppColors.primaryDarkGreen, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  color: AppColors.primaryDarkGreen,
+                  fontWeight: FontWeight.bold),
             ),
           ),
         ],

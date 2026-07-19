@@ -87,11 +87,22 @@ class PaymentRepository {
       'period': period,
     };
     
-    debugPrint('PaymentRepository: Inserting booking: $bookingData');
+    debugPrint('PaymentRepository: Inserting booking via RPC');
 
-    final response = await _supabase.from('bookings').insert(bookingData).select().single();
+    final response = await _supabase.rpc('save_booking', params: {
+      'p_user_id': user.uid,
+      'p_ground_id': groundId,
+      'p_slot_time': slotTime.toIso8601String(),
+      'p_amount': amount,
+      'p_status': 'paid',
+      'p_sport_name': sportName,
+      'p_period': period,
+      'p_razorpay_order_id': orderId,
+      'p_razorpay_payment_id': paymentId,
+      'p_razorpay_signature': signature,
+    });
     debugPrint('PaymentRepository: saveBooking completed');
-    return response;
+    return response as Map<String, dynamic>;
   }
 
   /// SAVE DIRECT BOOKING (BYPASS PAYMENT)
@@ -111,39 +122,37 @@ class PaymentRepository {
     }
 
     try {
-      // 1. Create Booking Record
-      final bookingData = {
-        'user_id': user.uid,
-        'ground_id': groundId,
-        'slot_time': date.toIso8601String(),
-        'amount': amount,
-        'status': 'confirmed',
-        'sport_name': sportName,
-        'period': period,
-      };
-
-      debugPrint('PaymentRepository: Inserting into bookings... Data: $bookingData');
-      final bookingResponse = await _supabase.from('bookings').insert(bookingData).select().single();
+      // 1. Create Booking Record via RPC
+      debugPrint('PaymentRepository: Inserting booking via RPC');
+      final bookingResponse = await _supabase.rpc('save_booking', params: {
+        'p_user_id': user.uid,
+        'p_ground_id': groundId,
+        'p_slot_time': date.toIso8601String(),
+        'p_amount': amount,
+        'p_status': 'confirmed',
+        'p_sport_name': sportName,
+        'p_period': period,
+      });
       debugPrint('PaymentRepository: Booking record created successfully');
 
-      // 2. Block Slots in Database
+      // 2. Block Slots in Database via RPC
       final formattedDate = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
       debugPrint('PaymentRepository: Blocking ${slotStartTimes.length} slots for date: $formattedDate');
 
       for (final startTime in slotStartTimes) {
         debugPrint('PaymentRepository: Upserting slot: $startTime');
-        await _supabase.from('slots').upsert({
-          'ground_id': groundId,
-          'date': formattedDate,
-          'start_time': startTime,
-          'status': 'booked',
-          'price': (amount / slotStartTimes.length).toInt(),
-        }, onConflict: 'ground_id, date, start_time');
+        await _supabase.rpc('upsert_slot', params: {
+          'p_ground_id': groundId,
+          'p_date': formattedDate,
+          'p_start_time': startTime,
+          'p_status': 'booked',
+          'p_price': (amount / slotStartTimes.length).toInt(),
+        });
         debugPrint('PaymentRepository: Slot $startTime upsert completed');
       }
 
       debugPrint('PaymentRepository: saveDirectBooking FULLY completed');
-      return bookingResponse;
+      return bookingResponse as Map<String, dynamic>;
     } catch (e) {
       debugPrint('PaymentRepository: EXCEPTION in saveDirectBooking: $e');
       if (e is PostgrestException) {

@@ -104,24 +104,35 @@ class _SavedGroundsScreenState extends State<SavedGroundsScreen> {
   }
 
   Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 24,
+        left: 20,
+        right: 20,
+        bottom: 24,
+      ),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF0B8457), Color(0xFF065B3C)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppText(
+          const AppText(
             text: "Saved Grounds",
-            textStyle: AppTextTheme.black18.copyWith(
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-            ),
+            size: 22,
+            weight: FontWeight.w700,
+            color: AppColors.white,
           ),
-          const AppSizedBox(height: 4),
+          const SizedBox(height: 4),
           AppText(
             text: "Your favorite arenas ready for the next match.",
-            textStyle: AppTextTheme.black14.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            ),
+            size: 13,
+            color: AppColors.white.withValues(alpha: 0.7),
           ),
         ],
       ),

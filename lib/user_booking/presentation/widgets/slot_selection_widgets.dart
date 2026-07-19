@@ -103,7 +103,7 @@ class SlotSelectionWidgets {
                       ),
                       if (onLocationTap != null) ...[
                         const AppSizedBox(width: 4),
-                        HugeIcon(
+                        const HugeIcon(
                           icon: HugeIcons.strokeRoundedArrowDown01,
                           size: 14,
                           color: AppColors.primaryDarkGreen,
@@ -185,7 +185,9 @@ class SlotSelectionWidgets {
                     border: Border.all(
                       color: isSel
                           ? AppColors.primaryDarkGreen
-                          : Theme.of(context).dividerColor.withValues(alpha: 0.5),
+                          : Theme.of(context)
+                              .dividerColor
+                              .withValues(alpha: 0.5),
                       width: 2,
                     ),
                     borderRadius: BorderRadius.circular(12),
@@ -200,7 +202,8 @@ class SlotSelectionWidgets {
                         decoration: BoxDecoration(
                           color: isSel
                               ? AppColors.primaryDarkGreen
-                              : AppColors.primaryDarkGreen.withValues(alpha: 0.1),
+                              : AppColors.primaryDarkGreen
+                                  .withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: ClipOval(
@@ -209,8 +212,12 @@ class SlotSelectionWidgets {
                             width: 24,
                             height: 24,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                Icon(Icons.sports, size: 18, color: isSel ? Colors.white : AppColors.primaryDarkGreen),
+                            errorBuilder: (context, error, stackTrace) => Icon(
+                                Icons.sports,
+                                size: 18,
+                                color: isSel
+                                    ? Colors.white
+                                    : AppColors.primaryDarkGreen),
                           ),
                         ),
                       ),
@@ -362,13 +369,16 @@ class SlotSelectionWidgets {
                   child: Container(
                     width: 180,
                     margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       border: Border.all(
                         color: isSelected
                             ? AppColors.primaryDarkGreen
-                            : Theme.of(context).dividerColor.withValues(alpha: 0.5),
+                            : Theme.of(context)
+                                .dividerColor
+                                .withValues(alpha: 0.5),
                         width: isSelected ? 2 : 1.5,
                       ),
                       borderRadius: BorderRadius.circular(16),
@@ -381,8 +391,11 @@ class SlotSelectionWidgets {
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? AppColors.primaryDarkGreen.withValues(alpha: 0.1)
-                                : Theme.of(context).dividerColor.withValues(alpha: 0.1),
+                                ? AppColors.primaryDarkGreen
+                                    .withValues(alpha: 0.1)
+                                : Theme.of(context)
+                                    .dividerColor
+                                    .withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: ClipOval(
@@ -390,7 +403,11 @@ class SlotSelectionWidgets {
                               _getSportImage(state.selectedSport ?? ''),
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) =>
-                                  Icon(Icons.stadium_outlined, size: 16, color: isSelected ? AppColors.primaryDarkGreen : Colors.grey),
+                                  Icon(Icons.stadium_outlined,
+                                      size: 16,
+                                      color: isSelected
+                                          ? AppColors.primaryDarkGreen
+                                          : Colors.grey),
                             ),
                           ),
                         ),
@@ -869,10 +886,10 @@ class SlotSelectionWidgets {
                                       children: [
                                         ..._getAmenityIcons(turf.amenities)
                                             .take(4),
-                                        if ((turf.amenities?.length ?? 0) > 4)
+                                        if ((turf.amenities.length ?? 0) > 4)
                                           AppText(
                                             text:
-                                                "+${turf.amenities!.length - 4}",
+                                                "+${turf.amenities.length - 4}",
                                             textStyle: const TextStyle(
                                                 fontSize: 10,
                                                 color: Colors.grey),
@@ -999,9 +1016,9 @@ class SlotSelectionWidgets {
       case 'pickleball':
         return 'assets/images/sports/sport4.png';
       case 'badminton':
-        return 'assets/images/sports/sport5.png'; 
+        return 'assets/images/sports/sport5.png';
       case 'tennis':
-        return 'assets/images/sports/sport2.png'; 
+        return 'assets/images/sports/sport2.png';
       default:
         return 'assets/images/sports/sport6.png';
     }
@@ -1966,7 +1983,7 @@ class SlotSelectionWidgets {
     if (amenities == null || amenities.isEmpty) {
       return const SizedBox.shrink();
     }
-    
+
     final displayAmenities = amenities.take(4).toList();
     final hasMore = amenities.length > 4;
 
@@ -2059,7 +2076,8 @@ class SlotSelectionWidgets {
     );
   }
 
-  static void _showAmenitiesBottomSheet(BuildContext context, List<String> amenities) {
+  static void _showAmenitiesBottomSheet(
+      BuildContext context, List<String> amenities) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -2301,18 +2319,24 @@ class SlotSelectionWidgets {
     }
   }
 
-  static Widget _buildReviewCard(BuildContext context, ReviewModel review, int index) {
+  static Widget _buildReviewCard(
+      BuildContext context, ReviewModel review, int index) {
     // Dynamic color for avatar background
-    final colors = [AppColors.primaryDarkGreen, Colors.orange, Colors.blue, Colors.purple];
+    final colors = [
+      AppColors.primaryDarkGreen,
+      Colors.orange,
+      Colors.blue,
+      Colors.purple
+    ];
     final color = colors[index % colors.length];
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF4F6F9), // Light greyish background from screenshot
+        color:
+            const Color(0xFFF4F6F9), // Light greyish background from screenshot
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-            color: AppColors.primaryDarkGreen.withOpacity(0.3)),
+        border: Border.all(color: AppColors.primaryDarkGreen.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2331,9 +2355,11 @@ class SlotSelectionWidgets {
                     ),
                     child: Center(
                       child: AppText(
-                        text: review.userName.length >= 2 
-                          ? review.userName.substring(0, 2).toUpperCase()
-                          : (review.userName.isNotEmpty ? review.userName[0].toUpperCase() : "?"),
+                        text: review.userName.length >= 2
+                            ? review.userName.substring(0, 2).toUpperCase()
+                            : (review.userName.isNotEmpty
+                                ? review.userName[0].toUpperCase()
+                                : "?"),
                         textStyle: const TextStyle(
                           color: Colors.white,
                           fontSize: 13,
@@ -2375,9 +2401,7 @@ class SlotSelectionWidgets {
                     size: 14,
                     color: starIndex < review.rating
                         ? AppColors.goldenYellow
-                        : Theme.of(context)
-                            .dividerColor
-                            .withOpacity(0.2),
+                        : Theme.of(context).dividerColor.withOpacity(0.2),
                   );
                 }),
               ),
@@ -2390,10 +2414,7 @@ class SlotSelectionWidgets {
               textStyle: TextStyle(
                 fontSize: 13,
                 height: 1.4,
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withOpacity(0.7),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
               ),
             ),
           ],
@@ -2515,8 +2536,10 @@ class _ReviewSectionWidgetState extends State<_ReviewSectionWidget> {
     final averageRating =
         widget.reviews.fold(0.0, (sum, review) => sum + review.rating) /
             widget.reviews.length;
-    
-    final displayCount = _showAll ? widget.reviews.length : (widget.reviews.length > 2 ? 2 : widget.reviews.length);
+
+    final displayCount = _showAll
+        ? widget.reviews.length
+        : (widget.reviews.length > 2 ? 2 : widget.reviews.length);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
@@ -2544,7 +2567,8 @@ class _ReviewSectionWidgetState extends State<_ReviewSectionWidget> {
                   const SizedBox(width: 6),
                   AppText(
                     text: averageRating.toStringAsFixed(1),
-                    textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    textStyle: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   const SizedBox(width: 4),
                   AppText(
@@ -2567,7 +2591,8 @@ class _ReviewSectionWidgetState extends State<_ReviewSectionWidget> {
             itemCount: displayCount,
             separatorBuilder: (context, index) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
-              return SlotSelectionWidgets._buildReviewCard(context, widget.reviews[index], index);
+              return SlotSelectionWidgets._buildReviewCard(
+                  context, widget.reviews[index], index);
             },
           ),
           if (widget.reviews.length > 2 && !_showAll)

@@ -1,4 +1,3 @@
-
 import 'package:turfpro/user_booking/presentation/blocs/auth/auth_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/auth/auth_state.dart';
 import 'package:turfpro/user_booking/data/repositories/user_repository_impl.dart';
@@ -13,7 +12,6 @@ import '../../../constants/route_constants.dart';
 import '../../../constants/widgets/app_button.dart';
 import '../../../constants/widgets/app_sizedBox.dart';
 import '../../../constants/widgets/app_text.dart';
-import '../../../../common/constants/colors.dart';
 
 class CompleteProfileScreen extends StatefulWidget {
   const CompleteProfileScreen({super.key});
@@ -42,7 +40,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     }
 
     if (selectedDate == null) {
-      ToastUtil.show(context, message: "Please select your date of birth", type: ToastType.warning);
+      ToastUtil.show(context,
+          message: "Please select your date of birth", type: ToastType.warning);
       isValid = false;
     }
 
@@ -74,7 +73,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
           Navigator.pushReplacementNamed(context, AppRoutes.nav);
         }
         if (state is AuthError) {
-          ToastUtil.show(context, message: state.message, type: ToastType.error);
+          ToastUtil.show(context,
+              message: state.message, type: ToastType.error);
         }
       },
       child: BlocBuilder<AuthCubit, AuthState>(
@@ -83,11 +83,12 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
 
           return Scaffold(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              body: SafeArea(
+            body: SafeArea(
               child: Center(
                 child: SingleChildScrollView(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                    padding:
+                        EdgeInsets.symmetric(horizontal: horizontalPadding),
                     child: Column(
                       children: [
                         const AppSizedBox(height: 30),
@@ -122,12 +123,18 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                                 text: "Full Name",
                                 size: 12,
                                 weight: FontWeight.w600,
-                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.6),
                               ),
                               const AppSizedBox(height: 8),
                               TextField(
                                 controller: nameController,
-                                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                                style: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface),
                                 decoration: InputDecoration(
                                   hintText: "Enter your name",
                                   errorText: nameError,
@@ -141,7 +148,10 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                                 text: "Gender",
                                 size: 12,
                                 weight: FontWeight.w600,
-                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.6),
                               ),
                               const AppSizedBox(height: 8),
                               Row(
@@ -149,13 +159,15 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                                   ChoiceChip(
                                     label: const Text("Male"),
                                     selected: selectedGender == "Male",
-                                    onSelected: (val) => setState(() => selectedGender = "Male"),
+                                    onSelected: (val) =>
+                                        setState(() => selectedGender = "Male"),
                                   ),
                                   const AppSizedBox(width: 8),
                                   ChoiceChip(
                                     label: const Text("Female"),
                                     selected: selectedGender == "Female",
-                                    onSelected: (val) => setState(() => selectedGender = "Female"),
+                                    onSelected: (val) => setState(
+                                        () => selectedGender = "Female"),
                                   ),
                                 ],
                               ),
@@ -164,7 +176,10 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                                 text: "Date of Birth",
                                 size: 12,
                                 weight: FontWeight.w600,
-                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.6),
                               ),
                               const AppSizedBox(height: 8),
                               GestureDetector(
@@ -172,19 +187,30 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                                 child: Container(
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.grey.shade300),
+                                    border:
+                                        Border.all(color: Colors.grey.shade300),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       AppText(
                                         text: selectedDate == null
                                             ? "Select Date"
-                                            : DateFormat('dd/MM/yyyy').format(selectedDate!),
-                                        color: selectedDate == null ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4) : Theme.of(context).colorScheme.onSurface,
+                                            : DateFormat('dd/MM/yyyy')
+                                                .format(selectedDate!),
+                                        color: selectedDate == null
+                                            ? Theme.of(context)
+                                                .colorScheme
+                                                .onSurface
+                                                .withValues(alpha: 0.4)
+                                            : Theme.of(context)
+                                                .colorScheme
+                                                .onSurface,
                                       ),
-                                      const Icon(Icons.calendar_today, size: 18),
+                                      const Icon(Icons.calendar_today,
+                                          size: 18),
                                     ],
                                   ),
                                 ),
@@ -199,7 +225,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                                           name: nameController.text.trim(),
                                           gender: selectedGender,
                                           dob: selectedDate!,
-                                          userRepository: di.getIt<UserRepository>(),
+                                          userRepository:
+                                              di.getIt<UserRepository>(),
                                         );
                                   }
                                 },

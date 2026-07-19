@@ -7,91 +7,77 @@ class GroundSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Shimmer.fromColors(
       baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
       highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
           color: isDark ? Colors.grey[900] : Colors.white,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// Image Placeholder (matching 160 height of GroundCard)
+            // Image placeholder
             Container(
-              height: 160,
+              height: 110,
               width: double.infinity,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Colors.white,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(18),
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(16),
                 ),
               ),
             ),
 
+            // Info section
             Padding(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  /// Name and Rating Row
+                  // Name
+                  Container(
+                    width: 120,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Category chips
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Container(
-                        width: 180,
-                        height: 20,
+                        width: 50,
+                        height: 16,
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(5),
                         ),
                       ),
+                      const SizedBox(width: 6),
                       Container(
-                        width: 45,
-                        height: 22,
+                        width: 60,
+                        height: 16,
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(5),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
 
-                  /// Categories Placeholder
+                  // Address
                   Row(
                     children: [
                       Container(
-                        width: 60,
-                        height: 18,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        width: 70,
-                        height: 18,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  /// Address Placeholder
-                  Row(
-                    children: [
-                      Container(
-                        width: 14,
-                        height: 14,
+                        width: 12,
+                        height: 12,
                         decoration: const BoxDecoration(
                           color: Colors.white,
                           shape: BoxShape.circle,
@@ -99,8 +85,8 @@ class GroundSkeleton extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Container(
-                        width: 220,
-                        height: 12,
+                        width: 140,
+                        height: 10,
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(4),
@@ -108,35 +94,20 @@ class GroundSkeleton extends StatelessWidget {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 10),
 
-                  const SizedBox(height: 18),
-
-                  /// Price Section (matching Column in GroundCard)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Container(
-                        width: 100,
-                        height: 22,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                    ],
-                  )
+                  // Price
+                  Container(
+                    width: 80,
+                    height: 18,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),

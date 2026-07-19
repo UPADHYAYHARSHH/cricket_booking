@@ -5,6 +5,7 @@ class LocationModel {
   final double latitude;
   final double longitude;
   final List<String> amenities;
+  final List<String> sports;
   final double rating;
   final int totalReviews;
 
@@ -15,6 +16,7 @@ class LocationModel {
     required this.latitude,
     required this.longitude,
     required this.amenities,
+    this.sports = const [],
     this.rating = 0.0,
     this.totalReviews = 0,
   });
@@ -27,6 +29,7 @@ class LocationModel {
       latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
       longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
       amenities: (json['amenities'] as List?)?.map((e) => e.toString()).toList() ?? [],
+      sports: (json['sports'] as List?)?.map((e) => e.toString()).toList() ?? [],
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       totalReviews: json['total_reviews'] ?? 0,
     );

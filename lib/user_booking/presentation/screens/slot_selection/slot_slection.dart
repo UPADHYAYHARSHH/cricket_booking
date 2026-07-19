@@ -164,24 +164,24 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
       },
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
-        bottomNavigationBar: BlocBuilder<SlotSelectionCubit, SlotSelectionState>(
+        bottomNavigationBar:
+            BlocBuilder<SlotSelectionCubit, SlotSelectionState>(
           builder: (context, state) {
             final isEnabled = state.selectedTurf != null;
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: theme.scaffoldBackgroundColor,
-                border: Border(
-                  top: BorderSide(color: theme.dividerColor.withOpacity(0.1)),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    offset: const Offset(0, -4),
-                    blurRadius: 10,
-                  )
-                ]
-              ),
+                  color: theme.scaffoldBackgroundColor,
+                  border: Border(
+                    top: BorderSide(color: theme.dividerColor.withOpacity(0.1)),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      offset: const Offset(0, -4),
+                      blurRadius: 10,
+                    )
+                  ]),
               child: SafeArea(
                 child: SizedBox(
                   width: double.infinity,
@@ -197,13 +197,14 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                     ),
                     onPressed: isEnabled
                         ? () {
-                            Navigator.pushNamed(context, AppRoutes.timeSlotSelection);
+                            Navigator.pushNamed(
+                                context, AppRoutes.timeSlotSelection);
                           }
                         : null,
-                    child: Row(
+                    child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const AppText(
+                        AppText(
                           text: "Book Now",
                           textStyle: TextStyle(
                             fontSize: 16,
@@ -211,8 +212,9 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                             color: Colors.white,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+                        SizedBox(width: 8),
+                        Icon(Icons.arrow_forward,
+                            color: Colors.white, size: 20),
                       ],
                     ),
                   ),
@@ -222,137 +224,160 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
           },
         ),
         body: BlocConsumer<SlotSelectionCubit, SlotSelectionState>(
-          listenWhen: (previous, current) => previous.selectedTurf?.id != current.selectedTurf?.id,
+          listenWhen: (previous, current) =>
+              previous.selectedTurf?.id != current.selectedTurf?.id,
           listener: (context, state) {
             if (state.selectedTurf != null) {
               _loadReviews(state.selectedTurf!.id);
             }
           },
           builder: (context, state) {
-          final cubit = context.read<SlotSelectionCubit>();
-          final selectedSlots = state.slots
-              .where((s) => s.status == SlotStatus.selected)
-              .toList();
-          final totalPrice =
-              selectedSlots.fold<double>(0, (sum, s) => sum + s.price);
-          final activeDate = state.dates.isNotEmpty
-              ? state.dates.firstWhere((d) => d.isSelected,
-                  orElse: () => state.dates.first)
-              : null;
+            final cubit = context.read<SlotSelectionCubit>();
+            final selectedSlots = state.slots
+                .where((s) => s.status == SlotStatus.selected)
+                .toList();
+            final totalPrice =
+                selectedSlots.fold<double>(0, (sum, s) => sum + s.price);
+            final activeDate = state.dates.isNotEmpty
+                ? state.dates.firstWhere((d) => d.isSelected,
+                    orElse: () => state.dates.first)
+                : null;
 
-          final displayVenue = _ground ?? (state.facilityGrounds.isNotEmpty ? state.facilityGrounds.first : null);
+            final displayVenue = _ground ??
+                (state.facilityGrounds.isNotEmpty
+                    ? state.facilityGrounds.first
+                    : null);
 
-          return Column(
-            children: [
-              // Fixed Header
-              BlocBuilder<SavedGroundCubit, SavedGroundState>(
-                builder: (context, savedState) {
-                  final displayVenueId = (state.selectedTurf ?? _ground)?.id;
-                  final isSaved = displayVenueId != null ? savedState.favoriteIds.contains(displayVenueId) : false;
-                  return SlotSelectionWidgets.buildHeader(
-                    context, state.selectedTurf ?? _ground,
-                    title: state.selectedTurf?.name ?? "Book Slots",
-                    isSaved: isSaved,
-                    onToggleFav: () {
-                      if (displayVenueId == null) return;
-                      HapticFeedback.lightImpact();
-                      final user = FirebaseAuth.instance.currentUser;
-                      if (user != null) {
-                        context
-                            .read<SavedGroundCubit>()
-                            .toggleFavorite(user.uid, displayVenueId);
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Please login to save grounds")),
-                        );
-                      }
-                    },
-                    onShare: _shareGround,
-                  );
-                },
-              ),
+            return Column(
+              children: [
+                // Fixed Header
+                BlocBuilder<SavedGroundCubit, SavedGroundState>(
+                  builder: (context, savedState) {
+                    final displayVenueId = (state.selectedTurf ?? _ground)?.id;
+                    final isSaved = displayVenueId != null
+                        ? savedState.favoriteIds.contains(displayVenueId)
+                        : false;
+                    return SlotSelectionWidgets.buildHeader(
+                      context,
+                      state.selectedTurf ?? _ground,
+                      title: state.selectedTurf?.name ?? "Book Slots",
+                      isSaved: isSaved,
+                      onToggleFav: () {
+                        if (displayVenueId == null) return;
+                        HapticFeedback.lightImpact();
+                        final user = FirebaseAuth.instance.currentUser;
+                        if (user != null) {
+                          context
+                              .read<SavedGroundCubit>()
+                              .toggleFavorite(user.uid, displayVenueId);
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text("Please login to save grounds")),
+                          );
+                        }
+                      },
+                      onShare: _shareGround,
+                    );
+                  },
+                ),
 
-              if (state.isLoading && state.availableSports.isEmpty)
-                Expanded(
-                  child: SingleChildScrollView(
-                    physics: const NeverScrollableScrollPhysics(),
-                    child: SlotSelectionWidgets.buildSportGroundShimmer(context),
-                  ),
-                )
-              else ...[
-                // Scrollable Content
-                Expanded(
-                  child: SingleChildScrollView(
-                    controller: _scrollController,
-                    child: Column(
-                      children: [
-                        // Venue Info
-                        SlotSelectionWidgets.buildVenueImageCarousel(context, displayVenue),
-                        SlotSelectionWidgets.buildQuickSummarySection(context, displayVenue),
+                if (state.isLoading && state.availableSports.isEmpty)
+                  Expanded(
+                    child: SingleChildScrollView(
+                      physics: const NeverScrollableScrollPhysics(),
+                      child:
+                          SlotSelectionWidgets.buildSportGroundShimmer(context),
+                    ),
+                  )
+                else ...[
+                  // Scrollable Content
+                  Expanded(
+                    child: SingleChildScrollView(
+                      controller: _scrollController,
+                      child: Column(
+                        children: [
+                          // Venue Info
+                          SlotSelectionWidgets.buildVenueImageCarousel(
+                              context, displayVenue),
+                          SlotSelectionWidgets.buildQuickSummarySection(
+                              context, displayVenue),
 
-                        // Sport Selection
-                        SlotSelectionWidgets.buildSportSelection(
-                          context,
-                          state,
-                          onSportChanged: (sport) async {
-                            if (selectedSlots.isNotEmpty && sport != state.selectedSport) {
-                              final proceed = await _showClearSelectionDialog(context);
-                              if (!proceed) return;
-                              cubit.clearSelections();
-                            }
-                            cubit.selectSport(sport);
-                          },
-                        ),
-
-                        // Ground Selection
-                        SlotSelectionWidgets.buildGroundSelection(
-                          context,
-                          state,
-                          onTurfChanged: (turf) async {
-                            if (selectedSlots.isNotEmpty && turf.id != state.selectedTurf?.id) {
-                              final proceed = await _showClearSelectionDialog(context);
-                              if (!proceed) return;
-                              cubit.clearSelections();
-                            }
-                            cubit.selectTurf(turf);
-                          },
-                        ),
-
-                        // Amenities
-                        SlotSelectionWidgets.buildAmenitiesSection(context, state.selectedTurf?.amenities?.isNotEmpty == true ? state.selectedTurf?.amenities : displayVenue?.amenities),
-                        
-                        Container(height: 8, color: const Color(0xFFF4F6F9)),
-
-                        // Description
-                        SlotSelectionWidgets.buildDescriptionSection(context, (state.selectedTurf?.description ?? '').isNotEmpty ? state.selectedTurf?.description : displayVenue?.description),
-
-                        Container(height: 8, color: const Color(0xFFF4F6F9)),
-
-                        // Map (if available)
-                        if (displayVenue != null) ...[
-                          SlotSelectionWidgets.buildMapSection(
+                          // Sport Selection
+                          SlotSelectionWidgets.buildSportSelection(
                             context,
-                            latitude: displayVenue.latitude,
-                            longitude: displayVenue.longitude,
-                            address: displayVenue.address,
+                            state,
+                            onSportChanged: (sport) async {
+                              if (selectedSlots.isNotEmpty &&
+                                  sport != state.selectedSport) {
+                                final proceed =
+                                    await _showClearSelectionDialog(context);
+                                if (!proceed) return;
+                                cubit.clearSelections();
+                              }
+                              cubit.selectSport(sport);
+                            },
                           ),
-                          Container(height: 8, color: const Color(0xFFF4F6F9)),
-                        ],
 
-                        // Reviews (we pass the displayVenue id or ground id to _reviews which are loaded separately)
-                        SlotSelectionWidgets.buildReviewSection(context, _reviews, _isLoadingReviews),
-                      ],
+                          // Ground Selection
+                          SlotSelectionWidgets.buildGroundSelection(
+                            context,
+                            state,
+                            onTurfChanged: (turf) async {
+                              if (selectedSlots.isNotEmpty &&
+                                  turf.id != state.selectedTurf?.id) {
+                                final proceed =
+                                    await _showClearSelectionDialog(context);
+                                if (!proceed) return;
+                                cubit.clearSelections();
+                              }
+                              cubit.selectTurf(turf);
+                            },
+                          ),
+
+                          // Amenities
+                          SlotSelectionWidgets.buildAmenitiesSection(
+                              context,
+                              state.selectedTurf?.amenities.isNotEmpty == true
+                                  ? state.selectedTurf?.amenities
+                                  : displayVenue?.amenities),
+
+                          Container(height: 8, color: const Color(0xFFF4F6F9)),
+
+                          // Description
+                          SlotSelectionWidgets.buildDescriptionSection(
+                              context,
+                              (state.selectedTurf?.description ?? '').isNotEmpty
+                                  ? state.selectedTurf?.description
+                                  : displayVenue?.description),
+
+                          Container(height: 8, color: const Color(0xFFF4F6F9)),
+
+                          // Map (if available)
+                          if (displayVenue != null) ...[
+                            SlotSelectionWidgets.buildMapSection(
+                              context,
+                              latitude: displayVenue.latitude,
+                              longitude: displayVenue.longitude,
+                              address: displayVenue.address,
+                            ),
+                            Container(
+                                height: 8, color: const Color(0xFFF4F6F9)),
+                          ],
+
+                          // Reviews (we pass the displayVenue id or ground id to _reviews which are loaded separately)
+                          SlotSelectionWidgets.buildReviewSection(
+                              context, _reviews, _isLoadingReviews),
+                        ],
+                      ),
                     ),
                   ),
-                ),
+                ],
               ],
-
-            ],
-          );
-        },
+            );
+          },
+        ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 }

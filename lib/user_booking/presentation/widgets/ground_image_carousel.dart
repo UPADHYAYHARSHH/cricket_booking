@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:turfpro/common/constants/colors.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_network_image.dart';
 
 class GroundImageCarousel extends StatefulWidget {
@@ -34,9 +33,13 @@ class _GroundImageCarouselState extends State<GroundImageCarousel> {
 
   @override
   Widget build(BuildContext context) {
-    final displayImages = widget.images.isNotEmpty 
-        ? widget.images 
-        : [widget.fallbackImageUrl.isNotEmpty ? widget.fallbackImageUrl : "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e"];
+    final displayImages = widget.images.isNotEmpty
+        ? widget.images
+        : [
+            widget.fallbackImageUrl.isNotEmpty
+                ? widget.fallbackImageUrl
+                : "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e"
+          ];
 
     return Stack(
       children: [
@@ -64,7 +67,7 @@ class _GroundImageCarouselState extends State<GroundImageCarousel> {
             ),
           ),
         ),
-        
+
         // Dark Gradient Overlay for better visibility of indicator and badges
         if (widget.showGradient)
           Positioned.fill(
@@ -103,8 +106,8 @@ class _GroundImageCarouselState extends State<GroundImageCarousel> {
                   height: 6,
                   width: _currentPage == index ? 16 : 6,
                   decoration: BoxDecoration(
-                    color: _currentPage == index 
-                        ? Colors.white 
+                    color: _currentPage == index
+                        ? Colors.white
                         : Colors.white.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(3),
                     boxShadow: [

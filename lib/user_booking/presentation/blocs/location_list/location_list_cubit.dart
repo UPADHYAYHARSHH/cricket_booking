@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:turfpro/user_booking/data/models/location_model.dart';
 import 'package:turfpro/user_booking/domain/repositories/ground_repository.dart';
@@ -27,8 +28,10 @@ class LocationListCubit extends Cubit<LocationListState> {
     emit(LocationListLoading());
     try {
       final locations = await repository.fetchLocations();
+      debugPrint("[LocationListCubit] Loaded ${locations.length} locations");
       emit(LocationListLoaded(locations));
     } catch (e) {
+      debugPrint("[LocationListCubit] ERROR: $e");
       emit(LocationListError(e.toString()));
     }
   }

@@ -24,8 +24,6 @@ class _AddReviewBottomSheetState extends State<AddReviewBottomSheet> {
   final TextEditingController _reviewController = TextEditingController();
   bool _isSubmitting = false;
 
-
-
   Future<void> _submit() async {
     if (_rating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -67,6 +65,7 @@ class _AddReviewBottomSheetState extends State<AddReviewBottomSheet> {
     }
   }
 
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
@@ -91,7 +90,8 @@ class _AddReviewBottomSheetState extends State<AddReviewBottomSheet> {
                     width: 45,
                     height: 5,
                     decoration: BoxDecoration(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(10)))),
             const AppSizedBox(height: 24),
             Row(
@@ -105,11 +105,12 @@ class _AddReviewBottomSheetState extends State<AddReviewBottomSheet> {
                         textStyle: TextStyle(
                             fontSize: 20, fontWeight: FontWeight.bold)),
                     AppText(
-                        text: "How was your experience at ${widget.groundName}?",
+                        text:
+                            "How was your experience at ${widget.groundName}?",
                         textStyle: TextStyle(
                             fontSize: 14,
-                            color:
-                                theme.colorScheme.onSurface.withValues(alpha: 0.5))),
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.5))),
                   ],
                 ),
                 IconButton(
@@ -136,7 +137,8 @@ class _AddReviewBottomSheetState extends State<AddReviewBottomSheet> {
                             : Icons.star_outline_rounded,
                         color: index < _rating
                             ? AppColors.goldenYellow
-                            : theme.colorScheme.onSurface.withValues(alpha: 0.2),
+                            : theme.colorScheme.onSurface
+                                .withValues(alpha: 0.2),
                         size: 48,
                       ),
                     ),
@@ -162,7 +164,6 @@ class _AddReviewBottomSheetState extends State<AddReviewBottomSheet> {
                 contentPadding: const EdgeInsets.all(16),
               ),
             ),
-
             const AppSizedBox(height: 32),
             SizedBox(
               width: double.infinity,
@@ -192,6 +193,4 @@ class _AddReviewBottomSheetState extends State<AddReviewBottomSheet> {
       ),
     );
   }
-
-
 }

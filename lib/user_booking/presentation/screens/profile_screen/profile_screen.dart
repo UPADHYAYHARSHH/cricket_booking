@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:turfpro/common/constants/colors.dart';
 import 'package:turfpro/user_booking/presentation/blocs/auth/auth_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/auth/auth_state.dart';
@@ -15,6 +16,7 @@ import 'package:flutter/foundation.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:turfpro/user_booking/di/get_it/get_it.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -23,140 +25,220 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => getIt<ProfileCubit>()..loadProfile(),
-        child: MultiBlocListener(
-          listeners: [
-            BlocListener<AuthCubit, AuthState>(
-              listener: (context, state) {
-                if (state is AuthInitial) {
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    AppRoutes.login,
-                    (route) => false,
-                  );
-                }
-              },
-            ),
-            BlocListener<ProfileCubit, ProfileState>(
-              listenWhen: (prev, curr) => prev.isDeleted != curr.isDeleted || prev.error != curr.error,
-              listener: (context, state) {
-                if (state.isDeleted) {
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    AppRoutes.login,
-                    (route) => false,
-                  );
-                  return;
-                }
-                
-                if (state.error != null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(state.error!),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              },
-            ),
-          ],
-          child: Scaffold(
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            body: SafeArea(
-              child: BlocBuilder<ProfileCubit, ProfileState>(
-                builder: (context, profileState) {
-                  debugPrint("[PROFILE_SCREEN] State: isLoading=${profileState.isLoading}, name=${profileState.name}, error=${profileState.error}");
-                  
-                  if (profileState.isLoading && profileState.name == null) {
-                    return const _ProfileSkeleton();
-                  }
+      child: MultiBlocListener(
+        listeners: [
+          BlocListener<AuthCubit, AuthState>(
+            listener: (context, state) {
+              if (state is AuthInitial) {
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  AppRoutes.login,
+                  (route) => false,
+                );
+              }
+            },
+          ),
+          BlocListener<ProfileCubit, ProfileState>(
+            listenWhen: (prev, curr) =>
+                prev.isDeleted != curr.isDeleted || prev.error != curr.error,
+            listener: (context, state) {
+              if (state.isDeleted) {
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  AppRoutes.login,
+                  (route) => false,
+                );
+                return;
+              }
 
-                  return SingleChildScrollView(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                    child: Column(
-                      children: [
-                        _buildAvatar(context, profileState),
-                        const SizedBox(height: 14),
-                        _buildNameSection(context, profileState),
-                        if (FeatureConfig.isWalletEnabled) ...[
-                          const SizedBox(height: 24),
-                          _buildWalletCard(context, profileState),
-                        ],
-                        const SizedBox(height: 28),
-                        _buildMenuList(context),
-                        const SizedBox(height: 16),
-                      ],
+              if (state.error != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.error!),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+          ),
+        ],
+        child: Scaffold(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          body: SafeArea(
+            child: BlocBuilder<ProfileCubit, ProfileState>(
+              builder: (context, profileState) {
+                debugPrint(
+                    "[PROFILE_SCREEN] State: isLoading=${profileState.isLoading}, name=${profileState.name}, error=${profileState.error}");
+
+                if (profileState.isLoading && profileState.name == null) {
+                  return const _ProfileSkeleton();
+                }
+
+                return Column(
+                  children: [
+                    _buildProfileHeader(context, profileState),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                        child: Column(
+                          children: [
+                            if (FeatureConfig.isWalletEnabled) ...[
+                              _buildWalletCard(context, profileState),
+                              const SizedBox(height: 28),
+                            ],
+                            _buildMenuList(context),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
+                      ),
                     ),
-                  );
-                },
-              ),
+                  ],
+                );
+              },
             ),
           ),
         ),
+      ),
     );
   }
 
-  Widget _buildAvatar(BuildContext context, ProfileState state) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Container(
-          width: 88,
-          height: 88,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 3),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(
-                    alpha: Theme.of(context).brightness == Brightness.dark
-                        ? 0.3
-                        : 0.12),
-                blurRadius: 16,
-                spreadRadius: 2,
-                offset: const Offset(0, 4),
+  Widget _buildProfileHeader(BuildContext context, ProfileState state) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 24,
+        left: 20,
+        right: 20,
+        bottom: 40,
+      ),
+      decoration: const BoxDecoration(
+        color: AppColors.primaryDarkGreen,
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              AppText(
+                text: "Profile",
+                size: 20,
+                weight: FontWeight.w700,
+                color: AppColors.white,
+              ),
+              _buildGlassCircle(
+                AppText(
+                  text: _getInitials(state.name ?? "U"),
+                  color: AppColors.white,
+                  weight: FontWeight.w700,
+                ),
+                bordered: true,
               ),
             ],
           ),
-          child: ClipOval(
-            child: state.photoUrl != null
-                ? Image.network(
-                    state.photoUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      color: Colors.grey.shade200,
-                      child: const Icon(Icons.person,
-                          size: 44, color: Colors.grey),
-                    ),
-                  )
-                : Container(
-                    color: Colors.grey.shade200,
-                    child:
-                        const Icon(Icons.person, size: 44, color: Colors.grey),
-                  ),
+          const SizedBox(height: 24),
+          _buildAvatar(context, state),
+          const SizedBox(height: 14),
+          _buildNameSection(context, state),
+        ],
+      ),
+    );
+  }
+
+  String _getInitials(String name) {
+    if (name.isEmpty) return "U";
+    final parts = name.trim().split(" ");
+    if (parts.length > 1) {
+      return "${parts[0][0]}${parts[1][0]}".toUpperCase();
+    }
+    return parts[0][0].toUpperCase();
+  }
+
+  Widget _buildGlassCircle(Widget child, {VoidCallback? onTap, bool bordered = false}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipOval(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.white.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+              border: bordered
+                  ? Border.all(
+                      color: AppColors.white.withValues(alpha: 0.4),
+                      width: 1,
+                    )
+                  : null,
+            ),
+            child: Center(child: child),
           ),
         ),
-        Positioned(
-          bottom: 0,
-          right: 0,
-          child: GestureDetector(
-            onTap: () => _pickImage(context),
-            child: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: AppColors.primaryDarkGreen,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
-              ),
-              child: const Icon(
-                Icons.edit,
-                size: 14,
-                color: Colors.white,
+      ),
+    );
+  }
+  Widget _buildAvatar(BuildContext context, ProfileState state) {
+    return Center(
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 88,
+            height: 88,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                  color: AppColors.white.withValues(alpha: 0.3), width: 3),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 16,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ClipOval(
+              child: state.photoUrl != null
+                  ? Image.network(
+                      state.photoUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: AppColors.white.withValues(alpha: 0.2),
+                        child: const Icon(Icons.person,
+                            size: 44, color: AppColors.white),
+                      ),
+                    )
+                  : Container(
+                      color: AppColors.white.withValues(alpha: 0.2),
+                      child: const Icon(Icons.person,
+                          size: 44, color: AppColors.white),
+                    ),
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: GestureDetector(
+              onTap: () => _pickImage(context),
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.accentOrange,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.white, width: 2),
+                ),
+                child: const Icon(
+                  Icons.edit,
+                  size: 14,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -199,7 +281,6 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildWalletCard(BuildContext context, ProfileState state) {
-    final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -282,22 +363,17 @@ class ProfileScreen extends StatelessWidget {
   Widget _buildNameSection(BuildContext context, ProfileState state) {
     return Column(
       children: [
-        Text(
-          state.name ?? "Player",
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
+        AppText(
+          text: state.name ?? "Player",
+          size: 20,
+          weight: FontWeight.w700,
+          color: AppColors.white,
         ),
         const SizedBox(height: 4),
-        Text(
-          state.username != null ? "@${state.username}" : "User",
-          style: const TextStyle(
-            fontSize: 14,
-            color: AppColors.primaryDarkGreen,
-            fontWeight: FontWeight.w600,
-          ),
+        AppText(
+          text: state.username != null ? "@${state.username}" : "User",
+          size: 13,
+          color: AppColors.white.withValues(alpha: 0.7),
         ),
       ],
     );
@@ -311,7 +387,7 @@ class ProfileScreen extends StatelessWidget {
       _MenuItem(
         icon: Icons.person_outline_rounded,
         label: "Edit Profile",
-        iconBg: AppColors.primaryDarkGreen.withOpacity(isDark ? 0.2 : 0.1),
+        iconBg: AppColors.primaryDarkGreen.withValues(alpha: isDark ? 0.2 : 0.1),
         iconColor:
             isDark ? AppColors.primaryLightGreen : AppColors.primaryDarkGreen,
         isLogout: false,
@@ -326,7 +402,7 @@ class ProfileScreen extends StatelessWidget {
         _MenuItem(
           icon: HugeIcons.strokeRoundedStar,
           label: "My Rewards",
-          iconBg: Colors.amber.withOpacity(isDark ? 0.2 : 0.1),
+          iconBg: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.1),
           iconColor: isDark ? Colors.amberAccent : Colors.amber.shade700,
           isLogout: false,
           onTap: () {
@@ -340,7 +416,7 @@ class ProfileScreen extends StatelessWidget {
         _MenuItem(
           icon: HugeIcons.strokeRoundedCreditCard,
           label: "Split History",
-          iconBg: Colors.blue.withOpacity(isDark ? 0.2 : 0.1),
+          iconBg: Colors.blue.withValues(alpha: isDark ? 0.2 : 0.1),
           iconColor: isDark ? Colors.blueAccent : Colors.blue.shade700,
           isLogout: false,
           onTap: () => Navigator.pushNamed(context, AppRoutes.splitHistory),
@@ -351,8 +427,8 @@ class ProfileScreen extends StatelessWidget {
             isDark ? HugeIcons.strokeRoundedMoon : HugeIcons.strokeRoundedSun01,
         label: "Dark Mode",
         iconBg: isDark
-            ? Colors.blueGrey.withOpacity(0.2)
-            : Colors.amber.withOpacity(0.1),
+            ? Colors.blueGrey.withValues(alpha: 0.2)
+            : Colors.amber.withValues(alpha: 0.1),
         iconColor: isDark ? Colors.lightBlueAccent : AppColors.accentOrange,
         isLogout: false,
         trailing: Switch(
@@ -365,14 +441,14 @@ class ProfileScreen extends StatelessWidget {
       _MenuItem(
         icon: Icons.help_outline_rounded,
         label: "Help & Support",
-        iconBg: Colors.purple.withOpacity(isDark ? 0.2 : 0.1),
+        iconBg: Colors.purple.withValues(alpha: isDark ? 0.2 : 0.1),
         iconColor: isDark ? Colors.purpleAccent : const Color(0xFF7B1FA2),
         isLogout: false,
       ),
       _MenuItem(
         icon: Icons.logout_rounded,
         label: "Logout",
-        iconBg: Colors.red.withOpacity(isDark ? 0.2 : 0.1),
+        iconBg: Colors.red.withValues(alpha: isDark ? 0.2 : 0.1),
         iconColor: isDark ? Colors.redAccent : const Color(0xFFD32F2F),
         isLogout: true,
         onTap: () {
@@ -404,7 +480,7 @@ class ProfileScreen extends StatelessWidget {
       _MenuItem(
         icon: Icons.delete_outline_rounded,
         label: "Delete Account",
-        iconBg: Colors.red.withOpacity(isDark ? 0.2 : 0.1),
+        iconBg: Colors.red.withValues(alpha: isDark ? 0.2 : 0.1),
         iconColor: isDark ? Colors.redAccent : const Color(0xFFD32F2F),
         isLogout: true,
         onTap: () {
@@ -414,18 +490,22 @@ class ProfileScreen extends StatelessWidget {
               title: const Text("Delete Account"),
               content: const Text(
                   "Are you sure you want to permanently delete your account and all associated data? This action cannot be undone."),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+                  child: const Text("Cancel",
+                      style: TextStyle(color: Colors.grey)),
                 ),
                 TextButton(
                   onPressed: () {
                     Navigator.pop(ctx);
                     context.read<ProfileCubit>().deleteAccount();
                   },
-                  child: const Text("Delete", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                  child: const Text("Delete",
+                      style: TextStyle(
+                          color: Colors.red, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -574,7 +654,7 @@ class _ProfileSkeleton extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 14),
-            
+
             // Name Skeleton
             Container(
               width: 150,
@@ -585,7 +665,7 @@ class _ProfileSkeleton extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            
+
             // Username Skeleton
             Container(
               width: 100,
@@ -667,4 +747,3 @@ class _ProfileSkeleton extends StatelessWidget {
     );
   }
 }
-

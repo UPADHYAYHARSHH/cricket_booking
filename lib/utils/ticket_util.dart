@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -282,8 +281,7 @@ class TicketUtil {
                                   child: pw.Text(
                                     groundAddress,
                                     style: pw.TextStyle(
-                                        color: _kWhite
-                                            .withAlpha(0.8),
+                                        color: _kWhite.withAlpha(0.8),
                                         fontSize: 10),
                                     maxLines: 1,
                                   ),
@@ -322,7 +320,8 @@ class TicketUtil {
                         pw.Row(
                           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                           children: [
-                            _pdfInfoBlock('PERIOD', selectedPeriod.toUpperCase()),
+                            _pdfInfoBlock(
+                                'PERIOD', selectedPeriod.toUpperCase()),
                             _pdfInfoBlock('PRICE PAID', formattedPrice,
                                 alignRight: true),
                           ],
@@ -348,15 +347,21 @@ class TicketUtil {
                                   runSpacing: 8,
                                   children: amenities.take(6).map((amenity) {
                                     return pw.Container(
-                                      padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      padding: const pw.EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
                                       decoration: pw.BoxDecoration(
                                         color: _kBg,
-                                        borderRadius: pw.BorderRadius.circular(4),
-                                        border: pw.Border.all(color: _kBorder, width: 0.5),
+                                        borderRadius:
+                                            pw.BorderRadius.circular(4),
+                                        border: pw.Border.all(
+                                            color: _kBorder, width: 0.5),
                                       ),
                                       child: pw.Text(
                                         amenity,
-                                        style: pw.TextStyle(color: _kGreen, fontSize: 8, fontWeight: pw.FontWeight.bold),
+                                        style: pw.TextStyle(
+                                            color: _kGreen,
+                                            fontSize: 8,
+                                            fontWeight: pw.FontWeight.bold),
                                       ),
                                     );
                                   }).toList(),
@@ -418,7 +423,8 @@ class TicketUtil {
                                 ),
                                 child: pw.BarcodeWidget(
                                   barcode: pw.Barcode.qrCode(),
-                                  data: "$orderId | Ground: $groundName | Owner: $ownerId | Ground ID: $groundId",
+                                  data:
+                                      "$orderId | Ground: $groundName | Owner: $ownerId | Ground ID: $groundId",
                                   width: 100,
                                   height: 100,
                                   color: _kDark,

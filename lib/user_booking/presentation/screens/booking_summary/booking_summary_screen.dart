@@ -27,7 +27,7 @@ class BookingSummaryScreen extends StatelessWidget {
     final rawArgs = ModalRoute.of(context)?.settings.arguments;
 
     if (rawArgs == null || rawArgs is! BookingSummaryArguments) {
-      return Scaffold(
+      return const Scaffold(
         body: Center(
           child: AppText(text: "Invalid booking data"),
         ),
@@ -52,21 +52,24 @@ class BookingSummaryScreen extends StatelessWidget {
           bool canRedeem = state.availableLoyaltyPoints >= 50;
           if (state.useLoyaltyPoints && canRedeem) {
             double maxDiscount = basePrice * 0.5;
-            pointsDiscount = state.availableLoyaltyPoints > maxDiscount 
-                ? maxDiscount 
+            pointsDiscount = state.availableLoyaltyPoints > maxDiscount
+                ? maxDiscount
                 : state.availableLoyaltyPoints.toDouble();
           }
         }
         // Wallet Balance Logic
         double walletDiscount = 0.0;
-        if (FeatureConfig.isWalletEnabled && state.useWallet && state.walletBalance > 0) {
+        if (FeatureConfig.isWalletEnabled &&
+            state.useWallet &&
+            state.walletBalance > 0) {
           double remainingAfterLoyalty = basePrice - pointsDiscount;
-          walletDiscount = state.walletBalance > remainingAfterLoyalty 
-              ? remainingAfterLoyalty 
+          walletDiscount = state.walletBalance > remainingAfterLoyalty
+              ? remainingAfterLoyalty
               : state.walletBalance;
         }
 
-        final double grandTotal = (basePrice - pointsDiscount - walletDiscount) + platformFee;
+        final double grandTotal =
+            (basePrice - pointsDiscount - walletDiscount) + platformFee;
 
         return Scaffold(
           backgroundColor: theme.scaffoldBackgroundColor,
@@ -99,7 +102,8 @@ class BookingSummaryScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(18),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
+                        color:
+                            Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -124,17 +128,23 @@ class BookingSummaryScreen extends StatelessWidget {
                               left: 14,
                               right: 14,
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Expanded(
                                     child: Row(
                                       children: [
-                                        const Icon(Icons.calendar_today_rounded, size: 14, color: Colors.white),
+                                        const Icon(Icons.calendar_today_rounded,
+                                            size: 14, color: Colors.white),
                                         const SizedBox(width: 6),
                                         Flexible(
                                           child: AppText(
-                                            text: "${activeDate.month} ${activeDate.date}, ${DateTime.now().year}",
-                                            textStyle: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                                            text:
+                                                "${activeDate.month} ${activeDate.date}, ${DateTime.now().year}",
+                                            textStyle: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold),
                                             maxLines: 1,
                                           ),
                                         ),
@@ -143,14 +153,18 @@ class BookingSummaryScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 12),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
                                       color: AppColors.accentOrange,
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: AppText(
                                       text: "${selectedSlots.length} Slots",
-                                      textStyle: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                      textStyle: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold),
                                     ),
                                   ),
                                 ],
@@ -158,7 +172,7 @@ class BookingSummaryScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-                        
+
                         // Info Section
                         Padding(
                           padding: const EdgeInsets.all(14),
@@ -170,7 +184,8 @@ class BookingSummaryScreen extends StatelessWidget {
                                 children: [
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         AppText(
                                           text: ground.name,
@@ -212,16 +227,22 @@ class BookingSummaryScreen extends StatelessWidget {
                                     child: HugeIcon(
                                       icon: HugeIcons.strokeRoundedLocation01,
                                       size: 14,
-                                      color: colorScheme.onSurface.withValues(alpha: 0.5),
+                                      color: colorScheme.onSurface
+                                          .withValues(alpha: 0.5),
                                     ),
                                   ),
                                   const SizedBox(width: 4),
                                   Expanded(
                                     child: AppText(
-                                      text: ground.address.isNotEmpty ? ground.address : (ground.city.isNotEmpty ? ground.city : 'Location unavailable'),
+                                      text: ground.address.isNotEmpty
+                                          ? ground.address
+                                          : (ground.city.isNotEmpty
+                                              ? ground.city
+                                              : 'Location unavailable'),
                                       textStyle: TextStyle(
                                         fontSize: 12,
-                                        color: colorScheme.onSurface.withValues(alpha: 0.5),
+                                        color: colorScheme.onSurface
+                                            .withValues(alpha: 0.5),
                                       ),
                                     ),
                                   ),
@@ -235,15 +256,18 @@ class BookingSummaryScreen extends StatelessWidget {
                                     fontSize: 10,
                                     fontWeight: FontWeight.w800,
                                     letterSpacing: 0.5,
-                                    color: colorScheme.onSurface.withValues(alpha: 0.4),
+                                    color: colorScheme.onSurface
+                                        .withValues(alpha: 0.4),
                                   ),
                                 ),
                                 const SizedBox(height: 8),
                                 Wrap(
                                   spacing: 8,
                                   runSpacing: 8,
-                                  children: ground.amenities.take(4).map((amenity) {
-                                    return SlotSelectionWidgets.amenityChip(context, amenity);
+                                  children:
+                                      ground.amenities.take(4).map((amenity) {
+                                    return SlotSelectionWidgets.amenityChip(
+                                        context, amenity);
                                   }).toList(),
                                 ),
                               ],
@@ -271,18 +295,22 @@ class BookingSummaryScreen extends StatelessWidget {
                   runSpacing: 10,
                   children: selectedSlots.map((slot) {
                     return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
-                        color: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
+                        color:
+                            AppColors.primaryDarkGreen.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: AppColors.primaryDarkGreen.withValues(alpha: 0.2),
+                          color:
+                              AppColors.primaryDarkGreen.withValues(alpha: 0.2),
                         ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.access_time_rounded, size: 14, color: AppColors.primaryDarkGreen),
+                          const Icon(Icons.access_time_rounded,
+                              size: 14, color: AppColors.primaryDarkGreen),
                           const AppSizedBox(width: 6),
                           AppText(
                             text: "${slot.startTime} - ${slot.endTime}",
@@ -316,9 +344,9 @@ class BookingSummaryScreen extends StatelessWidget {
                       color: colorScheme.surface,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: state.useLoyaltyPoints 
-                          ? AppColors.primaryDarkGreen 
-                          : colorScheme.outline.withValues(alpha: 0.2),
+                        color: state.useLoyaltyPoints
+                            ? AppColors.primaryDarkGreen
+                            : colorScheme.outline.withValues(alpha: 0.2),
                         width: 1.5,
                       ),
                     ),
@@ -327,10 +355,12 @@ class BookingSummaryScreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: AppColors.goldenYellow.withValues(alpha: 0.1),
+                            color:
+                                AppColors.goldenYellow.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.stars_rounded, color: AppColors.goldenYellow, size: 28),
+                          child: const Icon(Icons.stars_rounded,
+                              color: AppColors.goldenYellow, size: 28),
                         ),
                         const AppSizedBox(width: 16),
                         Expanded(
@@ -346,12 +376,13 @@ class BookingSummaryScreen extends StatelessWidget {
                                 ),
                               ),
                               AppText(
-                                text: state.availableLoyaltyPoints >= 50 
-                                  ? "Use ${state.availableLoyaltyPoints} pts for ₹${pointsDiscount.toStringAsFixed(0)} off"
-                                  : "Min. 50 points required",
+                                text: state.availableLoyaltyPoints >= 50
+                                    ? "Use ${state.availableLoyaltyPoints} pts for ₹${pointsDiscount.toStringAsFixed(0)} off"
+                                    : "Min. 50 points required",
                                 textStyle: TextStyle(
                                   fontSize: 12,
-                                  color: colorScheme.onSurface.withValues(alpha: 0.6),
+                                  color: colorScheme.onSurface
+                                      .withValues(alpha: 0.6),
                                 ),
                               ),
                             ],
@@ -359,10 +390,12 @@ class BookingSummaryScreen extends StatelessWidget {
                         ),
                         Switch(
                           value: state.useLoyaltyPoints,
-                          activeColor: AppColors.primaryDarkGreen,
-                          onChanged: state.availableLoyaltyPoints >= 50 
-                            ? (_) => context.read<SlotSelectionCubit>().toggleLoyaltyPoints() 
-                            : null,
+                          activeThumbColor: AppColors.primaryDarkGreen,
+                          onChanged: state.availableLoyaltyPoints >= 50
+                              ? (_) => context
+                                  .read<SlotSelectionCubit>()
+                                  .toggleLoyaltyPoints()
+                              : null,
                         ),
                       ],
                     ),
@@ -387,9 +420,9 @@ class BookingSummaryScreen extends StatelessWidget {
                       color: colorScheme.surface,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: state.useWallet 
-                          ? AppColors.primaryDarkGreen 
-                          : colorScheme.outline.withValues(alpha: 0.2),
+                        color: state.useWallet
+                            ? AppColors.primaryDarkGreen
+                            : colorScheme.outline.withValues(alpha: 0.2),
                         width: 1.5,
                       ),
                     ),
@@ -401,7 +434,10 @@ class BookingSummaryScreen extends StatelessWidget {
                             color: Colors.blue.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.blue, size: 28),
+                          child: const Icon(
+                              Icons.account_balance_wallet_rounded,
+                              color: Colors.blue,
+                              size: 28),
                         ),
                         const AppSizedBox(width: 16),
                         Expanded(
@@ -417,12 +453,13 @@ class BookingSummaryScreen extends StatelessWidget {
                                 ),
                               ),
                               AppText(
-                                text: state.walletBalance > 0 
-                                  ? "Available: ₹${state.walletBalance.toStringAsFixed(0)}"
-                                  : "No balance available",
+                                text: state.walletBalance > 0
+                                    ? "Available: ₹${state.walletBalance.toStringAsFixed(0)}"
+                                    : "No balance available",
                                 textStyle: TextStyle(
                                   fontSize: 12,
-                                  color: colorScheme.onSurface.withValues(alpha: 0.6),
+                                  color: colorScheme.onSurface
+                                      .withValues(alpha: 0.6),
                                 ),
                               ),
                             ],
@@ -430,10 +467,12 @@ class BookingSummaryScreen extends StatelessWidget {
                         ),
                         Switch(
                           value: state.useWallet,
-                          activeColor: AppColors.primaryDarkGreen,
-                          onChanged: state.walletBalance > 0 
-                            ? (_) => context.read<SlotSelectionCubit>().toggleWallet() 
-                            : null,
+                          activeThumbColor: AppColors.primaryDarkGreen,
+                          onChanged: state.walletBalance > 0
+                              ? (_) => context
+                                  .read<SlotSelectionCubit>()
+                                  .toggleWallet()
+                              : null,
                         ),
                       ],
                     ),
@@ -454,11 +493,18 @@ class BookingSummaryScreen extends StatelessWidget {
                 _priceRow(context, label: "Base Amount", amount: basePrice),
                 const AppSizedBox(height: 12),
                 if (pointsDiscount > 0) ...[
-                  _priceRow(context, label: "Loyalty Discount", amount: -pointsDiscount, isDiscount: true),
+                  _priceRow(context,
+                      label: "Loyalty Discount",
+                      amount: -pointsDiscount,
+                      isDiscount: true),
                   const AppSizedBox(height: 12),
                 ],
                 if (walletDiscount > 0) ...[
-                  _priceRow(context, label: "Wallet Used", amount: -walletDiscount, isDiscount: true, isWallet: true),
+                  _priceRow(context,
+                      label: "Wallet Used",
+                      amount: -walletDiscount,
+                      isDiscount: true,
+                      isWallet: true),
                   const AppSizedBox(height: 12),
                 ],
                 _priceRow(context, label: "Platform Fee", amount: platformFee),
@@ -496,7 +542,8 @@ class BookingSummaryScreen extends StatelessWidget {
                     // Pop this screen and return the final amount and points to the caller
                     Navigator.pop(context, {
                       'finalAmount': grandTotal,
-                      'appliedPoints': state.useLoyaltyPoints ? pointsDiscount.toInt() : 0,
+                      'appliedPoints':
+                          state.useLoyaltyPoints ? pointsDiscount.toInt() : 0,
                       'appliedWallet': state.useWallet ? walletDiscount : 0.0,
                     });
                   },
@@ -530,7 +577,12 @@ class BookingSummaryScreen extends StatelessWidget {
     );
   }
 
-  Widget _priceRow(BuildContext context, {required String label, required double amount, bool isDiscount = false, bool isFree = false, bool isWallet = false}) {
+  Widget _priceRow(BuildContext context,
+      {required String label,
+      required double amount,
+      bool isDiscount = false,
+      bool isFree = false,
+      bool isWallet = false}) {
     final colorScheme = Theme.of(context).colorScheme;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -543,15 +595,17 @@ class BookingSummaryScreen extends StatelessWidget {
           ),
         ),
         AppText(
-          text: isFree ? "FREE" : "${isDiscount ? '- ' : ''}₹${amount.abs().toStringAsFixed(2)}",
+          text: isFree
+              ? "FREE"
+              : "${isDiscount ? '- ' : ''}₹${amount.abs().toStringAsFixed(2)}",
           textStyle: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.bold,
-            color: isFree 
-              ? Colors.green 
-              : (isDiscount 
-                  ? (isWallet ? Colors.blue : AppColors.primaryDarkGreen) 
-                  : colorScheme.onSurface),
+            color: isFree
+                ? Colors.green
+                : (isDiscount
+                    ? (isWallet ? Colors.blue : AppColors.primaryDarkGreen)
+                    : colorScheme.onSurface),
           ),
         ),
       ],
