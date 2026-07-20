@@ -23,4 +23,5 @@ abstract class ReviewRepository {
   });
 
   Future<bool> hasUserRatedLocation(String userId, String locationId);
+  Future<List<ReviewModel>> fetchLocationReviews(String locationId);
 }

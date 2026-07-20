@@ -48,6 +48,7 @@ class GroundRepositoryImpl implements GroundRepository {
           latitude: (e['latitude'] as num?)?.toDouble() ?? 0.0,
           longitude: (e['longitude'] as num?)?.toDouble() ?? 0.0,
           pricePerHour: e['price_per_hour'] ?? 0,
+          weekendPrice: e['weekend_price'] ?? 0,
           rating: (e['rating'] as num?)?.toDouble() ?? 0.0,
           openingTime: e['opening_time']?.toString() ?? '00:00:00',
           closingTime: e['closing_time']?.toString() ?? '00:00:00',
@@ -79,6 +80,7 @@ class GroundRepositoryImpl implements GroundRepository {
             return list.toSet().toList();
           }(),
           ownerId: e['owner_id']?.toString() ?? '',
+          locationId: e['location_id']?.toString() ?? '',
           isAvailable: e['is_available'] ?? true,
           imageUrl: imageUrl,
           images: uniqueImages,
@@ -141,6 +143,7 @@ class GroundRepositoryImpl implements GroundRepository {
           latitude: (e['latitude'] as num?)?.toDouble() ?? 0.0,
           longitude: (e['longitude'] as num?)?.toDouble() ?? 0.0,
           pricePerHour: e['price_per_hour'] ?? 0,
+          weekendPrice: e['weekend_price'] ?? 0,
           rating: (e['rating'] as num?)?.toDouble() ?? 0.0,
           openingTime: e['opening_time']?.toString() ?? '00:00:00',
           closingTime: e['closing_time']?.toString() ?? '00:00:00',
@@ -172,6 +175,7 @@ class GroundRepositoryImpl implements GroundRepository {
             return list.toSet().toList();
           }(),
           ownerId: e['owner_id']?.toString() ?? '',
+          locationId: e['location_id']?.toString() ?? '',
           isAvailable: e['is_available'] ?? true,
           imageUrl: imageUrl,
           images: uniqueImages,
@@ -228,6 +232,7 @@ class GroundRepositoryImpl implements GroundRepository {
       latitude: (e['latitude'] as num?)?.toDouble() ?? 0.0,
       longitude: (e['longitude'] as num?)?.toDouble() ?? 0.0,
       pricePerHour: e['price_per_hour'] ?? 0,
+      weekendPrice: e['weekend_price'] ?? 0,
       rating: (e['rating'] as num?)?.toDouble() ?? 0.0,
       openingTime: e['opening_time']?.toString() ?? '00:00:00',
       closingTime: e['closing_time']?.toString() ?? '00:00:00',
@@ -259,6 +264,7 @@ class GroundRepositoryImpl implements GroundRepository {
         return list.toSet().toList();
       }(),
       ownerId: e['owner_id']?.toString() ?? '',
+      locationId: e['location_id']?.toString() ?? '',
       isAvailable: e['is_available'] ?? true,
       imageUrl: imageUrl,
       images: uniqueImages,

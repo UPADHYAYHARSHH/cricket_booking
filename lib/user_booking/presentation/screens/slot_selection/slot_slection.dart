@@ -35,6 +35,7 @@ class SlotSelectionScreen extends StatefulWidget {
 
 class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
   GroundModel? _ground;
+  LocationModel? _location;
   bool _isInitialized = false;
   List<ReviewModel> _reviews = [];
   bool _isLoadingReviews = true;
@@ -60,10 +61,17 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
       if (args is GroundModel) {
         _ground = args;
         context.read<SlotSelectionCubit>().initFacility(_ground!);
-        _loadReviews(_ground!.id);
+        // Load reviews - prefer location reviews if locationId is available
+        final locationId = _ground!.locationId;
+        if (locationId.isNotEmpty) {
+          _loadLocationReviews(locationId);
+        } else {
+          _loadReviews(_ground!.id);
+        }
       } else if (args is LocationModel) {
+        _location = args;
         context.read<SlotSelectionCubit>().initForLocation(args);
-        setState(() => _isLoadingReviews = false);
+        _loadLocationReviews(args.id);
       } else {
         setState(() => _isLoadingReviews = false);
       }
@@ -79,6 +87,25 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
     try {
       final reviews =
           await getIt<ReviewRepository>().fetchGroundReviews(groundId);
+      if (mounted) {
+        setState(() {
+          _reviews = reviews;
+          _isLoadingReviews = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingReviews = false);
+    }
+  }
+
+  Future<void> _loadLocationReviews(String locationId) async {
+    if (!mounted) return;
+    setState(() {
+      _isLoadingReviews = true;
+    });
+    try {
+      final reviews =
+          await getIt<ReviewRepository>().fetchLocationReviews(locationId);
       if (mounted) {
         setState(() {
           _reviews = reviews;
@@ -228,7 +255,13 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
               previous.selectedTurf?.id != current.selectedTurf?.id,
           listener: (context, state) {
             if (state.selectedTurf != null) {
-              _loadReviews(state.selectedTurf!.id);
+              // Load reviews - prefer location reviews if locationId is available
+              final locationId = state.selectedTurf!.locationId;
+              if (locationId.isNotEmpty) {
+                _loadLocationReviews(locationId);
+              } else {
+                _loadReviews(state.selectedTurf!.id);
+              }
             }
           },
           builder: (context, state) {

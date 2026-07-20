@@ -1502,6 +1502,7 @@ class SlotSelectionWidgets {
       BuildContext context, List<TimeSlot> slots, Function(int) onToggleSlot) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       color: colorScheme.surface,
@@ -1510,20 +1511,245 @@ class SlotSelectionWidgets {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Remove the explicit title here as we have tabs now
+          // Legend chips
+          _buildSlotLegend(context),
+          const SizedBox(height: 16),
+          // Slot grid
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: slots.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.5,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 2.2,
             ),
             itemBuilder: (ctx, i) =>
                 _buildSlotCard(context, slots[i], i, onToggleSlot),
           ),
+        ],
+      ),
+    );
+  }
+
+  static String _getSlotPeriod(String time) {
+    if (time.isEmpty) return 'Day';
+    try {
+      final timeParts = time.split(' ');
+      final timeH = timeParts[0].split(':');
+      int hour = int.parse(timeH[0]);
+      final ampm = timeParts.length > 1 ? timeParts[1].toUpperCase() : 'AM';
+      if (ampm == 'PM' && hour != 12) hour += 12;
+      if (ampm == 'AM' && hour == 12) hour = 0;
+      if (hour < 6) return 'Midnight';
+      if (hour < 12) return 'Day';
+      if (hour < 18) return 'Evening';
+      return 'Night';
+    } catch (_) {
+      return 'Day';
+    }
+  }
+
+  /// Check if a slot's start time has already passed for the given date.
+  static bool isSlotExpired(String startTime, DateTime selectedDate) {
+    try {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final slotDate = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+
+      // If the selected date is in the future, slot is not expired
+      if (slotDate.isAfter(today)) return false;
+
+      // If the selected date is today, check the time
+      if (slotDate.isAtSameMomentAs(today)) {
+        final timeParts = startTime.split(' ');
+        final timeH = timeParts[0].split(':');
+        int hour = int.parse(timeH[0]);
+        int minute = timeH.length > 1 ? int.parse(timeH[1]) : 0;
+        final ampm = timeParts.length > 1 ? timeParts[1].toUpperCase() : 'AM';
+
+        if (ampm == 'PM' && hour != 12) hour += 12;
+        if (ampm == 'AM' && hour == 12) hour = 0;
+
+        final slotTime = DateTime(now.year, now.month, now.day, hour, minute);
+        return now.isAfter(slotTime);
+      }
+
+      // If the selected date is in the past, slot is expired
+      return slotDate.isBefore(today);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Widget _buildSlotLegend(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 6,
+      children: [
+        _legendChip(context, "Available", AppColors.slotAvailable, isDark),
+        _legendChip(context, "Selected", AppColors.accentOrange, isDark),
+        _legendChip(context, "Booked", AppColors.slotBlocked, isDark),
+        _legendChip(context, "Passed", Colors.grey, isDark),
+      ],
+    );
+  }
+
+  static Widget _legendChip(BuildContext context, String label, Color color, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.white70 : AppColors.textSecondaryLight,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Grouped Slot Section (all periods in one screen) ──────────────────────
+
+  static Widget buildGroupedSlotSection(
+      BuildContext context, List<TimeSlot> slots, Function(int) onToggleSlot, {DateTime? selectedDate}) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    // Group slots by period
+    final Map<String, List<MapEntry<int, TimeSlot>>> grouped = {};
+    for (int i = 0; i < slots.length; i++) {
+      final period = _getSlotPeriod(slots[i].startTime);
+      grouped.putIfAbsent(period, () => []);
+      grouped[period]!.add(MapEntry(i, slots[i]));
+    }
+
+    // Define display order
+    final periodOrder = ['Midnight', 'Day', 'Evening', 'Night'];
+    final periodIcons = {
+      'Midnight': Icons.nights_stay_rounded,
+      'Day': Icons.wb_sunny_rounded,
+      'Evening': Icons.wb_twilight_rounded,
+      'Night': Icons.bedtime_rounded,
+    };
+    final periodColors = {
+      'Midnight': const Color(0xFF5C6BC0),
+      'Day': const Color(0xFFFFB300),
+      'Evening': const Color(0xFFFF7043),
+      'Night': const Color(0xFF7E57C2),
+    };
+
+    if (grouped.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      color: colorScheme.surface,
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSlotLegend(context),
+          const SizedBox(height: 16),
+          ...periodOrder.where((p) => grouped.containsKey(p)).map((period) {
+            final periodSlots = grouped[period]!;
+            final periodColor = periodColors[period] ?? AppColors.primaryDarkGreen;
+            final periodIcon = periodIcons[period] ?? Icons.access_time;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Period label
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: periodColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: periodColor.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(periodIcon, size: 14, color: periodColor),
+                      const SizedBox(width: 6),
+                      Text(
+                        period.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: periodColor,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: periodColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          "${periodSlots.length}",
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: periodColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                // Slots grid
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: periodSlots.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    childAspectRatio: 2.2,
+                  ),
+                  itemBuilder: (ctx, i) => _buildSlotCard(
+                    context,
+                    periodSlots[i].value,
+                    periodSlots[i].key,
+                    onToggleSlot,
+                    selectedDate: selectedDate,
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            );
+          }),
         ],
       ),
     );
@@ -1625,52 +1851,55 @@ class SlotSelectionWidgets {
           itemCount: 6,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 1.5,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            childAspectRatio: 2.2,
           ),
           itemBuilder: (ctx, i) => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(8),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Row(
               children: [
-                // Start Time Placeholder
                 Container(
-                  width: 60,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(4),
+                  width: 4,
+                  height: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Colors.grey,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(8),
+                      bottomLeft: Radius.circular(8),
+                    ),
                   ),
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Subtitle Placeholder
-                    Container(
-                      width: 80,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: Colors.black,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 60,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: Colors.grey,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          width: 40,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: Colors.grey,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    // Price Placeholder
-                    Container(
-                      width: 50,
-                      height: 16,
-                      decoration: BoxDecoration(
-                        color: Colors.black,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),
@@ -1681,7 +1910,7 @@ class SlotSelectionWidgets {
   }
 
   static Widget _buildSlotCard(BuildContext context, TimeSlot slot, int index,
-      Function(int) onToggleSlot) {
+      Function(int) onToggleSlot, {DateTime? selectedDate}) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
@@ -1691,45 +1920,68 @@ class SlotSelectionWidgets {
     final bool isAdvance = slot.status == SlotStatus.advance;
     final bool isAvailable = slot.status == SlotStatus.available;
 
-    Color borderColor;
-    Color timeColor = colorScheme.onSurface;
-    Color subColor = colorScheme.onSurface.withValues(alpha: 0.4);
-    Color priceColor =
-        isDark ? AppColors.primaryLightGreen : AppColors.primaryDarkGreen;
-    IconData? statusIcon;
-    Color? iconColor;
+    // Check if slot has passed
+    final bool isExpired = selectedDate != null && isSlotExpired(slot.startTime, selectedDate);
 
-    if (isSelected) {
-      borderColor = AppColors.primaryDarkGreen;
-      statusIcon = Icons.radio_button_checked;
-      iconColor = AppColors.accentOrange;
-      priceColor = AppColors.accentOrange;
-    } else if (isBooked) {
+    // Format time range: "6:00 AM - 7:00 AM"
+    final String timeRange = _formatSlotTimeRange(slot.startTime, slot.endTime);
+
+    // Status colors (matching owner app style)
+    Color accentColor;
+    Color bgColor;
+    Color timeColor;
+    Color statusColor;
+    Color borderColor;
+
+    if (isExpired) {
+      // Expired slot - greyed out
+      accentColor = Colors.grey.withValues(alpha: 0.3);
+      bgColor = isDark ? Colors.white.withValues(alpha: 0.02) : Colors.grey.withValues(alpha: 0.05);
+      timeColor = colorScheme.onSurface.withValues(alpha: 0.25);
+      statusColor = colorScheme.onSurface.withValues(alpha: 0.2);
       borderColor = Colors.transparent;
-      timeColor = colorScheme.onSurface.withValues(alpha: 0.35);
-      subColor = colorScheme.onSurface.withValues(alpha: 0.25);
-      priceColor = colorScheme.onSurface.withValues(alpha: 0.25);
-      statusIcon = null;
-      iconColor = null;
+    } else if (isSelected) {
+      accentColor = AppColors.accentOrange;
+      bgColor = colorScheme.surface;
+      timeColor = AppColors.accentOrange;
+      statusColor = AppColors.accentOrange;
+      borderColor = AppColors.accentOrange;
+    } else if (isBooked) {
+      accentColor = AppColors.slotBlocked;
+      bgColor = isDark
+          ? Colors.white.withValues(alpha: 0.03)
+          : AppColors.bgLight;
+      timeColor = colorScheme.onSurface.withValues(alpha: 0.4);
+      statusColor = colorScheme.onSurface.withValues(alpha: 0.35);
+      borderColor = Colors.transparent;
     } else if (isAdvance) {
-      borderColor = AppColors.goldenYellow;
-      statusIcon = Icons.info;
-      iconColor = AppColors.goldenYellow;
+      accentColor = AppColors.goldenYellow;
+      bgColor = colorScheme.surface;
+      timeColor = colorScheme.onSurface;
+      statusColor = AppColors.goldenYellow;
+      borderColor = AppColors.goldenYellow.withValues(alpha: 0.3);
     } else {
       // Available
-      borderColor =
-          AppColors.slotAvailableBorder.withValues(alpha: isDark ? 0.3 : 0.5);
-      statusIcon = Icons.check_circle;
-      iconColor = AppColors.slotAvailableBorder;
+      accentColor = AppColors.slotAvailable;
+      bgColor = colorScheme.surface;
+      timeColor = colorScheme.onSurface;
+      statusColor = AppColors.success;
+      borderColor = AppColors.slotAvailableBorder.withValues(alpha: isDark ? 0.3 : 0.5);
     }
 
     return GestureDetector(
       key: ValueKey(slot.startTime),
       onTap: () {
-        if (isBooked) {
+        if (isExpired) {
           ToastUtil.show(
             context,
-            message: "Oops! You missed that opportunity.",
+            message: "This slot has already passed.",
+            type: ToastType.info,
+          );
+        } else if (isBooked) {
+          ToastUtil.show(
+            context,
+            message: "This slot is already booked.",
             type: ToastType.info,
           );
         } else {
@@ -1739,92 +1991,132 @@ class SlotSelectionWidgets {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          color: isBooked
-              ? (isDark
-                  ? Colors.white.withValues(alpha: 0.05)
-                  : Colors.grey.withValues(alpha: 0.08))
-              : colorScheme.surface,
-          borderRadius: BorderRadius.circular(20),
+          color: bgColor,
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(
-              color: isBooked ? Colors.transparent : borderColor, width: 2),
+            color: isSelected ? borderColor : (isBooked || isExpired ? Colors.transparent : borderColor),
+            width: isSelected ? 1.5 : 1,
+          ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.primaryDarkGreen.withValues(alpha: 0.25),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  )
-                ]
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+                    color: AppColors.accentOrange.withValues(alpha: 0.2),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   )
-                ],
+                ]
+              : null,
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Stack(
+        child: Row(
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                AppText(
-                  text: slot.startTime.split(' ')[0], // Just show HH:MM
-                  textStyle: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: timeColor,
-                  ),
+            // Left accent bar
+            Container(
+              width: 4,
+              height: double.infinity,
+              decoration: BoxDecoration(
+                color: accentColor,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(8),
+                  bottomLeft: Radius.circular(8),
                 ),
-                Column(
+              ),
+            ),
+            // Content
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    AppText(
-                      text: '1 Hour Slot',
-                      textStyle: TextStyle(
+                    // Time range
+                    Text(
+                      timeRange,
+                      style: TextStyle(
                         fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: subColor,
+                        fontWeight: FontWeight.w600,
+                        color: timeColor,
                       ),
                     ),
-                    const AppSizedBox(height: 4),
-                    if (isBooked)
-                      AppText(
-                        text: 'Booked',
-                        textStyle: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: subColor,
-                        ),
+                    const SizedBox(height: 3),
+                    // Status and price
+                    if (isExpired)
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.schedule_rounded,
+                            size: 10,
+                            color: statusColor,
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            "Passed",
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: statusColor,
+                            ),
+                          ),
+                        ],
+                      )
+                    else if (isBooked)
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.block_rounded,
+                            size: 10,
+                            color: statusColor,
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            "Booked",
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: statusColor,
+                            ),
+                          ),
+                        ],
                       )
                     else
-                      AppText(
-                        text: '₹${slot.price.toStringAsFixed(2)}',
-                        textStyle: TextStyle(
-                          fontSize: 15,
+                      Text(
+                        isSelected ? "Selected • ₹${slot.price.toStringAsFixed(0)}" : "₹${slot.price.toStringAsFixed(0)}",
+                        style: TextStyle(
+                          fontSize: 13,
                           fontWeight: FontWeight.w800,
-                          color: priceColor,
+                          color: statusColor,
                         ),
                       ),
                   ],
                 ),
-              ],
-            ),
-            Positioned(
-              top: 0,
-              right: 0,
-              child: Icon(
-                statusIcon,
-                size: 18,
-                color: iconColor,
               ),
             ),
+            // Status indicator
+            if (!isBooked && !isExpired)
+              Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: Icon(
+                  isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                  size: 18,
+                  color: isSelected ? AppColors.accentOrange : colorScheme.onSurface.withValues(alpha: 0.2),
+                ),
+              ),
           ],
         ),
       ),
     );
+  }
+
+  static String _formatSlotTimeRange(String startTime, String endTime) {
+    // Input: "6:00 AM", "7:00 AM" -> Output: "6:00 AM - 7:00 AM"
+    if (startTime.isEmpty) return '';
+    if (endTime.isEmpty) return startTime;
+
+    // Clean up the time strings
+    final start = startTime.trim();
+    final end = endTime.trim();
+
+    return "$start - $end";
   }
 
   // ── Bottom Bar ────────────────────────────────────────────────────────────

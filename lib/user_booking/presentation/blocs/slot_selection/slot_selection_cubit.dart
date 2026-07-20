@@ -233,7 +233,7 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
       state.selectedDate ?? DateTime.now(),
       openingTime: turf.openingTime,
       closingTime: turf.closingTime,
-      pricePerSlot: turf.pricePerHour.toDouble(),
+      pricePerSlot: _getPriceForDate(turf, state.selectedDate ?? DateTime.now()),
     );
   }
 
@@ -397,8 +397,12 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
 
     final selectedDate = DateTime.now().add(Duration(days: index));
     emit(state.copyWith(dates: dates));
+
+    // Calculate price based on weekday/weekend
+    final turf = state.selectedTurf;
+    final effectivePrice = turf != null ? _getPriceForDate(turf, selectedDate) : pricePerSlot;
     
-    loadSlots(groundId, selectedDate, openingTime: openingTime, closingTime: closingTime, pricePerSlot: pricePerSlot);
+    loadSlots(groundId, selectedDate, openingTime: openingTime, closingTime: closingTime, pricePerSlot: effectivePrice);
   }
 
   void toggleSlot(int index) {
@@ -420,6 +424,15 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
 
   void changePeriod(String period) {
     emit(state.copyWith(selectedPeriod: period));
+  }
+
+  /// Get the correct price for a ground on a specific date (weekday vs weekend).
+  static double _getPriceForDate(GroundModel ground, DateTime date) {
+    final isWeekend = date.weekday == DateTime.saturday || date.weekday == DateTime.sunday;
+    if (isWeekend && ground.weekendPrice > 0) {
+      return ground.weekendPrice.toDouble();
+    }
+    return ground.pricePerHour.toDouble();
   }
 
   @override

@@ -264,20 +264,37 @@ class _BookingCardState extends State<_BookingCard> {
   Future<void> _checkIfRated() async {
     final user = FirebaseAuth.instance.currentUser;
     final groundId = widget.booking.groundId;
+    final locationId = widget.booking.ground?.locationId ?? '';
 
-    if (user != null && groundId.isNotEmpty) {
+    if (user != null) {
       try {
-        final rated = await getIt<ReviewRepository>()
-            .hasUserRatedGround(user.uid, groundId);
-        if (mounted) {
-          setState(() {
-            _hasRated = rated;
-            _isLoadingRating = false;
-          });
+        // Check location rating first (venue-wise rating)
+        if (locationId.isNotEmpty) {
+          final rated = await getIt<ReviewRepository>()
+              .hasUserRatedLocation(user.uid, locationId);
+          if (mounted) {
+            setState(() {
+              _hasRated = rated;
+              _isLoadingRating = false;
+            });
+          }
+          return;
         }
-        return;
+
+        // Fallback to ground rating
+        if (groundId.isNotEmpty) {
+          final rated = await getIt<ReviewRepository>()
+              .hasUserRatedGround(user.uid, groundId);
+          if (mounted) {
+            setState(() {
+              _hasRated = rated;
+              _isLoadingRating = false;
+            });
+          }
+          return;
+        }
       } catch (e) {
-        debugPrint("Error checking user ground rating: $e");
+        debugPrint("Error checking user rating: $e");
       }
     }
 
@@ -517,7 +534,10 @@ class _BookingCardState extends State<_BookingCard> {
   }
 
   void _showRatingSheet(BuildContext context) async {
-    if (widget.booking.groundId.isEmpty) {
+    final groundId = widget.booking.groundId;
+    final locationId = widget.booking.ground?.locationId ?? '';
+
+    if (groundId.isEmpty && locationId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Venue information not available.")),
       );
@@ -529,8 +549,12 @@ class _BookingCardState extends State<_BookingCard> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => AddReviewBottomSheet(
-        groundId: widget.booking.groundId,
+        groundId: groundId,
         groundName: widget.booking.ground?.name ?? "Venue",
+        locationId: locationId.isNotEmpty ? locationId : null,
+        locationName: locationId.isNotEmpty
+            ? (widget.booking.ground?.name ?? "Venue")
+            : null,
       ),
     );
 

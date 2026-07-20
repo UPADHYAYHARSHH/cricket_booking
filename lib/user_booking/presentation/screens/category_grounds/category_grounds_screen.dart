@@ -25,6 +25,25 @@ class CategoryGroundsScreen extends StatefulWidget {
 
 class _CategoryGroundsScreenState extends State<CategoryGroundsScreen> {
   FilterCriteria _criteria = FilterCriteria();
+  bool _isInitialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isInitialized) {
+      _isInitialized = true;
+      // Ensure grounds are loaded
+      final state = context.read<GroundCubit>().state;
+      if (state is! GroundLoaded) {
+        final locationState = context.read<LocationCubit>().state;
+        context.read<GroundCubit>().getGrounds(
+          city: locationState.city,
+          userLat: locationState.hasGpsLocation ? locationState.latitude : null,
+          userLng: locationState.hasGpsLocation ? locationState.longitude : null,
+        );
+      }
+    }
+  }
 
   List<String> _getSuggestedAmenities(String category) {
     switch (category.toLowerCase()) {

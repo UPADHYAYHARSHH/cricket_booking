@@ -4,6 +4,7 @@ class ReviewModel {
   final String userName;
   final String userImage;
   final String groundId;
+  final String locationId;
   final double rating;
   final String reviewText;
   final List<String> mediaUrls;
@@ -14,7 +15,8 @@ class ReviewModel {
     required this.userId,
     required this.userName,
     required this.userImage,
-    required this.groundId,
+    this.groundId = '',
+    this.locationId = '',
     required this.rating,
     required this.reviewText,
     required this.mediaUrls,
@@ -31,6 +33,7 @@ class ReviewModel {
       userName: userData?['name']?.toString() ?? 'User',
       userImage: userData?['photo_url']?.toString() ?? '',
       groundId: json['ground_id']?.toString() ?? '',
+      locationId: json['location_id']?.toString() ?? '',
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       reviewText: json['review_text']?.toString() ?? '',
       mediaUrls: (json['media_urls'] as List?)?.map((e) => e.toString()).toList() ?? [],
@@ -42,6 +45,7 @@ class ReviewModel {
     return {
       'user_id': userId,
       'ground_id': groundId,
+      'location_id': locationId,
       'rating': rating,
       'review_text': reviewText,
       'media_urls': mediaUrls,

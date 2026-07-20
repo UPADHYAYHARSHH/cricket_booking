@@ -11,9 +11,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 class AddReviewBottomSheet extends StatefulWidget {
   final String groundId;
   final String groundName;
+  final String? locationId;
+  final String? locationName;
 
-  const AddReviewBottomSheet(
-      {required this.groundId, required this.groundName, super.key});
+  const AddReviewBottomSheet({
+    required this.groundId,
+    required this.groundName,
+    this.locationId,
+    this.locationName,
+    super.key,
+  });
 
   @override
   State<AddReviewBottomSheet> createState() => _AddReviewBottomSheetState();
@@ -23,6 +30,11 @@ class _AddReviewBottomSheetState extends State<AddReviewBottomSheet> {
   double _rating = 0;
   final TextEditingController _reviewController = TextEditingController();
   bool _isSubmitting = false;
+
+  bool get _isLocationReview => widget.locationId != null && widget.locationId!.isNotEmpty;
+  String get _venueName => _isLocationReview
+      ? (widget.locationName ?? widget.groundName)
+      : widget.groundName;
 
   Future<void> _submit() async {
     if (_rating == 0) {
@@ -37,14 +49,23 @@ class _AddReviewBottomSheetState extends State<AddReviewBottomSheet> {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) throw Exception("User not logged in");
 
-      await getIt<ReviewRepository>().submitReview(
-        userId: user.uid,
-        groundId: widget.groundId,
-        rating: _rating,
-        reviewText: _reviewController.text,
-        mediaBytes: [],
-        mediaTypes: [],
-      );
+      if (_isLocationReview) {
+        await getIt<ReviewRepository>().submitLocationReview(
+          userId: user.uid,
+          locationId: widget.locationId!,
+          rating: _rating,
+          reviewText: _reviewController.text,
+        );
+      } else {
+        await getIt<ReviewRepository>().submitReview(
+          userId: user.uid,
+          groundId: widget.groundId,
+          rating: _rating,
+          reviewText: _reviewController.text,
+          mediaBytes: [],
+          mediaTypes: [],
+        );
+      }
 
       if (mounted) {
         Navigator.pop(context, true);
@@ -106,7 +127,7 @@ class _AddReviewBottomSheetState extends State<AddReviewBottomSheet> {
                             fontSize: 20, fontWeight: FontWeight.bold)),
                     AppText(
                         text:
-                            "How was your experience at ${widget.groundName}?",
+                            "How was your experience at $_venueName?",
                         textStyle: TextStyle(
                             fontSize: 14,
                             color: theme.colorScheme.onSurface

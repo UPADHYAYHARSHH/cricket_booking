@@ -5,6 +5,7 @@ class GroundModel {
   final double latitude;
   final double longitude;
   final int pricePerHour;
+  final int weekendPrice;
   final String imageUrl;
   final double rating;
   final String openingTime;
@@ -16,6 +17,7 @@ class GroundModel {
   final List<String> images;
   final List<String> categories;
   final String ownerId;
+  final String locationId;
   final bool isAvailable;
 
   GroundModel({
@@ -31,11 +33,13 @@ class GroundModel {
     required this.closingTime,
     required this.city,
     required this.totalReviews,
+    this.weekendPrice = 0,
     this.description = '',
     this.amenities = const [],
     this.images = const [],
     this.categories = const [],
     this.ownerId = '',
+    this.locationId = '',
     this.isAvailable = true,
   });
 
@@ -47,6 +51,7 @@ class GroundModel {
       latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
       longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
       pricePerHour: json['price_per_hour'] ?? 0,
+      weekendPrice: json['weekend_price'] ?? 0,
       imageUrl: json['imageUrl'] ?? '',
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       openingTime: json['opening_time'] ?? '00:00:00',
@@ -80,6 +85,7 @@ class GroundModel {
         return list.toSet().toList();
       }(),
       ownerId: json['owner_id'] ?? '',
+      locationId: json['location_id']?.toString() ?? '',
       isAvailable: json['is_available'] ?? true,
     );
   }
@@ -92,6 +98,7 @@ class GroundModel {
       'latitude': latitude,
       'longitude': longitude,
       'price_per_hour': pricePerHour,
+      'weekend_price': weekendPrice,
       'imageUrl': imageUrl,
       'rating': rating,
       'opening_time': openingTime,
@@ -103,6 +110,7 @@ class GroundModel {
       'images': images,
       'categories': categories,
       'owner_id': ownerId,
+      'location_id': locationId,
       'is_available': isAvailable,
     };
   }

@@ -2,8 +2,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:turfpro/common/constants/colors.dart';
 import 'package:turfpro/common/constants/size_constants.dart';
 import 'package:turfpro/user_booking/presentation/screens/ground_list/widgets/city_search_bottomsheet.dart';
-import 'package:turfpro/user_booking/presentation/blocs/location_list/location_list_cubit.dart';
-import 'package:turfpro/user_booking/presentation/widgets/location_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -20,10 +18,9 @@ import '../../blocs/ground/ground_cubit.dart';
 import '../../blocs/ground/ground_state.dart';
 import 'package:turfpro/user_booking/presentation/widgets/ground_card.dart';
 import 'widgets/ground_skeleton.dart';
-import 'widgets/location_skeleton.dart';
 import '../../blocs/notification/notification_cubit.dart';
 import 'package:turfpro/user_booking/constants/route_constants.dart';
-import 'widgets/filter_bottom_sheet.dart';
+import 'package:turfpro/user_booking/data/models/ground_model.dart';
 
 class GroundListScreen extends StatefulWidget {
   const GroundListScreen({super.key});
@@ -125,23 +122,23 @@ class _GroundListScreenState extends State<GroundListScreen> {
                 controller: _scrollController,
                 physics: const BouncingScrollPhysics(),
                 slivers: [
-                  // Search & Filter
+                  // Search Bar
                   SliverToBoxAdapter(child: _buildSearchBar(context, isDark)),
-
-                  // Quick Actions
-                  SliverToBoxAdapter(
-                      child: _buildQuickActions(context, isDark)),
 
                   // Sport Selection
                   SliverToBoxAdapter(
                       child: _buildSportSelection(context, isDark)),
 
-                  // Section Header
+                  // Top Venues (Horizontal)
                   SliverToBoxAdapter(
-                      child: _buildSectionHeader(context, isDark)),
+                      child: _buildTopVenuesSection(context, isDark)),
 
-                  // Ground Grid
-                  _buildGroundContent(),
+                  // Nearby Venues Header
+                  SliverToBoxAdapter(
+                      child: _buildNearbyVenuesHeader(context, isDark)),
+
+                  // Nearby Venues (Vertical List)
+                  _buildNearbyVenuesList(),
                 ],
               ),
             ),
@@ -342,227 +339,257 @@ class _GroundListScreenState extends State<GroundListScreen> {
   Widget _buildSearchBar(BuildContext context, bool isDark) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-      child: Row(
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: () {
-                HapticFeedback.lightImpact();
-                Navigator.pushNamed(context, AppRoutes.search);
-              },
-              child: Hero(
-                tag: 'search_bar',
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          Navigator.pushNamed(context, AppRoutes.search);
+        },
+        child: Hero(
+          tag: 'search_bar',
+          child: Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.06)
+                  : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : AppColors.borderLight,
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color:
+                      Colors.black.withValues(alpha: isDark ? 0.1 : 0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.06)
-                        : Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.08)
-                          : AppColors.borderLight,
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color:
-                            Colors.black.withValues(alpha: isDark ? 0.1 : 0.04),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                    color:
+                        AppColors.primaryDarkGreen.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color:
-                              AppColors.primaryDarkGreen.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const HugeIcon(
-                          icon: HugeIcons.strokeRoundedSearch01,
-                          size: 16,
-                          color: AppColors.primaryDarkGreen,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      AppText(
-                        text: "Search grounds, sports...",
-                        textStyle: TextStyle(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withValues(alpha: 0.4),
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
+                  child: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedSearch01,
+                    size: 16,
+                    color: AppColors.primaryDarkGreen,
                   ),
                 ),
-              ),
+                const SizedBox(width: 12),
+                AppText(
+                  text: "Search grounds, sports...",
+                  textStyle: TextStyle(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.4),
+                    fontSize: 14,
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 10),
-          BlocBuilder<GroundCubit, GroundState>(
-            builder: (context, state) {
-              final bool hasFilters =
-                  state is GroundLoaded && !state.criteria.isDefault;
-              return GestureDetector(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  if (state is GroundLoaded) {
-                    _showFilterSheet(context, state);
-                  }
-                },
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryDarkGreen,
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primaryDarkGreen
-                                .withValues(alpha: 0.4),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: const HugeIcon(
-                        icon: HugeIcons.strokeRoundedFilterHorizontal,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                    if (hasFilters)
-                      Positioned(
-                        top: -3,
-                        right: -3,
-                        child: Container(
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            color: AppColors.error,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ],
+        ),
       ),
     ).animate().fadeIn(delay: 200.ms, duration: 400.ms);
   }
 
-  // ─── QUICK ACTIONS ───────────────────────────────────────────
-  Widget _buildQuickActions(BuildContext context, bool isDark) {
-    final actions = [
-      {
-        'icon': HugeIcons.strokeRoundedCompass,
-        'label': 'Nearby',
-        'color': const Color(0xFF1565C0),
-      },
-      {
-        'icon': HugeIcons.strokeRoundedStar,
-        'label': 'Top Rated',
-        'color': const Color(0xFFF57C00),
-      },
-      {
-        'icon': HugeIcons.strokeRoundedClock01,
-        'label': 'Open Now',
-        'color': const Color(0xFF2E7D32),
-      },
-    ];
+  // ─── TOP VENUES (Horizontal) ──────────────────────────────────
+  Widget _buildTopVenuesSection(BuildContext context, bool isDark) {
+    return BlocBuilder<GroundCubit, GroundState>(
+      builder: (context, state) {
+        if (state is! GroundLoaded || state.allGrounds.isEmpty) {
+          return const SizedBox.shrink();
+        }
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-      child: Row(
-        children: List.generate(actions.length, (index) {
-          final action = actions[index];
-          return Expanded(
-            child: GestureDetector(
-              onTap: () {
-                HapticFeedback.lightImpact();
-                if (action['label'] == 'Nearby') {
-                  _applyQuickFilter('nearMe');
-                } else if (action['label'] == 'Top Rated') {
-                  _applyQuickFilter('topRated');
-                } else if (action['label'] == 'Open Now') {
-                  _applyQuickFilter('availableNow');
-                }
-              },
-              child: Container(
-                margin: EdgeInsets.only(
-                  right: index < actions.length - 1 ? 10 : 0,
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: (action['color'] as Color).withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: (action['color'] as Color).withValues(alpha: 0.15),
-                    width: 1,
+        // Get top rated venues (rating >= 4.0 or top 5 by rating)
+        final topVenues = List<GroundModel>.from(state.allGrounds)
+          ..sort((a, b) => b.rating.compareTo(a.rating));
+        final displayTopVenues = topVenues.where((g) => g.rating >= 4.0).take(10).toList();
+        if (displayTopVenues.isEmpty && topVenues.isNotEmpty) {
+          displayTopVenues.addAll(topVenues.take(5));
+        }
+
+        if (displayTopVenues.isEmpty) return const SizedBox.shrink();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(AppSizes.sm),
+                    decoration: BoxDecoration(
+                      color: AppColors.accentOrange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+                    ),
+                    child: const HugeIcon(
+                      icon: HugeIcons.strokeRoundedStar,
+                      color: AppColors.accentOrange,
+                      size: AppSizes.iconMd,
+                    ),
                   ),
-                ),
-                child: Column(
-                  children: [
-                    HugeIcon(
-                      icon: action['icon'] as dynamic,
-                      size: 20,
-                      color: action['color'] as Color,
+                  const SizedBox(width: AppSizes.md),
+                  const AppText(
+                    text: "Top Venues",
+                    size: 18,
+                    weight: FontWeight.w700,
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(
+              height: 240,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: displayTopVenues.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  return _AnimatedGroundCard(
+                    index: index,
+                    child: SizedBox(
+                      width: 260,
+                      child: GroundCard(
+                        ground: displayTopVenues[index],
+                        showAmenities: false,
+                        isGrid: false,
+                      ),
                     ),
-                    const SizedBox(height: 4),
-                    AppText(
-                      text: action['label'] as String,
-                      size: 11,
-                      weight: FontWeight.w600,
-                      color: action['color'] as Color,
+                  );
+                },
+              ),
+            ),
+          ],
+        ).animate().fadeIn(delay: 400.ms, duration: 400.ms);
+      },
+    );
+  }
+
+  // ─── NEARBY VENUES HEADER ─────────────────────────────────────
+  Widget _buildNearbyVenuesHeader(BuildContext context, bool isDark) {
+    return BlocBuilder<GroundCubit, GroundState>(
+      builder: (context, state) {
+        final count = (state is GroundLoaded) ? state.grounds.length : 0;
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(AppSizes.sm),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(AppSizes.radiusSm),
                     ),
-                  ],
-                ),
+                    child: const HugeIcon(
+                      icon: HugeIcons.strokeRoundedCompass,
+                      color: AppColors.primaryDarkGreen,
+                      size: AppSizes.iconMd,
+                    ),
+                  ),
+                  const SizedBox(width: AppSizes.md),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const AppText(
+                        text: "Nearby Venues",
+                        size: 18,
+                        weight: FontWeight.w700,
+                      ),
+                      if (count > 0) ...[
+                        const SizedBox(height: 2),
+                        AppText(
+                          text: "$count venue${count == 1 ? '' : 's'} found",
+                          size: 12,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.5),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ).animate().fadeIn(delay: 500.ms, duration: 400.ms);
+      },
+    );
+  }
+
+  // ─── NEARBY VENUES LIST (Vertical) ────────────────────────────
+  Widget _buildNearbyVenuesList() {
+    return BlocBuilder<GroundCubit, GroundState>(
+      builder: (context, state) {
+        if (state is GroundLoading || state is GroundInitial) {
+          return SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                child: _buildSkeletonCard(),
+              ),
+              childCount: 4,
+            ),
+          );
+        }
+
+        if (state is GroundLoaded) {
+          if (state.grounds.isEmpty) {
+            return SliverFillRemaining(
+              hasScrollBody: false,
+              child: _buildEmptyState(),
+            );
+          }
+
+          return SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _AnimatedGroundCard(
+                      index: index,
+                      child: GroundCard(
+                        ground: state.grounds[index],
+                        showAmenities: true,
+                        isGrid: false,
+                      ),
+                    ),
+                  );
+                },
+                childCount: state.grounds.length,
               ),
             ),
           );
-        }),
-      ),
-    ).animate().fadeIn(delay: 300.ms, duration: 400.ms);
-  }
+        }
 
-  void _applyQuickFilter(String type) {
-    final locationState = context.read<LocationCubit>().state;
-    final groundCubit = context.read<GroundCubit>();
+        if (state is GroundError) {
+          return SliverFillRemaining(
+            hasScrollBody: false,
+            child: _buildErrorState(state.message),
+          );
+        }
 
-    if (type == 'nearMe' && locationState.hasGpsLocation) {
-      groundCubit.getGrounds(
-        city: locationState.city,
-        userLat: locationState.latitude,
-        userLng: locationState.longitude,
-      );
-    } else if (type == 'topRated') {
-      groundCubit.getGrounds(
-        city: locationState.city,
-        userLat: locationState.hasGpsLocation ? locationState.latitude : null,
-        userLng: locationState.hasGpsLocation ? locationState.longitude : null,
-      );
-    } else if (type == 'availableNow') {
-      groundCubit.getGrounds(
-        city: locationState.city,
-        userLat: locationState.hasGpsLocation ? locationState.latitude : null,
-        userLng: locationState.hasGpsLocation ? locationState.longitude : null,
-      );
-    }
+        return const SliverToBoxAdapter(child: SizedBox());
+      },
+    );
   }
 
   // ─── SPORT SELECTION ─────────────────────────────────────────
@@ -773,234 +800,6 @@ class _GroundListScreenState extends State<GroundListScreen> {
     );
   }
 
-  // ─── SECTION HEADER ──────────────────────────────────────────
-  Widget _buildSectionHeader(BuildContext context, bool isDark) {
-    return BlocBuilder<GroundCubit, GroundState>(
-      builder: (context, state) {
-        final currentSportId =
-            (state is GroundLoaded) ? (state.criteria.sportId ?? 'all') : 'all';
-        final count = (state is GroundLoaded) ? state.grounds.length : 0;
-
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AppText(
-                    text: currentSportId == 'all'
-                        ? "Nearby Venues"
-                        : "${currentSportId[0].toUpperCase()}${currentSportId.substring(1)} Grounds",
-                    size: 18,
-                    weight: FontWeight.w700,
-                  ),
-                  if (count > 0) ...[
-                    const SizedBox(height: 2),
-                    AppText(
-                      text: "$count venue${count == 1 ? '' : 's'} found",
-                      size: 12,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.5),
-                    ),
-                  ],
-                ],
-              ),
-              if (count > 4)
-                GestureDetector(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    if (state is GroundLoaded) {
-                      _showFilterSheet(context, state);
-                    }
-                  },
-                  child: AppText(
-                    text: "See All",
-                    size: 13,
-                    weight: FontWeight.w600,
-                    color: AppColors.primaryDarkGreen,
-                  ),
-                ),
-            ],
-          ),
-        ).animate().fadeIn(delay: 500.ms, duration: 400.ms);
-      },
-    );
-  }
-
-  // ─── GROUND CONTENT ──────────────────────────────────────────
-  Widget _buildGroundContent() {
-    return BlocBuilder<GroundCubit, GroundState>(
-      builder: (context, state) {
-        final currentSportId =
-            (state is GroundLoaded) ? (state.criteria.sportId ?? 'all') : 'all';
-
-        if (currentSportId == 'all') {
-          return _buildLocationGrid();
-        }
-
-        if (state is GroundLoading || state is GroundInitial) {
-          return SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                mainAxisExtent: 260,
-              ),
-              delegate: SliverChildBuilderDelegate(
-                (context, index) => _buildSkeletonCard(),
-                childCount: 4,
-              ),
-            ),
-          );
-        }
-
-        if (state is GroundLoaded) {
-          if (state.grounds.isEmpty) {
-            return _buildEmptyState();
-          }
-
-          return SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
-            sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                mainAxisExtent: 260,
-              ),
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  return _AnimatedGroundCard(
-                    index: index,
-                    child: GroundCard(
-                      ground: state.grounds[index],
-                      showAmenities: false,
-                      isGrid: true,
-                    ),
-                  );
-                },
-                childCount: state.grounds.length > 4 ? 4 : state.grounds.length,
-              ),
-            ),
-          );
-        }
-
-        if (state is GroundError) {
-          return SliverFillRemaining(
-            hasScrollBody: false,
-            child: _buildErrorState(state.message),
-          );
-        }
-
-        return const SliverToBoxAdapter(child: SizedBox());
-      },
-    );
-  }
-
-  // ─── LOCATION GRID ───────────────────────────────────────────
-  Widget _buildLocationGrid() {
-    return BlocBuilder<LocationListCubit, LocationListState>(
-      builder: (context, locState) {
-        if (locState is LocationListLoading ||
-            locState is LocationListInitial) {
-          return SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                mainAxisExtent: 170,
-              ),
-              delegate: SliverChildBuilderDelegate(
-                (context, index) => const LocationSkeleton(),
-                childCount: 4,
-              ),
-            ),
-          );
-        }
-
-        if (locState is LocationListLoaded) {
-          if (locState.locations.isEmpty) {
-            return _buildEmptyState();
-          }
-
-          return SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
-            sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                mainAxisExtent: 170,
-              ),
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  return _AnimatedGroundCard(
-                    index: index,
-                    child: LocationCard(
-                      location: locState.locations[index],
-                      showAmenities: false,
-                      isGrid: true,
-                    ),
-                  );
-                },
-                childCount: locState.locations.length > 4
-                    ? 4
-                    : locState.locations.length,
-              ),
-            ),
-          );
-        }
-
-        if (locState is LocationListError) {
-          return SliverFillRemaining(
-            hasScrollBody: false,
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const HugeIcon(
-                      icon: HugeIcons.strokeRoundedAlertCircle,
-                      size: 36,
-                      color: AppColors.error,
-                    ),
-                    const SizedBox(height: 12),
-                    AppText(
-                      text: "Failed to load venues",
-                      size: 16,
-                      weight: FontWeight.w600,
-                    ),
-                    const SizedBox(height: 4),
-                    AppText(
-                      text: locState.message,
-                      size: 12,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.5),
-                      align: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }
-
-        return const SliverToBoxAdapter(child: SizedBox());
-      },
-    );
-  }
-
   // ─── SKELETON CARD ───────────────────────────────────────────
   Widget _buildSkeletonCard() {
     return Container(
@@ -1102,32 +901,6 @@ class _GroundListScreenState extends State<GroundListScreen> {
     );
   }
 
-  // ─── FILTER SHEET ────────────────────────────────────────────
-  void _showFilterSheet(BuildContext context, GroundLoaded state) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => FilterBottomSheet(
-        initialCriteria: state.criteria,
-        onApply: (criteria) {
-          final locationState = context.read<LocationCubit>().state;
-          context.read<GroundCubit>().applyFilters(
-                criteria,
-                userLat: locationState.hasGpsLocation
-                    ? locationState.latitude
-                    : null,
-                userLng: locationState.hasGpsLocation
-                    ? locationState.longitude
-                    : null,
-              );
-          if (_scrollController.hasClients) {
-            _scrollController.jumpTo(0);
-          }
-        },
-      ),
-    );
-  }
 }
 
 // ─── ANIMATED GROUND CARD WRAPPER ──────────────────────────────

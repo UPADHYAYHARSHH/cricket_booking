@@ -379,6 +379,17 @@ class _GroundCardState extends State<GroundCard>
                         color: onSurface.withValues(alpha: 0.5),
                       ),
                     ),
+                    if (widget.ground.weekendPrice > 0 &&
+                        widget.ground.weekendPrice != widget.ground.pricePerHour) ...[
+                      TextSpan(
+                        text: "  •  Weekend: ₹${widget.ground.weekendPrice}/hr",
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.accentOrange,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

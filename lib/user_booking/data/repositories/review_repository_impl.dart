@@ -117,4 +117,20 @@ class ReviewRepositoryImpl implements ReviewRepository {
       return false;
     }
   }
+
+  @override
+  Future<List<ReviewModel>> fetchLocationReviews(String locationId) async {
+    try {
+      final response = await _supabase
+          .from('location_reviews')
+          .select('*, users(name, photo_url)')
+          .eq('location_id', locationId)
+          .order('created_at', ascending: false);
+
+      return (response as List).map((e) => ReviewModel.fromJson(e)).toList();
+    } catch (e) {
+      print("Error fetching location reviews: $e");
+      return [];
+    }
+  }
 }
