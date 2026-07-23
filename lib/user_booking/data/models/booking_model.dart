@@ -14,6 +14,8 @@ class BookingModel {
   final String? sportName;
   final String? period;
   final GroundModel? ground;
+  final bool checkedIn;
+  final DateTime? checkedInAt;
 
   BookingModel({
     required this.id,
@@ -29,6 +31,8 @@ class BookingModel {
     this.sportName,
     this.period,
     this.ground,
+    this.checkedIn = false,
+    this.checkedInAt,
   });
 
   factory BookingModel.fromJson(Map<String, dynamic> json) {
@@ -46,6 +50,8 @@ class BookingModel {
       sportName: json['sport_name'],
       period: json['period'],
       ground: json['grounds'] != null ? GroundModel.fromJson(json['grounds']) : null,
+      checkedIn: json['checked_in'] == true,
+      checkedInAt: json['checked_in_at'] != null ? DateTime.tryParse(json['checked_in_at']) : null,
     );
   }
 }

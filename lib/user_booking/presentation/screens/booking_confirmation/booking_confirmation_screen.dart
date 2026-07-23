@@ -13,6 +13,7 @@ import 'package:lottie/lottie.dart';
 import 'package:turfpro/utils/toast_util.dart';
 // Add our new helper
 import 'package:turfpro/utils/ticket_util.dart'; // Add TicketUtil
+import 'package:turfpro/utils/qr_crypto.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:turfpro/utils/id_util.dart';
 import '../../widgets/ground_image_carousel.dart';
@@ -215,8 +216,8 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
 
               const AppSizedBox(height: 20),
               _QRCodeCard(
-                qrData:
-                    "$orderId | Ground: ${ground.name} | Owner: ${ground.ownerId} | Ground ID: ${ground.id}",
+                qrData: QrCrypto.encryptQrData(
+                    "$orderId | Ground: ${ground.name} | Owner: ${ground.ownerId} | Ground ID: ${ground.id}"),
                 displayId: displayId,
               ),
 

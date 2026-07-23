@@ -6,6 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:math';
 import 'package:turfpro/common/widgets/status_badge.dart';
 import 'package:turfpro/utils/ticket_util.dart';
+import 'package:turfpro/utils/qr_crypto.dart';
 import 'package:turfpro/utils/id_util.dart';
 
 import '../../../../common/constants/colors.dart';
@@ -357,6 +358,35 @@ class _BookingCardState extends State<_BookingCard> {
           right: 12,
           child: StatusBadge(status: widget.booking.status),
         ),
+
+        // Check-in Badge
+        if (widget.booking.checkedIn)
+          Positioned(
+            top: 12,
+            left: 12,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: AppColors.primaryDarkGreen,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.white, size: 14),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Checked In',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -461,6 +491,29 @@ class _BookingCardState extends State<_BookingCard> {
               ),
             ],
           ),
+          
+          // Check-in time display
+          if (widget.booking.checkedIn && widget.booking.checkedInAt != null) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Icon(
+                  Icons.access_time_filled,
+                  size: 14,
+                  color: AppColors.primaryDarkGreen,
+                ),
+                const SizedBox(width: 4),
+                AppText(
+                  text: "Checked in at ${DateFormat('h:mm a').format(widget.booking.checkedInAt!)}",
+                  textStyle: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primaryDarkGreen,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -1201,8 +1254,8 @@ class _TicketCardState extends State<_TicketCard> {
             borderRadius: BorderRadius.circular(12),
           ),
           child: _QrCodePainter(
-            data:
-                "${widget.ticket.bookingId} | Ground: ${widget.ticket.venueName} | Owner: ${widget.ticket.ownerId} | Ground ID: ${widget.ticket.groundId}",
+            data: QrCrypto.encryptQrData(
+                "${widget.ticket.bookingId} | Ground: ${widget.ticket.venueName} | Owner: ${widget.ticket.ownerId} | Ground ID: ${widget.ticket.groundId}"),
           ),
         ),
         const SizedBox(height: 12),

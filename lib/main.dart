@@ -34,6 +34,7 @@ import 'package:turfpro/user_booking/presentation/blocs/notification/notificatio
 import 'package:turfpro/user_booking/presentation/blocs/location_list/location_list_cubit.dart';
 import 'package:turfpro/user_booking/constants/route_constants.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:turfpro/common/utils/app_bloc_observer.dart';
 import 'package:flutter/foundation.dart';
@@ -63,6 +64,13 @@ import 'package:turfpro/utils/app_scroll_behavior.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
+// Background message handler
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  debugPrint('Booking App - Background message: ${message.messageId}');
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   debugPrint("DEBUG: [Main] App starting. Full URL: ${Uri.base}");
@@ -73,6 +81,9 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Set background message handler
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   // Initialize Remote Config
   await RemoteConfigService().initialize();
