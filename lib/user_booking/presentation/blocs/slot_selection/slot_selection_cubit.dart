@@ -369,10 +369,14 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
           }
         }
 
+        // Peak pricing: 6 PM - 9 PM gets +100 (matching owner app logic)
+        final isPeak = startH >= 18 && startH <= 21;
+        final slotPrice = isPeak ? price + 100 : price;
+
         generated.add(TimeSlot(
           startTime: startStr,
           endTime: endStr,
-          price: price,
+          price: slotPrice,
           status: isPast ? SlotStatus.booked : SlotStatus.available,
         ));
       }

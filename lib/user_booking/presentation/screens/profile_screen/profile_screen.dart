@@ -127,7 +127,7 @@ class ProfileScreen extends StatelessWidget {
               ),
               _buildGlassCircle(
                 AppText(
-                  text: _getInitials(state.name ?? "U"),
+                  text: _getInitials(state.name ?? "P"),
                   color: AppColors.white,
                   weight: FontWeight.w700,
                 ),
@@ -361,20 +361,25 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildNameSection(BuildContext context, ProfileState state) {
+    final displayName = state.name?.isNotEmpty == true ? state.name! : "Player";
+    final displayUsername = state.username?.isNotEmpty == true ? "@${state.username}" : "";
+    
     return Column(
       children: [
         AppText(
-          text: state.name ?? "Player",
+          text: displayName,
           size: 20,
           weight: FontWeight.w700,
           color: AppColors.white,
         ),
-        const SizedBox(height: 4),
-        AppText(
-          text: state.username != null ? "@${state.username}" : "User",
-          size: 13,
-          color: AppColors.white.withValues(alpha: 0.7),
-        ),
+        if (displayUsername.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          AppText(
+            text: displayUsername,
+            size: 13,
+            color: AppColors.white.withValues(alpha: 0.7),
+          ),
+        ],
       ],
     );
   }

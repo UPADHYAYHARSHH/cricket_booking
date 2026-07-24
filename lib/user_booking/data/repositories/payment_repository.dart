@@ -69,6 +69,7 @@ class PaymentRepository {
     required String signature,
     String? sportName,
     String? period,
+    List<String>? slotStartTimes,
   }) async {
     debugPrint('PaymentRepository: saveBooking called');
     final user = FirebaseAuth.instance.currentUser;
@@ -102,6 +103,21 @@ class PaymentRepository {
       'p_razorpay_signature': signature,
     });
     debugPrint('PaymentRepository: saveBooking completed');
+
+    // Sync: Update slots table to mark as booked
+    if (slotStartTimes != null && slotStartTimes.isNotEmpty) {
+      final formattedDate = "${slotTime.year}-${slotTime.month.toString().padLeft(2, '0')}-${slotTime.day.toString().padLeft(2, '0')}";
+      for (final startTime in slotStartTimes) {
+        await _supabase.rpc('upsert_slot', params: {
+          'p_ground_id': groundId,
+          'p_date': formattedDate,
+          'p_start_time': startTime,
+          'p_status': 'booked',
+          'p_price': (amount / slotStartTimes.length).toInt(),
+        });
+      }
+    }
+
     return response as Map<String, dynamic>;
   }
 

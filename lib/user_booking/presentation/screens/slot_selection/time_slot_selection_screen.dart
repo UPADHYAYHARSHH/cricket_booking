@@ -82,6 +82,7 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
           signature: response.signature!,
           sportName: cubit.state.selectedSport,
           period: slotTimesPeriod,
+          slotStartTimes: _pendingSlots?.map((s) => s.startTime).toList(),
         );
 
         final int displayId = bookingData['display_id'] ?? 0;

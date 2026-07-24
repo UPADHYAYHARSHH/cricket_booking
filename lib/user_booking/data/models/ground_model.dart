@@ -1,6 +1,7 @@
 class GroundModel {
   final String id;
   final String name;
+  final String displayName;
   final String address;
   final double latitude;
   final double longitude;
@@ -13,6 +14,7 @@ class GroundModel {
   final String city;
   final int totalReviews;
   final String description;
+  final String locationDescription;
   final List<String> amenities;
   final List<String> images;
   final List<String> categories;
@@ -23,6 +25,7 @@ class GroundModel {
   GroundModel({
     required this.id,
     required this.name,
+    this.displayName = '',
     required this.address,
     required this.latitude,
     required this.longitude,
@@ -35,6 +38,7 @@ class GroundModel {
     required this.totalReviews,
     this.weekendPrice = 0,
     this.description = '',
+    this.locationDescription = '',
     this.amenities = const [],
     this.images = const [],
     this.categories = const [],
@@ -59,6 +63,7 @@ class GroundModel {
       city: json['city'] ?? '',
       totalReviews: json['total_reviews'] ?? 0,
       description: json['description'] ?? '',
+      locationDescription: json['location_description'] ?? json['locations']?['description'] ?? '',
       amenities: () {
         final list = <String>[];
         if (json['amenities'] is List) {
@@ -106,6 +111,7 @@ class GroundModel {
       'city': city,
       'total_reviews': totalReviews,
       'description': description,
+      'location_description': locationDescription,
       'amenities': amenities,
       'images': images,
       'categories': categories,

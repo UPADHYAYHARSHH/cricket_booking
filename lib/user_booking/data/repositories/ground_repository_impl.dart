@@ -9,7 +9,7 @@ class GroundRepositoryImpl implements GroundRepository {
 
   @override
   Future<List<GroundModel>> fetchGrounds() async {
-    final response = await supabase.from('grounds').select('*, ground_images(image_url)');
+    final response = await supabase.from('grounds').select('*, ground_images(image_url), locations(description)');
 
     return (response as List).map((e) {
       try {
@@ -55,6 +55,7 @@ class GroundRepositoryImpl implements GroundRepository {
           city: e['city']?.toString() ?? '',
           totalReviews: e['total_reviews'] ?? 0,
           description: e['description']?.toString() ?? '',
+          locationDescription: (e['locations'] is Map) ? (e['locations']['description']?.toString() ?? '') : '',
           amenities: () {
             final list = <String>[];
             if (e['amenities'] is List) {
@@ -103,7 +104,7 @@ class GroundRepositoryImpl implements GroundRepository {
   Future<List<GroundModel>> fetchGroundsByLocation(String locationId) async {
     final response = await supabase
         .from('grounds')
-        .select('*, ground_images(image_url)')
+        .select('*, ground_images(image_url), locations(description)')
         .eq('location_id', locationId);
 
     return (response as List).map((e) {
@@ -150,6 +151,7 @@ class GroundRepositoryImpl implements GroundRepository {
           city: e['city']?.toString() ?? '',
           totalReviews: e['total_reviews'] ?? 0,
           description: e['description']?.toString() ?? '',
+          locationDescription: (e['locations'] is Map) ? (e['locations']['description']?.toString() ?? '') : '',
           amenities: () {
             final list = <String>[];
             if (e['amenities'] is List) {
@@ -196,7 +198,7 @@ class GroundRepositoryImpl implements GroundRepository {
   
   @override
   Future<GroundModel?> fetchGroundById(String id) async {
-    final response = await supabase.from('grounds').select('*, ground_images(image_url)').eq('id', id).maybeSingle();
+    final response = await supabase.from('grounds').select('*, ground_images(image_url), locations(description)').eq('id', id).maybeSingle();
 
     if (response == null) return null;
 
@@ -239,6 +241,7 @@ class GroundRepositoryImpl implements GroundRepository {
       city: e['city']?.toString() ?? '',
       totalReviews: e['total_reviews'] ?? 0,
       description: e['description']?.toString() ?? '',
+      locationDescription: (e['locations'] is Map) ? (e['locations']['description']?.toString() ?? '') : '',
       amenities: () {
         final list = <String>[];
         if (e['amenities'] is List) {

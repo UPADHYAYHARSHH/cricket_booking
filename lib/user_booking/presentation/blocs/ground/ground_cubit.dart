@@ -32,6 +32,9 @@ class GroundCubit extends Cubit<GroundState> {
       
       print("✅ GroundCubit: Total grounds after city filter: ${grounds.length}");
 
+      // Number multiple same-sport grounds at the same location
+      grounds = _applyGroundNumbering(grounds);
+
       final criteria = FilterCriteria();
 
       // Initial sort: Rating (Descending), fallback to Near Me
@@ -54,6 +57,69 @@ class GroundCubit extends Cubit<GroundState> {
     } catch (e) {
       emit(GroundError(e.toString()));
     }
+  }
+
+  /// Numbers multiple grounds of the same sport at the same location.
+  /// E.g., "Cricket" becomes "Cricket 1", "Cricket 2" when there are 2+ cricket grounds.
+  List<GroundModel> _applyGroundNumbering(List<GroundModel> grounds) {
+    // Group by locationId + category
+    final groups = <String, List<GroundModel>>{};
+    for (final ground in grounds) {
+      if (ground.categories.isEmpty) continue;
+      for (final category in ground.categories) {
+        final key = '${ground.locationId}_${category.toLowerCase()}';
+        groups.putIfAbsent(key, () => []).add(ground);
+      }
+    }
+
+    // Build a map from groundId to its numbered name
+    final numberedNames = <String, String>{};
+    for (final entry in groups.entries) {
+      if (entry.value.length <= 1) continue;
+      final category = entry.key.split('_').last;
+      for (var i = 0; i < entry.value.length; i++) {
+        final ground = entry.value[i];
+        final number = i + 1;
+        numberedNames[ground.id] = '${_capitalize(category)} $number';
+      }
+    }
+
+    // Create new GroundModel instances with displayName set
+    return grounds.map((g) {
+      final displayName = numberedNames[g.id];
+      if (displayName != null) {
+        return GroundModel(
+          id: g.id,
+          name: g.name,
+          displayName: displayName,
+          address: g.address,
+          latitude: g.latitude,
+          longitude: g.longitude,
+          pricePerHour: g.pricePerHour,
+          weekendPrice: g.weekendPrice,
+          imageUrl: g.imageUrl,
+          rating: g.rating,
+          openingTime: g.openingTime,
+          closingTime: g.closingTime,
+          city: g.city,
+          totalReviews: g.totalReviews,
+          description: g.description,
+          locationDescription: g.locationDescription,
+          amenities: g.amenities,
+          images: g.images,
+          categories: g.categories,
+          ownerId: g.ownerId,
+          locationId: g.locationId,
+          isAvailable: g.isAvailable,
+        );
+      }
+      return g;
+    }).toList();
+  }
+
+  String _capitalize(String s) {
+    if (s.isEmpty) return s;
+    return '${s[0].toUpperCase()}${s.substring(1)}';
   }
 
   /// APPLY FILTERS

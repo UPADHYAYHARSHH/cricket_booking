@@ -288,6 +288,11 @@ class _GroundCardState extends State<GroundCard>
   }
 
   Widget _buildInfo(BuildContext context, Color onSurface, bool isDark) {
+    // Use location description if available, otherwise fall back to ground description
+    final displayDescription = widget.ground.locationDescription.isNotEmpty
+        ? widget.ground.locationDescription
+        : widget.ground.description;
+
     return Padding(
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -295,7 +300,9 @@ class _GroundCardState extends State<GroundCard>
         children: [
           // Name
           AppText(
-            text: widget.ground.name,
+            text: widget.ground.displayName.isNotEmpty
+                ? widget.ground.displayName
+                : widget.ground.name,
             textStyle: AppTextTheme.black16.copyWith(
               fontWeight: FontWeight.w700,
               fontSize: 14,
@@ -330,6 +337,21 @@ class _GroundCardState extends State<GroundCard>
             ),
 
           const SizedBox(height: 6),
+
+          // Description (if available)
+          if (displayDescription.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: AppText(
+                text: displayDescription,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textStyle: AppTextTheme.black12.copyWith(
+                  color: onSurface.withValues(alpha: 0.6),
+                  fontSize: 11,
+                ),
+              ),
+            ),
 
           // Address
           Row(
