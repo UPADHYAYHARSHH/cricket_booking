@@ -686,6 +686,31 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
 
   Future<void> _loadBookedSlots() async {
     try {
+      final periodParts = (widget.ticket.period).split('|');
+      if (periodParts.length > 1 && periodParts[1].isNotEmpty) {
+        final slotTimes = periodParts[1].split(',').map((s) => s.trim()).toList();
+        final pricePerSlot = widget.ticket.price / (slotTimes.isEmpty ? 1 : slotTimes.length);
+        
+        final slots = slotTimes.map((st) {
+          final endTime = _calculateEndTime(st);
+          return TimeSlot(
+            startTime: st,
+            endTime: endTime,
+            price: pricePerSlot,
+            status: SlotStatus.booked,
+          );
+        }).toList();
+
+        if (mounted) {
+          setState(() {
+            _bookedSlots = slots;
+            _isLoadingSlots = false;
+          });
+        }
+        return; // We got the slots locally!
+      }
+
+      // Fallback for old bookings
       final formattedDate =
           "${widget.ticket.date.year}-${widget.ticket.date.month.toString().padLeft(2, '0')}-${widget.ticket.date.day.toString().padLeft(2, '0')}";
       final response = await Supabase.instance.client
@@ -780,7 +805,7 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
   Future<void> _generateAndDownload() async {
     final timeStr = _bookedSlots.isNotEmpty
         ? _bookedSlots.map((s) => "${s.startTime} - ${s.endTime}").join(', ')
-        : widget.ticket.time;
+        : widget.ticket.period.split('|').first;
 
     await TicketUtil.downloadTicket(
       context,
@@ -793,7 +818,7 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
       displayId: widget.ticket.displayId,
       totalPrice: widget.ticket.price,
       sportName: widget.ticket.sportName,
-      selectedPeriod: widget.ticket.period,
+      selectedPeriod: widget.ticket.period.split('|').first,
       groundId: widget.ticket.groundId,
       ownerId: widget.ticket.ownerId,
       amenities: widget.ticket.amenities,
@@ -1072,7 +1097,7 @@ class _TicketCardState extends State<_TicketCard> {
           .map((s) => "${s.startTime} - ${s.endTime}")
           .join(', ');
     } else {
-      timeStr = widget.ticket.time;
+      timeStr = widget.ticket.period.split('|').first;
     }
 
     return Padding(

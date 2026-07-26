@@ -90,6 +90,8 @@ class PaymentRepository {
     
     debugPrint('PaymentRepository: Inserting booking via RPC');
 
+    final combinedPeriod = "${period ?? 'Day'}|${slotStartTimes?.join(',') ?? ''}";
+
     final response = await _supabase.rpc('save_booking', params: {
       'p_user_id': user.uid,
       'p_ground_id': groundId,
@@ -97,7 +99,7 @@ class PaymentRepository {
       'p_amount': amount,
       'p_status': 'paid',
       'p_sport_name': sportName,
-      'p_period': period,
+      'p_period': combinedPeriod,
       'p_razorpay_order_id': orderId,
       'p_razorpay_payment_id': paymentId,
       'p_razorpay_signature': signature,
@@ -138,7 +140,8 @@ class PaymentRepository {
     }
 
     try {
-      // 1. Create Booking Record via RPC
+      final combinedPeriod = "${period ?? 'Day'}|${slotStartTimes.join(',')}";
+
       debugPrint('PaymentRepository: Inserting booking via RPC');
       final bookingResponse = await _supabase.rpc('save_booking', params: {
         'p_user_id': user.uid,
@@ -147,7 +150,7 @@ class PaymentRepository {
         'p_amount': amount,
         'p_status': 'confirmed',
         'p_sport_name': sportName,
-        'p_period': period,
+        'p_period': combinedPeriod,
       });
       debugPrint('PaymentRepository: Booking record created successfully');
 

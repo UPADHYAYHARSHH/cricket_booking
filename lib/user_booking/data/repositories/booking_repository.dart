@@ -16,7 +16,14 @@ class BookingRepository {
     });
 
     final List data = response as List;
-    debugPrint("[BOOKING_REPO] Bookings found: ${data.length}");
-    return data.map((json) => BookingModel.fromJson(json)).toList();
+    final Map<String, dynamic> uniqueBookings = {};
+    for (var json in data) {
+      final id = json['id']?.toString() ?? '';
+      if (id.isNotEmpty) {
+        uniqueBookings[id] = json;
+      }
+    }
+    debugPrint("[BOOKING_REPO] Bookings fetched: ${data.length}, Unique: ${uniqueBookings.length}");
+    return uniqueBookings.values.map((json) => BookingModel.fromJson(json)).toList();
   }
 }

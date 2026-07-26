@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 // Already here, good for Web sharing
 import 'package:turfpro/utils/toast_util.dart';
+import '../../../constants/route_constants.dart';
 // Add our new helper
 import 'package:turfpro/utils/ticket_util.dart'; // Add TicketUtil
 import 'package:turfpro/utils/qr_crypto.dart';
@@ -116,7 +117,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
               const AppText(text: "Booking information missing"),
               TextButton(
                 onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                    context, '/nav', (r) => false),
+                    context, AppRoutes.nav, (r) => false),
                 child: const Text("Go to Home"),
               )
             ],
@@ -361,15 +362,11 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
               /// BACK TO HOME
               TextButton(
                 onPressed: () {
-                  if (Navigator.canPop(context)) {
-                    Navigator.pop(context);
-                  } else {
-                    Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      '/nav',
-                      (route) => false,
-                    );
-                  }
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    AppRoutes.nav,
+                    (route) => false,
+                  );
                 },
                 child: AppText(
                   text: "Back to Home",
