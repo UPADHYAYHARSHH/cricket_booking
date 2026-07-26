@@ -48,6 +48,12 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     return isValid;
   }
 
+  @override
+  void dispose() {
+    nameController.dispose();
+    super.dispose();
+  }
+
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,

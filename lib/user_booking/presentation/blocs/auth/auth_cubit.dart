@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 import 'package:turfpro/common/services/notification_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../domain/repositories/auth_repositories.dart';
 import '../../../data/repositories/user_repository_impl.dart';
 import 'package:turfpro/user_booking/presentation/blocs/auth/auth_state.dart';
@@ -14,12 +16,16 @@ class AuthCubit extends Cubit<AuthState> {
   StreamSubscription<fb.User?>? _authSubscription;
 
   AuthCubit(this.repository) : super(AuthInitial()) {
-    _authSubscription = fb.FirebaseAuth.instance.authStateChanges().listen((user) {
-      debugPrint("DEBUG: [AuthCubit] Firebase Auth state change. User: ${user?.uid}, Verified: ${user?.emailVerified}");
+    _authSubscription = fb.FirebaseAuth.instance.authStateChanges().listen((user) async {
+      debugPrint("DEBUG: [AuthCubit] Firebase Auth state change. User: ${user?.uid}");
       
-      if (user != null && user.emailVerified) {
-        debugPrint("DEBUG: [AuthCubit] User verified - emitting AuthVerified");
+      if (user != null) {
+        debugPrint("DEBUG: [AuthCubit] User verified - emitting AuthVerified and checking profile");
         emit(AuthVerified());
+        await _checkProfileAndEmit();
+      } else {
+        debugPrint("DEBUG: [AuthCubit] No user - emitting AuthInitial");
+        emit(AuthInitial());
       }
     });
   }
@@ -121,30 +127,41 @@ class AuthCubit extends Cubit<AuthState> {
     if (user != null) {
       debugPrint("DEBUG: [AuthCubit] Checking profile for Firebase user: ${user.uid}");
       
-      // Use Supabase client for database query but with Firebase UID
       try {
+        // Fetch user data via RPC to bypass RLS issues completely
         final userData = await sb.Supabase.instance.client
-            .from('users')
-            .select('name')
-            .eq('id', user.uid)
-            .maybeSingle();
+            .rpc('get_user_profile', params: {'p_id': user.uid});
             
         if (userData == null) {
           debugPrint("DEBUG: [AuthCubit] No record found for ID: ${user.uid}. Redirecting to complete profile.");
           emit(AuthProfileIncomplete());
-        } else if (userData['name'] == null || (userData['name'] as String).isEmpty) {
-          debugPrint("DEBUG: [AuthCubit] Profile record exists but name is missing.");
-          emit(AuthProfileIncomplete());
         } else {
-          debugPrint("DEBUG: [AuthCubit] Profile complete");
-          await NotificationService.initialize();
-          emit(AuthSuccess());
+          debugPrint("DEBUG: [AuthCubit] RPC get_user_profile returned: $userData");
+          
+          final name = userData['name'] as String?;
+          final gender = userData['gender'] as String?;
+          final dob = userData['dob'] as String?;
+          
+          debugPrint("DEBUG: [AuthCubit] Parsed fields - name: '$name', gender: '$gender', dob: '$dob'");
+          
+          if (name == null || name.trim().isEmpty ||
+              gender == null || gender.trim().isEmpty ||
+              dob == null || dob.trim().isEmpty) {
+            debugPrint("DEBUG: [AuthCubit] Profile record exists but required fields are missing.");
+            emit(AuthProfileIncomplete());
+          } else {
+            debugPrint("DEBUG: [AuthCubit] Profile complete");
+            await NotificationService.initialize();
+            emit(AuthSuccess());
+          }
         }
       } catch (e) {
         debugPrint("DEBUG: [AuthCubit] Error checking profile: $e");
         if (e.toString().contains('22P02') || e.toString().contains('uuid')) {
           emit(AuthError("Database Schema Error: The Supabase 'users' table 'id' column must be changed from 'uuid' to 'text' to support Firebase UIDs."));
         } else {
+          // If we fail due to network or RLS, but we have a valid firebase user,
+          // we could potentially fallback, but without local cache we must show error
           emit(AuthError("Failed to fetch user profile: ${e.toString()}"));
         }
       }
@@ -181,6 +198,7 @@ class AuthCubit extends Cubit<AuthState> {
         gender: gender,
         dob: dob,
       );
+
       await NotificationService.initialize();
       emit(AuthSuccess());
     } catch (e) {

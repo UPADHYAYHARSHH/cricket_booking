@@ -178,15 +178,15 @@ class LocationCubit extends Cubit<LocationState> {
       debugPrint("[LOCATION_CUBIT] Fetching GPS location...");
       final userLoc = await getCurrentLocation();
 
-      // Only update city name if it's not "Unknown" or if we don't have one yet
-      final bool shouldUpdateCity = userLoc.city != "Unknown" || state.city == null;
+      // Only update city name if it's not "Unknown" AND we don't already have a valid city set
+      final bool shouldUpdateCity = userLoc.city != "Unknown" && (state.city == null || state.city == "Select Location");
 
       emit(state.copyWith(
         city: shouldUpdateCity ? userLoc.city : state.city,
-        latitude: userLoc.latitude,
-        longitude: userLoc.longitude,
-        gpsLatitude: userLoc.latitude,
-        gpsLongitude: userLoc.longitude,
+        latitude: shouldUpdateCity ? userLoc.latitude : state.latitude, // Keep geocoded lat if we don't update city
+        longitude: shouldUpdateCity ? userLoc.longitude : state.longitude, // Keep geocoded lng if we don't update city
+        gpsLatitude: userLoc.latitude, // Always update GPS lat for distance calculation
+        gpsLongitude: userLoc.longitude, // Always update GPS lng for distance calculation
         isLoading: false,
         errorMessage: null,
         hasGpsLocation: true, // Successfully fetched GPS

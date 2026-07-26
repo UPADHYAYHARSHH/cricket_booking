@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:turfpro/common/services/notification_service.dart';
 import 'package:turfpro/common/services/remote_config_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 abstract class SplashState {}
 
@@ -20,25 +21,19 @@ class SplashUpdateRequired extends SplashState {
   SplashUpdateRequired(this.updateUrl);
 }
 
+class SplashNavigateToCompleteProfile extends SplashState {}
+
 class SplashCubit extends Cubit<SplashState> {
   final RemoteConfigService _remoteConfigService = RemoteConfigService();
   StreamSubscription<User?>? _authSubscription;
 
   SplashCubit() : super(SplashInitial()) {
-    debugPrint("DEBUG: [SplashCubit] Initialized. Starting Firebase auth listener.");
-    _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
-      debugPrint("DEBUG: [SplashCubit] Firebase Auth User: ${user?.uid}, Verified: ${user?.emailVerified}");
-      
-      if (user != null && user.emailVerified) {
-        debugPrint("DEBUG: [SplashCubit] User verified! Navigating to Home.");
-        emit(SplashNavigateToHome());
-      }
-    });
+    debugPrint("DEBUG: [SplashCubit] Initialized.");
   }
 
   @override
   Future<void> close() {
-    debugPrint("DEBUG: [SplashCubit] Closing. Cancelling auth listener.");
+    debugPrint("DEBUG: [SplashCubit] Closing.");
     _authSubscription?.cancel();
     return super.close();
   }
@@ -64,13 +59,44 @@ class SplashCubit extends Cubit<SplashState> {
       return;
     }
 
-    // 3. Check Auth
+    // 3. Check Auth & Profile
     final user = FirebaseAuth.instance.currentUser;
     debugPrint("DEBUG: [SplashCubit] Final check: User: ${user?.uid}, Verified: ${user?.emailVerified}");
     
-    if (user != null && user.emailVerified) {
-      NotificationService.initialize();
-      emit(SplashNavigateToHome());
+    if (user != null) {
+      try {
+        // Fetch user data via RPC to bypass RLS issues completely
+        final userData = await sb.Supabase.instance.client
+            .rpc('get_user_profile', params: {'p_id': user.uid});
+            
+        if (userData == null) {
+          debugPrint("DEBUG: [SplashCubit] No record found for ID: ${user.uid}. Redirecting to complete profile.");
+          emit(SplashNavigateToCompleteProfile());
+        } else {
+          debugPrint("DEBUG: [SplashCubit] RPC get_user_profile returned: $userData");
+          
+          final name = userData['name'] as String?;
+          final gender = userData['gender'] as String?;
+          final dob = userData['dob'] as String?;
+          
+          debugPrint("DEBUG: [SplashCubit] Parsed fields - name: '$name', gender: '$gender', dob: '$dob'");
+          
+          if (name == null || name.trim().isEmpty ||
+              gender == null || gender.trim().isEmpty ||
+              dob == null || dob.trim().isEmpty) {
+            debugPrint("DEBUG: [SplashCubit] Profile record exists but required fields are missing.");
+            emit(SplashNavigateToCompleteProfile());
+          } else {
+            debugPrint("DEBUG: [SplashCubit] Profile complete. Navigating to Home.");
+            NotificationService.initialize();
+            emit(SplashNavigateToHome());
+          }
+        }
+      } catch (e) {
+        debugPrint("DEBUG: [SplashCubit] Error checking profile: $e");
+        // Fallback to complete profile if we cannot verify DB (prevent incomplete users from entering app)
+        emit(SplashNavigateToCompleteProfile());
+      }
     } else {
       debugPrint("DEBUG: [SplashCubit] No verified user found. Navigating to Login.");
       emit(SplashNavigateToLogin());

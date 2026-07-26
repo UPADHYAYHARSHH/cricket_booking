@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 abstract class UserRepository {
   Future<void> upsertUser({
@@ -68,6 +69,7 @@ class UserRepositoryImpl implements UserRepository {
         'p_email': user.email ?? '',
         'p_gender': gender,
         'p_dob': dob?.toIso8601String() ?? '',
+        'p_username': username ?? '',
       });
       return;
     } catch (rpcError) {
@@ -88,14 +90,11 @@ class UserRepositoryImpl implements UserRepository {
 
     try {
       final response = await supabase
-          .from('users')
-          .select()
-          .eq('id', user.uid)
-          .maybeSingle()
+          .rpc('get_user_profile', params: {'p_id': user.uid})
           .timeout(const Duration(seconds: 10));
 
       debugPrint("[USER_REPO] Profile Data Received: $response");
-      return response;
+      return response as Map<String, dynamic>?;
     } catch (e) {
       debugPrint("[USER_REPO] Error in fetchUserProfile: $e");
       rethrow;
@@ -129,31 +128,70 @@ class UserRepositoryImpl implements UserRepository {
     }
   }
 
-  /// FETCH PERSISTED CITY FROM SUPABASE USERS TABLE
+  /// FETCH PERSISTED CITY FROM SUPABASE USERS TABLE (AND LOCAL CACHE)
   @override
   Future<String?> getUserCity() async {
+    // 1. Try local cache first for instant load and offline support
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedCity = prefs.getString('user_city');
+      if (cachedCity != null && cachedCity.isNotEmpty) {
+        return cachedCity;
+      }
+    } catch (e) {
+      debugPrint("[USER_REPO] Local cache read error: $e");
+    }
+
+    // 2. Fallback to Supabase if not in local cache
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return null;
 
-    final data = await supabase
-        .from('users')
-        .select('city')
-        .eq('id', user.uid)
-        .maybeSingle();
-
-    return data?['city'];
+    try {
+      final data = await supabase
+          .from('users')
+          .select('city')
+          .eq('id', user.uid)
+          .maybeSingle();
+      
+      final dbCity = data?['city'];
+      
+      // Cache it locally for next time
+      if (dbCity != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user_city', dbCity);
+      }
+      
+      return dbCity;
+    } catch (e) {
+      debugPrint("[USER_REPO] Supabase city fetch error: $e");
+      return null; // Return null safely instead of throwing
+    }
   }
 
-  /// SAVE OR UPDATE CITY IN SUPABASE USERS TABLE
+  /// SAVE OR UPDATE CITY IN SUPABASE USERS TABLE (AND LOCAL CACHE)
   @override
   Future<void> updateUserCity(String city) async {
+    // 1. Save to local cache immediately
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_city', city);
+    } catch (e) {
+      debugPrint("[USER_REPO] Local cache write error: $e");
+    }
+
+    // 2. Save to Supabase using RPC to bypass RLS issues
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    await supabase.from('users').upsert({
-      'id': user.uid,
-      'city': city,
-    });
+    try {
+      await supabase.rpc('update_user_city', params: {
+        'p_id': user.uid,
+        'p_city': city,
+      });
+      debugPrint("[USER_REPO] Successfully saved city to Supabase DB via RPC");
+    } catch (e) {
+      debugPrint("[USER_REPO] Error updating city in Supabase: $e");
+    }
   }
 
   @override

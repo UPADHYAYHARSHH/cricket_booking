@@ -15,6 +15,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/saved_ground/saved_ground_cubit.dart';
 import '../../blocs/location/location_cubit.dart';
 import '../../blocs/notification/notification_cubit.dart';
+import '../../blocs/auth/auth_cubit.dart';
+import '../../blocs/auth/auth_state.dart';
+import '../../../constants/route_constants.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class MainNavScreen extends StatefulWidget {
@@ -110,6 +113,16 @@ class _MainNavScreenState extends State<MainNavScreen> {
           BlocListener<LocationCubit, LocationState>(
             listener: (context, state) {
               _checkLocation(state);
+            },
+          ),
+          BlocListener<AuthCubit, AuthState>(
+            listener: (context, state) {
+              if (state is AuthProfileIncomplete) {
+                Navigator.pushReplacementNamed(context, AppRoutes.completeProfile);
+              } else if (state is AuthInitial || state is AuthError) {
+                // Not authenticated or error, redirect to login
+                Navigator.pushReplacementNamed(context, AppRoutes.login);
+              }
             },
           ),
         ],

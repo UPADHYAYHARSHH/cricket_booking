@@ -231,6 +231,10 @@ class _SplashScreenState extends State<SplashScreen>
             Navigator.pushReplacementNamed(context, AppRoutes.login);
           }
 
+          if (state is SplashNavigateToCompleteProfile) {
+            Navigator.pushReplacementNamed(context, AppRoutes.completeProfile);
+          }
+
           if (state is SplashUnderMaintenance) {
             Navigator.pushAndRemoveUntil(
               context,
