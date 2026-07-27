@@ -321,7 +321,10 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
         final index = mergedSlots
             .indexWhere((s) => s.startTime == dbSlot.startTime);
         if (index != -1) {
-          mergedSlots[index] = dbSlot;
+          mergedSlots[index] = mergedSlots[index].copyWith(
+            status: dbSlot.status,
+            price: dbSlot.price > 0 ? dbSlot.price : null,
+          );
         } else {
           mergedSlots.add(dbSlot); // Fallback
         }

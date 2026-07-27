@@ -118,28 +118,52 @@ class _GroundListScreenState extends State<GroundListScreen> {
           children: [
             _buildPremiumHeader(context, isDark),
             Expanded(
-              child: CustomScrollView(
-                controller: _scrollController,
-                physics: const BouncingScrollPhysics(),
-                slivers: [
-                  // Search Bar
-                  SliverToBoxAdapter(child: _buildSearchBar(context, isDark)),
-
-                  // Sport Selection
-                  SliverToBoxAdapter(
-                      child: _buildSportSelection(context, isDark)),
-
-                  // Top Venues (Horizontal)
-                  SliverToBoxAdapter(
-                      child: _buildTopVenuesSection(context, isDark)),
-
-                  // Nearby Venues Header
-                  SliverToBoxAdapter(
-                      child: _buildNearbyVenuesHeader(context, isDark)),
-
-                  // Nearby Venues (Vertical List)
-                  _buildNearbyVenuesList(),
-                ],
+              child: RefreshIndicator(
+                color: AppColors.primaryDarkGreen,
+                onRefresh: () async {
+                  HapticFeedback.lightImpact();
+                  final sportCubit = context.read<SportCubit>();
+                  final locationCubit = context.read<LocationCubit>();
+                  final groundCubit = context.read<GroundCubit>();
+                  
+                  // Refresh sports
+                  await sportCubit.fetchSports();
+                  
+                  // Refresh grounds
+                  final locationState = locationCubit.state;
+                  if (locationState.city != null && locationState.city != "Fetching...") {
+                    await groundCubit.getGrounds(
+                      city: locationState.city,
+                      userLat: locationState.hasGpsLocation ? locationState.latitude : null,
+                      userLng: locationState.hasGpsLocation ? locationState.longitude : null,
+                    );
+                  } else {
+                    await groundCubit.getGrounds();
+                  }
+                },
+                child: CustomScrollView(
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                  slivers: [
+                    // Search Bar
+                    SliverToBoxAdapter(child: _buildSearchBar(context, isDark)),
+  
+                    // Sport Selection
+                    SliverToBoxAdapter(
+                        child: _buildSportSelection(context, isDark)),
+  
+                    // Top Venues (Horizontal)
+                    SliverToBoxAdapter(
+                        child: _buildTopVenuesSection(context, isDark)),
+  
+                    // Nearby Venues Header
+                    SliverToBoxAdapter(
+                        child: _buildNearbyVenuesHeader(context, isDark)),
+  
+                    // Nearby Venues (Vertical List)
+                    _buildNearbyVenuesList(),
+                  ],
+                ),
               ),
             ),
           ],
@@ -551,10 +575,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
 
         if (state is GroundLoaded) {
           if (state.grounds.isEmpty) {
-            return SliverFillRemaining(
-              hasScrollBody: false,
-              child: _buildEmptyState(),
-            );
+            return _buildEmptyState();
           }
 
           return SliverPadding(

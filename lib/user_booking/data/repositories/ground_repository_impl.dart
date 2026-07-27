@@ -9,9 +9,21 @@ class GroundRepositoryImpl implements GroundRepository {
 
   @override
   Future<List<GroundModel>> fetchGrounds() async {
-    final response = await supabase.from('grounds').select('*, ground_images(image_url), locations(description)');
+    // Fetch active sports to filter grounds
+    List<String> activeSportIdentifiers = [];
+    try {
+      final sportsResponse = await supabase.from('sports').select('slug, name').eq('is_active', true);
+      for (var s in sportsResponse as List) {
+        if (s['slug'] != null) activeSportIdentifiers.add(s['slug'].toString().toLowerCase());
+        if (s['name'] != null) activeSportIdentifiers.add(s['name'].toString().toLowerCase());
+      }
+    } catch (e) {
+      if (kDebugMode) print('Error fetching active sports for filtering: $e');
+    }
 
-    return (response as List).map((e) {
+    final response = await supabase.from('grounds').select('*, ground_images(image_url), locations(description)').eq('is_available', true);
+
+    final List<GroundModel> allGrounds = (response as List).map((e) {
       try {
         final List<String> allImages = [];
         
@@ -98,16 +110,40 @@ class GroundRepositoryImpl implements GroundRepository {
         rethrow;
       }
     }).toList();
+
+    // Filter grounds to only include those that match active sports
+    if (activeSportIdentifiers.isNotEmpty) {
+      return allGrounds.where((ground) {
+        if (ground.categories.isEmpty) return false;
+        // Check if ANY of the ground's categories match an active sport
+        return ground.categories.any((c) => activeSportIdentifiers.contains(c.toLowerCase()));
+      }).toList();
+    }
+    
+    return allGrounds;
   }
 
   @override
   Future<List<GroundModel>> fetchGroundsByLocation(String locationId) async {
+    // Fetch active sports to filter grounds
+    List<String> activeSportIdentifiers = [];
+    try {
+      final sportsResponse = await supabase.from('sports').select('slug, name').eq('is_active', true);
+      for (var s in sportsResponse as List) {
+        if (s['slug'] != null) activeSportIdentifiers.add(s['slug'].toString().toLowerCase());
+        if (s['name'] != null) activeSportIdentifiers.add(s['name'].toString().toLowerCase());
+      }
+    } catch (e) {
+      if (kDebugMode) print('Error fetching active sports for filtering: $e');
+    }
+
     final response = await supabase
         .from('grounds')
         .select('*, ground_images(image_url), locations(description)')
-        .eq('location_id', locationId);
+        .eq('location_id', locationId)
+        .eq('is_available', true);
 
-    return (response as List).map((e) {
+    final List<GroundModel> allGrounds = (response as List).map((e) {
       try {
         final List<String> allImages = [];
         
@@ -194,6 +230,17 @@ class GroundRepositoryImpl implements GroundRepository {
         rethrow;
       }
     }).toList();
+
+    // Filter grounds to only include those that match active sports
+    if (activeSportIdentifiers.isNotEmpty) {
+      return allGrounds.where((ground) {
+        if (ground.categories.isEmpty) return false;
+        // Check if ANY of the ground's categories match an active sport
+        return ground.categories.any((c) => activeSportIdentifiers.contains(c.toLowerCase()));
+      }).toList();
+    }
+    
+    return allGrounds;
   }
   
   @override
@@ -278,6 +325,10 @@ class GroundRepositoryImpl implements GroundRepository {
   Future<List<LocationModel>> fetchLocations() async {
     final response = await supabase.rpc('get_locations_with_grounds');
     final List data = response as List;
-    return data.map((e) => LocationModel.fromJson(e)).toList();
+    // Filter out locations that have an empty 'sports' array (i.e. no available grounds)
+    return data
+        .map((e) => LocationModel.fromJson(e))
+        .where((loc) => loc.sports.isNotEmpty)
+        .toList();
   }
 }

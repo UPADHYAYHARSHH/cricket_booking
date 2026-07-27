@@ -247,7 +247,7 @@ EXCEPTION
                     COALESCE(
                         (SELECT array_agg(DISTINCT g.category)
                          FROM public.grounds g
-                         WHERE g.location_id = l.id AND g.category IS NOT NULL),
+                         WHERE g.location_id = l.id AND g.category IS NOT NULL AND g.is_available = true),
                         '{}'
                     ) AS sports,
                     0 AS rating,

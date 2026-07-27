@@ -170,13 +170,34 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
         if (state is BookingLoaded) {
           final now = DateTime.now();
           final bookings = state.bookings.where((b) {
-            // A booking is considered "Completed" if its start time has passed.
-            // For a better UX, we could also consider the end time (e.g. +1 hour),
-            // but following the requirement: "once date or time... has gone".
+            final localDate = b.slotTime.toLocal();
+            DateTime endTime = localDate;
+            if (b.period != null && b.period!.contains('|')) {
+              final parts = b.period!.split('|');
+              if (parts.length > 1) {
+                final times = parts[1].split(',');
+                if (times.isNotEmpty) {
+                  final lastTime = times.last.trim();
+                  final timeParts = lastTime.split(':');
+                  if (timeParts.length >= 2) {
+                    int h = int.tryParse(timeParts[0]) ?? 0;
+                    final mPart = timeParts[1].trim().split(' ');
+                    final m = int.tryParse(mPart[0]) ?? 0;
+                    final amPm = mPart.length > 1 ? mPart[1].toUpperCase() : '';
+                    if (amPm == 'PM' && h != 12) h += 12;
+                    if (amPm == 'AM' && h == 12) h = 0;
+                    // Adding 1 hour to the start time of the last slot to represent its end time.
+                    endTime = DateTime(localDate.year, localDate.month, localDate.day, h + 1, m);
+                  }
+                }
+              }
+            }
+
+            // A booking is considered "Completed" once its end time has passed.
             if (_selectedTab == 0) {
-              return b.slotTime.isAfter(now);
+              return endTime.isAfter(now);
             } else {
-              return b.slotTime.isBefore(now);
+              return endTime.isBefore(now);
             }
           }).toList();
 
@@ -391,8 +412,61 @@ class _BookingCardState extends State<_BookingCard> {
     );
   }
 
+  String _getFormattedTimeRange() {
+    if (widget.booking.period == null || !widget.booking.period!.contains('|')) {
+      return '';
+    }
+    final parts = widget.booking.period!.split('|');
+    if (parts.length <= 1) return '';
+    final times = parts[1].split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+    if (times.isEmpty) return '';
+
+    List<int> hours24 = [];
+    for (String time in times) {
+      final timeParts = time.split(':');
+      if (timeParts.length >= 2) {
+        int h = int.tryParse(timeParts[0]) ?? 0;
+        final mPart = timeParts[1].trim().split(' ');
+        final amPm = mPart.length > 1 ? mPart[1].toUpperCase() : '';
+        if (amPm == 'PM' && h != 12) h += 12;
+        if (amPm == 'AM' && h == 12) h = 0;
+        hours24.add(h);
+      }
+    }
+    hours24.sort();
+
+    if (hours24.isEmpty) return '';
+
+    List<String> ranges = [];
+    int blockStart = hours24.first;
+    int prevHour = hours24.first;
+
+    String formatHour(int h) {
+      int wrappedH = h % 24;
+      final amPm = wrappedH >= 12 ? 'PM' : 'AM';
+      int hour12 = wrappedH > 12 ? wrappedH - 12 : (wrappedH == 0 ? 12 : wrappedH);
+      return '${hour12.toString().padLeft(2, '0')}:00 $amPm';
+    }
+
+    for (int i = 1; i < hours24.length; i++) {
+      if (hours24[i] == prevHour + 1) {
+        prevHour = hours24[i];
+      } else {
+        ranges.add('${formatHour(blockStart)} - ${formatHour(prevHour + 1)}');
+        blockStart = hours24[i];
+        prevHour = hours24[i];
+      }
+    }
+    ranges.add('${formatHour(blockStart)} - ${formatHour(prevHour + 1)}');
+
+    final count = hours24.length;
+    final slotText = count == 1 ? '1 slot' : '$count slots';
+    return '${ranges.join(', ')} ($slotText)';
+  }
+
   Widget _buildDateSection(BuildContext context) {
     final theme = Theme.of(context);
+    final timeRange = _getFormattedTimeRange();
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 16, 14, 0),
@@ -405,12 +479,15 @@ class _BookingCardState extends State<_BookingCard> {
                 size: 16, color: AppColors.primaryDarkGreen),
           ),
           const SizedBox(width: 6),
-          AppText(
-            text: DateFormat('EEE, d MMM yyyy').format(widget.booking.slotTime),
-            textStyle: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface,
+          Expanded(
+            child: AppText(
+              text: DateFormat('EEE, d MMM yyyy').format(widget.booking.slotTime) +
+                  (timeRange.isNotEmpty ? '  •  $timeRange' : ''),
+              textStyle: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onSurface,
+              ),
             ),
           ),
         ],
@@ -521,7 +598,28 @@ class _BookingCardState extends State<_BookingCard> {
 
   Widget _buildActionRow(BuildContext context) {
     final now = DateTime.now();
-    final isPast = widget.booking.slotTime.isBefore(now);
+    final localDate = widget.booking.slotTime.toLocal();
+    DateTime endTime = localDate;
+    if (widget.booking.period != null && widget.booking.period!.contains('|')) {
+      final parts = widget.booking.period!.split('|');
+      if (parts.length > 1) {
+        final times = parts[1].split(',');
+        if (times.isNotEmpty) {
+          final lastTime = times.last.trim();
+          final timeParts = lastTime.split(':');
+          if (timeParts.length >= 2) {
+            int h = int.tryParse(timeParts[0]) ?? 0;
+            final mPart = timeParts[1].trim().split(' ');
+            final m = int.tryParse(mPart[0]) ?? 0;
+            final amPm = mPart.length > 1 ? mPart[1].toUpperCase() : '';
+            if (amPm == 'PM' && h != 12) h += 12;
+            if (amPm == 'AM' && h == 12) h = 0;
+            endTime = DateTime(localDate.year, localDate.month, localDate.day, h + 1, m);
+          }
+        }
+      }
+    }
+    final isPast = endTime.isBefore(now);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
