@@ -78,7 +78,7 @@ class PaymentRepository {
     final bookingData = {
       'user_id': user.uid,
       'ground_id': groundId,
-      'slot_time': slotTime.toIso8601String(),
+      'slot_time': slotTime.toUtc().toIso8601String(),
       'amount': amount,
       'status': 'paid',
       'razorpay_order_id': orderId,
@@ -95,7 +95,7 @@ class PaymentRepository {
     final response = await _supabase.rpc('save_booking', params: {
       'p_user_id': user.uid,
       'p_ground_id': groundId,
-      'p_slot_time': slotTime.toIso8601String(),
+      'p_slot_time': slotTime.toUtc().toIso8601String(),
       'p_amount': amount,
       'p_status': 'paid',
       'p_sport_name': sportName,
@@ -146,7 +146,7 @@ class PaymentRepository {
       final bookingResponse = await _supabase.rpc('save_booking', params: {
         'p_user_id': user.uid,
         'p_ground_id': groundId,
-        'p_slot_time': date.toIso8601String(),
+        'p_slot_time': date.toUtc().toIso8601String(),
         'p_amount': amount,
         'p_status': 'confirmed',
         'p_sport_name': sportName,

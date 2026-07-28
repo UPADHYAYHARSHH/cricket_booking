@@ -70,7 +70,7 @@ class SlotRepositoryImpl implements SlotRepository {
         final amPm = hour >= 12 ? 'PM' : 'AM';
         if (hour > 12) hour -= 12;
         if (hour == 0) hour = 12;
-        return '${hour.toString().padLeft(2, '0')}:$minute $amPm';
+        return '$hour:$minute $amPm';
       }
     } catch (e) {
       return timeString;

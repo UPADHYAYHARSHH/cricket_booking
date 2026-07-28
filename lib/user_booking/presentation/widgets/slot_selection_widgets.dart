@@ -1534,7 +1534,7 @@ class SlotSelectionWidgets {
   }
 
   static String _getSlotPeriod(String time) {
-    if (time.isEmpty) return 'Day';
+    if (time.isEmpty) return 'Morning';
     try {
       final timeParts = time.split(' ');
       final timeH = timeParts[0].split(':');
@@ -1542,12 +1542,18 @@ class SlotSelectionWidgets {
       final ampm = timeParts.length > 1 ? timeParts[1].toUpperCase() : 'AM';
       if (ampm == 'PM' && hour != 12) hour += 12;
       if (ampm == 'AM' && hour == 12) hour = 0;
-      if (hour < 6) return 'Midnight';
-      if (hour < 12) return 'Day';
-      if (hour < 18) return 'Evening';
-      return 'Night';
+      
+      if (hour >= 6 && hour < 12) {
+        return 'Morning';
+      } else if (hour >= 12 && hour < 16) {
+        return 'Afternoon';
+      } else if (hour >= 16 && hour < 20) {
+        return 'Evening';
+      } else {
+        return 'Night';
+      }
     } catch (_) {
-      return 'Day';
+      return 'Morning';
     }
   }
 
@@ -1647,19 +1653,19 @@ class SlotSelectionWidgets {
       grouped[period]!.add(MapEntry(i, slots[i]));
     }
 
-    // Define display order
-    final periodOrder = ['Midnight', 'Day', 'Evening', 'Night'];
+    // Define display order to match Owner App
+    final periodOrder = ['Morning', 'Afternoon', 'Evening', 'Night'];
     final periodIcons = {
-      'Midnight': Icons.nights_stay_rounded,
-      'Day': Icons.wb_sunny_rounded,
+      'Morning': Icons.wb_sunny_rounded,
+      'Afternoon': Icons.wb_cloudy_rounded,
       'Evening': Icons.wb_twilight_rounded,
-      'Night': Icons.bedtime_rounded,
+      'Night': Icons.nights_stay_rounded,
     };
     final periodColors = {
-      'Midnight': const Color(0xFF5C6BC0),
-      'Day': const Color(0xFFFFB300),
-      'Evening': const Color(0xFFFF7043),
-      'Night': const Color(0xFF7E57C2),
+      'Morning': const Color(0xFFFFB300),
+      'Afternoon': const Color(0xFFFF7043),
+      'Evening': const Color(0xFFE65100),
+      'Night': const Color(0xFF5C6BC0),
     };
 
     if (grouped.isEmpty) {

@@ -348,7 +348,8 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
                         cubit.selectDate(index, currentTurf.id,
                             openingTime: currentTurf.openingTime,
                             closingTime: currentTurf.closingTime,
-                            pricePerSlot: currentTurf.pricePerHour.toDouble());
+                            pricePerSlot: currentTurf.pricePerHour.toDouble(),
+                            slotDuration: currentTurf.slotDuration);
                       }),
                       if (state.isLoading)
                         SlotSelectionWidgets.buildSlotShimmer(context)
@@ -362,6 +363,7 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
                             openingTime: currentTurf.openingTime,
                             closingTime: currentTurf.closingTime,
                             pricePerSlot: currentTurf.pricePerHour.toDouble(),
+                            slotDuration: currentTurf.slotDuration,
                           ),
                         )
                       else if (state.slots.isEmpty)

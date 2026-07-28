@@ -11,6 +11,7 @@ class GroundModel {
   final double rating;
   final String openingTime;
   final String closingTime;
+  final String slotDuration;
   final String city;
   final int totalReviews;
   final String description;
@@ -34,6 +35,7 @@ class GroundModel {
     required this.rating,
     required this.openingTime,
     required this.closingTime,
+    required this.slotDuration,
     required this.city,
     required this.totalReviews,
     this.weekendPrice = 0,
@@ -60,6 +62,7 @@ class GroundModel {
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       openingTime: json['opening_time'] ?? '00:00:00',
       closingTime: json['closing_time'] ?? '00:00:00',
+      slotDuration: json['slot_duration']?.toString() ?? '1 hour',
       city: json['city'] ?? '',
       totalReviews: json['total_reviews'] ?? 0,
       description: json['description'] ?? '',
@@ -99,6 +102,7 @@ class GroundModel {
     return {
       'id': id,
       'name': name,
+      'displayName': displayName,
       'address': address,
       'latitude': latitude,
       'longitude': longitude,
@@ -108,6 +112,7 @@ class GroundModel {
       'rating': rating,
       'opening_time': openingTime,
       'closing_time': closingTime,
+      'slot_duration': slotDuration,
       'city': city,
       'total_reviews': totalReviews,
       'description': description,

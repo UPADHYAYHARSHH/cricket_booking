@@ -40,7 +40,7 @@ class BookingModel {
       id: json['id']?.toString() ?? '',
       userId: json['user_id']?.toString() ?? '',
       groundId: json['ground_id']?.toString() ?? '',
-      slotTime: DateTime.parse(json['slot_time'] ?? DateTime.now().toIso8601String()),
+      slotTime: DateTime.parse(json['slot_time'] ?? DateTime.now().toIso8601String()).toLocal(),
       amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
       status: json['status']?.toString() ?? '',
       razorpayOrderId: json['razorpay_order_id'] ?? '',
@@ -51,7 +51,7 @@ class BookingModel {
       period: json['period'],
       ground: json['grounds'] != null ? GroundModel.fromJson(json['grounds']) : null,
       checkedIn: json['checked_in'] == true,
-      checkedInAt: json['checked_in_at'] != null ? DateTime.tryParse(json['checked_in_at']) : null,
+      checkedInAt: json['checked_in_at'] != null ? DateTime.tryParse(json['checked_in_at'])?.toLocal() : null,
     );
   }
 }

@@ -234,6 +234,7 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
       openingTime: turf.openingTime,
       closingTime: turf.closingTime,
       pricePerSlot: _getPriceForDate(turf, state.selectedDate ?? DateTime.now()),
+      slotDuration: turf.slotDuration,
     );
   }
 
@@ -253,7 +254,7 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
   }
 
   Future<void> loadSlots(String groundId, DateTime date,
-      {String? openingTime, String? closingTime, double pricePerSlot = 0}) async {
+      {String? openingTime, String? closingTime, double pricePerSlot = 0, String? slotDuration}) async {
     emit(state.copyWith(
         isLoading: true,
         errorMessage: null,
@@ -266,7 +267,7 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
     // 1. Eagerly fetch and emit slots via direct HTTP first to guarantee instant snapshot display
     try {
       final initialDbSlots = await repository.fetchSlotsForGround(groundId, date);
-      _processAndEmitSlots(initialDbSlots, openingTime, closingTime, pricePerSlot);
+      _processAndEmitSlots(initialDbSlots, openingTime, closingTime, pricePerSlot, slotDuration);
     } catch (e) {
       debugPrint('[SLOT_CUBIT] Eager slot fetch failed: $e');
     }
@@ -274,7 +275,7 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
     // 2. Start listening to real-time updates with robust error handling
     _slotsSubscription = repository.getSlotsStream(groundId, date).listen(
       (dbSlots) {
-        _processAndEmitSlots(dbSlots, openingTime, closingTime, pricePerSlot);
+        _processAndEmitSlots(dbSlots, openingTime, closingTime, pricePerSlot, slotDuration);
       },
       onError: (error) async {
         debugPrint('Realtime stream error: $error. Attempting fallback fetch...');
@@ -287,7 +288,7 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
 
         try {
           final dbSlots = await repository.fetchSlotsForGround(groundId, date);
-          _processAndEmitSlots(dbSlots, openingTime, closingTime, pricePerSlot);
+          _processAndEmitSlots(dbSlots, openingTime, closingTime, pricePerSlot, slotDuration);
         } catch (e) {
           debugPrint('Fallback fetch also failed: $e');
           // Only emit error if we don't have slots yet or it's a critical failure
@@ -309,12 +310,12 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
     return error;
   }
 
-  void _processAndEmitSlots(List<TimeSlot> dbSlots, String? openingTime, String? closingTime, double pricePerSlot) {
+  void _processAndEmitSlots(List<TimeSlot> dbSlots, String? openingTime, String? closingTime, double pricePerSlot, String? slotDuration) {
     List<TimeSlot> mergedSlots = [];
 
     if (openingTime != null && closingTime != null) {
       // 1. Generate all possible slots for the day
-      mergedSlots = _generateSlots(openingTime, closingTime, pricePerSlot);
+      mergedSlots = _generateSlots(openingTime, closingTime, pricePerSlot, slotDuration);
 
       // 2. Overlay booked slots from DB
       for (var dbSlot in dbSlots) {
@@ -340,7 +341,31 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
     emit(state.copyWith(slots: mergedSlots, isLoading: false, errorMessage: null));
   }
 
-  List<TimeSlot> _generateSlots(String open, String close, double price) {
+  int _parseSlotDuration(dynamic raw) {
+    try {
+      if (raw == null) return 60;
+      if (raw is int) return raw;
+      if (raw is num) return raw.toInt();
+      if (raw is String) {
+        final s = raw.trim().toLowerCase();
+        final numStr = RegExp(r'[0-9]+(?:\.[0-9]+)?').firstMatch(s)?.group(0);
+        if (numStr == null) return 60;
+        final value = double.tryParse(numStr) ?? 0.0;
+        if (s.contains('hour')) {
+          return (value * 60).round();
+        } else if (s.contains('min')) {
+          return value.round();
+        } else {
+          return value.round();
+        }
+      }
+      return 60;
+    } catch (e) {
+      return 60;
+    }
+  }
+
+  List<TimeSlot> _generateSlots(String open, String close, double price, String? slotDurationStr) {
     List<TimeSlot> generated = [];
     final now = DateTime.now();
     final isToday = state.selectedDate != null &&
@@ -349,39 +374,58 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
         state.selectedDate!.day == now.day;
 
     try {
-      final openHour = int.parse(open.split(':')[0]);
-      var closeHour = int.parse(close.split(':')[0]);
+      final openParts = open.split(':');
+      final closeParts = close.split(':');
+      
+      final slotDurationMins = _parseSlotDuration(slotDurationStr);
 
-      if (closeHour <= openHour) {
-        closeHour += 24; // Handle overnight
+      final selectedDate = state.selectedDate ?? now;
+      
+      final slotStart = DateTime(
+        selectedDate.year,
+        selectedDate.month,
+        selectedDate.day,
+        int.parse(openParts[0]),
+        int.parse(openParts[1]),
+      );
+      
+      var slotEnd = DateTime(
+        selectedDate.year,
+        selectedDate.month,
+        selectedDate.day,
+        int.parse(closeParts[0]),
+        int.parse(closeParts[1]),
+      );
+      
+      if (slotEnd.isBefore(slotStart) || slotEnd.isAtSameMomentAs(slotStart)) {
+        slotEnd = slotEnd.add(const Duration(days: 1));
       }
 
-      for (int h = openHour; h < closeHour; h++) {
-        final startH = h % 24;
-        final endH = (h + 1) % 24;
-
-        final startStr = _formatHour(startH);
-        final endStr = _formatHour(endH);
+      var currentSlotTime = slotStart;
+      
+      while (currentSlotTime.isBefore(slotEnd)) {
+        final nextSlotTime = currentSlotTime.add(Duration(minutes: slotDurationMins));
+        if (nextSlotTime.isAfter(slotEnd)) break;
+        
+        final startStr = _formatTime(currentSlotTime);
+        final endStr = _formatTime(nextSlotTime);
 
         // Determine if slot has already passed
         bool isPast = false;
         if (isToday) {
-          // If the slot's hour is before the current hour, it's past
-          if (startH < now.hour) {
+          if (currentSlotTime.isBefore(now)) {
             isPast = true;
           }
         }
 
-        // Peak pricing: 6 PM - 9 PM gets +100 (matching owner app logic)
-        final isPeak = startH >= 18 && startH <= 21;
-        final slotPrice = isPeak ? price + 100 : price;
-
         generated.add(TimeSlot(
           startTime: startStr,
           endTime: endStr,
-          price: slotPrice,
+          price: price,
           status: isPast ? SlotStatus.booked : SlotStatus.available,
         ));
+        
+        currentSlotTime = nextSlotTime;
       }
     } catch (e) {
       debugPrint("Error generating slots: $e");
@@ -389,13 +433,14 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
     return generated;
   }
 
-  String _formatHour(int h) {
-    final hour = h > 12 ? h - 12 : (h == 0 ? 12 : h);
-    final amPm = h >= 12 ? 'PM' : 'AM';
-    return '${hour.toString().padLeft(2, '0')}:00 $amPm';
+  String _formatTime(DateTime time) {
+    final hour = time.hour > 12 ? time.hour - 12 : (time.hour == 0 ? 12 : time.hour);
+    final amPm = time.hour >= 12 ? 'PM' : 'AM';
+    final minStr = time.minute > 0 ? ':${time.minute.toString().padLeft(2, '0')}' : ':00';
+    return '$hour$minStr $amPm';
   }
 
-  void selectDate(int index, String groundId, {String? openingTime, String? closingTime, double pricePerSlot = 0}) {
+  void selectDate(int index, String groundId, {String? openingTime, String? closingTime, double pricePerSlot = 0, String? slotDuration}) {
     final dates = List<DateItem>.from(state.dates);
     for (var d in dates) {
       d.isSelected = false;
@@ -409,7 +454,7 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
     final turf = state.selectedTurf;
     final effectivePrice = turf != null ? _getPriceForDate(turf, selectedDate) : pricePerSlot;
     
-    loadSlots(groundId, selectedDate, openingTime: openingTime, closingTime: closingTime, pricePerSlot: effectivePrice);
+    loadSlots(groundId, selectedDate, openingTime: openingTime, closingTime: closingTime, pricePerSlot: effectivePrice, slotDuration: slotDuration);
   }
 
   void toggleSlot(int index) {
