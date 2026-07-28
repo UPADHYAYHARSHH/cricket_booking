@@ -70,25 +70,53 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
     }
   }
 
-  static List<DateItem> _generateDates() {
+  static List<DateItem> _generateDates([GroundModel? turf]) {
     final now = DateTime.now();
-    return List.generate(7, (i) {
-      final date = now.add(Duration(days: i));
-      return DateItem(
-        day: DateFormat('EEE').format(date).toUpperCase(),
-        date: date.day,
-        month: DateFormat('MMM').format(date).toUpperCase(),
-        isSelected: i == 0,
-      );
-    });
+    final ops = (turf?.operatingDays != null && turf!.operatingDays.isNotEmpty) 
+        ? turf.operatingDays 
+        : [1, 2, 3, 4, 5, 6, 7];
+        
+    debugPrint("[SLOT_CUBIT] Generating dates for turf: ${turf?.name}");
+    debugPrint("[SLOT_CUBIT] Turf operating days: $ops");
+        
+    final dates = <DateItem>[];
+    int added = 0;
+    int offset = 0;
+    
+    while (added < 7 && offset < 30) {
+      final date = now.add(Duration(days: offset));
+      if (ops.contains(date.weekday)) {
+        dates.add(DateItem(
+          day: DateFormat('EEE').format(date).toUpperCase(),
+          date: date.day,
+          month: DateFormat('MMM').format(date).toUpperCase(),
+          fullDate: date,
+          isSelected: added == 0,
+        ));
+        added++;
+      }
+      offset++;
+    }
+    
+    if (dates.isEmpty) {
+      dates.add(DateItem(
+        day: DateFormat('EEE').format(now).toUpperCase(),
+        date: now.day,
+        month: DateFormat('MMM').format(now).toUpperCase(),
+        fullDate: now,
+        isSelected: true,
+      ));
+    }
+    
+    return dates;
   }
 
   Future<void> initFacility(GroundModel initialGround) async {
-    final todayDates = _generateDates();
+    final todayDates = _generateDates(initialGround);
     emit(state.copyWith(
       isLoading: true,
       selectedTurf: initialGround,
-      selectedDate: DateTime.now(),
+      selectedDate: todayDates.first.fullDate,
       dates: todayDates,
       errorMessage: null,
     ));
@@ -227,13 +255,20 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
   }
 
   void selectTurf(GroundModel turf) {
-    emit(state.copyWith(selectedTurf: turf));
+    final dates = _generateDates(turf);
+    final selectedDate = dates.first.fullDate;
+    
+    emit(state.copyWith(
+      selectedTurf: turf,
+      dates: dates,
+      selectedDate: selectedDate,
+    ));
     loadSlots(
       turf.id,
-      state.selectedDate ?? DateTime.now(),
+      selectedDate,
       openingTime: turf.openingTime,
       closingTime: turf.closingTime,
-      pricePerSlot: _getPriceForDate(turf, state.selectedDate ?? DateTime.now()),
+      pricePerSlot: _getPriceForDate(turf, selectedDate),
       slotDuration: turf.slotDuration,
     );
   }
@@ -332,13 +367,33 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
       }
 
       // 3. Sort merged slots by time
-      mergedSlots.sort((a, b) => a.startTime.compareTo(b.startTime));
+      mergedSlots.sort((a, b) => _timeToMinutes(a.startTime).compareTo(_timeToMinutes(b.startTime)));
     } else {
       mergedSlots = dbSlots;
     }
 
     // Set errorMessage to null when successfully emitting slots to clear any previous errors
     emit(state.copyWith(slots: mergedSlots, isLoading: false, errorMessage: null));
+  }
+
+  int _timeToMinutes(String time) {
+    try {
+      final parts = time.split(' ');
+      if (parts.length != 2) return 0;
+      final timeParts = parts[0].split(':');
+      int hours = int.parse(timeParts[0]);
+      int minutes = timeParts.length > 1 ? int.parse(timeParts[1]) : 0;
+      final amPm = parts[1].toUpperCase();
+
+      if (amPm == 'PM' && hours != 12) {
+        hours += 12;
+      } else if (amPm == 'AM' && hours == 12) {
+        hours = 0;
+      }
+      return hours * 60 + minutes;
+    } catch (e) {
+      return 0;
+    }
   }
 
   int _parseSlotDuration(dynamic raw) {
@@ -447,7 +502,7 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
     }
     dates[index].isSelected = true;
 
-    final selectedDate = DateTime.now().add(Duration(days: index));
+    final selectedDate = dates[index].fullDate;
     emit(state.copyWith(dates: dates));
 
     // Calculate price based on weekday/weekend

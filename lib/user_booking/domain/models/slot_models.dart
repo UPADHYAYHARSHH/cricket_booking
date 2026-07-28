@@ -7,11 +7,13 @@ class DateItem {
   final int date;
   final String month;
   bool isSelected;
+  final DateTime fullDate;
 
   DateItem({
     required this.day,
     required this.date,
     required this.month,
+    required this.fullDate,
     this.isSelected = false,
   });
 }

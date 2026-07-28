@@ -21,7 +21,7 @@ class GroundRepositoryImpl implements GroundRepository {
       if (kDebugMode) print('Error fetching active sports for filtering: $e');
     }
 
-    final response = await supabase.from('grounds').select('*, ground_images(image_url), locations(description)').eq('is_available', true);
+    final response = await supabase.from('grounds').select('*, ground_images(image_url), locations(address, city, description)').eq('is_available', true);
 
     final List<GroundModel> allGrounds = (response as List).map((e) {
       try {
@@ -96,6 +96,22 @@ class GroundRepositoryImpl implements GroundRepository {
           ownerId: e['owner_id']?.toString() ?? '',
           locationId: e['location_id']?.toString() ?? '',
           isAvailable: e['is_available'] ?? true,
+          operatingDays: () {
+            if (e['operating_days'] is List) {
+              return (e['operating_days'] as List).map((dayStr) {
+                final val = dayStr.toString().toLowerCase();
+                if (val.startsWith('mon')) return 1;
+                if (val.startsWith('tue')) return 2;
+                if (val.startsWith('wed')) return 3;
+                if (val.startsWith('thu')) return 4;
+                if (val.startsWith('fri')) return 5;
+                if (val.startsWith('sat')) return 6;
+                if (val.startsWith('sun')) return 7;
+                return int.tryParse(val) ?? 1;
+              }).toList();
+            }
+            return [1, 2, 3, 4, 5, 6, 7];
+          }(),
           imageUrl: imageUrl,
           images: uniqueImages,
         );
@@ -140,7 +156,7 @@ class GroundRepositoryImpl implements GroundRepository {
 
     final response = await supabase
         .from('grounds')
-        .select('*, ground_images(image_url), locations(description)')
+        .select('*, ground_images(image_url), locations(address, city, description)')
         .eq('location_id', locationId)
         .eq('is_available', true);
 
@@ -217,6 +233,22 @@ class GroundRepositoryImpl implements GroundRepository {
           ownerId: e['owner_id']?.toString() ?? '',
           locationId: e['location_id']?.toString() ?? '',
           isAvailable: e['is_available'] ?? true,
+          operatingDays: () {
+            if (e['operating_days'] is List) {
+              return (e['operating_days'] as List).map((dayStr) {
+                final val = dayStr.toString().toLowerCase();
+                if (val.startsWith('mon')) return 1;
+                if (val.startsWith('tue')) return 2;
+                if (val.startsWith('wed')) return 3;
+                if (val.startsWith('thu')) return 4;
+                if (val.startsWith('fri')) return 5;
+                if (val.startsWith('sat')) return 6;
+                if (val.startsWith('sun')) return 7;
+                return int.tryParse(val) ?? 1;
+              }).toList();
+            }
+            return [1, 2, 3, 4, 5, 6, 7];
+          }(),
           imageUrl: imageUrl,
           images: uniqueImages,
         );
@@ -247,7 +279,7 @@ class GroundRepositoryImpl implements GroundRepository {
   
   @override
   Future<GroundModel?> fetchGroundById(String id) async {
-    final response = await supabase.from('grounds').select('*, ground_images(image_url), locations(description)').eq('id', id).maybeSingle();
+    final response = await supabase.from('grounds').select('*, ground_images(image_url), locations(address, city, description)').eq('id', id).maybeSingle();
 
     if (response == null) return null;
 
@@ -319,6 +351,22 @@ class GroundRepositoryImpl implements GroundRepository {
       ownerId: e['owner_id']?.toString() ?? '',
       locationId: e['location_id']?.toString() ?? '',
       isAvailable: e['is_available'] ?? true,
+      operatingDays: () {
+        if (e['operating_days'] is List) {
+          return (e['operating_days'] as List).map((dayStr) {
+            final val = dayStr.toString().toLowerCase();
+            if (val.startsWith('mon')) return 1;
+            if (val.startsWith('tue')) return 2;
+            if (val.startsWith('wed')) return 3;
+            if (val.startsWith('thu')) return 4;
+            if (val.startsWith('fri')) return 5;
+            if (val.startsWith('sat')) return 6;
+            if (val.startsWith('sun')) return 7;
+            return int.tryParse(val) ?? 1;
+          }).toList();
+        }
+        return [1, 2, 3, 4, 5, 6, 7];
+      }(),
       imageUrl: imageUrl,
       images: uniqueImages,
     );
