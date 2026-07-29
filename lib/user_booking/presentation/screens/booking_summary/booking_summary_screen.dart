@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:turfpro/user_booking/presentation/widgets/shared_booking_widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart';
@@ -481,58 +482,50 @@ class BookingSummaryScreen extends StatelessWidget {
                 ],
 
                 // Bill Details
-                AppText(
-                  text: "Bill Details",
-                  textStyle: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
+                const SizedBox(height: 24),
+                const SectionLabel(title: "PAYMENT SUMMARY"),
+                const SizedBox(height: 12),
+                SectionCard(
+                  child: Column(
+                    children: [
+                      PaymentRow(
+                        label: "Slot Booking Amount",
+                        value: "₹${basePrice.toStringAsFixed(0)}",
+                      ),
+                      const RowDivider(),
+                      if (pointsDiscount > 0) ...[
+                        PaymentRow(
+                          label: "Loyalty Discount",
+                          value: "- ₹${pointsDiscount.toStringAsFixed(0)}",
+                          valueColor: const Color(0xFFE53935),
+                        ),
+                        const RowDivider(),
+                      ],
+                      if (walletDiscount > 0) ...[
+                        PaymentRow(
+                          label: "Wallet Used",
+                          value: "- ₹${walletDiscount.toStringAsFixed(0)}",
+                          valueColor: const Color(0xFFE53935),
+                        ),
+                        const RowDivider(),
+                      ],
+                      PaymentRow(
+                        label: "Platform Fee",
+                        value: "+ ₹${platformFee.toStringAsFixed(0)}",
+                      ),
+                      const RowDivider(),
+                      const PaymentRow(
+                        label: "Taxes & Charges",
+                        value: "Included",
+                      ),
+                      const RowDivider(),
+                      PaymentRow(
+                        label: "Total Paid",
+                        value: "₹${grandTotal.toStringAsFixed(0)}",
+                        valueColor: AppColors.primaryDarkGreen,
+                      ),
+                    ],
                   ),
-                ),
-                const AppSizedBox(height: 16),
-                _priceRow(context, label: "Base Amount", amount: basePrice),
-                const AppSizedBox(height: 12),
-                if (pointsDiscount > 0) ...[
-                  _priceRow(context,
-                      label: "Loyalty Discount",
-                      amount: -pointsDiscount,
-                      isDiscount: true),
-                  const AppSizedBox(height: 12),
-                ],
-                if (walletDiscount > 0) ...[
-                  _priceRow(context,
-                      label: "Wallet Used",
-                      amount: -walletDiscount,
-                      isDiscount: true,
-                      isWallet: true),
-                  const AppSizedBox(height: 12),
-                ],
-                _priceRow(context, label: "Platform Fee", amount: platformFee),
-                const AppSizedBox(height: 12),
-                _priceRow(context, label: "Taxes & Charges", amount: 0),
-                const AppSizedBox(height: 20),
-                const Divider(),
-                const AppSizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    AppText(
-                      text: "Grand Total",
-                      textStyle: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    AppText(
-                      text: "₹${grandTotal.toStringAsFixed(0)}",
-                      textStyle: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.accentOrange,
-                      ),
-                    ),
-                  ],
                 ),
                 const AppSizedBox(height: 40),
 
@@ -577,38 +570,5 @@ class BookingSummaryScreen extends StatelessWidget {
     );
   }
 
-  Widget _priceRow(BuildContext context,
-      {required String label,
-      required double amount,
-      bool isDiscount = false,
-      bool isFree = false,
-      bool isWallet = false}) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        AppText(
-          text: label,
-          textStyle: TextStyle(
-            fontSize: 14,
-            color: colorScheme.onSurface.withValues(alpha: 0.7),
-          ),
-        ),
-        AppText(
-          text: isFree
-              ? "FREE"
-              : "${isDiscount ? '- ' : ''}₹${amount.abs().toStringAsFixed(2)}",
-          textStyle: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
-            color: isFree
-                ? Colors.green
-                : (isDiscount
-                    ? (isWallet ? Colors.blue : AppColors.primaryDarkGreen)
-                    : colorScheme.onSurface),
-          ),
-        ),
-      ],
-    );
-  }
+  
 }

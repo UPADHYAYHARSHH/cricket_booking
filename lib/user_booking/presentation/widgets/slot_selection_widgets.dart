@@ -224,7 +224,7 @@ class SlotSelectionWidgets {
                       const SizedBox(width: 8),
                       Flexible(
                         child: AppText(
-                          text: sport,
+                          text: sport.split('_').map((w) => w.isEmpty ? '' : '${w[0].toUpperCase()}${w.substring(1).toLowerCase()}').join(' '),
                           textStyle: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,

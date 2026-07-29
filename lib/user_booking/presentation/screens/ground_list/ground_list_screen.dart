@@ -17,10 +17,12 @@ import '../../blocs/location/location_cubit.dart';
 import '../../blocs/ground/ground_cubit.dart';
 import '../../blocs/ground/ground_state.dart';
 import 'package:turfpro/user_booking/presentation/widgets/ground_card.dart';
+import 'package:turfpro/user_booking/presentation/widgets/venue_card.dart';
 import 'widgets/ground_skeleton.dart';
 import '../../blocs/notification/notification_cubit.dart';
 import 'package:turfpro/user_booking/constants/route_constants.dart';
-import 'package:turfpro/user_booking/data/models/ground_model.dart';
+
+import 'package:turfpro/user_booking/data/models/venue_model.dart';
 
 class GroundListScreen extends StatefulWidget {
   const GroundListScreen({super.key});
@@ -436,9 +438,9 @@ class _GroundListScreenState extends State<GroundListScreen> {
         }
 
         // Get top rated venues (rating >= 4.0 or top 5 by rating)
-        final topVenues = List<GroundModel>.from(state.allGrounds)
+        final topVenues = List<VenueModel>.from(state.venues)
           ..sort((a, b) => b.rating.compareTo(a.rating));
-        final displayTopVenues = topVenues.where((g) => g.rating >= 4.0).take(10).toList();
+        final displayTopVenues = topVenues.where((v) => v.rating >= 4.0).take(10).toList();
         if (displayTopVenues.isEmpty && topVenues.isNotEmpty) {
           displayTopVenues.addAll(topVenues.take(5));
         }
@@ -485,8 +487,8 @@ class _GroundListScreenState extends State<GroundListScreen> {
                     index: index,
                     child: SizedBox(
                       width: 260,
-                      child: GroundCard(
-                        ground: displayTopVenues[index],
+                      child: VenueCard(
+                        venue: displayTopVenues[index],
                         showAmenities: false,
                         isGrid: false,
                       ),
@@ -505,7 +507,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
   Widget _buildNearbyVenuesHeader(BuildContext context, bool isDark) {
     return BlocBuilder<GroundCubit, GroundState>(
       builder: (context, state) {
-        final count = (state is GroundLoaded) ? state.grounds.length : 0;
+        final count = (state is GroundLoaded) ? state.venues.length : 0;
 
         return Padding(
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
@@ -574,7 +576,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
         }
 
         if (state is GroundLoaded) {
-          if (state.grounds.isEmpty) {
+          if (state.venues.isEmpty) {
             return _buildEmptyState();
           }
 
@@ -587,15 +589,15 @@ class _GroundListScreenState extends State<GroundListScreen> {
                     padding: const EdgeInsets.only(bottom: 12),
                     child: _AnimatedGroundCard(
                       index: index,
-                      child: GroundCard(
-                        ground: state.grounds[index],
+                      child: VenueCard(
+                        venue: state.venues[index],
                         showAmenities: true,
                         isGrid: false,
                       ),
                     ),
                   );
                 },
-                childCount: state.grounds.length,
+                childCount: state.venues.length,
               ),
             ),
           );

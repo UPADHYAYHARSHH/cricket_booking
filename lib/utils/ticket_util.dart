@@ -170,7 +170,7 @@ class TicketUtil {
     // ── Formatted values ──────────────────────────────
     final formattedDate = DateFormat('EEEE, d MMMM yyyy').format(date);
     final formattedPrice = '₹${totalPrice.toStringAsFixed(0)}';
-    final shortId = IdUtil.formatDisplayId(displayId);
+    final shortId = displayId != 0 ? IdUtil.formatDisplayId(displayId) : IdUtil.getShortId(orderId);
 
     pdf.addPage(
       pw.Page(
@@ -312,7 +312,7 @@ class TicketUtil {
                           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                           children: [
                             _pdfInfoBlock('BOOKING ID', '#$shortId'),
-                            _pdfInfoBlock('SPORT', sportName.toUpperCase(),
+                            _pdfInfoBlock('SPORT', sportName.replaceAll('_', ' ').split(' ').map((word) => word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}' : '').join(' '),
                                 alignRight: true),
                           ],
                         ),
@@ -322,9 +322,39 @@ class TicketUtil {
                           children: [
                             _pdfInfoBlock(
                                 'PERIOD', selectedPeriod.toUpperCase()),
-                            _pdfInfoBlock('PRICE PAID', formattedPrice,
-                                alignRight: true),
                           ],
+                        ),
+                        // Payment Breakdown
+                        pw.SizedBox(height: 24),
+                        pw.Text(
+                          'PAYMENT SUMMARY',
+                          style: pw.TextStyle(
+                              color: _kGrey,
+                              fontSize: 8,
+                              fontWeight: pw.FontWeight.bold,
+                              letterSpacing: 1),
+                        ),
+                        pw.SizedBox(height: 8),
+                        pw.Container(
+                          padding: const pw.EdgeInsets.all(12),
+                          decoration: pw.BoxDecoration(
+                            color: _kBg,
+                            borderRadius: pw.BorderRadius.circular(8),
+                            border: pw.Border.all(color: _kBorder, width: 1),
+                          ),
+                          child: pw.Column(
+                            children: [
+                              _pdfPaymentRow('Slot Booking Amount', 'Rs ${(totalPrice - 25).toStringAsFixed(0)}'),
+                              pw.SizedBox(height: 6),
+                              _pdfPaymentRow('Platform Fee', '+ Rs 25'),
+                              pw.SizedBox(height: 6),
+                              _pdfPaymentRow('Taxes & Charges', 'Included'),
+                              pw.SizedBox(height: 8),
+                              pw.Divider(color: _kBorder, thickness: 1),
+                              pw.SizedBox(height: 8),
+                              _pdfPaymentRow('Total Paid', 'Rs ${totalPrice.toStringAsFixed(0)}', isBold: true),
+                            ],
+                          ),
                         ),
                         if (amenities != null && amenities.isNotEmpty) ...[
                           pw.SizedBox(height: 24),
@@ -499,6 +529,29 @@ class TicketUtil {
           style: pw.TextStyle(
             color: _kDark,
             fontSize: isBold ? 14 : 12,
+            fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
+          ),
+        ),
+      ],
+    );
+  }
+
+  static pw.Widget _pdfPaymentRow(String label, String value, {bool isBold = false, bool isDiscount = false}) {
+    return pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+      children: [
+        pw.Text(
+          label,
+          style: pw.TextStyle(
+            color: _kGrey,
+            fontSize: 9,
+          ),
+        ),
+        pw.Text(
+          value,
+          style: pw.TextStyle(
+            color: isDiscount ? const PdfColor.fromInt(0xFFE53935) : (isBold ? _kGreen : _kDark),
+            fontSize: isBold ? 11 : 9,
             fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
           ),
         ),

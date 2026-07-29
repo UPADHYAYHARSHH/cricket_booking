@@ -7,7 +7,8 @@ import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
 import 'package:turfpro/user_booking/presentation/blocs/ground/ground_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/ground/ground_state.dart';
 import 'package:turfpro/user_booking/presentation/blocs/location/location_cubit.dart';
-import 'package:turfpro/user_booking/presentation/widgets/ground_card.dart';
+import 'package:turfpro/user_booking/presentation/widgets/venue_card.dart';
+import 'package:turfpro/user_booking/data/models/venue_model.dart';
 import 'package:turfpro/user_booking/presentation/screens/ground_list/widgets/ground_skeleton.dart';
 
 import 'dart:math';
@@ -105,37 +106,37 @@ class _CategoryGroundsScreenState extends State<CategoryGroundsScreen> {
     return 12742 * asin(sqrt(a));
   }
 
-  List<GroundModel> _applyLocalFilters(List<GroundModel> baseGrounds, double? userLat, double? userLng) {
-    List<GroundModel> filtered = List.from(baseGrounds);
+  List<VenueModel> _applyLocalFilters(List<VenueModel> baseVenues, double? userLat, double? userLng) {
+    List<VenueModel> filtered = List.from(baseVenues);
 
-    filtered = filtered.where((g) => g.pricePerHour >= _criteria.minPrice && g.pricePerHour <= _criteria.maxPrice).toList();
+    filtered = filtered.where((v) { final p = v.pitches.first; return p.pricePerHour >= _criteria.minPrice && p.pricePerHour <= _criteria.maxPrice; }).toList();
 
     if (_criteria.selectedAmenities.isNotEmpty) {
-      filtered = filtered.where((g) {
+      filtered = filtered.where((v) {
         return _criteria.selectedAmenities.every((amenity) => 
-          g.amenities.any((ga) => ga.toLowerCase() == amenity.toLowerCase())
+          v.pitches.first.amenities.any((pa) => pa.toLowerCase() == amenity.toLowerCase())
         );
       }).toList();
     }
 
     if (_criteria.isAvailableNow) {
-      filtered = filtered.where((g) => _isAvailableNow(g.openingTime, g.closingTime)).toList();
+      filtered = filtered.where((v) => _isAvailableNow(v.pitches.first.openingTime, v.pitches.first.closingTime)).toList();
     }
 
     if (_criteria.isNearMe && userLat != null && userLng != null) {
-      filtered = filtered.where((g) => _calculateDistance(userLat, userLng, g.latitude, g.longitude) <= 10.0).toList();
+      filtered = filtered.where((v) => _calculateDistance(userLat, userLng, v.latitude, v.longitude) <= 10.0).toList();
     }
 
     if (_criteria.isTopRated) {
-      filtered = filtered.where((g) => g.rating >= 4.0).toList();
+      filtered = filtered.where((v) => v.rating >= 4.0).toList();
     }
 
     switch (_criteria.sortBy) {
       case SortBy.priceLowToHigh:
-        filtered.sort((a, b) => a.pricePerHour.compareTo(b.pricePerHour));
+        filtered.sort((a, b) => a.pitches.first.pricePerHour.compareTo(b.pitches.first.pricePerHour));
         break;
       case SortBy.priceHighToLow:
-        filtered.sort((a, b) => b.pricePerHour.compareTo(a.pricePerHour));
+        filtered.sort((a, b) => b.pitches.first.pricePerHour.compareTo(a.pitches.first.pricePerHour));
         break;
       case SortBy.none:
       default:
@@ -227,8 +228,8 @@ class _CategoryGroundsScreenState extends State<CategoryGroundsScreen> {
             final locationState = context.read<LocationCubit>().state;
             final city = locationState.city?.split(',').first.trim().toLowerCase();
             
-            final baseCategoryGrounds = state.allGrounds.where((g) {
-              final matchesCategory = g.categories.any((c) {
+            final baseCategoryVenues = state.allVenues.where((v) {
+              final matchesCategory = v.availableSports.any((c) {
                 final catLower = c.toLowerCase();
                 final searchLower = category.toLowerCase();
                 return catLower == searchLower || 
@@ -236,19 +237,19 @@ class _CategoryGroundsScreenState extends State<CategoryGroundsScreen> {
                        searchLower.contains(catLower);
               });
               final matchesCity = city == null || 
-                                  g.city.toLowerCase().contains(city) || 
-                                  city.contains(g.city.toLowerCase());
+                                  v.pitches.first.city.toLowerCase().contains(city) || 
+                                  city.contains(v.pitches.first.city.toLowerCase());
               
               return matchesCategory && matchesCity;
             }).toList();
 
-            final filteredGrounds = _applyLocalFilters(
-              baseCategoryGrounds,
+            final filteredVenues = _applyLocalFilters(
+              baseCategoryVenues,
               locationState.latitude,
               locationState.longitude,
             );
 
-            if (filteredGrounds.isEmpty) {
+            if (filteredVenues.isEmpty) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -292,11 +293,11 @@ class _CategoryGroundsScreenState extends State<CategoryGroundsScreen> {
               },
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
-                itemCount: filteredGrounds.length,
+                itemCount: filteredVenues.length,
                 itemBuilder: (context, index) {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 16),
-                    child: GroundCard(ground: filteredGrounds[index]),
+                    child: VenueCard(venue: filteredVenues[index], showAmenities: true, isGrid: false),
                   );
                 },
               ),

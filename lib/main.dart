@@ -1,4 +1,4 @@
-import 'package:turfpro/firebase_options.dart';
+﻿import 'package:turfpro/firebase_options.dart';
 import 'package:turfpro/user_booking/di/get_it/get_it.dart' as di;
 import 'package:turfpro/user_booking/presentation/blocs/auth/auth_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/profile/profile_cubit.dart';
@@ -6,7 +6,7 @@ import 'package:turfpro/user_booking/presentation/blocs/slot_selection/slot_sele
 import 'package:turfpro/user_booking/presentation/blocs/splash/splash_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/connectivity/connectivity_cubit.dart';
 import 'package:turfpro/user_booking/presentation/screens/no_internet/no_internet_screen.dart';
-import 'package:turfpro/user_booking/presentation/screens/booking_confirmation/booking_confirmation_screen.dart';
+
 import 'package:turfpro/user_booking/presentation/screens/login/login_screen.dart';
 import 'package:turfpro/user_booking/presentation/screens/login/forgot_password_screen.dart';
 import 'package:turfpro/user_booking/presentation/screens/main_navbar/main_nav.dart';
@@ -244,8 +244,6 @@ void main() async {
               AppRoutes.slotSelection: (context) => const SlotSelectionScreen(),
               AppRoutes.timeSlotSelection: (context) =>
                   const TimeSlotSelectionScreen(),
-              "/bookingConfirmationScreen": (context) =>
-                  const BookingConfirmationScreen(),
               "/myBookingScreen": (context) => const MyBookingsScreen(),
               "/paymentFailedScreen": (context) => const PaymentFailedScreen(),
               AppRoutes.editProfileScreen: (context) => BlocProvider(

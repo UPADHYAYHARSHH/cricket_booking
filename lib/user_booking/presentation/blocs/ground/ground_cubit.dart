@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../domain/repositories/ground_repository.dart';
 import '../../../data/models/ground_model.dart';
+import '../../../data/models/venue_model.dart';
 import '../../../data/services/analytics_service.dart';
 import 'package:turfpro/user_booking/domain/models/filter_criteria.dart';
 import 'ground_state.dart';
@@ -53,7 +54,8 @@ class GroundCubit extends Cubit<GroundState> {
 
       analytics.logGroundView(groundId: 'all', groundName: 'Fetch List');
 
-      emit(GroundLoaded(grounds, grounds, criteria: criteria));
+      final venues = _groupGroundsIntoVenues(grounds);
+      emit(GroundLoaded(grounds, grounds, criteria: criteria, venues: venues, allVenues: venues));
     } catch (e) {
       emit(GroundError(e.toString()));
     }
@@ -121,6 +123,17 @@ class GroundCubit extends Cubit<GroundState> {
   String _capitalize(String s) {
     if (s.isEmpty) return s;
     return '${s[0].toUpperCase()}${s.substring(1)}';
+  }
+
+  List<VenueModel> _groupGroundsIntoVenues(List<GroundModel> grounds) {
+    final Map<String, List<GroundModel>> grouped = {};
+    for (final ground in grounds) {
+      // Group by address string (lowercased) to merge venues even if they have different locationIds
+      final key = ground.address.trim().toLowerCase();
+      grouped.putIfAbsent(key, () => []).add(ground);
+    }
+    
+    return grouped.entries.map((e) => VenueModel.fromGrounds(e.key, e.value)).toList();
   }
 
   /// APPLY FILTERS
@@ -200,8 +213,9 @@ class GroundCubit extends Cubit<GroundState> {
           break;
       }
 
+      final venues = _groupGroundsIntoVenues(filteredList);
       emit(GroundLoaded(filteredList, currentState.allGrounds,
-          criteria: criteria));
+          criteria: criteria, venues: venues, allVenues: currentState.allVenues));
     }
   }
 
@@ -223,8 +237,9 @@ class GroundCubit extends Cubit<GroundState> {
         return name.contains(searchLower) || address.contains(searchLower);
       }).toList();
 
+      final venues = _groupGroundsIntoVenues(filteredList);
       emit(GroundLoaded(filteredList, currentState.allGrounds,
-          criteria: currentState.criteria));
+          criteria: currentState.criteria, venues: venues, allVenues: currentState.allVenues));
     }
   }
 

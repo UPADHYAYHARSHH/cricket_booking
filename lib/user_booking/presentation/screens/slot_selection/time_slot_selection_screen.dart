@@ -1,9 +1,10 @@
-import 'package:turfpro/common/constants/colors.dart';
+﻿import 'package:turfpro/common/constants/colors.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import 'package:turfpro/user_booking/data/repositories/payment_repository.dart';
 import 'package:turfpro/user_booking/domain/models/slot_models.dart';
 import 'package:flutter/material.dart';
+import 'package:turfpro/user_booking/presentation/screens/my_booking/my_booking_screen.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
@@ -89,21 +90,35 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
         if (!mounted) return;
         Navigator.pop(context);
 
-        Navigator.pushReplacementNamed(
+        Navigator.pushReplacement(
           context,
-          AppRoutes.bookingConfirmationScreen,
-          arguments: BookingSuccessArguments(
-            ground: ground,
-            date: _pendingDate!,
-            selectedSlots: _pendingSlots ?? [],
-            orderId: response.orderId!,
-            displayId: displayId,
-            totalPrice: _pendingAmount!,
-            sportName: cubit.state.selectedSport ?? "Sport",
-            selectedPeriod: slotTimesPeriod,
+          MaterialPageRoute(
+            builder: (_) => ViewTicketScreen(
+              isFromBookingFlow: true,
+              ticket: TicketModel(
+                bookingId: bookingData['id'] ?? response.orderId ?? 'N/A',
+                groundId: ground.id,
+                displayId: displayId,
+                venueName: ground.name,
+                pitchName: "Main Pitch",
+                date: _pendingDate!,
+                time: slotTimesPeriod,
+                bookedBy: "User",
+                location: ground.address.isNotEmpty ? ground.address : (ground.city.isNotEmpty ? ground.city : "Location"),
+                latitude: ground.latitude,
+                longitude: ground.longitude,
+                price: _pendingAmount!,
+                imageUrl: ground.imageUrl,
+                images: ground.images,
+                isPaid: true,
+                sportName: cubit.state.selectedSport ?? "Sport",
+                period: slotTimesPeriod,
+                ownerId: ground.ownerId,
+                amenities: ground.amenities,
+              ),
+            ),
           ),
-        );
-      } else {
+        );} else {
         if (!mounted) return;
         Navigator.pop(context);
         Navigator.pushNamed(context, AppRoutes.paymentFailedScreen);
@@ -250,22 +265,35 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
       if (!mounted) return;
       Navigator.pop(context);
 
-      Navigator.pushReplacementNamed(
+      Navigator.pushReplacement(
         context,
-        AppRoutes.bookingConfirmationScreen,
-        arguments: BookingSuccessArguments(
-          ground: currentGround,
-          date: _pendingDate!,
-          selectedSlots: selectedSlots,
-          orderId: 'DIRECT_${DateTime.now().millisecondsSinceEpoch}',
-          displayId: displayId,
-          totalPrice: totalPrice,
-          sportName:
-              cubit.state.selectedSport ?? "Sport",
-          selectedPeriod: slotTimesPeriod,
+        MaterialPageRoute(
+          builder: (_) => ViewTicketScreen(
+            isFromBookingFlow: true,
+            ticket: TicketModel(
+              bookingId: bookingData['id'] ?? 'DIRECT_${DateTime.now().millisecondsSinceEpoch}',
+              groundId: currentGround.id,
+              displayId: displayId,
+              venueName: currentGround.name,
+              pitchName: "Main Pitch",
+              date: _pendingDate!,
+              time: slotTimesPeriod,
+              bookedBy: "User",
+              location: currentGround.address.isNotEmpty ? currentGround.address : (currentGround.city.isNotEmpty ? currentGround.city : "Location"),
+              latitude: currentGround.latitude,
+              longitude: currentGround.longitude,
+              price: totalPrice,
+              imageUrl: currentGround.imageUrl,
+              images: currentGround.images,
+              isPaid: true,
+              sportName: cubit.state.selectedSport ?? "Sport",
+              period: slotTimesPeriod,
+              ownerId: currentGround.ownerId,
+              amenities: currentGround.amenities,
+            ),
+          ),
         ),
-      );
-    } catch (e) {
+      );} catch (e) {
       if (mounted) {
         try {
           Navigator.pop(context);
