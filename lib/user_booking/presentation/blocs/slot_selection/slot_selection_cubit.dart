@@ -124,9 +124,9 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
     try {
       final grounds = await groundRepository.fetchGrounds();
       
-      // Group grounds by ownerId and address to find turfs of the same facility
+      // Group grounds by locationId to find turfs of the same facility
       final facilityGrounds = grounds.where((g) {
-        return g.address.trim().toLowerCase() == initialGround.address.trim().toLowerCase();
+        return g.locationId == initialGround.locationId;
       }).toList();
 
       // Ensure the initial ground is present in facility grounds

@@ -226,22 +226,29 @@ class _CategoryGroundsScreenState extends State<CategoryGroundsScreen> {
 
           if (state is GroundLoaded) {
             final locationState = context.read<LocationCubit>().state;
-            final city = locationState.city?.split(',').first.trim().toLowerCase();
             
-            final baseCategoryVenues = state.allVenues.where((v) {
-              final matchesCategory = v.availableSports.any((c) {
-                final catLower = c.toLowerCase();
+            // Find locationIds that have grounds matching the category
+            final matchingLocationIds = state.allGrounds.where((g) {
+              return g.categories.any((c) {
+                final catLower = c.replaceAll('_', ' ').toLowerCase();
                 final searchLower = category.toLowerCase();
                 return catLower == searchLower || 
                        catLower.contains(searchLower) || 
                        searchLower.contains(catLower);
               });
-              final matchesCity = city == null || 
-                                  v.pitches.first.city.toLowerCase().contains(city) || 
-                                  city.contains(v.pitches.first.city.toLowerCase());
-              
-              return matchesCategory && matchesCity;
-            }).toList();
+            }).map((g) => g.locationId).toSet();
+
+            // Group ALL grounds belonging to those matching locations
+            final Map<String, List<GroundModel>> grouped = {};
+            for (final ground in state.allGrounds) {
+              if (matchingLocationIds.contains(ground.locationId)) {
+                grouped.putIfAbsent(ground.locationId, () => []).add(ground);
+              }
+            }
+            
+            final baseCategoryVenues = grouped.entries
+                .map((e) => VenueModel.fromGrounds(e.key, e.value))
+                .toList();
 
             final filteredVenues = _applyLocalFilters(
               baseCategoryVenues,
@@ -261,7 +268,7 @@ class _CategoryGroundsScreenState extends State<CategoryGroundsScreen> {
                     ),
                     const AppSizedBox(height: 16),
                     AppText(
-                      text: hasFilters ? "No grounds match your filters" : "No $category grounds found in this city",
+                      text: hasFilters ? "No grounds match your filters" : "No $category grounds found",
                       textStyle: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
                     ),
                     if (hasFilters) ...[
