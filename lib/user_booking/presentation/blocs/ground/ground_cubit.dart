@@ -27,11 +27,14 @@ class GroundCubit extends Cubit<GroundState> {
         final cityName = city.split(',').first.trim().toLowerCase();
         print("🌍 GroundCubit: Filtering by city -> '$cityName'");
         grounds = grounds
-            .where((g) => g.city.toLowerCase().contains(cityName) || cityName.contains(g.city.toLowerCase()))
+            .where((g) =>
+                g.city.toLowerCase().contains(cityName) ||
+                cityName.contains(g.city.toLowerCase()))
             .toList();
       }
-      
-      print("✅ GroundCubit: Total grounds after city filter: ${grounds.length}");
+
+      print(
+          "✅ GroundCubit: Total grounds after city filter: ${grounds.length}");
 
       // Number multiple same-sport grounds at the same location
       grounds = _applyGroundNumbering(grounds);
@@ -45,8 +48,10 @@ class GroundCubit extends Cubit<GroundState> {
           return ratingComparison;
         }
         if (userLat != null && userLng != null) {
-          final distA = _calculateDistance(userLat, userLng, a.latitude, a.longitude);
-          final distB = _calculateDistance(userLat, userLng, b.latitude, b.longitude);
+          final distA =
+              _calculateDistance(userLat, userLng, a.latitude, a.longitude);
+          final distB =
+              _calculateDistance(userLat, userLng, b.latitude, b.longitude);
           return distA.compareTo(distB);
         }
         return 0;
@@ -55,7 +60,8 @@ class GroundCubit extends Cubit<GroundState> {
       analytics.logGroundView(groundId: 'all', groundName: 'Fetch List');
 
       final venues = _groupGroundsIntoVenues(grounds);
-      emit(GroundLoaded(grounds, grounds, criteria: criteria, venues: venues, allVenues: venues));
+      emit(GroundLoaded(grounds, grounds,
+          criteria: criteria, venues: venues, allVenues: venues));
     } catch (e) {
       emit(GroundError(e.toString()));
     }
@@ -90,31 +96,31 @@ class GroundCubit extends Cubit<GroundState> {
     return grounds.map((g) {
       final displayName = numberedNames[g.id];
       if (displayName != null) {
-          return GroundModel(
-            id: g.id,
-            name: g.name,
-            displayName: displayName,
-            address: g.address,
-            latitude: g.latitude,
-            longitude: g.longitude,
-            pricePerHour: g.pricePerHour,
-            weekendPrice: g.weekendPrice,
-            imageUrl: g.imageUrl,
-            rating: g.rating,
-            openingTime: g.openingTime,
-            closingTime: g.closingTime,
-            slotDuration: g.slotDuration,
-            city: g.city,
-            totalReviews: g.totalReviews,
-            description: g.description,
-            locationDescription: g.locationDescription,
-            amenities: g.amenities,
-            images: g.images,
-            categories: g.categories,
-            ownerId: g.ownerId,
-            locationId: g.locationId,
-            isAvailable: g.isAvailable,
-          );
+        return GroundModel(
+          id: g.id,
+          name: g.name,
+          displayName: displayName,
+          address: g.address,
+          latitude: g.latitude,
+          longitude: g.longitude,
+          pricePerHour: g.pricePerHour,
+          weekendPrice: g.weekendPrice,
+          imageUrl: g.imageUrl,
+          rating: g.rating,
+          openingTime: g.openingTime,
+          closingTime: g.closingTime,
+          slotDuration: g.slotDuration,
+          city: g.city,
+          totalReviews: g.totalReviews,
+          description: g.description,
+          locationDescription: g.locationDescription,
+          amenities: g.amenities,
+          images: g.images,
+          categories: g.categories,
+          ownerId: g.ownerId,
+          locationId: g.locationId,
+          isAvailable: g.isAvailable,
+        );
       }
       return g;
     }).toList();
@@ -128,12 +134,17 @@ class GroundCubit extends Cubit<GroundState> {
   List<VenueModel> _groupGroundsIntoVenues(List<GroundModel> grounds) {
     final Map<String, List<GroundModel>> grouped = {};
     for (final ground in grounds) {
-      // Group by address string (lowercased) to merge venues even if they have different locationIds
-      final key = ground.address.trim().toLowerCase();
+      // Group by locationId to merge grounds in the same venue properly.
+      // Fallback to address string if locationId is missing.
+      final key = ground.locationId.isNotEmpty
+          ? ground.locationId
+          : ground.address.trim().toLowerCase();
       grouped.putIfAbsent(key, () => []).add(ground);
     }
-    
-    return grouped.entries.map((e) => VenueModel.fromGrounds(e.key, e.value)).toList();
+
+    return grouped.entries
+        .map((e) => VenueModel.fromGrounds(e.key, e.value))
+        .toList();
   }
 
   /// APPLY FILTERS
@@ -182,8 +193,8 @@ class GroundCubit extends Cubit<GroundState> {
       // 6. Filter by Sport Category
       if (criteria.sportId != null && criteria.sportId != 'all') {
         filteredList = filteredList.where((g) {
-          return g.categories.any((c) =>
-              c.toLowerCase() == criteria.sportId!.toLowerCase());
+          return g.categories
+              .any((c) => c.toLowerCase() == criteria.sportId!.toLowerCase());
         }).toList();
       }
 
@@ -204,8 +215,10 @@ class GroundCubit extends Cubit<GroundState> {
               return ratingComparison;
             }
             if (userLat != null && userLng != null) {
-              final distA = _calculateDistance(userLat, userLng, a.latitude, a.longitude);
-              final distB = _calculateDistance(userLat, userLng, b.latitude, b.longitude);
+              final distA =
+                  _calculateDistance(userLat, userLng, a.latitude, a.longitude);
+              final distB =
+                  _calculateDistance(userLat, userLng, b.latitude, b.longitude);
               return distA.compareTo(distB);
             }
             return 0;
@@ -215,7 +228,9 @@ class GroundCubit extends Cubit<GroundState> {
 
       final venues = _groupGroundsIntoVenues(filteredList);
       emit(GroundLoaded(filteredList, currentState.allGrounds,
-          criteria: criteria, venues: venues, allVenues: currentState.allVenues));
+          criteria: criteria,
+          venues: venues,
+          allVenues: currentState.allVenues));
     }
   }
 
@@ -239,7 +254,9 @@ class GroundCubit extends Cubit<GroundState> {
 
       final venues = _groupGroundsIntoVenues(filteredList);
       emit(GroundLoaded(filteredList, currentState.allGrounds,
-          criteria: currentState.criteria, venues: venues, allVenues: currentState.allVenues));
+          criteria: currentState.criteria,
+          venues: venues,
+          allVenues: currentState.allVenues));
     }
   }
 
@@ -257,23 +274,27 @@ class GroundCubit extends Cubit<GroundState> {
     try {
       final now = DateTime.now();
       final currentTimeMinutes = now.hour * 60 + now.minute;
-      
+
       final openParts = openingTimeStr.split(':');
-      final openMinutes = int.parse(openParts[0]) * 60 + int.parse(openParts[1]);
-      
+      final openMinutes =
+          int.parse(openParts[0]) * 60 + int.parse(openParts[1]);
+
       final closeParts = closingTimeStr.split(':');
-      final closeMinutes = int.parse(closeParts[0]) * 60 + int.parse(closeParts[1]);
-      
+      final closeMinutes =
+          int.parse(closeParts[0]) * 60 + int.parse(closeParts[1]);
+
       // Handle overnight grounds (e.g., open 18:00, close 02:00)
       if (openMinutes <= closeMinutes) {
-        return currentTimeMinutes >= openMinutes && currentTimeMinutes <= closeMinutes;
+        return currentTimeMinutes >= openMinutes &&
+            currentTimeMinutes <= closeMinutes;
       } else {
         // Overnight
-        return currentTimeMinutes >= openMinutes || currentTimeMinutes <= closeMinutes;
+        return currentTimeMinutes >= openMinutes ||
+            currentTimeMinutes <= closeMinutes;
       }
     } catch (e) {
       // If parsing fails or times are missing/invalid, default to false
-      return false; 
+      return false;
     }
   }
 }

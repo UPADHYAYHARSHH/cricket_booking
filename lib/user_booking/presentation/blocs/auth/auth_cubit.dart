@@ -208,6 +208,7 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> logout() async {
+    await NotificationService.clearFcmToken();
     await repository.logout();
     emit(AuthInitial());
   }

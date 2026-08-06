@@ -39,6 +39,9 @@ class RemoteConfigService {
         _kRequiredVersion: '1.0.0',
         _kUpdateUrl:
             'https://play.google.com/store/apps/details?id=com.boxcricket.booking',
+        'platform_fee': 0.0,
+        'commission_rate': 0.0,
+        'commission_is_percentage': true,
       });
 
       debugPrint('✅ DEFAULTS SET');
@@ -230,6 +233,15 @@ debugPrint(
 
   String get updateUrl =>
       _remoteConfig.getString(_kUpdateUrl);
+
+  double get platformFee =>
+      _remoteConfig.getDouble('platform_fee');
+
+  double get commissionRate =>
+      _remoteConfig.getDouble('commission_rate');
+
+  bool get commissionIsPercentage =>
+      _remoteConfig.getBool('commission_is_percentage');
 
   Future<bool> isUpdateRequired() async {
     try {
