@@ -150,6 +150,7 @@ class NotificationService {
         'token': token,
         'platform': platform,
         'last_used_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
       }, onConflict: 'user_id,token');
 
       // Also keep legacy column in sync
