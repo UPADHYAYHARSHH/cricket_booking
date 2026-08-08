@@ -304,7 +304,12 @@ class _CategoryGroundsScreenState extends State<CategoryGroundsScreen> {
                 itemBuilder: (context, index) {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 16),
-                    child: VenueCard(venue: filteredVenues[index], showAmenities: true, isGrid: false),
+                    child: VenueCard(
+                      venue: filteredVenues[index], 
+                      showAmenities: true, 
+                      isGrid: false,
+                      preferredSport: category,
+                    ),
                   );
                 },
               ),

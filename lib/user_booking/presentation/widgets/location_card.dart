@@ -68,10 +68,8 @@ class LocationCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildImageSection(context, isDark),
-            Expanded(
-              child: ClipRect(
-                child: _buildInfoSection(context, onSurface, isDark),
-              ),
+            ClipRect(
+              child: _buildInfoSection(context, onSurface, isDark),
             ),
           ],
         ),

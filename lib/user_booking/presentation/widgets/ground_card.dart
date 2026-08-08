@@ -150,7 +150,7 @@ class _GroundCardState extends State<GroundCard>
           right: 10,
           child: BlocBuilder<SavedGroundCubit, SavedGroundState>(
             builder: (context, state) {
-              final isSaved = state.favoriteIds.contains(widget.ground.id);
+              final isSaved = state.favoriteIds.contains(widget.ground.locationId);
               return GestureDetector(
                 onTap: () {
                   HapticFeedback.lightImpact();
@@ -158,7 +158,7 @@ class _GroundCardState extends State<GroundCard>
                   if (user != null) {
                     context
                         .read<SavedGroundCubit>()
-                        .toggleFavorite(user.uid, widget.ground.id);
+                        .toggleFavorite(user.uid, widget.ground.locationId);
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(

@@ -58,7 +58,23 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
     super.didChangeDependencies();
     if (!_isInitialized) {
       final args = ModalRoute.of(context)?.settings.arguments;
-      if (args is GroundModel) {
+      if (args is Map) {
+        _ground = args['ground'] as GroundModel?;
+        _location = args['location'] as LocationModel?;
+        final explicitSport = args['preferredSport'] as String?;
+        if (_ground != null) {
+          context.read<SlotSelectionCubit>().initFacility(_ground!, explicitPreferredSport: explicitSport);
+          final locationId = _ground!.locationId;
+          if (locationId.isNotEmpty) {
+            _loadLocationReviews(locationId);
+          } else {
+            _loadReviews(_ground!.id);
+          }
+        } else if (_location != null) {
+          context.read<SlotSelectionCubit>().initForLocation(_location!);
+          _loadLocationReviews(_location!.id);
+        }
+      } else if (args is GroundModel) {
         _ground = args;
         context.read<SlotSelectionCubit>().initFacility(_ground!);
         // Load reviews - prefer location reviews if locationId is available
@@ -286,9 +302,9 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                 // Fixed Header
                 BlocBuilder<SavedGroundCubit, SavedGroundState>(
                   builder: (context, savedState) {
-                    final displayVenueId = (state.selectedTurf ?? _ground)?.id;
-                    final isSaved = displayVenueId != null
-                        ? savedState.favoriteIds.contains(displayVenueId)
+                    final displayLocationId = (state.selectedTurf ?? _ground)?.locationId;
+                    final isSaved = displayLocationId != null
+                        ? savedState.favoriteIds.contains(displayLocationId)
                         : false;
                     return SlotSelectionWidgets.buildHeader(
                       context,
@@ -296,13 +312,13 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                       title: state.selectedTurf?.name ?? "Book Slots",
                       isSaved: isSaved,
                       onToggleFav: () {
-                        if (displayVenueId == null) return;
+                        if (displayLocationId == null) return;
                         HapticFeedback.lightImpact();
                         final user = FirebaseAuth.instance.currentUser;
                         if (user != null) {
                           context
                               .read<SavedGroundCubit>()
-                              .toggleFavorite(user.uid, displayVenueId);
+                              .toggleFavorite(user.uid, displayLocationId);
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(

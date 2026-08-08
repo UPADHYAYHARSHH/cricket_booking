@@ -1,8 +1,7 @@
-import 'package:turfpro/user_booking/data/models/ground_model.dart';
-import 'package:turfpro/user_booking/presentation/blocs/ground/ground_cubit.dart';
-import 'package:turfpro/user_booking/presentation/blocs/ground/ground_state.dart';
+import 'package:turfpro/user_booking/data/models/location_model.dart';
+import 'package:turfpro/user_booking/presentation/blocs/location_list/location_list_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/saved_ground/saved_ground_cubit.dart';
-import 'package:turfpro/user_booking/presentation/widgets/ground_card.dart';
+import 'package:turfpro/user_booking/presentation/widgets/location_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -27,26 +26,26 @@ class _SavedGroundsScreenState extends State<SavedGroundsScreen> {
       body: SafeArea(
         child: BlocBuilder<SavedGroundCubit, SavedGroundState>(
           builder: (context, savedState) {
-            return BlocBuilder<GroundCubit, GroundState>(
-              builder: (context, groundState) {
-                List<GroundModel> savedGrounds = [];
+            return BlocBuilder<LocationListCubit, LocationListState>(
+              builder: (context, locationState) {
+                List<LocationModel> savedLocations = [];
 
-                if (groundState is GroundLoading) {
+                if (locationState is LocationListLoading) {
                   return const Center(
                     child: CircularProgressIndicator(color: AppColors.success),
                   );
                 }
 
-                if (groundState is GroundLoaded) {
-                  savedGrounds = groundState.allGrounds
-                      .where((g) => savedState.favoriteIds.contains(g.id))
+                if (locationState is LocationListLoaded) {
+                  savedLocations = locationState.locations
+                      .where((loc) => savedState.favoriteIds.contains(loc.id))
                       .toList();
                 }
 
                 return CustomScrollView(
                   slivers: [
                     SliverToBoxAdapter(child: _buildHeader()),
-                    if (savedGrounds.isEmpty)
+                    if (savedLocations.isEmpty)
                       SliverFillRemaining(
                         hasScrollBody: false,
                         child: _buildEmptyState(context),
@@ -58,11 +57,11 @@ class _SavedGroundsScreenState extends State<SavedGroundsScreen> {
                           delegate: SliverChildBuilderDelegate(
                             (context, index) => Padding(
                               padding: const EdgeInsets.only(bottom: 16),
-                              child: GroundCard(
-                                ground: savedGrounds[index],
+                              child: LocationCard(
+                                location: savedLocations[index],
                               ),
                             ),
-                            childCount: savedGrounds.length,
+                            childCount: savedLocations.length,
                           ),
                         ),
                       ),
@@ -89,12 +88,12 @@ class _SavedGroundsScreenState extends State<SavedGroundsScreen> {
           ),
           AppSizedBox(height: 16),
           AppText(
-            text: "No Saved Grounds Yet",
+            text: "No Saved Locations Yet",
             textStyle: AppTextTheme.black18,
           ),
           AppSizedBox(height: 8),
           AppText(
-            text: "Tap the heart icon on any ground to save it here.",
+            text: "Tap the heart icon on any location to save it here.",
             textStyle: AppTextTheme.black14,
             align: TextAlign.center,
           ),
@@ -123,14 +122,14 @@ class _SavedGroundsScreenState extends State<SavedGroundsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const AppText(
-            text: "Saved Grounds",
+            text: "Saved Locations",
             size: 22,
             weight: FontWeight.w700,
             color: AppColors.white,
           ),
           const SizedBox(height: 4),
           AppText(
-            text: "Your favorite arenas ready for the next match.",
+            text: "Your favorite venues ready for the next match.",
             size: 13,
             color: AppColors.white.withValues(alpha: 0.7),
           ),

@@ -17,13 +17,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 class VenueCard extends StatefulWidget {
   final VenueModel venue;
-
+  final String? preferredSport;
   final bool showAmenities;
   final bool isGrid;
 
   const VenueCard({
     super.key,
     required this.venue,
+    this.preferredSport,
     this.showAmenities = true,
     this.isGrid = false,
   });
@@ -70,7 +71,10 @@ class _VenueCardState extends State<VenueCard>
         Navigator.pushNamed(
           context,
           AppRoutes.slotSelection,
-          arguments: widget.venue.pitches.first,
+          arguments: {
+            'ground': widget.venue.pitches.first,
+            'preferredSport': widget.preferredSport,
+          },
         );
       },
       onTapCancel: () => _pressController.reverse(),

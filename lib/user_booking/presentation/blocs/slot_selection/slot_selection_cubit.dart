@@ -11,6 +11,11 @@ import 'dart:async';
 import 'package:turfpro/user_booking/domain/repositories/loyalty_repository.dart';
 import 'package:turfpro/user_booking/domain/repositories/wallet_repository.dart';
 import 'package:turfpro/common/config/feature_config.dart';
+import 'package:turfpro/user_booking/di/get_it/get_it.dart';
+import 'package:turfpro/user_booking/presentation/blocs/ground/ground_cubit.dart';
+import 'package:turfpro/user_booking/presentation/blocs/ground/ground_state.dart';
+import 'package:turfpro/user_booking/presentation/blocs/sport/sport_cubit.dart';
+import 'package:turfpro/user_booking/presentation/blocs/sport/sport_state.dart';
 import 'slot_selection_state.dart';
 
 class SlotSelectionCubit extends Cubit<SlotSelectionState> {
@@ -44,6 +49,32 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
     if (hour < 12) return 'Day';
     if (hour < 18) return 'Evening';
     return 'Night';
+  }
+
+  String? _getPreferredSportFromGlobalState(List<String> availableSports) {
+    try {
+      final groundCubit = getIt<GroundCubit>();
+      final sportCubit = getIt<SportCubit>();
+      if (groundCubit.state is GroundLoaded) {
+        final selectedSportId = (groundCubit.state as GroundLoaded).criteria.sportId;
+        if (selectedSportId != null && selectedSportId != 'all') {
+          if (sportCubit.state is SportLoaded) {
+            final sports = (sportCubit.state as SportLoaded).sports;
+            for (var s in sports) {
+              if (s.id == selectedSportId) {
+                if (availableSports.contains(s.name)) {
+                  return s.name;
+                }
+                break;
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint("[SLOT_CUBIT] Could not determine preferred sport from global state: $e");
+    }
+    return null;
   }
 
   Future<void> loadWalletBalance() async {
@@ -111,7 +142,7 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
     return dates;
   }
 
-  Future<void> initFacility(GroundModel initialGround) async {
+  Future<void> initFacility(GroundModel initialGround, {String? explicitPreferredSport}) async {
     final todayDates = _generateDates(initialGround);
     emit(state.copyWith(
       isLoading: true,
@@ -150,20 +181,52 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
         isLoading: false,
       ));
 
-      // Choose preferred sport based on the initial ground's category
-      String? preferredSport;
-      if (initialGround.categories.isNotEmpty && sportsList.contains(initialGround.categories.first)) {
-        preferredSport = initialGround.categories.first;
-      } else if (sportsList.isNotEmpty) {
-        preferredSport = sportsList.first;
+      // Choose preferred sport based on the initial ground's category, global selection, or explicit argument
+      String? preferredSport = explicitPreferredSport ?? _getPreferredSportFromGlobalState(sportsList);
+      
+      debugPrint("[SLOT_CUBIT] explicitPreferredSport: $explicitPreferredSport");
+      debugPrint("[SLOT_CUBIT] preferredSport after global check: $preferredSport");
+      debugPrint("[SLOT_CUBIT] sportsList available: $sportsList");
+
+      if (preferredSport == null) {
+        if (initialGround.categories.isNotEmpty && sportsList.contains(initialGround.categories.first)) {
+          preferredSport = initialGround.categories.first;
+        } else if (sportsList.isNotEmpty) {
+          preferredSport = sportsList.first;
+        }
+        debugPrint("[SLOT_CUBIT] preferredSport fallback: $preferredSport");
+      } else if (!sportsList.contains(preferredSport)) {
+        // If explicit preferred sport is NOT in the sportsList, try case-insensitive or partial match
+        final lowerPref = preferredSport.toLowerCase();
+        final match = sportsList.firstWhere(
+            (s) => s.toLowerCase() == lowerPref || s.toLowerCase().contains(lowerPref) || lowerPref.contains(s.toLowerCase()),
+            orElse: () => '');
+        if (match.isNotEmpty) {
+          preferredSport = match;
+          debugPrint("[SLOT_CUBIT] found partial match for preferredSport: $preferredSport");
+        } else {
+          preferredSport = sportsList.isNotEmpty ? sportsList.first : null;
+          debugPrint("[SLOT_CUBIT] no match found for preferredSport, falling back to: $preferredSport");
+        }
       }
 
       if (preferredSport != null) {
+        debugPrint("[SLOT_CUBIT] final preferredSport selected: $preferredSport");
         selectSport(preferredSport);
       }
 
-      // Explicitly select the initial ground and load slots
-      selectTurf(initialGround);
+      // Explicitly select the initial ground if it matches the preferred sport, 
+      // or find the first turf that does match the preferred sport.
+      if (preferredSport != null && !initialGround.categories.contains(preferredSport)) {
+        final matchingTurfs = facilityGrounds.where((g) => g.categories.contains(preferredSport)).toList();
+        if (matchingTurfs.isNotEmpty) {
+          selectTurf(matchingTurfs.first);
+        } else {
+          selectTurf(initialGround);
+        }
+      } else {
+        selectTurf(initialGround);
+      }
     } catch (e) {
       emit(state.copyWith(
         isLoading: false,
@@ -215,8 +278,12 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
         isLoading: false,
       ));
 
-      if (sportsList.isNotEmpty) {
-        selectSport(sportsList.first);
+      String? preferredSport = _getPreferredSportFromGlobalState(sportsList);
+      if (preferredSport == null && sportsList.isNotEmpty) {
+        preferredSport = sportsList.first;
+      }
+      if (preferredSport != null) {
+        selectSport(preferredSport);
       }
     } catch (e, st) {
       debugPrint("[SLOT_CUBIT] ERROR in initForLocation: $e\n$st");
@@ -359,7 +426,9 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
         if (index != -1) {
           mergedSlots[index] = mergedSlots[index].copyWith(
             status: dbSlot.status,
-            price: dbSlot.price > 0 ? dbSlot.price : null,
+            // If the slot is available, ignore the DB price and keep the generated base price,
+            // as the DB price might be a leftover from a cancelled booking.
+            price: (dbSlot.status != SlotStatus.available && dbSlot.price > 0) ? dbSlot.price : null,
           );
         } else {
           mergedSlots.add(dbSlot); // Fallback
