@@ -42,7 +42,11 @@ serve(async (req) => {
       "android_store_url": "owner_android_store_url",
       "ios_store_url": "owner_ios_store_url",
       "owner_app_maintenance": "is_owner_under_maintenance",
-      "user_app_maintenance": "is_under_maintenance"
+      "user_app_maintenance": "is_under_maintenance",
+      "user_android_min_version": "required_version",
+      "user_ios_min_version": "ios_required_version",
+      "user_android_store_url": "update_url",
+      "user_ios_store_url": "ios_update_url"
     };
 
     const remoteConfigKey = keyMapping[key];
