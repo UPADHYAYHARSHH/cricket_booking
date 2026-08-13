@@ -171,7 +171,10 @@ class NotificationService {
       // Also keep legacy column in sync
       await Supabase.instance.client
           .from('users')
-          .update({'fcm_token': token})
+          .update({
+            'fcm_token': token,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
           .eq('id', user.uid);
     } catch (e) {
       debugPrint("DEBUG: [NotificationService] Failed to update token in Supabase: $e");
