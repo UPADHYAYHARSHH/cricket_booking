@@ -8,6 +8,7 @@ class LocationModel {
   final List<String> sports;
   final double rating;
   final int totalReviews;
+  final List<String> images;
 
   LocationModel({
     required this.id,
@@ -19,6 +20,7 @@ class LocationModel {
     this.sports = const [],
     this.rating = 0.0,
     this.totalReviews = 0,
+    this.images = const [],
   });
 
   factory LocationModel.fromJson(Map<String, dynamic> json) {
@@ -32,6 +34,7 @@ class LocationModel {
       sports: (json['sports'] as List?)?.map((e) => e.toString()).toList() ?? [],
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       totalReviews: json['total_reviews'] ?? 0,
+      images: (json['images'] as List?)?.map((e) => e.toString()).toList() ?? [],
     );
   }
 }

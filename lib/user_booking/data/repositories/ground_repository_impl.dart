@@ -21,7 +21,7 @@ class GroundRepositoryImpl implements GroundRepository {
       if (kDebugMode) print('Error fetching active sports for filtering: $e');
     }
 
-    final response = await supabase.from('grounds').select('*, ground_images(image_url), locations(address, city, description)').eq('is_available', true);
+    final response = await supabase.from('grounds').select('*, ground_images(image_url), locations(address, city, description, location_images(image_url))').eq('is_available', true);
 
     final List<GroundModel> allGrounds = (response as List).map((e) {
       try {
@@ -44,6 +44,18 @@ class GroundRepositoryImpl implements GroundRepository {
         // 3. From 'image_urls' column
         if (e['image_urls'] != null && e['image_urls'] is List) {
           allImages.addAll((e['image_urls'] as List).map((i) => i.toString()));
+        }
+
+        // 4. From location_images relation
+        if (e['locations'] != null && e['locations'] is Map) {
+          final loc = e['locations'];
+          if (loc['location_images'] != null && loc['location_images'] is List) {
+            for (var img in (loc['location_images'] as List)) {
+              if (img is Map && img['image_url'] != null) {
+                allImages.add(img['image_url'].toString());
+              }
+            }
+          }
         }
 
         // Final Deduplication
@@ -376,10 +388,35 @@ class GroundRepositoryImpl implements GroundRepository {
   Future<List<LocationModel>> fetchLocations() async {
     final response = await supabase.rpc('get_locations_with_grounds');
     final List data = response as List;
+    
+    // Fetch all location images separately since the RPC doesn't return them
+    Map<String, List<String>> locImages = {};
+    try {
+      final imagesResponse = await supabase.from('location_images').select('location_id, image_url');
+      for (var row in imagesResponse as List) {
+        final locId = row['location_id'].toString();
+        if (!locImages.containsKey(locId)) {
+          locImages[locId] = [];
+        }
+        if (row['image_url'] != null) {
+          locImages[locId]!.add(row['image_url'].toString());
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) print('Error fetching location images: $e');
+    }
+
     // Filter out locations that have an empty 'sports' array (i.e. no available grounds)
-    return data
-        .map((e) => LocationModel.fromJson(e))
-        .where((loc) => loc.sports.isNotEmpty)
-        .toList();
+    return data.map((e) {
+      final locId = e['id']?.toString() ?? '';
+      final images = locImages[locId] ?? [];
+      
+      // Merge images into the json object so fromJson picks it up
+      if (e is Map<String, dynamic>) {
+        e['images'] = images;
+      }
+      
+      return LocationModel.fromJson(Map<String, dynamic>.from(e));
+    }).where((loc) => loc.sports.isNotEmpty).toList();
   }
 }

@@ -2374,6 +2374,42 @@ class SlotSelectionWidgets {
     );
   }
 
+  static Widget buildPrivacyPolicySection(BuildContext context, String? policy) {
+    if (policy == null || policy.trim().isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppText(
+            text: "Rules & Privacy Policy",
+            textStyle: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+          AppText(
+            text: policy.trim(),
+            textStyle: TextStyle(
+              fontSize: 14,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   static void _showAmenitiesBottomSheet(
       BuildContext context, List<String> amenities) {
     showModalBottomSheet(

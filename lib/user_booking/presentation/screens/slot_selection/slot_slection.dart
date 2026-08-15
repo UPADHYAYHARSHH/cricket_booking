@@ -393,12 +393,26 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
 
                           Container(height: 8, color: const Color(0xFFF4F6F9)),
 
+                          // Privacy Policy
+                          SlotSelectionWidgets.buildPrivacyPolicySection(
+                              context,
+                              (state.selectedTurf?.privacyPolicy ?? '').isNotEmpty
+                                  ? state.selectedTurf?.privacyPolicy
+                                  : displayVenue?.privacyPolicy),
+
+                          Container(height: 8, color: const Color(0xFFF4F6F9)),
+
                           // Description
                           SlotSelectionWidgets.buildDescriptionSection(
                               context,
-                              (state.selectedTurf?.description ?? '').isNotEmpty
-                                  ? state.selectedTurf?.description
-                                  : displayVenue?.description),
+                              [
+                                if ((displayVenue?.locationDescription ?? '').isNotEmpty)
+                                  displayVenue!.locationDescription.trim(),
+                                if ((state.selectedTurf?.description ?? '').isNotEmpty)
+                                  state.selectedTurf!.description.trim()
+                                else if ((displayVenue?.description ?? '').isNotEmpty)
+                                  displayVenue!.description.trim(),
+                              ].where((s) => s.isNotEmpty).join('\n\n')),
 
                           Container(height: 8, color: const Color(0xFFF4F6F9)),
 

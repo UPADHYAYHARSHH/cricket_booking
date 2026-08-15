@@ -9,8 +9,14 @@ class NotificationService {
   static const String _fcmTokenKey = 'fcm_token';
   static final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
+  static bool _isInitialized = false;
 
   static Future<void> initialize() async {
+    if (_isInitialized) {
+      await updateFcmToken();
+      return;
+    }
+    _isInitialized = true;
     // 1. Request permissions
     await _requestPermissions();
 

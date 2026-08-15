@@ -14,6 +14,10 @@ import 'package:turfpro/user_booking/data/models/venue_model.dart';
 import 'package:turfpro/user_booking/constants/route_constants.dart';
 import 'package:turfpro/user_booking/presentation/widgets/ground_image_carousel.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:turfpro/user_booking/data/models/sport_model.dart';
+import 'package:turfpro/user_booking/presentation/blocs/sport/sport_cubit.dart';
+import 'package:turfpro/user_booking/presentation/blocs/sport/sport_state.dart';
 
 class VenueCard extends StatefulWidget {
   final VenueModel venue;
@@ -132,7 +136,7 @@ class _VenueCardState extends State<VenueCard>
           bottom: 0,
           left: 0,
           right: 0,
-          height: 40,
+          height: 60,
           child: DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: const BorderRadius.vertical(
@@ -142,10 +146,39 @@ class _VenueCardState extends State<VenueCard>
                 end: Alignment.bottomCenter,
                 colors: [
                   Colors.transparent,
-                  Colors.black.withValues(alpha: 0.3),
+                  Colors.black.withValues(alpha: 0.6),
                 ],
               ),
             ),
+          ),
+        ),
+
+        // City name on image
+        Positioned(
+          bottom: 6,
+          left: 8,
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const HugeIcon(
+                  icon: HugeIcons.strokeRoundedLocation01,
+                  size: 12,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(width: 6),
+              AppText(
+                text: widget.venue.city,
+                size: 14,
+                weight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ],
           ),
         ),
 
@@ -197,58 +230,6 @@ class _VenueCardState extends State<VenueCard>
                         ),
                 ),
               );
-            },
-          ),
-        ),
-
-        // Distance Badge
-        Positioned(
-          bottom: 10,
-          left: 10,
-          child: BlocBuilder<LocationCubit, LocationState>(
-            builder: (context, state) {
-              final double? originLat = state.gpsLatitude ?? state.latitude;
-              final double? originLng = state.gpsLongitude ?? state.longitude;
-
-              if (originLat != null && originLng != null) {
-                final distance = _calculateDistance(
-                  originLat,
-                  originLng,
-                  widget.venue.latitude,
-                  widget.venue.longitude,
-                );
-                return Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.55),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.15),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const HugeIcon(
-                        icon: HugeIcons.strokeRoundedLocation01,
-                        size: 12,
-                        color: Colors.white,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        "${distance.toStringAsFixed(1)} km",
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-              return const SizedBox();
             },
           ),
         ),
@@ -318,33 +299,6 @@ class _VenueCardState extends State<VenueCard>
 
           const SizedBox(height: 6),
 
-          // Categories
-          if (widget.venue.availableSports.isNotEmpty)
-            Wrap(
-              spacing: 4,
-              runSpacing: 4,
-              children: widget.venue.availableSports.map((category) {
-                return Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryDarkGreen.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  child: AppText(
-                    text: category,
-                    textStyle: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primaryDarkGreen,
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-
-          const SizedBox(height: 6),
-
           // Description (if available)
           if (displayDescription.isNotEmpty)
             Padding(
@@ -382,6 +336,114 @@ class _VenueCardState extends State<VenueCard>
               ),
             ],
           ),
+
+          const SizedBox(height: 3),
+
+          // Distance from user
+          BlocBuilder<LocationCubit, LocationState>(
+            builder: (context, state) {
+              final double? originLat = state.gpsLatitude ?? state.latitude;
+              final double? originLng = state.gpsLongitude ?? state.longitude;
+
+              if (originLat != null && originLng != null) {
+                final distance = _calculateDistance(
+                  originLat,
+                  originLng,
+                  widget.venue.latitude,
+                  widget.venue.longitude,
+                );
+                return Row(
+                  children: [
+                    HugeIcon(
+                      icon: HugeIcons.strokeRoundedNavigation01,
+                      size: 11,
+                      color: AppColors.primaryDarkGreen,
+                    ),
+                    const SizedBox(width: 3),
+                    AppText(
+                      text: "${distance.toStringAsFixed(1)} km away",
+                      size: 10,
+                      color: onSurface.withValues(alpha: 0.5),
+                    ),
+                  ],
+                );
+              }
+              return const SizedBox();
+            },
+          ),
+
+          // Sports icons row
+          if (widget.venue.availableSports.isNotEmpty) ...[
+            const SizedBox(height: 5),
+            BlocBuilder<SportCubit, SportState>(
+              builder: (context, sportState) {
+                final sports = sportState is SportLoaded ? sportState.sports : <SportModel>[];
+                return SizedBox(
+                  height: 20,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: widget.venue.availableSports.length > 5
+                        ? 5
+                        : widget.venue.availableSports.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 4),
+                    itemBuilder: (context, index) {
+                      final sportSlug = widget.venue.availableSports[index];
+                      SportModel? sportData;
+                      try {
+                        sportData = sports.firstWhere((s) => s.slug == sportSlug || s.name == sportSlug);
+                      } catch (_) {}
+                      return Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: AppColors.accentOrange.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: sportData != null && sportData.iconUrl.isNotEmpty
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(2),
+                                child: CachedNetworkImage(
+                                  imageUrl: sportData.iconUrl,
+                                  width: 16,
+                                  height: 16,
+                                  fit: BoxFit.cover,
+                                  placeholder: (_, __) => const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                  ),
+                                  errorWidget: (_, __, ___) => const Icon(
+                                    Icons.sports,
+                                    size: 14,
+                                    color: AppColors.accentOrange,
+                                  ),
+                                ),
+                              )
+                            : sportData != null && sportData.localAsset.isNotEmpty
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(2),
+                                    child: Image.asset(
+                                      sportData.localAsset,
+                                      width: 16,
+                                      height: 16,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => const Icon(
+                                        Icons.sports,
+                                        size: 14,
+                                        color: AppColors.accentOrange,
+                                      ),
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.sports,
+                                    size: 14,
+                                    color: AppColors.accentOrange,
+                                  ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+          ],
 
           const SizedBox(height: 8),
 

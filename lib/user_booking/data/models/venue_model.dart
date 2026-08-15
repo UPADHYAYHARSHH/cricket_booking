@@ -13,6 +13,7 @@ class VenueModel {
   final List<GroundModel> pitches;
   final double latitude;
   final double longitude;
+  final String privacyPolicy;
   final List<String> amenities;
 
   VenueModel({
@@ -28,6 +29,7 @@ class VenueModel {
     required this.pitches,
     required this.latitude,
     required this.longitude,
+    required this.privacyPolicy,
     required this.amenities,
   });
 
@@ -68,6 +70,7 @@ class VenueModel {
       images: firstGround.images,
       latitude: firstGround.latitude,
       longitude: firstGround.longitude,
+      privacyPolicy: firstGround.privacyPolicy,
       amenities: firstGround.amenities,
       availableSports: sportsSet.toList()..sort(),
       pitches: grounds,

@@ -16,6 +16,7 @@ import 'package:turfpro/user_booking/presentation/blocs/saved_ground/saved_groun
 import 'package:turfpro/user_booking/presentation/blocs/sport/sport_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/sport/sport_state.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:turfpro/user_booking/presentation/widgets/ground_image_carousel.dart';
 
 class LocationCard extends StatelessWidget {
   final LocationModel location;
@@ -80,17 +81,12 @@ class LocationCard extends StatelessWidget {
   Widget _buildImageSection(BuildContext context, bool isDark) {
     return Stack(
       children: [
-        // Image
-        SizedBox(
+        // Image Carousel
+        GroundImageCarousel(
+          images: location.images,
+          fallbackImageUrl: location.images.isNotEmpty ? location.images.first : '',
           height: isGrid ? 85 : 110,
-          width: double.infinity,
-          child: const ClipRRect(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-            child: AppNetworkImage(
-              imageUrl: "",
-              fit: BoxFit.cover,
-            ),
-          ),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
         ),
 
         // Gradient overlay

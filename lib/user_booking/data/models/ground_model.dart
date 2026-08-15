@@ -18,6 +18,7 @@ class GroundModel {
   final int totalReviews;
   final String description;
   final String locationDescription;
+  final String privacyPolicy;
   final List<String> amenities;
   final List<String> images;
   final List<String> categories;
@@ -44,6 +45,7 @@ class GroundModel {
     this.weekendPrice = 0,
     this.description = '',
     this.locationDescription = '',
+    this.privacyPolicy = '',
     this.amenities = const [],
     this.images = const [],
     this.categories = const [],
@@ -75,6 +77,7 @@ class GroundModel {
       totalReviews: json['total_reviews'] ?? 0,
       description: json['description'] ?? '',
       locationDescription: json['location_description'] ?? json['locations']?['description'] ?? '',
+      privacyPolicy: json['privacy_policy'] ?? json['locations']?['privacy_policy'] ?? '',
       amenities: () {
         final list = <String>[];
         if (json['amenities'] is List) {
@@ -142,6 +145,7 @@ class GroundModel {
       'total_reviews': totalReviews,
       'description': description,
       'location_description': locationDescription,
+      'privacy_policy': privacyPolicy,
       'amenities': amenities,
       'images': images,
       'categories': categories,
