@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_network_image.dart';
 
@@ -7,6 +8,7 @@ class GroundImageCarousel extends StatefulWidget {
   final double height;
   final BorderRadius? borderRadius;
   final bool showGradient;
+  final bool allowFullScreen;
 
   const GroundImageCarousel({
     super.key,
@@ -15,6 +17,7 @@ class GroundImageCarousel extends StatefulWidget {
     this.height = 160,
     this.borderRadius,
     this.showGradient = true,
+    this.allowFullScreen = false,
   });
 
   @override
@@ -24,9 +27,34 @@ class GroundImageCarousel extends StatefulWidget {
 class _GroundImageCarouselState extends State<GroundImageCarousel> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  Timer? _autoScrollTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startAutoScroll();
+  }
+
+  void _startAutoScroll() {
+    _autoScrollTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      final imageCount = widget.images.isNotEmpty ? widget.images.length : 1;
+      if (imageCount > 1 && _pageController.hasClients) {
+        int nextPage = _currentPage + 1;
+        if (nextPage >= imageCount) {
+          nextPage = 0;
+        }
+        _pageController.animateToPage(
+          nextPage,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
 
   @override
   void dispose() {
+    _autoScrollTimer?.cancel();
     _pageController.dispose();
     super.dispose();
   }
@@ -57,11 +85,25 @@ class _GroundImageCarouselState extends State<GroundImageCarousel> {
               },
               itemCount: displayImages.length,
               itemBuilder: (context, index) {
-                return AppNetworkImage(
-                  imageUrl: displayImages[index],
-                  height: widget.height,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
+                return GestureDetector(
+                  onTap: widget.allowFullScreen ? () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        fullscreenDialog: true,
+                        builder: (context) => _FullScreenImageViewer(
+                          images: displayImages,
+                          initialIndex: index,
+                        ),
+                      ),
+                    );
+                  } : null,
+                  child: AppNetworkImage(
+                    imageUrl: displayImages[index],
+                    height: widget.height,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
                 );
               },
             ),
@@ -124,6 +166,66 @@ class _GroundImageCarouselState extends State<GroundImageCarousel> {
             ),
           ),
       ],
+    );
+  }
+}
+
+class _FullScreenImageViewer extends StatefulWidget {
+  final List<String> images;
+  final int initialIndex;
+
+  const _FullScreenImageViewer({
+    required this.images,
+    required this.initialIndex,
+  });
+
+  @override
+  State<_FullScreenImageViewer> createState() => _FullScreenImageViewerState();
+}
+
+class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
+  late PageController _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: PageView.builder(
+        controller: _pageController,
+        itemCount: widget.images.length,
+        itemBuilder: (context, index) {
+          return InteractiveViewer(
+            minScale: 1.0,
+            maxScale: 4.0,
+            child: Center(
+              child: AppNetworkImage(
+                imageUrl: widget.images[index],
+                fit: BoxFit.contain,
+                width: double.infinity,
+                height: double.infinity,
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }

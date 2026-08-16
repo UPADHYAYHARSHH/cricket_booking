@@ -59,9 +59,9 @@ class VenueModel {
 
     return VenueModel(
       locationId: locationId,
-      name: firstGround.locationDescription.isNotEmpty 
-          ? firstGround.locationDescription 
-          : firstGround.address.split(',').first, // Use location description or address
+      name: firstGround.locationName.isNotEmpty 
+          ? firstGround.locationName 
+          : '---',
       address: firstGround.address,
       city: firstGround.city,
       rating: firstGround.rating, // Could also average the ratings

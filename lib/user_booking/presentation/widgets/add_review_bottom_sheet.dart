@@ -49,23 +49,18 @@ class _AddReviewBottomSheetState extends State<AddReviewBottomSheet> {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) throw Exception("User not logged in");
 
-      if (_isLocationReview) {
-        await getIt<ReviewRepository>().submitLocationReview(
-          userId: user.uid,
-          locationId: widget.locationId!,
-          rating: _rating,
-          reviewText: _reviewController.text,
-        );
-      } else {
-        await getIt<ReviewRepository>().submitReview(
-          userId: user.uid,
-          groundId: widget.groundId,
-          rating: _rating,
-          reviewText: _reviewController.text,
-          mediaBytes: [],
-          mediaTypes: [],
-        );
+      if (widget.locationId == null || widget.locationId!.isEmpty) {
+        throw Exception("Cannot submit a review: Location ID is missing.");
       }
+
+      await getIt<ReviewRepository>().submitReview(
+        userId: user.uid,
+        locationId: widget.locationId!,
+        rating: _rating,
+        reviewText: _reviewController.text,
+        mediaBytes: [], // Add media collection logic if needed in the UI later
+        mediaTypes: [],
+      );
 
       if (mounted) {
         Navigator.pop(context, true);

@@ -21,7 +21,7 @@ class GroundRepositoryImpl implements GroundRepository {
       if (kDebugMode) print('Error fetching active sports for filtering: $e');
     }
 
-    final response = await supabase.from('grounds').select('*, ground_images(image_url), locations(address, city, description, location_images(image_url))').eq('is_available', true);
+    final response = await supabase.from('grounds').select('*, ground_images(image_url), locations(*, location_images(image_url))').eq('is_available', true);
 
     final List<GroundModel> allGrounds = (response as List).map((e) {
       try {
@@ -68,7 +68,10 @@ class GroundRepositoryImpl implements GroundRepository {
         return GroundModel(
           id: e['id']?.toString() ?? '',
           name: e['name']?.toString() ?? '',
-          address: e['address']?.toString() ?? '',
+          locationName: (e['locations'] is Map) ? (e['locations']['name']?.toString() ?? '') : '',
+          address: (e['locations'] is Map && e['locations']['address'] != null && e['locations']['address'].toString().isNotEmpty) 
+              ? e['locations']['address'].toString() 
+              : e['address']?.toString() ?? '',
           latitude: (e['latitude'] as num?)?.toDouble() ?? 0.0,
           longitude: (e['longitude'] as num?)?.toDouble() ?? 0.0,
           pricePerHour: e['price_per_hour'] ?? 0,
@@ -77,14 +80,20 @@ class GroundRepositoryImpl implements GroundRepository {
           openingTime: e['opening_time']?.toString() ?? '00:00:00',
           closingTime: e['closing_time']?.toString() ?? '00:00:00',
           slotDuration: e['slot_duration']?.toString() ?? '1 hour',
-          city: e['city']?.toString() ?? '',
+          city: (e['locations'] is Map && e['locations']['city'] != null && e['locations']['city'].toString().isNotEmpty) 
+              ? e['locations']['city'].toString() 
+              : e['city']?.toString() ?? '',
           totalReviews: e['total_reviews'] ?? 0,
           description: e['description']?.toString() ?? '',
           locationDescription: (e['locations'] is Map) ? (e['locations']['description']?.toString() ?? '') : '',
+          privacyPolicy: e['privacy_policy']?.toString() ?? (e['locations'] is Map ? e['locations']['privacy_policy']?.toString() : null) ?? '',
           amenities: () {
             final list = <String>[];
             if (e['amenities'] is List) {
-               list.addAll((e['amenities'] as List).map((a) => a.toString()));
+               list.addAll((e['amenities'] as List).map((a) => a.toString().replaceAll('_', ' ')));
+            }
+            if (e['locations'] is Map && e['locations']['amenities'] is List) {
+               list.addAll((e['locations']['amenities'] as List).map((a) => a.toString().replaceAll('_', ' ')));
             }
             if (e['has_parking'] == true) list.add('Parking');
             if (e['has_washroom'] == true) list.add('Washroom');
@@ -168,7 +177,7 @@ class GroundRepositoryImpl implements GroundRepository {
 
     final response = await supabase
         .from('grounds')
-        .select('*, ground_images(image_url), locations(address, city, description)')
+        .select('*, ground_images(image_url), locations(*, location_images(image_url))')
         .eq('location_id', locationId)
         .eq('is_available', true);
 
@@ -195,6 +204,18 @@ class GroundRepositoryImpl implements GroundRepository {
           allImages.addAll((e['image_urls'] as List).map((i) => i.toString()));
         }
 
+        // 4. From 'location_images' relation inside 'locations'
+        if (e['locations'] != null && e['locations'] is Map) {
+          final loc = e['locations'];
+          if (loc['location_images'] != null && loc['location_images'] is List) {
+            for (var img in (loc['location_images'] as List)) {
+              if (img is Map && img['image_url'] != null) {
+                allImages.add(img['image_url'].toString());
+              }
+            }
+          }
+        }
+
         // Final Deduplication
         final uniqueImages = allImages.where((url) => url.isNotEmpty).toSet().toList();
         
@@ -205,7 +226,10 @@ class GroundRepositoryImpl implements GroundRepository {
         return GroundModel(
           id: e['id']?.toString() ?? '',
           name: e['name']?.toString() ?? '',
-          address: e['address']?.toString() ?? '',
+          locationName: (e['locations'] is Map) ? (e['locations']['name']?.toString() ?? '') : '',
+          address: (e['locations'] is Map && e['locations']['address'] != null && e['locations']['address'].toString().isNotEmpty) 
+              ? e['locations']['address'].toString() 
+              : e['address']?.toString() ?? '',
           latitude: (e['latitude'] as num?)?.toDouble() ?? 0.0,
           longitude: (e['longitude'] as num?)?.toDouble() ?? 0.0,
           pricePerHour: e['price_per_hour'] ?? 0,
@@ -214,14 +238,20 @@ class GroundRepositoryImpl implements GroundRepository {
           openingTime: e['opening_time']?.toString() ?? '00:00:00',
           closingTime: e['closing_time']?.toString() ?? '00:00:00',
           slotDuration: e['slot_duration']?.toString() ?? '1 hour',
-          city: e['city']?.toString() ?? '',
+          city: (e['locations'] is Map && e['locations']['city'] != null && e['locations']['city'].toString().isNotEmpty) 
+              ? e['locations']['city'].toString() 
+              : e['city']?.toString() ?? '',
           totalReviews: e['total_reviews'] ?? 0,
           description: e['description']?.toString() ?? '',
           locationDescription: (e['locations'] is Map) ? (e['locations']['description']?.toString() ?? '') : '',
+          privacyPolicy: e['privacy_policy']?.toString() ?? (e['locations'] is Map ? e['locations']['privacy_policy']?.toString() : null) ?? '',
           amenities: () {
             final list = <String>[];
             if (e['amenities'] is List) {
-               list.addAll((e['amenities'] as List).map((a) => a.toString()));
+               list.addAll((e['amenities'] as List).map((a) => a.toString().replaceAll('_', ' ')));
+            }
+            if (e['locations'] is Map && e['locations']['amenities'] is List) {
+               list.addAll((e['locations']['amenities'] as List).map((a) => a.toString().replaceAll('_', ' ')));
             }
             if (e['has_parking'] == true) list.add('Parking');
             if (e['has_washroom'] == true) list.add('Washroom');
@@ -291,7 +321,7 @@ class GroundRepositoryImpl implements GroundRepository {
   
   @override
   Future<GroundModel?> fetchGroundById(String id) async {
-    final response = await supabase.from('grounds').select('*, ground_images(image_url), locations(address, city, description)').eq('id', id).maybeSingle();
+    final response = await supabase.from('grounds').select('*, ground_images(image_url), locations(*, location_images(image_url))').eq('id', id).maybeSingle();
 
     if (response == null) return null;
 
@@ -314,6 +344,17 @@ class GroundRepositoryImpl implements GroundRepository {
       allImages.addAll((e['image_urls'] as List).map((i) => i.toString()));
     }
 
+    if (e['locations'] != null && e['locations'] is Map) {
+      final loc = e['locations'];
+      if (loc['location_images'] != null && loc['location_images'] is List) {
+        for (var img in (loc['location_images'] as List)) {
+          if (img is Map && img['image_url'] != null) {
+            allImages.add(img['image_url'].toString());
+          }
+        }
+      }
+    }
+
     final uniqueImages = allImages.where((url) => url.isNotEmpty).toSet().toList();
     
     final imageUrl = uniqueImages.isNotEmpty 
@@ -323,7 +364,10 @@ class GroundRepositoryImpl implements GroundRepository {
     return GroundModel(
       id: e['id']?.toString() ?? '',
       name: e['name']?.toString() ?? '',
-      address: e['address']?.toString() ?? '',
+      locationName: (e['locations'] is Map) ? (e['locations']['name']?.toString() ?? '') : '',
+      address: (e['locations'] is Map && e['locations']['address'] != null && e['locations']['address'].toString().isNotEmpty) 
+          ? e['locations']['address'].toString() 
+          : e['address']?.toString() ?? '',
       latitude: (e['latitude'] as num?)?.toDouble() ?? 0.0,
       longitude: (e['longitude'] as num?)?.toDouble() ?? 0.0,
       pricePerHour: e['price_per_hour'] ?? 0,
@@ -332,14 +376,20 @@ class GroundRepositoryImpl implements GroundRepository {
       openingTime: e['opening_time']?.toString() ?? '00:00:00',
       closingTime: e['closing_time']?.toString() ?? '00:00:00',
       slotDuration: e['slot_duration']?.toString() ?? '1 hour',
-      city: e['city']?.toString() ?? '',
+      city: (e['locations'] is Map && e['locations']['city'] != null && e['locations']['city'].toString().isNotEmpty) 
+          ? e['locations']['city'].toString() 
+          : e['city']?.toString() ?? '',
       totalReviews: e['total_reviews'] ?? 0,
       description: e['description']?.toString() ?? '',
       locationDescription: (e['locations'] is Map) ? (e['locations']['description']?.toString() ?? '') : '',
+      privacyPolicy: e['privacy_policy']?.toString() ?? (e['locations'] is Map ? e['locations']['privacy_policy']?.toString() : null) ?? '',
       amenities: () {
         final list = <String>[];
         if (e['amenities'] is List) {
-           list.addAll((e['amenities'] as List).map((a) => a.toString()));
+           list.addAll((e['amenities'] as List).map((a) => a.toString().replaceAll('_', ' ')));
+        }
+        if (e['locations'] is Map && e['locations']['amenities'] is List) {
+           list.addAll((e['locations']['amenities'] as List).map((a) => a.toString().replaceAll('_', ' ')));
         }
         if (e['has_parking'] == true) list.add('Parking');
         if (e['has_washroom'] == true) list.add('Washroom');

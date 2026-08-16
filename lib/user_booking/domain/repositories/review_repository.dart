@@ -4,24 +4,13 @@ import 'dart:typed_data';
 abstract class ReviewRepository {
   Future<void> submitReview({
     required String userId,
-    required String groundId,
+    required String locationId,
     required double rating,
     required String reviewText,
     required List<Uint8List> mediaBytes,
     required List<String> mediaTypes, // 'image' or 'video'
   });
 
-  Future<List<ReviewModel>> fetchGroundReviews(String groundId);
-  Future<bool> hasUserRatedGround(String userId, String groundId);
-
-  // Location ratings
-  Future<void> submitLocationReview({
-    required String userId,
-    required String locationId,
-    required double rating,
-    required String reviewText,
-  });
-
-  Future<bool> hasUserRatedLocation(String userId, String locationId);
   Future<List<ReviewModel>> fetchLocationReviews(String locationId);
+  Future<bool> hasUserRatedLocation(String userId, String locationId);
 }

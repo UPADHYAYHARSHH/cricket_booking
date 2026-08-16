@@ -246,10 +246,13 @@ class GroundCubit extends Cubit<GroundState> {
 
       final filteredList = currentState.allGrounds.where((ground) {
         final name = ground.name.toLowerCase();
+        final locationName = ground.locationName.toLowerCase();
         final address = ground.address.toLowerCase();
         final searchLower = query.toLowerCase();
 
-        return name.contains(searchLower) || address.contains(searchLower);
+        return name.contains(searchLower) || 
+               address.contains(searchLower) || 
+               locationName.contains(searchLower);
       }).toList();
 
       final venues = _groupGroundsIntoVenues(filteredList);

@@ -9,7 +9,7 @@ class ReviewRepositoryImpl implements ReviewRepository {
   @override
   Future<void> submitReview({
     required String userId,
-    required String groundId,
+    required String locationId,
     required double rating,
     required String reviewText,
     required List<Uint8List> mediaBytes,
@@ -19,7 +19,7 @@ class ReviewRepositoryImpl implements ReviewRepository {
 
     // 1. Upload media to Supabase Storage
     for (int i = 0; i < mediaBytes.length; i++) {
-      final fileName = '${userId}_${groundId}_${DateTime.now().millisecondsSinceEpoch}_$i';
+      final fileName = '${userId}_${locationId}_${DateTime.now().millisecondsSinceEpoch}_$i';
       final fileExtension = mediaTypes[i] == 'image' ? 'jpg' : 'mp4';
       final path = 'review_media/$fileName.$fileExtension';
 
@@ -36,85 +36,42 @@ class ReviewRepositoryImpl implements ReviewRepository {
         mediaUrls.add(publicUrl);
       } catch (e) {
         print("Storage Upload Error for review media: $e");
-        // We could either fail the whole thing or just skip this media. 
-        // Failing seems safer for data consistency.
         throw Exception("Failed to upload review media. Make sure 'reviews' bucket exists.");
       }
     }
 
     // 2. Insert review record
-    await _supabase.from('reviews').insert({
-      'user_id': userId,
-      'ground_id': groundId,
-      'rating': rating,
-      'review_text': reviewText,
-      'media_urls': mediaUrls,
-    });
-  }
-
-  @override
-  Future<List<ReviewModel>> fetchGroundReviews(String groundId) async {
-    try {
-      final response = await _supabase
-          .from('reviews')
-          .select('*, users(name, photo_url)')
-          .eq('ground_id', groundId)
-          .order('created_at', ascending: false);
-
-      return (response as List).map((e) => ReviewModel.fromJson(e)).toList();
-    } catch (e) {
-      print("Error fetching reviews: $e");
-      return [];
-    }
-  }
-
-  @override
-  Future<bool> hasUserRatedGround(String userId, String groundId) async {
-    try {
-      final response = await _supabase
-          .from('reviews')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('ground_id', groundId)
-          .maybeSingle();
-
-      return response != null;
-    } catch (e) {
-      print("Error checking user rating: $e");
-      return false;
-    }
-  }
-
-  @override
-  Future<void> submitLocationReview({
-    required String userId,
-    required String locationId,
-    required double rating,
-    required String reviewText,
-  }) async {
-    // Insert into location_reviews
     await _supabase.from('location_reviews').insert({
       'user_id': userId,
       'location_id': locationId,
       'rating': rating,
       'review_text': reviewText,
+      'media_urls': mediaUrls,
     });
-  }
 
-  @override
-  Future<bool> hasUserRatedLocation(String userId, String locationId) async {
+    // 3. Send notification to the owner
     try {
-      final response = await _supabase
-          .from('location_reviews')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('location_id', locationId)
-          .maybeSingle();
+      final locationData = await _supabase
+          .from('locations')
+          .select('owner_id, name')
+          .eq('id', locationId)
+          .single();
+          
+      final String ownerId = locationData['owner_id']?.toString() ?? '';
+      final String locationName = locationData['name']?.toString() ?? 'their venue';
 
-      return response != null;
+      if (ownerId.isNotEmpty) {
+        await _supabase.from('notifications').insert({
+          'user_id': ownerId,
+          'title': 'New Review for $locationName',
+          'message': 'A user just gave a ${rating.toStringAsFixed(1)}-star review!',
+          'type': 'review',
+          'is_read': false,
+          'created_at': DateTime.now().toUtc().toIso8601String(),
+        });
+      }
     } catch (e) {
-      print("Error checking user location rating: $e");
-      return false;
+      print("Failed to send review notification to owner: $e");
     }
   }
 
@@ -129,8 +86,25 @@ class ReviewRepositoryImpl implements ReviewRepository {
 
       return (response as List).map((e) => ReviewModel.fromJson(e)).toList();
     } catch (e) {
-      print("Error fetching location reviews: $e");
+      print("Error fetching reviews: $e");
       return [];
+    }
+  }
+
+  @override
+  Future<bool> hasUserRatedLocation(String userId, String locationId) async {
+    try {
+      final response = await _supabase
+          .from('location_reviews')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('location_id', locationId)
+          .maybeSingle();
+
+      return response != null;
+    } catch (e) {
+      print("Error checking user rating: $e");
+      return false;
     }
   }
 }

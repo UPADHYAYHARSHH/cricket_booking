@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 class GroundModel {
   final String id;
   final String name;
+  final String locationName;
   final String displayName;
   final String address;
   final double latitude;
@@ -30,6 +31,7 @@ class GroundModel {
   GroundModel({
     required this.id,
     required this.name,
+    this.locationName = '',
     this.displayName = '',
     required this.address,
     required this.latitude,
@@ -59,6 +61,7 @@ class GroundModel {
     return GroundModel(
       id: json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
+      locationName: json['locations']?['name']?.toString() ?? '',
       address: (json['locations'] is Map && json['locations']['address'] != null && json['locations']['address'].toString().isNotEmpty) 
           ? json['locations']['address'].toString() 
           : json['address']?.toString() ?? '',
@@ -67,14 +70,18 @@ class GroundModel {
       pricePerHour: json['price_per_hour'] ?? 0,
       weekendPrice: json['weekend_price'] ?? 0,
       imageUrl: json['imageUrl'] ?? '',
-      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+      rating: (json['locations'] is Map && json['locations']['rating'] != null)
+          ? (json['locations']['rating'] as num).toDouble()
+          : ((json['rating'] as num?)?.toDouble() ?? 0.0),
       openingTime: json['opening_time'] ?? '00:00:00',
       closingTime: json['closing_time'] ?? '00:00:00',
       slotDuration: json['slot_duration']?.toString() ?? '1 hour',
       city: (json['locations'] is Map && json['locations']['city'] != null && json['locations']['city'].toString().isNotEmpty) 
           ? json['locations']['city'].toString() 
           : json['city']?.toString() ?? '',
-      totalReviews: json['total_reviews'] ?? 0,
+      totalReviews: (json['locations'] is Map && json['locations']['total_reviews'] != null)
+          ? json['locations']['total_reviews']
+          : (json['total_reviews'] ?? 0),
       description: json['description'] ?? '',
       locationDescription: json['location_description'] ?? json['locations']?['description'] ?? '',
       privacyPolicy: json['privacy_policy'] ?? json['locations']?['privacy_policy'] ?? '',
@@ -130,6 +137,7 @@ class GroundModel {
     return {
       'id': id,
       'name': name,
+      'locationName': locationName,
       'displayName': displayName,
       'address': address,
       'latitude': latitude,

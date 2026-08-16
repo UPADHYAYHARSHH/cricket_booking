@@ -2,6 +2,7 @@ import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
 import 'package:turfpro/user_booking/presentation/blocs/ground/ground_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/ground/ground_state.dart';
 import 'package:turfpro/user_booking/presentation/widgets/ground_card.dart';
+import 'package:turfpro/user_booking/presentation/widgets/venue_card.dart';
 import 'package:turfpro/user_booking/presentation/screens/ground_list/widgets/ground_skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -56,7 +57,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 controller: _searchController,
                 focusNode: _focusNode,
                 onChanged: (value) {
-                  context.read<GroundCubit>().searchGrounds(value);
+                  setState(() {});
                 },
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurface,
@@ -112,21 +113,36 @@ class _SearchScreenState extends State<SearchScreen> {
         }
 
         if (state is GroundLoaded) {
-          if (_searchController.text.isEmpty) {
+          final query = _searchController.text.trim().toLowerCase();
+          
+          if (query.isEmpty) {
             return _buildEmptyState(context, "Search for your favorite turfs");
           }
 
-          if (state.grounds.isEmpty) {
-            return _buildNoResultsState(context, "No grounds found");
+          final filteredVenues = state.allVenues.where((venue) {
+            final name = venue.name.toLowerCase();
+            final address = venue.address.toLowerCase();
+            // Since VenueModel doesn't directly expose locationName, we check the first ground's locationName if available
+            final locationName = venue.pitches.isNotEmpty 
+                ? venue.pitches.first.locationName.toLowerCase() 
+                : '';
+
+            return name.contains(query) || 
+                   address.contains(query) || 
+                   locationName.contains(query);
+          }).toList();
+
+          if (filteredVenues.isEmpty) {
+            return _buildNoResultsState(context, "No venues found");
           }
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: state.grounds.length,
+            itemCount: filteredVenues.length,
             itemBuilder: (context, index) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16),
-                child: GroundCard(ground: state.grounds[index]),
+                child: VenueCard(venue: filteredVenues[index]),
               );
             },
           );

@@ -288,10 +288,10 @@ class _GroundCardState extends State<GroundCard>
   }
 
   Widget _buildInfo(BuildContext context, Color onSurface, bool isDark) {
-    // Use location description if available, otherwise fall back to ground description
-    final displayDescription = widget.ground.locationDescription.isNotEmpty
-        ? widget.ground.locationDescription
-        : widget.ground.description;
+    // Show location name instead of description
+    final displayDescription = widget.ground.locationName.isNotEmpty
+        ? widget.ground.locationName
+        : '---';
 
     return Padding(
       padding: const EdgeInsets.all(12),

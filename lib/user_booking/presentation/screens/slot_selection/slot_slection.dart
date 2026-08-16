@@ -67,8 +67,6 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
           final locationId = _ground!.locationId;
           if (locationId.isNotEmpty) {
             _loadLocationReviews(locationId);
-          } else {
-            _loadReviews(_ground!.id);
           }
         } else if (_location != null) {
           context.read<SlotSelectionCubit>().initForLocation(_location!);
@@ -77,12 +75,10 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
       } else if (args is GroundModel) {
         _ground = args;
         context.read<SlotSelectionCubit>().initFacility(_ground!);
-        // Load reviews - prefer location reviews if locationId is available
+        // Load reviews using locationId
         final locationId = _ground!.locationId;
         if (locationId.isNotEmpty) {
           _loadLocationReviews(locationId);
-        } else {
-          _loadReviews(_ground!.id);
         }
       } else if (args is LocationModel) {
         _location = args;
@@ -92,25 +88,6 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
         setState(() => _isLoadingReviews = false);
       }
       _isInitialized = true;
-    }
-  }
-
-  Future<void> _loadReviews(String groundId) async {
-    if (!mounted) return;
-    setState(() {
-      _isLoadingReviews = true;
-    });
-    try {
-      final reviews =
-          await getIt<ReviewRepository>().fetchGroundReviews(groundId);
-      if (mounted) {
-        setState(() {
-          _reviews = reviews;
-          _isLoadingReviews = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) setState(() => _isLoadingReviews = false);
     }
   }
 
@@ -275,8 +252,6 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
               final locationId = state.selectedTurf!.locationId;
               if (locationId.isNotEmpty) {
                 _loadLocationReviews(locationId);
-              } else {
-                _loadReviews(state.selectedTurf!.id);
               }
             }
           },
@@ -309,7 +284,9 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                     return SlotSelectionWidgets.buildHeader(
                       context,
                       state.selectedTurf ?? _ground,
-                      title: state.selectedTurf?.name ?? "Book Slots",
+                      title: displayVenue?.locationName.isNotEmpty == true
+                          ? displayVenue!.locationName
+                          : '---',
                       isSaved: isSaved,
                       onToggleFav: () {
                         if (displayLocationId == null) return;
@@ -347,90 +324,131 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                       child: Column(
                         children: [
                           // Venue Info
-                          SlotSelectionWidgets.buildVenueImageCarousel(
-                              context, displayVenue),
-                          SlotSelectionWidgets.buildQuickSummarySection(
-                              context, displayVenue),
+                          SlotSelectionWidgets.buildVenueImageCarousel(context, displayVenue),
+                          SlotSelectionWidgets.buildVenueInfoCard(context, displayVenue),
 
-                          // Sport Selection
-                          SlotSelectionWidgets.buildSportSelection(
-                            context,
-                            state,
-                            onSportChanged: (sport) async {
-                              if (selectedSlots.isNotEmpty &&
-                                  sport != state.selectedSport) {
-                                final proceed =
-                                    await _showClearSelectionDialog(context);
-                                if (!proceed) return;
-                                cubit.clearSelections();
-                              }
-                              cubit.selectSport(sport);
-                            },
-                          ),
-
-                          // Ground Selection
-                          SlotSelectionWidgets.buildGroundSelection(
-                            context,
-                            state,
-                            onTurfChanged: (turf) async {
-                              if (selectedSlots.isNotEmpty &&
-                                  turf.id != state.selectedTurf?.id) {
-                                final proceed =
-                                    await _showClearSelectionDialog(context);
-                                if (!proceed) return;
-                                cubit.clearSelections();
-                              }
-                              cubit.selectTurf(turf);
-                            },
+                          // Sport & Ground Selection
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                            child: SlotSelectionWidgets.buildPremiumCard(
+                              context: context,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  SlotSelectionWidgets.buildSportSelection(
+                                    context,
+                                    state,
+                                    onSportChanged: (sport) async {
+                                      if (selectedSlots.isNotEmpty && sport != state.selectedSport) {
+                                        final proceed = await _showClearSelectionDialog(context);
+                                        if (!proceed) return;
+                                        cubit.clearSelections();
+                                      }
+                                      cubit.selectSport(sport);
+                                    },
+                                  ),
+                                  if (state.facilityGrounds.isNotEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                      child: Divider(height: 1, color: Theme.of(context).dividerColor.withOpacity(0.1)),
+                                    ),
+                                  SlotSelectionWidgets.buildGroundSelection(
+                                    context,
+                                    state,
+                                    onTurfChanged: (turf) async {
+                                      if (selectedSlots.isNotEmpty && turf.id != state.selectedTurf?.id) {
+                                        final proceed = await _showClearSelectionDialog(context);
+                                        if (!proceed) return;
+                                        cubit.clearSelections();
+                                      }
+                                      cubit.selectTurf(turf);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
 
                           // Amenities
-                          SlotSelectionWidgets.buildAmenitiesSection(
-                              context,
-                              state.selectedTurf?.amenities.isNotEmpty == true
-                                  ? state.selectedTurf?.amenities
-                                  : displayVenue?.amenities),
-
-                          Container(height: 8, color: const Color(0xFFF4F6F9)),
+                          if (state.selectedTurf?.amenities.isNotEmpty == true || displayVenue?.amenities.isNotEmpty == true)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                              child: SlotSelectionWidgets.buildPremiumCard(
+                                context: context,
+                                child: SlotSelectionWidgets.buildAmenitiesSection(
+                                    context,
+                                    state.selectedTurf?.amenities.isNotEmpty == true
+                                        ? state.selectedTurf?.amenities
+                                        : displayVenue?.amenities),
+                              ),
+                            ),
 
                           // Privacy Policy
-                          SlotSelectionWidgets.buildPrivacyPolicySection(
-                              context,
-                              (state.selectedTurf?.privacyPolicy ?? '').isNotEmpty
-                                  ? state.selectedTurf?.privacyPolicy
-                                  : displayVenue?.privacyPolicy),
-
-                          Container(height: 8, color: const Color(0xFFF4F6F9)),
+                          if ((state.selectedTurf?.privacyPolicy ?? '').isNotEmpty || (displayVenue?.privacyPolicy ?? '').isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                              child: SlotSelectionWidgets.buildPremiumCard(
+                                context: context,
+                                child: SlotSelectionWidgets.buildPrivacyPolicySection(
+                                    context,
+                                    (state.selectedTurf?.privacyPolicy ?? '').isNotEmpty
+                                        ? state.selectedTurf?.privacyPolicy
+                                        : displayVenue?.privacyPolicy),
+                              ),
+                            ),
 
                           // Description
-                          SlotSelectionWidgets.buildDescriptionSection(
-                              context,
-                              [
+                          Builder(
+                            builder: (context) {
+                              final descText = [
                                 if ((displayVenue?.locationDescription ?? '').isNotEmpty)
                                   displayVenue!.locationDescription.trim(),
                                 if ((state.selectedTurf?.description ?? '').isNotEmpty)
                                   state.selectedTurf!.description.trim()
                                 else if ((displayVenue?.description ?? '').isNotEmpty)
                                   displayVenue!.description.trim(),
-                              ].where((s) => s.isNotEmpty).join('\n\n')),
-
-                          Container(height: 8, color: const Color(0xFFF4F6F9)),
+                              ].where((s) => s.isNotEmpty).join('\n\n');
+                              
+                              if (descText.isEmpty) return const SizedBox.shrink();
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                                child: SlotSelectionWidgets.buildPremiumCard(
+                                  context: context,
+                                  child: SlotSelectionWidgets.buildDescriptionSection(
+                                    context, 
+                                    descText,
+                                    locationName: displayVenue?.locationName,
+                                  ),
+                                ),
+                              );
+                            }
+                          ),
 
                           // Map (if available)
-                          if (displayVenue != null) ...[
-                            SlotSelectionWidgets.buildMapSection(
-                              context,
-                              latitude: displayVenue.latitude,
-                              longitude: displayVenue.longitude,
-                              address: displayVenue.address,
+                          if (displayVenue != null)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                              child: SlotSelectionWidgets.buildPremiumCard(
+                                context: context,
+                                child: SlotSelectionWidgets.buildMapSection(
+                                  context,
+                                  latitude: displayVenue.latitude,
+                                  longitude: displayVenue.longitude,
+                                  address: displayVenue.address,
+                                ),
+                              ),
                             ),
-                            Container(
-                                height: 8, color: const Color(0xFFF4F6F9)),
-                          ],
 
-                          // Reviews (we pass the displayVenue id or ground id to _reviews which are loaded separately)
-                          SlotSelectionWidgets.buildReviewSection(
-                              context, _reviews, _isLoadingReviews),
+                          // Reviews
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                            child: SlotSelectionWidgets.buildPremiumCard(
+                              context: context,
+                              child: SlotSelectionWidgets.buildReviewSection(
+                                  context, _reviews, _isLoadingReviews),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
                         ],
                       ),
                     ),

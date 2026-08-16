@@ -276,9 +276,6 @@ class _VenueCardState extends State<VenueCard>
   Widget _buildInfo(BuildContext context, Color onSurface, bool isDark) {
     final now = DateTime.now();
     final isWeekend = now.weekday == DateTime.saturday || now.weekday == DateTime.sunday;
-    final displayDescription = "".isNotEmpty
-        ? ""
-        : widget.venue.address;
 
     return Padding(
       padding: const EdgeInsets.all(12),
@@ -299,38 +296,25 @@ class _VenueCardState extends State<VenueCard>
 
           const SizedBox(height: 6),
 
-          // Description (if available)
-          if (displayDescription.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: AppText(
-                text: displayDescription,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textStyle: AppTextTheme.black12.copyWith(
-                  color: onSurface.withValues(alpha: 0.6),
-                  fontSize: 11,
-                ),
-              ),
-            ),
-
           // Address
           Row(
             children: [
               HugeIcon(
                 icon: HugeIcons.strokeRoundedLocation01,
-                size: 12,
-                color: onSurface.withValues(alpha: 0.4),
+                size: 14,
+                color: onSurface.withValues(alpha: 0.5),
               ),
-              const SizedBox(width: 3),
+              const SizedBox(width: 4),
               Expanded(
                 child: AppText(
-                  text: widget.venue.address,
-                  maxLines: 1,
+                  text: widget.venue.address.isNotEmpty
+                      ? widget.venue.address
+                      : "Location not available",
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  textStyle: AppTextTheme.black12.copyWith(
+                  textStyle: TextStyle(
+                    fontSize: 12,
                     color: onSurface.withValues(alpha: 0.5),
-                    fontSize: 11,
                   ),
                 ),
               ),

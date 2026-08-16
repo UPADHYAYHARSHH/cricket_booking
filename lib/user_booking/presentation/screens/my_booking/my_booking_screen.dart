@@ -287,42 +287,34 @@ class _BookingCardState extends State<_BookingCard> {
 
   Future<void> _checkIfRated() async {
     final user = FirebaseAuth.instance.currentUser;
-    final groundId = widget.booking.groundId;
     final locationId = widget.booking.ground?.locationId ?? '';
 
-    if (user != null) {
-      try {
-        // Check location rating first (venue-wise rating)
-        if (locationId.isNotEmpty) {
-          final rated = await getIt<ReviewRepository>()
-              .hasUserRatedLocation(user.uid, locationId);
-          if (mounted) {
-            setState(() {
-              _hasRated = rated;
-              _isLoadingRating = false;
-            });
-          }
-          return;
-        }
-
-        // Fallback to ground rating
-        if (groundId.isNotEmpty) {
-          final rated = await getIt<ReviewRepository>()
-              .hasUserRatedGround(user.uid, groundId);
-          if (mounted) {
-            setState(() {
-              _hasRated = rated;
-              _isLoadingRating = false;
-            });
-          }
-          return;
-        }
-      } catch (e) {
-        debugPrint("Error checking user rating: $e");
-      }
+    // If no locationId or no user, can't rate — hide the button
+    if (user == null || locationId.isEmpty) {
+      if (mounted) setState(() {
+        _hasRated = true; // treat as "already rated" to hide the button
+        _isLoadingRating = false;
+      });
+      return;
     }
 
-    if (mounted) setState(() => _isLoadingRating = false);
+    try {
+      final rated = await getIt<ReviewRepository>()
+          .hasUserRatedLocation(user.uid, locationId);
+      if (mounted) {
+        setState(() {
+          _hasRated = rated;
+          _isLoadingRating = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error checking user rating: $e");
+      // On error, hide button to avoid confusion
+      if (mounted) setState(() {
+        _hasRated = true;
+        _isLoadingRating = false;
+      });
+    }
   }
 
   @override
@@ -366,8 +358,7 @@ class _BookingCardState extends State<_BookingCard> {
 
   Widget _buildTopSection(BuildContext context) {
     return Stack(
-      children: [
-        GroundImageCarousel(
+      children: [        GroundImageCarousel(
           images: widget.booking.ground?.images ?? [],
           fallbackImageUrl: widget.booking.ground?.imageUrl ??
               "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e",
@@ -559,13 +550,14 @@ class _BookingCardState extends State<_BookingCard> {
               const SizedBox(width: 4),
               Expanded(
                 child: AppText(
-                  text: widget.booking.ground?.address ??
-                      "Location not available",
+                  text: (widget.booking.ground?.address != null && widget.booking.ground!.address.isNotEmpty)
+                      ? widget.booking.ground!.address
+                      : "Location not available",
                   textStyle: TextStyle(
                     fontSize: 12,
                     color: onSurface.withValues(alpha: 0.5),
                   ),
-                  maxLines: 1,
+                  maxLines: 2,
                 ),
               ),
             ],
