@@ -53,6 +53,11 @@ class _AddReviewBottomSheetState extends State<AddReviewBottomSheet> {
         throw Exception("Cannot submit a review: Location ID is missing.");
       }
 
+      final hasRated = await getIt<ReviewRepository>().hasUserRatedLocation(user.uid, widget.locationId!);
+      if (hasRated) {
+        throw Exception("You have already rated this location.");
+      }
+
       await getIt<ReviewRepository>().submitReview(
         userId: user.uid,
         locationId: widget.locationId!,

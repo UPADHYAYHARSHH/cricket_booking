@@ -99,9 +99,9 @@ class ReviewRepositoryImpl implements ReviewRepository {
           .select('id')
           .eq('user_id', userId)
           .eq('location_id', locationId)
-          .maybeSingle();
+          .limit(1);
 
-      return response != null;
+      return (response as List).isNotEmpty;
     } catch (e) {
       print("Error checking user rating: $e");
       return false;
