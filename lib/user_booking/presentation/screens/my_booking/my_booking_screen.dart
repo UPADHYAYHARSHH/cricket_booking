@@ -1239,6 +1239,33 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
             ),
           ),
         ),
+        if (widget.isFromBookingFlow) ...[
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  AppRoutes.nav,
+                  (route) => false,
+                );
+              },
+              icon: const Icon(Icons.home_rounded, color: Colors.white),
+              label: const Text(
+                "Back to Home",
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryDarkGreen,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
