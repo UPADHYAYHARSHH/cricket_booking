@@ -708,8 +708,8 @@ class _BookingCardState extends State<_BookingCard> {
         setState(() {
           _hasRated = true;
         });
+        context.read<BookingCubit>().getBookings();
       }
-      _checkIfRated();
     }
   }
 
