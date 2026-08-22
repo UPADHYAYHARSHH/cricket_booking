@@ -30,21 +30,24 @@ class RemoteConfigService {
 
       _maintenanceController.add(isMaintenanceMode);
 
-      if (!kIsWeb) {
-        Supabase.instance.client
-            .channel('public:app_config')
-            .onPostgresChanges(
-              event: PostgresChangeEvent.all,
-              schema: 'public',
-              table: 'app_config',
-              callback: (payload) async {
-                debugPrint('🚀 CONFIG UPDATED: ${payload.newRecord}');
-                await fetchAndActivate();
-                _maintenanceController.add(isMaintenanceMode);
-              },
-            )
-            .subscribe();
-      }
+      Supabase.instance.client
+          .channel('public:app_config')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'app_config',
+            callback: (payload) async {
+              debugPrint('🚀 CONFIG UPDATED: ${payload.newRecord}');
+              await fetchAndActivate();
+              _maintenanceController.add(isMaintenanceMode);
+            },
+          )
+          .subscribe((status, [error]) {
+            debugPrint('🚀 REALTIME STATUS: $status');
+            if (error != null) {
+              debugPrint('❌ REALTIME ERROR: $error');
+            }
+          });
     } catch (e, stack) {
       debugPrint('❌ REMOTE CONFIG INITIALIZATION FAILED');
       debugPrint(e.toString());
