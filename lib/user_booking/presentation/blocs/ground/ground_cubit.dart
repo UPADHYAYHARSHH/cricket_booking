@@ -41,20 +41,19 @@ class GroundCubit extends Cubit<GroundState> {
 
       final criteria = FilterCriteria();
 
-      // Initial sort: Rating (Descending), fallback to Near Me
+      // Initial sort: Near Me (Ascending), fallback to Rating (Descending)
       grounds.sort((a, b) {
-        int ratingComparison = b.rating.compareTo(a.rating);
-        if (ratingComparison != 0) {
-          return ratingComparison;
-        }
         if (userLat != null && userLng != null) {
           final distA =
               _calculateDistance(userLat, userLng, a.latitude, a.longitude);
           final distB =
               _calculateDistance(userLat, userLng, b.latitude, b.longitude);
-          return distA.compareTo(distB);
+          int distanceComparison = distA.compareTo(distB);
+          if (distanceComparison != 0) {
+            return distanceComparison;
+          }
         }
-        return 0;
+        return b.rating.compareTo(a.rating);
       });
 
       analytics.logGroundView(groundId: 'all', groundName: 'Fetch List');
@@ -208,20 +207,19 @@ class GroundCubit extends Cubit<GroundState> {
           break;
         case SortBy.none:
         default:
-          // Maintain rating sort if no other sort is selected
+          // Maintain distance sort if no other sort is selected
           filteredList.sort((a, b) {
-            int ratingComparison = b.rating.compareTo(a.rating);
-            if (ratingComparison != 0) {
-              return ratingComparison;
-            }
             if (userLat != null && userLng != null) {
               final distA =
                   _calculateDistance(userLat, userLng, a.latitude, a.longitude);
               final distB =
                   _calculateDistance(userLat, userLng, b.latitude, b.longitude);
-              return distA.compareTo(distB);
+              int distanceComparison = distA.compareTo(distB);
+              if (distanceComparison != 0) {
+                return distanceComparison;
+              }
             }
-            return 0;
+            return b.rating.compareTo(a.rating);
           });
           break;
       }

@@ -18,6 +18,11 @@ abstract class UserRepository {
   Future<void> updateUserCity(String city);
   Future<bool> isUsernameAvailable(String username);
   Future<List<Map<String, dynamic>>> searchUsersByUsername(String query);
+  
+  // Location specific methods
+  Future<Map<String, double>?> getUserLocation();
+  Future<void> updateUserLocation(double lat, double lng);
+  
   Future<void> deleteUserAccount();
 }
 
@@ -191,6 +196,72 @@ class UserRepositoryImpl implements UserRepository {
       debugPrint("[USER_REPO] Successfully saved city to Supabase DB via RPC");
     } catch (e) {
       debugPrint("[USER_REPO] Error updating city in Supabase: $e");
+    }
+  }
+
+  /// FETCH PERSISTED LOCATION FROM SUPABASE (AND LOCAL CACHE)
+  @override
+  Future<Map<String, double>?> getUserLocation() async {
+    // 1. Try local cache first
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final lat = prefs.getDouble('user_lat');
+      final lng = prefs.getDouble('user_lng');
+      if (lat != null && lng != null) {
+        return {'latitude': lat, 'longitude': lng};
+      }
+    } catch (e) {
+      debugPrint("[USER_REPO] Local cache read error (location): $e");
+    }
+
+    // 2. Fallback to Supabase RPC
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return null;
+
+    try {
+      final data = await supabase
+          .rpc('get_user_location', params: {'p_id': user.uid});
+      
+      final dbLat = data?['latitude'] is num ? (data['latitude'] as num).toDouble() : null;
+      final dbLng = data?['longitude'] is num ? (data['longitude'] as num).toDouble() : null;
+      
+      if (dbLat != null && dbLng != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setDouble('user_lat', dbLat);
+        await prefs.setDouble('user_lng', dbLng);
+        return {'latitude': dbLat, 'longitude': dbLng};
+      }
+    } catch (e) {
+      debugPrint("[USER_REPO] Supabase location fetch error: $e");
+    }
+    return null;
+  }
+
+  /// SAVE LOCATION TO SUPABASE (AND LOCAL CACHE)
+  @override
+  Future<void> updateUserLocation(double lat, double lng) async {
+    // 1. Save to local cache immediately
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble('user_lat', lat);
+      await prefs.setDouble('user_lng', lng);
+    } catch (e) {
+      debugPrint("[USER_REPO] Local cache write error (location): $e");
+    }
+
+    // 2. Save to Supabase using RPC
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      await supabase.rpc('update_user_location', params: {
+        'p_id': user.uid,
+        'p_latitude': lat,
+        'p_longitude': lng,
+      });
+      debugPrint("[USER_REPO] Successfully saved location to Supabase DB via RPC");
+    } catch (e) {
+      debugPrint("[USER_REPO] Error updating location in Supabase: $e");
     }
   }
 

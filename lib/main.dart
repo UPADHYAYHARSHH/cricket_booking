@@ -1,4 +1,4 @@
-﻿import 'package:turfpro/firebase_options.dart';
+import 'package:turfpro/firebase_options.dart';
 import 'package:turfpro/user_booking/di/get_it/get_it.dart' as di;
 import 'package:turfpro/user_booking/presentation/blocs/auth/auth_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/profile/profile_cubit.dart';
@@ -32,6 +32,7 @@ import 'package:turfpro/user_booking/presentation/screens/notification/notificat
 import 'package:turfpro/user_booking/presentation/screens/booking_summary/booking_summary_screen.dart';
 import 'package:turfpro/user_booking/presentation/blocs/notification/notification_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/location_list/location_list_cubit.dart';
+import 'package:turfpro/user_booking/presentation/screens/reviews/reviews_screen.dart';
 import 'package:turfpro/user_booking/constants/route_constants.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -259,6 +260,7 @@ void main() async {
               AppRoutes.scan: (context) => const ScanningScreen(),
               AppRoutes.categoryGrounds: (context) =>
                   const CategoryGroundsScreen(),
+              AppRoutes.reviewsScreen: (context) => const ReviewsScreen(),
               AppRoutes.notification: (context) => const NotificationScreen(),
               AppRoutes.bookingSummary: (context) =>
                   const BookingSummaryScreen(),

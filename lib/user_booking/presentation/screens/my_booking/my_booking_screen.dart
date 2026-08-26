@@ -496,52 +496,6 @@ class _BookingCardState extends State<_BookingCard> {
         children: [
           Row(
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    AppText(
-                      text: widget.booking.ground?.name ?? "Venue Name",
-                      textStyle: AppTextTheme.black16.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    if (widget.booking.sportName != null) ...[
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color:
-                              AppColors.primaryDarkGreen.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: AppText(
-                          text: widget.booking.sportName!.toUpperCase(),
-                          textStyle: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primaryDarkGreen,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              AppText(
-                text: "₹${widget.booking.amount}",
-                textStyle: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.primaryDarkGreen,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
               HugeIcon(
                 icon: HugeIcons.strokeRoundedLocation01,
                 size: 14,
@@ -562,13 +516,77 @@ class _BookingCardState extends State<_BookingCard> {
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppText(
+                      text: (widget.booking.ground?.locationName != null && widget.booking.ground!.locationName.isNotEmpty)
+                          ? widget.booking.ground!.locationName
+                          : (widget.booking.ground?.name ?? "Venue Name"),
+                      textStyle: AppTextTheme.black16.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (widget.booking.sportName != null) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppColors.primaryDarkGreen.withValues(alpha: 0.5),
+                                width: 1,
+                              ),
+                            ),
+                            child: ClipOval(
+                              child: Image.asset(
+                                SlotSelectionWidgets.getSportImage(widget.booking.sportName!),
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    const Icon(Icons.sports, size: 14, color: AppColors.primaryDarkGreen),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          AppText(
+                            text: widget.booking.ground?.name ?? "Venue Name",
+                            textStyle: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              AppText(
+                text: "₹${widget.booking.amount}",
+                textStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.primaryDarkGreen,
+                ),
+              ),
+            ],
+          ),
+
           
           // Check-in time display
           if (widget.booking.checkedIn && widget.booking.checkedInAt != null) ...[
             const SizedBox(height: 6),
             Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.access_time_filled,
                   size: 14,
                   color: AppColors.primaryDarkGreen,
@@ -576,7 +594,7 @@ class _BookingCardState extends State<_BookingCard> {
                 const SizedBox(width: 4),
                 AppText(
                   text: "Checked in at ${DateFormat('h:mm a').format(widget.booking.checkedInAt!)}",
-                  textStyle: TextStyle(
+                  textStyle: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: AppColors.primaryDarkGreen,
@@ -723,6 +741,7 @@ class _BookingCardState extends State<_BookingCard> {
             groundId: widget.booking.groundId,
             displayId: widget.booking.displayId,
             venueName: widget.booking.ground?.name ?? "Venue",
+            locationName: widget.booking.ground?.locationName ?? '',
             pitchName: "Main Pitch",
             date: widget.booking.slotTime, // Keep as DateTime
             time: DateFormat('hh:mm a').format(widget.booking.slotTime),
@@ -945,10 +964,9 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
             borderRadius: BorderRadius.circular(8),
           ),
           child: IconButton(
-            icon: const Icon(
-              Icons.arrow_back_ios_new,
+            icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 20,
               color: Colors.white,
-              size: 20,
+              
             ),
             onPressed: () => Navigator.pop(context),
           ),
@@ -1063,6 +1081,14 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
                   SectionCard(
                     child: Column(
                       children: [
+                        if (widget.ticket.locationName.isNotEmpty) ...[
+                          DetailRow(
+                            label: "Venue",
+                            value: widget.ticket.locationName,
+                            iconData: Icons.business_rounded,
+                          ),
+                          const RowDivider(),
+                        ],
                         DetailRow(
                           label: "Court",
                           value: widget.ticket.venueName,
@@ -1276,6 +1302,7 @@ class TicketModel {
   final String groundId;
   final int displayId;
   final String venueName;
+  final String locationName;
   final String pitchName;
   final DateTime date;
   final String time;
@@ -1297,6 +1324,7 @@ class TicketModel {
     required this.groundId,
     required this.displayId,
     required this.venueName,
+    this.locationName = '',
     required this.pitchName,
     required this.date,
     required this.time,

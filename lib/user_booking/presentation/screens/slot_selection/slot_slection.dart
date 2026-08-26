@@ -325,7 +325,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                         children: [
                           // Venue Info
                           SlotSelectionWidgets.buildVenueImageCarousel(context, displayVenue),
-                          SlotSelectionWidgets.buildVenueInfoCard(context, displayVenue),
+                          SlotSelectionWidgets.buildVenueInfoCard(context, displayVenue, reviews: _reviews),
 
                           // Sport & Ground Selection
                           Padding(

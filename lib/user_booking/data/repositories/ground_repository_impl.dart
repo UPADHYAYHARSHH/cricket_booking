@@ -72,18 +72,26 @@ class GroundRepositoryImpl implements GroundRepository {
           address: (e['locations'] is Map && e['locations']['address'] != null && e['locations']['address'].toString().isNotEmpty) 
               ? e['locations']['address'].toString() 
               : e['address']?.toString() ?? '',
-          latitude: (e['latitude'] as num?)?.toDouble() ?? 0.0,
-          longitude: (e['longitude'] as num?)?.toDouble() ?? 0.0,
+          latitude: (e['locations'] is Map && e['locations']['latitude'] != null)
+              ? (double.tryParse(e['locations']['latitude'].toString()) ?? 0.0)
+              : (double.tryParse(e['latitude']?.toString() ?? '') ?? 0.0),
+          longitude: (e['locations'] is Map && e['locations']['longitude'] != null)
+              ? (double.tryParse(e['locations']['longitude'].toString()) ?? 0.0)
+              : (double.tryParse(e['longitude']?.toString() ?? '') ?? 0.0),
           pricePerHour: e['price_per_hour'] ?? 0,
           weekendPrice: e['weekend_price'] ?? 0,
-          rating: (e['rating'] as num?)?.toDouble() ?? 0.0,
+          rating: (e['locations'] is Map && e['locations']['rating'] != null)
+              ? (double.tryParse(e['locations']['rating'].toString()) ?? 0.0)
+              : (double.tryParse(e['rating']?.toString() ?? '') ?? 0.0),
           openingTime: e['opening_time']?.toString() ?? '00:00:00',
           closingTime: e['closing_time']?.toString() ?? '00:00:00',
           slotDuration: e['slot_duration']?.toString() ?? '1 hour',
           city: (e['locations'] is Map && e['locations']['city'] != null && e['locations']['city'].toString().isNotEmpty) 
               ? e['locations']['city'].toString() 
               : e['city']?.toString() ?? '',
-          totalReviews: e['total_reviews'] ?? 0,
+          totalReviews: (e['locations'] is Map && e['locations']['total_reviews'] != null)
+              ? (int.tryParse(e['locations']['total_reviews'].toString()) ?? 0)
+              : (int.tryParse(e['total_reviews']?.toString() ?? '') ?? 0),
           description: e['description']?.toString() ?? '',
           locationDescription: (e['locations'] is Map) ? (e['locations']['description']?.toString() ?? '') : '',
           privacyPolicy: e['privacy_policy']?.toString() ?? (e['locations'] is Map ? e['locations']['privacy_policy']?.toString() : null) ?? '',
@@ -230,18 +238,26 @@ class GroundRepositoryImpl implements GroundRepository {
           address: (e['locations'] is Map && e['locations']['address'] != null && e['locations']['address'].toString().isNotEmpty) 
               ? e['locations']['address'].toString() 
               : e['address']?.toString() ?? '',
-          latitude: (e['latitude'] as num?)?.toDouble() ?? 0.0,
-          longitude: (e['longitude'] as num?)?.toDouble() ?? 0.0,
+          latitude: (e['locations'] is Map && e['locations']['latitude'] != null)
+              ? (double.tryParse(e['locations']['latitude'].toString()) ?? 0.0)
+              : (double.tryParse(e['latitude']?.toString() ?? '') ?? 0.0),
+          longitude: (e['locations'] is Map && e['locations']['longitude'] != null)
+              ? (double.tryParse(e['locations']['longitude'].toString()) ?? 0.0)
+              : (double.tryParse(e['longitude']?.toString() ?? '') ?? 0.0),
           pricePerHour: e['price_per_hour'] ?? 0,
           weekendPrice: e['weekend_price'] ?? 0,
-          rating: (e['rating'] as num?)?.toDouble() ?? 0.0,
+          rating: (e['locations'] is Map && e['locations']['rating'] != null)
+              ? (double.tryParse(e['locations']['rating'].toString()) ?? 0.0)
+              : (double.tryParse(e['rating']?.toString() ?? '') ?? 0.0),
           openingTime: e['opening_time']?.toString() ?? '00:00:00',
           closingTime: e['closing_time']?.toString() ?? '00:00:00',
           slotDuration: e['slot_duration']?.toString() ?? '1 hour',
           city: (e['locations'] is Map && e['locations']['city'] != null && e['locations']['city'].toString().isNotEmpty) 
               ? e['locations']['city'].toString() 
               : e['city']?.toString() ?? '',
-          totalReviews: e['total_reviews'] ?? 0,
+          totalReviews: (e['locations'] is Map && e['locations']['total_reviews'] != null)
+              ? (int.tryParse(e['locations']['total_reviews'].toString()) ?? 0)
+              : (int.tryParse(e['total_reviews']?.toString() ?? '') ?? 0),
           description: e['description']?.toString() ?? '',
           locationDescription: (e['locations'] is Map) ? (e['locations']['description']?.toString() ?? '') : '',
           privacyPolicy: e['privacy_policy']?.toString() ?? (e['locations'] is Map ? e['locations']['privacy_policy']?.toString() : null) ?? '',
@@ -368,18 +384,26 @@ class GroundRepositoryImpl implements GroundRepository {
       address: (e['locations'] is Map && e['locations']['address'] != null && e['locations']['address'].toString().isNotEmpty) 
           ? e['locations']['address'].toString() 
           : e['address']?.toString() ?? '',
-      latitude: (e['latitude'] as num?)?.toDouble() ?? 0.0,
-      longitude: (e['longitude'] as num?)?.toDouble() ?? 0.0,
+      latitude: (e['locations'] is Map && e['locations']['latitude'] != null)
+          ? (double.tryParse(e['locations']['latitude'].toString()) ?? 0.0)
+          : (double.tryParse(e['latitude']?.toString() ?? '') ?? 0.0),
+      longitude: (e['locations'] is Map && e['locations']['longitude'] != null)
+          ? (double.tryParse(e['locations']['longitude'].toString()) ?? 0.0)
+          : (double.tryParse(e['longitude']?.toString() ?? '') ?? 0.0),
       pricePerHour: e['price_per_hour'] ?? 0,
       weekendPrice: e['weekend_price'] ?? 0,
-      rating: (e['rating'] as num?)?.toDouble() ?? 0.0,
+      rating: (e['locations'] is Map && e['locations']['rating'] != null)
+          ? (double.tryParse(e['locations']['rating'].toString()) ?? 0.0)
+          : (double.tryParse(e['rating']?.toString() ?? '') ?? 0.0),
       openingTime: e['opening_time']?.toString() ?? '00:00:00',
       closingTime: e['closing_time']?.toString() ?? '00:00:00',
       slotDuration: e['slot_duration']?.toString() ?? '1 hour',
       city: (e['locations'] is Map && e['locations']['city'] != null && e['locations']['city'].toString().isNotEmpty) 
           ? e['locations']['city'].toString() 
           : e['city']?.toString() ?? '',
-      totalReviews: e['total_reviews'] ?? 0,
+      totalReviews: (e['locations'] is Map && e['locations']['total_reviews'] != null)
+          ? (int.tryParse(e['locations']['total_reviews'].toString()) ?? 0)
+          : (int.tryParse(e['total_reviews']?.toString() ?? '') ?? 0),
       description: e['description']?.toString() ?? '',
       locationDescription: (e['locations'] is Map) ? (e['locations']['description']?.toString() ?? '') : '',
       privacyPolicy: e['privacy_policy']?.toString() ?? (e['locations'] is Map ? e['locations']['privacy_policy']?.toString() : null) ?? '',

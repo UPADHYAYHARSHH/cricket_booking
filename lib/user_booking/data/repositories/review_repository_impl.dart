@@ -49,7 +49,30 @@ class ReviewRepositoryImpl implements ReviewRepository {
       'media_urls': mediaUrls,
     });
 
-    // 3. Send notification to the owner
+    // 3. Update the locations table with new rating and total reviews
+    try {
+      final reviewsResponse = await _supabase
+          .from('location_reviews')
+          .select('rating')
+          .eq('location_id', locationId);
+          
+      final reviewsList = reviewsResponse as List;
+      if (reviewsList.isNotEmpty) {
+        final totalReviews = reviewsList.length;
+        final sumRating = reviewsList.fold<double>(
+            0.0, (prev, row) => prev + (row['rating'] as num).toDouble());
+        final avgRating = sumRating / totalReviews;
+
+        await _supabase.from('locations').update({
+          'rating': double.parse(avgRating.toStringAsFixed(1)),
+          'total_reviews': totalReviews,
+        }).eq('id', locationId);
+      }
+    } catch (e) {
+      print("Failed to sync location rating: $e");
+    }
+
+    // 4. Send notification to the owner
     try {
       final locationData = await _supabase
           .from('locations')
@@ -80,11 +103,30 @@ class ReviewRepositoryImpl implements ReviewRepository {
     try {
       final response = await _supabase
           .from('location_reviews')
-          .select('*, users(name, photo_url)')
+          .select('*')
           .eq('location_id', locationId)
           .order('created_at', ascending: false);
 
-      return (response as List).map((e) => ReviewModel.fromJson(e)).toList();
+      final List<ReviewModel> reviews = [];
+      for (var row in (response as List)) {
+        try {
+          final userId = row['user_id']?.toString();
+          if (userId != null && userId.isNotEmpty) {
+            final profileData = await _supabase.rpc('get_user_profile', params: {'p_id': userId});
+            if (profileData != null) {
+              // Inject the user data so ReviewModel.fromJson can parse it
+              row['users'] = {
+                'name': profileData['name'] ?? profileData['full_name'],
+                'photo_url': profileData['photo_url'] ?? profileData['avatar_url'],
+              };
+            }
+          }
+        } catch (e) {
+          print("Error fetching profile for review: $e");
+        }
+        reviews.add(ReviewModel.fromJson(row));
+      }
+      return reviews;
     } catch (e) {
       print("Error fetching reviews: $e");
       return [];

@@ -78,7 +78,7 @@ class BookingSummaryScreen extends StatelessWidget {
             backgroundColor: Colors.transparent,
             elevation: 0,
             leading: IconButton(
-              icon: Icon(Icons.arrow_back_ios, color: colorScheme.onSurface),
+              icon: HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 20, color: colorScheme.onSurface),
               onPressed: () => Navigator.pop(context),
             ),
             title: AppText(

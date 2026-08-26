@@ -1,3 +1,4 @@
+import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
 import '../../../../common/constants/colors.dart';
 import '../../../constants/text_theme.dart';
@@ -19,10 +20,9 @@ class PaymentFailedScreen extends StatelessWidget {
       appBar: AppBar(
         centerTitle: true,
         leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios,
+          icon: HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 20,
             color: theme.colorScheme.onSurface,
-            size: 20,
+            
           ),
           onPressed: () => Navigator.pop(context),
         ),

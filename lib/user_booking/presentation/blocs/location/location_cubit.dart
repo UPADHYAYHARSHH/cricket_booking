@@ -131,11 +131,12 @@ class LocationCubit extends Cubit<LocationState> {
     try {
       /// STEP 1: Check stored city FIRST
       final storedCity = await repo.getUserCity();
+      final storedLocation = await repo.getUserLocation();
 
       if (storedCity != null && !forceRefresh) {
         debugPrint("[LOCATION_CUBIT] Found stored city: $storedCity");
 
-        // Set initial state from stored city
+        // Set initial state from stored city and stored location
         if (!kIsWeb) {
           try {
             List<Location> locations = await locationFromAddress(storedCity);
@@ -144,29 +145,37 @@ class LocationCubit extends Cubit<LocationState> {
                 city: storedCity,
                 latitude: locations.first.latitude,
                 longitude: locations.first.longitude,
+                gpsLatitude: storedLocation?['latitude'],
+                gpsLongitude: storedLocation?['longitude'],
                 isLoading: false,
                 errorMessage: null,
-                hasGpsLocation: true, // Allow distance display from stored coordinates
+                hasGpsLocation: storedLocation != null, // Allow distance display from stored coordinates if available
               ));
             } else {
               emit(state.copyWith(
                 city: storedCity,
+                gpsLatitude: storedLocation?['latitude'],
+                gpsLongitude: storedLocation?['longitude'],
                 isLoading: false,
-                hasGpsLocation: false,
+                hasGpsLocation: storedLocation != null,
               ));
             }
           } catch (_) {
             emit(state.copyWith(
               city: storedCity,
+              gpsLatitude: storedLocation?['latitude'],
+              gpsLongitude: storedLocation?['longitude'],
               isLoading: false,
-              hasGpsLocation: false,
+              hasGpsLocation: storedLocation != null,
             ));
           }
         } else {
           emit(state.copyWith(
             city: storedCity,
+            gpsLatitude: storedLocation?['latitude'],
+            gpsLongitude: storedLocation?['longitude'],
             isLoading: false,
-            hasGpsLocation: false,
+            hasGpsLocation: storedLocation != null,
           ));
         }
 
@@ -195,6 +204,10 @@ class LocationCubit extends Cubit<LocationState> {
       if (shouldUpdateCity && userLoc.city != "Unknown") {
         await repo.updateUserCity(userLoc.city);
       }
+      
+      // Update location in DB and local storage
+      await repo.updateUserLocation(userLoc.latitude, userLoc.longitude);
+      
     } catch (e) {
       debugPrint("[LOCATION_CUBIT] GPS ERROR: $e");
 
@@ -212,7 +225,7 @@ class LocationCubit extends Cubit<LocationState> {
         isLoading: false,
         errorMessage: errorMsg,
         city: state.city ?? "Select Location",
-        hasGpsLocation: false,
+        // Keep the gpsLatitude and gpsLongitude that were potentially loaded from stored location in step 1!
       ));
     }
   }

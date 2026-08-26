@@ -1,3 +1,4 @@
+import 'package:hugeicons/hugeicons.dart';
 import 'dart:async';
 import 'package:turfpro/common/constants/colors.dart';
 import 'package:flutter/material.dart';
@@ -108,7 +109,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             appBar: AppBar(
               centerTitle: true,
               leading: IconButton(
-                icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 20, color: colorScheme.onSurface),
                 onPressed: () => Navigator.pop(context),
               ),
               title: Text(

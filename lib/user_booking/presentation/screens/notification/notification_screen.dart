@@ -32,8 +32,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new,
-              size: 20, color: theme.colorScheme.onSurface),
+          icon: HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 20, color: theme.colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         title: const AppText(

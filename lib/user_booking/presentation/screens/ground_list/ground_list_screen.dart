@@ -147,8 +147,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
                   controller: _scrollController,
                   physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                   slivers: [
-                    // Search Bar
-                    SliverToBoxAdapter(child: _buildSearchBar(context, isDark)),
+                    // Search Bar moved to header
   
                     // Sport Selection
                     SliverToBoxAdapter(
@@ -300,21 +299,8 @@ class _GroundListScreenState extends State<GroundListScreen> {
                   ],
                 ),
 
-                const SizedBox(height: 20),
-
-                // Greeting
-                AppText(
-                  text: _greeting(),
-                  size: 14,
-                  color: Colors.white.withValues(alpha: 0.7),
-                ),
-                const SizedBox(height: 4),
-                AppText(
-                  text: "Find your perfect turf",
-                  size: 26,
-                  weight: FontWeight.w800,
-                  color: Colors.white,
-                ),
+                // Search Bar in Header
+                _buildSearchBar(context, isDark),
               ],
             ),
           ),
@@ -364,7 +350,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
   // ─── SEARCH BAR ──────────────────────────────────────────────
   Widget _buildSearchBar(BuildContext context, bool isDark) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+      padding: const EdgeInsets.only(top: 24),
       child: GestureDetector(
         onTap: () {
           HapticFeedback.lightImpact();

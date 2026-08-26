@@ -42,8 +42,7 @@ class _SearchScreenState extends State<SearchScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new,
-              size: 20, color: Theme.of(context).colorScheme.onSurface),
+          icon: HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 20, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         titleSpacing: 0,

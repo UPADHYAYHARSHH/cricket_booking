@@ -1,5 +1,7 @@
 import 'dart:ui' as ui;
+import 'package:share_plus/share_plus.dart';
 import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/user_booking/constants/route_constants.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import 'package:turfpro/user_booking/data/models/ground_model.dart';
@@ -62,54 +64,6 @@ class SlotSelectionWidgets {
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
                     color: colorScheme.onSurface,
-                  ),
-                ),
-                const AppSizedBox(height: 2),
-                GestureDetector(
-                  onTap: onLocationTap,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2.0),
-                        child: HugeIcon(
-                          icon: HugeIcons.strokeRoundedLocation01,
-                          size: 12,
-                          color: onLocationTap != null
-                              ? AppColors.primaryDarkGreen
-                              : colorScheme.onSurface.withValues(alpha: 0.6),
-                        ),
-                      ),
-                      const AppSizedBox(width: 4),
-                      Flexible(
-                        child: AppText(
-                          text: (ground?.address != null &&
-                                  ground!.address.isNotEmpty)
-                              ? ground.address
-                              : (ground != null && ground.city.isNotEmpty
-                                  ? ground.city
-                                  : 'Location unavailable'),
-                          align: TextAlign.left,
-                          textStyle: TextStyle(
-                            fontSize: 12,
-                            color: onLocationTap != null
-                                ? AppColors.primaryDarkGreen
-                                : colorScheme.onSurface.withValues(alpha: 0.6),
-                            fontWeight: onLocationTap != null
-                                ? FontWeight.w600
-                                : FontWeight.normal,
-                          ),
-                        ),
-                      ),
-                      if (onLocationTap != null) ...[
-                        const AppSizedBox(width: 4),
-                        const HugeIcon(
-                          icon: HugeIcons.strokeRoundedArrowDown01,
-                          size: 14,
-                          color: AppColors.primaryDarkGreen,
-                        ),
-                      ],
-                    ],
                   ),
                 ),
               ],
@@ -209,7 +163,7 @@ class SlotSelectionWidgets {
                         ),
                         child: ClipOval(
                           child: Image.asset(
-                            _getSportImage(sport),
+                            getSportImage(sport),
                             width: 24,
                             height: 24,
                             fit: BoxFit.cover,
@@ -402,7 +356,7 @@ class SlotSelectionWidgets {
                           ),
                           child: ClipOval(
                             child: Image.asset(
-                              _getSportImage(state.selectedSport ?? ''),
+                              getSportImage(state.selectedSport ?? ''),
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) =>
                                   Icon(Icons.stadium_outlined,
@@ -508,7 +462,7 @@ class SlotSelectionWidgets {
                 ),
                 child: Row(
                   children: [
-                    Icon(_getSportIcon(state.selectedSport!),
+                    Icon(getSportIcon(state.selectedSport!),
                         size: 16, color: _getSportColor(state.selectedSport!)),
                     const AppSizedBox(width: 8),
                     AppText(
@@ -721,7 +675,7 @@ class SlotSelectionWidgets {
                         right: -10,
                         bottom: -10,
                         child: Icon(
-                          _getSportIcon(sport),
+                          getSportIcon(sport),
                           size: 80,
                           color: Colors.white.withValues(alpha: 0.15),
                         ),
@@ -738,7 +692,7 @@ class SlotSelectionWidgets {
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
-                                _getSportIcon(sport),
+                                getSportIcon(sport),
                                 color: Colors.white,
                                 size: 24,
                               ),
@@ -1007,7 +961,7 @@ class SlotSelectionWidgets {
     }
   }
 
-  static String _getSportImage(String sport) {
+  static String getSportImage(String sport) {
     switch (sport.toLowerCase()) {
       case 'cricket':
       case 'box_cricket':
@@ -1027,7 +981,7 @@ class SlotSelectionWidgets {
     }
   }
 
-  static IconData _getSportIcon(String sport) {
+  static IconData getSportIcon(String sport) {
     switch (sport.toLowerCase()) {
       case 'cricket':
         return Icons.sports_cricket;
@@ -1115,8 +1069,16 @@ class SlotSelectionWidgets {
     }
   }
 
-  static Widget buildVenueInfoCard(BuildContext context, GroundModel? venue) {
+  static Widget buildVenueInfoCard(BuildContext context, GroundModel? venue, {List<ReviewModel>? reviews}) {
     if (venue == null) return const SizedBox.shrink();
+
+    double displayRating = venue.rating;
+    int displayReviews = venue.totalReviews;
+
+    if (reviews != null && reviews.isNotEmpty) {
+      displayRating = reviews.fold(0.0, (sum, r) => sum + r.rating) / reviews.length;
+      displayReviews = reviews.length;
+    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -1156,7 +1118,7 @@ class SlotSelectionWidgets {
                         const Icon(Icons.star_rounded, color: Colors.green, size: 16),
                         const SizedBox(width: 4),
                         AppText(
-                          text: venue.rating.toStringAsFixed(1),
+                          text: '${displayRating.toStringAsFixed(1)} ($displayReviews)',
                           textStyle: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -2510,12 +2472,9 @@ class SlotSelectionWidgets {
           ),
           const SizedBox(height: 16),
           InkWell(
-            onTap: () async {
-              final url =
-                  "geo:$latitude,$longitude?q=$latitude,$longitude(${Uri.encodeComponent(address)})";
-              if (await canLaunchUrlString(url)) {
-                await launchUrlString(url);
-              }
+            onTap: () {
+              final googleMapsUrl = 'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude';
+              Share.share('Check out this venue:\n$address\n$googleMapsUrl');
             },
             child: Container(
               height: 160,
@@ -2609,7 +2568,7 @@ class SlotSelectionWidgets {
     }
   }
 
-  static Widget _buildReviewCard(
+  static Widget buildReviewCard(
       BuildContext context, ReviewModel review, int index) {
     // Dynamic color for avatar background
     final colors = [
@@ -2819,17 +2778,13 @@ class _ReviewSectionWidget extends StatefulWidget {
 }
 
 class _ReviewSectionWidgetState extends State<_ReviewSectionWidget> {
-  bool _showAll = false;
-
   @override
   Widget build(BuildContext context) {
-    final averageRating =
-        widget.reviews.fold(0.0, (sum, review) => sum + review.rating) /
-            widget.reviews.length;
+    final averageRating = widget.reviews.isEmpty 
+        ? 0.0 
+        : widget.reviews.fold(0.0, (sum, review) => sum + review.rating) / widget.reviews.length;
 
-    final displayCount = _showAll
-        ? widget.reviews.length
-        : (widget.reviews.length > 2 ? 2 : widget.reviews.length);
+    final displayCount = widget.reviews.length > 2 ? 2 : widget.reviews.length;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
@@ -2878,19 +2833,21 @@ class _ReviewSectionWidgetState extends State<_ReviewSectionWidget> {
             itemCount: displayCount,
             separatorBuilder: (context, index) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
-              return SlotSelectionWidgets._buildReviewCard(
+              return SlotSelectionWidgets.buildReviewCard(
                   context, widget.reviews[index], index);
             },
           ),
-          if (widget.reviews.length > 2 && !_showAll)
+          if (widget.reviews.length > 2)
             Padding(
               padding: const EdgeInsets.only(top: 24),
               child: Center(
                 child: GestureDetector(
                   onTap: () {
-                    setState(() {
-                      _showAll = true;
-                    });
+                    Navigator.pushNamed(
+                      context,
+                      AppRoutes.reviewsScreen,
+                      arguments: widget.reviews,
+                    );
                   },
                   child: AppText(
                     text: "View all ${widget.reviews.length} reviews",

@@ -23,4 +23,5 @@ class AppRoutes {
   static const categoryGrounds = "/categoryGrounds";
   static const scan = "/scan";
   static const bookingSummary = "/bookingSummary";
+  static const reviewsScreen = "/reviewsScreen";
 }

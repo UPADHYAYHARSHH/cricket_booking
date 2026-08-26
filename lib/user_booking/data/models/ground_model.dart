@@ -61,12 +61,16 @@ class GroundModel {
     return GroundModel(
       id: json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
-      locationName: json['locations']?['name']?.toString() ?? '',
+      locationName: (json['locations'] is Map && json['locations']['name'] != null) ? json['locations']['name'].toString() : (json['location_name']?.toString() ?? ''),
       address: (json['locations'] is Map && json['locations']['address'] != null && json['locations']['address'].toString().isNotEmpty) 
           ? json['locations']['address'].toString() 
           : json['address']?.toString() ?? '',
-      latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
-      longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
+      latitude: (json['locations'] is Map && json['locations']['latitude'] != null)
+          ? (double.tryParse(json['locations']['latitude'].toString()) ?? 0.0)
+          : (double.tryParse(json['latitude']?.toString() ?? '') ?? 0.0),
+      longitude: (json['locations'] is Map && json['locations']['longitude'] != null)
+          ? (double.tryParse(json['locations']['longitude'].toString()) ?? 0.0)
+          : (double.tryParse(json['longitude']?.toString() ?? '') ?? 0.0),
       pricePerHour: json['price_per_hour'] ?? 0,
       weekendPrice: json['weekend_price'] ?? 0,
       imageUrl: json['imageUrl'] ?? '',

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 class AppColors {
   // --- BRAND COLORS (Consistent in both themes) ---
@@ -117,6 +118,13 @@ class AppColors {
         titleTextStyle: TextStyle(
             color: textPrimaryLight, fontSize: 20, fontWeight: FontWeight.w600),
       ),
+      actionIconTheme: ActionIconThemeData(
+        backButtonIconBuilder: (BuildContext context) => const HugeIcon(
+          icon: HugeIcons.strokeRoundedArrowLeft01,
+          size: 20,
+          color: textPrimaryLight,
+        ),
+      ),
       cardTheme: const CardThemeData(
         color: surfaceLight,
         elevation: 0,
@@ -194,6 +202,13 @@ class AppColors {
         iconTheme: IconThemeData(color: textPrimaryDark),
         titleTextStyle: TextStyle(
             color: textPrimaryDark, fontSize: 20, fontWeight: FontWeight.w600),
+      ),
+      actionIconTheme: ActionIconThemeData(
+        backButtonIconBuilder: (BuildContext context) => const HugeIcon(
+          icon: HugeIcons.strokeRoundedArrowLeft01,
+          size: 20,
+          color: textPrimaryDark,
+        ),
       ),
       cardTheme: const CardThemeData(
         color: surfaceDark,

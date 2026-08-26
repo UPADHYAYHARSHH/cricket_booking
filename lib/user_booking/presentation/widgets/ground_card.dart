@@ -213,8 +213,7 @@ class _GroundCardState extends State<GroundCard>
                   widget.ground.longitude,
                 );
                 return Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.55),
                     borderRadius: BorderRadius.circular(8),
@@ -272,7 +271,7 @@ class _GroundCardState extends State<GroundCard>
                   ),
                   const SizedBox(width: 3),
                   Text(
-                    widget.ground.rating.toString(),
+                    '${widget.ground.rating.toStringAsFixed(1)} (${widget.ground.totalReviews})',
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,

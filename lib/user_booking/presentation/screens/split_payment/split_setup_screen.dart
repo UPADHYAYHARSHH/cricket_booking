@@ -100,7 +100,7 @@ class _SplitSetupScreenState extends State<SplitSetupScreen> {
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
             leading: IconButton(
-              icon: Icon(Icons.arrow_back_ios,
+              icon: HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 20,
                   color: Theme.of(context).colorScheme.onSurface),
               onPressed: () => Navigator.pop(context),
             ),

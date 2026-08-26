@@ -1,3 +1,4 @@
+import 'package:hugeicons/hugeicons.dart';
 import 'package:turfpro/common/constants/colors.dart';
 import 'package:turfpro/user_booking/domain/models/split_payment_model.dart';
 import 'package:flutter/material.dart';
@@ -25,7 +26,7 @@ class SplitHistoryScreen extends StatelessWidget {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
           leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios,
+            icon: HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 20,
                 color: Theme.of(context).colorScheme.onSurface),
             onPressed: () => Navigator.pop(context),
           ),
