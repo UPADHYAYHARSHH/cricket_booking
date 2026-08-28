@@ -82,6 +82,9 @@ dependencies:
   open_filex: ^4.7.0
   firebase_auth: ^6.5.1
   shared_preferences: ^2.5.5
+  flutter_cashfree_pg_sdk: ^2.4.0+52
+  timezone: ^0.10.1
+  live_activities: ^2.4.9
 flutter_launcher_icons:
   android: true
   ios: true

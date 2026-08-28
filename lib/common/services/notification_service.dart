@@ -4,6 +4,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 class NotificationService {
   static const String _fcmTokenKey = 'fcm_token';
@@ -137,6 +138,49 @@ class NotificationService {
     );
 
     await _localNotifications.show(id, title, body, details, payload: payload);
+  }
+
+  static Future<void> scheduleBookingReminder({
+    required int id,
+    required String title,
+    required String body,
+    required DateTime bookingStartTime,
+  }) async {
+    if (kIsWeb) return;
+    
+    // Make sure timezones are initialized! (Done in main.dart)
+    final scheduledDate = bookingStartTime.subtract(const Duration(minutes: 30));
+    if (scheduledDate.isBefore(DateTime.now())) return;
+
+    final androidDetails = const AndroidNotificationDetails(
+      'booking_reminders',
+      'Booking Reminders',
+      channelDescription: 'Notifications for upcoming bookings',
+      importance: Importance.max,
+      priority: Priority.high,
+    );
+
+    final iosDetails = const DarwinNotificationDetails();
+
+    final details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    try {
+      await _localNotifications.zonedSchedule(
+        id,
+        title,
+        body,
+        tz.TZDateTime.from(scheduledDate, tz.local),
+        details,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      );
+      debugPrint("DEBUG: [NotificationService] Scheduled reminder for $scheduledDate");
+    } catch (e) {
+      debugPrint("DEBUG: [NotificationService] Failed to schedule reminder: $e");
+    }
   }
 
   static Future<void> updateFcmToken() async {
