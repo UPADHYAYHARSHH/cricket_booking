@@ -56,7 +56,12 @@ CREATE OR REPLACE FUNCTION public.save_booking(
     p_period TEXT DEFAULT NULL,
     p_razorpay_order_id TEXT DEFAULT NULL,
     p_razorpay_payment_id TEXT DEFAULT NULL,
-    p_razorpay_signature TEXT DEFAULT NULL
+    p_razorpay_signature TEXT DEFAULT NULL,
+    p_platform_fee NUMERIC DEFAULT 0.0,
+    p_commission_rate NUMERIC DEFAULT 0.0,
+    p_commission_is_percentage BOOLEAN DEFAULT true,
+    p_base_amount NUMERIC DEFAULT 0.0,
+    p_owner_earnings NUMERIC DEFAULT 0.0
 )
 RETURNS JSON
 LANGUAGE plpgsql
@@ -68,20 +73,22 @@ BEGIN
     INSERT INTO public.bookings (
         user_id, ground_id, slot_time, amount, status,
         sport_name, period,
-        razorpay_order_id, razorpay_payment_id, razorpay_signature
+        razorpay_order_id, razorpay_payment_id, razorpay_signature,
+        platform_fee, commission_rate, commission_is_percentage, base_amount, owner_earnings
     )
     VALUES (
         p_user_id, p_ground_id::uuid, p_slot_time::timestamptz, p_amount, p_status,
         p_sport_name, p_period,
-        p_razorpay_order_id, p_razorpay_payment_id, p_razorpay_signature
+        p_razorpay_order_id, p_razorpay_payment_id, p_razorpay_signature,
+        p_platform_fee, p_commission_rate, p_commission_is_percentage, p_base_amount, p_owner_earnings
     )
     RETURNING to_json(bookings.*) INTO result;
     RETURN result;
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.save_booking(TEXT, TEXT, TEXT, INT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) TO anon;
-GRANT EXECUTE ON FUNCTION public.save_booking(TEXT, TEXT, TEXT, INT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.save_booking(TEXT, TEXT, TEXT, INT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, NUMERIC, NUMERIC, BOOLEAN, NUMERIC, NUMERIC) TO anon;
+GRANT EXECUTE ON FUNCTION public.save_booking(TEXT, TEXT, TEXT, INT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, NUMERIC, NUMERIC, BOOLEAN, NUMERIC, NUMERIC) TO authenticated;
 
 -- 4. Slots: Upsert
 CREATE OR REPLACE FUNCTION public.upsert_slot(
@@ -131,6 +138,11 @@ BEGIN
                 b.checked_in,
                 b.checked_in_at,
                 b.created_at,
+                b.platform_fee,
+                b.commission_rate,
+                b.commission_is_percentage,
+                b.base_amount,
+                b.owner_earnings,
                 CASE WHEN g.id IS NOT NULL THEN json_build_object(
                     'id', g.id,
                     'name', g.name,

@@ -1131,12 +1131,12 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
                       children: [
                         PaymentRow(
                           label: "Slot Booking Amount",
-                          value: "₹${(widget.ticket.price - 25).toStringAsFixed(0)}",
+                          value: "₹${(widget.ticket.price - widget.ticket.platformFee).clamp(0.0, widget.ticket.price).toStringAsFixed(0)}",
                         ),
                         const RowDivider(),
-                        const PaymentRow(
+                        PaymentRow(
                           label: "Platform Fee",
-                          value: "+ ₹25",
+                          value: "+ ₹${widget.ticket.platformFee.toStringAsFixed(0)}",
                         ),
                         const RowDivider(),
                         if (discountAmount > 0) ...[
@@ -1318,6 +1318,7 @@ class TicketModel {
   final String period;
   final List<String>? amenities;
   final String ownerId;
+  final double platformFee;
 
   TicketModel({
     required this.bookingId,
@@ -1340,5 +1341,6 @@ class TicketModel {
     this.period = "Day",
     this.amenities,
     this.ownerId = "N/A",
+    this.platformFee = 0.0,
   });
 }

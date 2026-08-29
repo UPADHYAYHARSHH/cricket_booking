@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:turfpro/common/services/remote_config_service.dart';
 
 class PaymentRepository {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -74,19 +76,6 @@ class PaymentRepository {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) throw Exception('User not authenticated');
 
-    final bookingData = {
-      'user_id': user.uid,
-      'ground_id': groundId,
-      'slot_time': slotTime.toUtc().toIso8601String(),
-      'amount': amount,
-      'status': 'paid',
-      'razorpay_order_id': orderId,
-      'razorpay_payment_id': paymentId,
-      'razorpay_signature': signature,
-      'sport_name': sportName,
-      'period': period,
-    };
-    
     debugPrint('PaymentRepository: Inserting booking via RPC');
 
     final combinedPeriod = "${period ?? 'Day'}|${slotStartTimes?.join(',') ?? ''}";
@@ -119,7 +108,73 @@ class PaymentRepository {
       }
     }
 
+    await _updateBookingFinancialSnapshot(response, amount.toDouble());
+
     return response as Map<String, dynamic>;
+  }
+
+  Future<void> _updateBookingFinancialSnapshot(dynamic bookingResponse, double totalAmount) async {
+    try {
+      debugPrint('👉 _updateBookingFinancialSnapshot called with totalAmount: $totalAmount');
+      debugPrint('👉 Raw bookingResponse: $bookingResponse (${bookingResponse.runtimeType})');
+
+      String? bookingId;
+      if (bookingResponse is Map) {
+        bookingId = bookingResponse['id']?.toString() ?? bookingResponse['booking_id']?.toString();
+      } else if (bookingResponse is String) {
+        try {
+          final decoded = jsonDecode(bookingResponse);
+          if (decoded is Map) {
+            bookingId = decoded['id']?.toString() ?? decoded['booking_id']?.toString();
+          }
+        } catch (e) {
+          debugPrint('⚠️ Error decoding bookingResponse JSON: $e');
+        }
+      }
+
+      final user = FirebaseAuth.instance.currentUser;
+
+      // Fallback: If bookingId couldn't be extracted from RPC response, find latest booking for user
+      if ((bookingId == null || bookingId.isEmpty) && user != null) {
+        debugPrint('⚠️ bookingId not found in RPC response, querying latest booking for user ${user.uid}...');
+        final List latestRows = await _supabase
+            .from('bookings')
+            .select('id')
+            .eq('user_id', user.uid)
+            .order('created_at', ascending: false)
+            .limit(1);
+        if (latestRows.isNotEmpty) {
+          bookingId = latestRows.first['id']?.toString();
+          debugPrint('👉 Found latest bookingId from DB query: $bookingId');
+        }
+      }
+
+      double currentPlatformFee = RemoteConfigService().platformFee;
+      if (currentPlatformFee <= 0) currentPlatformFee = 30.0;
+      double currentCommissionRate = RemoteConfigService().commissionRate;
+      bool currentCommissionIsPercentage = RemoteConfigService().commissionIsPercentage;
+
+      final double baseAmount = (totalAmount - currentPlatformFee).clamp(0.0, totalAmount);
+      final double commissionDeduction = currentCommissionIsPercentage
+          ? (baseAmount * (currentCommissionRate / 100.0))
+          : currentCommissionRate;
+      final double ownerEarnings = (baseAmount - commissionDeduction).clamp(0.0, baseAmount);
+
+      if (bookingId != null && bookingId.isNotEmpty) {
+        final updateRes = await _supabase.from('bookings').update({
+          'platform_fee': currentPlatformFee,
+          'commission_rate': currentCommissionRate,
+          'commission_is_percentage': currentCommissionIsPercentage,
+          'base_amount': baseAmount,
+          'owner_earnings': ownerEarnings,
+        }).eq('id', bookingId).select();
+        debugPrint('✅ FINANCIAL SNAPSHOT UPDATED FOR BOOKING $bookingId: $updateRes');
+      } else {
+        debugPrint('❌ FAILED TO RESOLVE BOOKING ID FOR FINANCIAL SNAPSHOT!');
+      }
+    } catch (e, stack) {
+      debugPrint('❌ EXCEPTION IN _updateBookingFinancialSnapshot: $e\n$stack');
+    }
   }
 
   /// SAVE DIRECT BOOKING (BYPASS PAYMENT)
@@ -152,6 +207,8 @@ class PaymentRepository {
         'p_period': combinedPeriod,
       });
       debugPrint('PaymentRepository: Booking record created successfully');
+
+      await _updateBookingFinancialSnapshot(bookingResponse, amount.toDouble());
 
       // 2. Block Slots in Database via RPC
       final formattedDate = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";

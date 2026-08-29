@@ -16,6 +16,11 @@ class BookingModel {
   final GroundModel? ground;
   final bool checkedIn;
   final DateTime? checkedInAt;
+  final double platformFee;
+  final double commissionRate;
+  final bool commissionIsPercentage;
+  final double baseAmount;
+  final double ownerEarnings;
 
   BookingModel({
     required this.id,
@@ -33,6 +38,11 @@ class BookingModel {
     this.ground,
     this.checkedIn = false,
     this.checkedInAt,
+    this.platformFee = 0.0,
+    this.commissionRate = 0.0,
+    this.commissionIsPercentage = true,
+    this.baseAmount = 0.0,
+    this.ownerEarnings = 0.0,
   });
 
   factory BookingModel.fromJson(Map<String, dynamic> json) {
@@ -52,6 +62,11 @@ class BookingModel {
       ground: json['grounds'] != null ? GroundModel.fromJson(json['grounds']) : null,
       checkedIn: json['checked_in'] == true,
       checkedInAt: json['checked_in_at'] != null ? DateTime.tryParse(json['checked_in_at'])?.toLocal() : null,
+      platformFee: (json['platform_fee'] as num?)?.toDouble() ?? 0.0,
+      commissionRate: (json['commission_rate'] as num?)?.toDouble() ?? 0.0,
+      commissionIsPercentage: json['commission_is_percentage'] ?? true,
+      baseAmount: (json['base_amount'] as num?)?.toDouble() ?? 0.0,
+      ownerEarnings: (json['owner_earnings'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }

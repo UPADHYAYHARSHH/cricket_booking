@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:io' show Platform;
@@ -21,11 +22,33 @@ class RemoteConfigService {
   bool _commissionIsPercentage = true;
 
   final StreamController<bool> _maintenanceController = StreamController<bool>.broadcast();
+  StreamSubscription? _remoteConfigSubscription;
 
   Future<void> initialize() async {
     try {
-      debugPrint('🚀 REMOTE CONFIG INIT STARTED (Supabase)');
+      debugPrint('🚀 REMOTE CONFIG INIT STARTED (Firebase & Supabase)');
 
+      // 1. Initialize Firebase Remote Config
+      try {
+        final remoteConfig = FirebaseRemoteConfig.instance;
+        await remoteConfig.setConfigSettings(RemoteConfigSettings(
+          fetchTimeout: const Duration(seconds: 10),
+          minimumFetchInterval: Duration.zero,
+        ));
+        await remoteConfig.fetchAndActivate();
+        _readFromFirebase(remoteConfig);
+
+        _remoteConfigSubscription = remoteConfig.onConfigUpdated.listen((event) async {
+          debugPrint('🚀 FIREBASE REMOTE CONFIG UPDATED (User App)');
+          await remoteConfig.activate();
+          _readFromFirebase(remoteConfig);
+          _maintenanceController.add(isMaintenanceMode);
+        });
+      } catch (e) {
+        debugPrint('⚠️ FIREBASE REMOTE CONFIG INIT NOTICE: $e');
+      }
+
+      // 2. Fetch Supabase App Config (Realtime Sync & Fallback)
       await fetchAndActivate();
 
       _maintenanceController.add(isMaintenanceMode);
@@ -37,7 +60,7 @@ class RemoteConfigService {
             schema: 'public',
             table: 'app_config',
             callback: (payload) async {
-              debugPrint('🚀 CONFIG UPDATED: ${payload.newRecord}');
+              debugPrint('🚀 SUPABASE CONFIG UPDATED: ${payload.newRecord}');
               await fetchAndActivate();
               _maintenanceController.add(isMaintenanceMode);
             },
@@ -55,18 +78,70 @@ class RemoteConfigService {
     }
   }
 
+  void _readFromFirebase(FirebaseRemoteConfig remoteConfig) {
+    try {
+      final keys = remoteConfig.getAll();
+      if (keys.containsKey('platform_fee')) {
+        final feeNum = remoteConfig.getDouble('platform_fee');
+        if (feeNum > 0) {
+          _platformFee = feeNum;
+        } else {
+          _platformFee = double.tryParse(remoteConfig.getString('platform_fee')) ?? _platformFee;
+        }
+      }
+      if (keys.containsKey('commission_rate')) {
+        final commNum = remoteConfig.getDouble('commission_rate');
+        if (commNum > 0) {
+          _commissionRate = commNum;
+        } else {
+          _commissionRate = double.tryParse(remoteConfig.getString('commission_rate')) ?? _commissionRate;
+        }
+      }
+      if (keys.containsKey('commission_is_percentage')) {
+        _commissionIsPercentage = remoteConfig.getBool('commission_is_percentage') ||
+            remoteConfig.getString('commission_is_percentage') == 'true';
+      }
+      if (keys.containsKey('user_app_maintenance')) {
+        _isMaintenanceMode = remoteConfig.getBool('user_app_maintenance') ||
+            remoteConfig.getString('user_app_maintenance') == 'true';
+      }
+      if (keys.containsKey('user_android_min_version')) {
+        _requiredVersionAndroid = remoteConfig.getString('user_android_min_version');
+      }
+      if (keys.containsKey('user_ios_min_version')) {
+        _requiredVersionIos = remoteConfig.getString('user_ios_min_version');
+      }
+      if (keys.containsKey('user_android_store_url')) {
+        _updateUrlAndroid = remoteConfig.getString('user_android_store_url');
+      }
+      if (keys.containsKey('user_ios_store_url')) {
+        _updateUrlIos = remoteConfig.getString('user_ios_store_url');
+      }
+    } catch (e) {
+      debugPrint('⚠️ Error reading Firebase Remote Config: $e');
+    }
+  }
+
   Future<void> fetchAndActivate() async {
     try {
+      try {
+        final remoteConfig = FirebaseRemoteConfig.instance;
+        await remoteConfig.fetchAndActivate();
+        _readFromFirebase(remoteConfig);
+      } catch (_) {}
+
       final rows = await Supabase.instance.client.from('app_config').select('key, value');
       for (final row in rows as List<dynamic>) {
         final key = row['key']?.toString();
         final val = row['value']?.toString() ?? '';
         switch (key) {
           case 'platform_fee':
-            _platformFee = double.tryParse(val) ?? 0.0;
+            final parsedFee = double.tryParse(val);
+            if (parsedFee != null) _platformFee = parsedFee;
             break;
           case 'commission_rate':
-            _commissionRate = double.tryParse(val) ?? 0.0;
+            final parsedComm = double.tryParse(val);
+            if (parsedComm != null) _commissionRate = parsedComm;
             break;
           case 'commission_is_percentage':
             _commissionIsPercentage = val == 'true' || val == '1';
@@ -75,26 +150,27 @@ class RemoteConfigService {
             _isMaintenanceMode = val == 'true' || val == '1';
             break;
           case 'user_android_min_version':
-            _requiredVersionAndroid = val;
+            if (val.isNotEmpty) _requiredVersionAndroid = val;
             break;
           case 'user_ios_min_version':
-            _requiredVersionIos = val;
+            if (val.isNotEmpty) _requiredVersionIos = val;
             break;
           case 'user_android_store_url':
-            _updateUrlAndroid = val;
+            if (val.isNotEmpty) _updateUrlAndroid = val;
             break;
           case 'user_ios_store_url':
-            _updateUrlIos = val;
+            if (val.isNotEmpty) _updateUrlIos = val;
             break;
         }
       }
-      debugPrint('🔥 FETCH AND ACTIVATE SUCCESS');
+      debugPrint('🔥 FETCH AND ACTIVATE SUCCESS: platformFee=$_platformFee');
     } catch (e) {
       debugPrint('❌ FETCH AND ACTIVATE FAILED: $e');
     }
   }
 
   void dispose() {
+    _remoteConfigSubscription?.cancel();
     _maintenanceController.close();
   }
 

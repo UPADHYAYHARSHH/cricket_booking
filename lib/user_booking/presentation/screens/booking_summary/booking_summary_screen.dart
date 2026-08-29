@@ -13,9 +13,9 @@ import 'package:turfpro/user_booking/domain/models/slot_models.dart';
 import 'package:turfpro/user_booking/domain/models/booking_arguments.dart';
 import 'package:turfpro/user_booking/presentation/widgets/ground_image_carousel.dart';
 import 'package:turfpro/user_booking/presentation/widgets/slot_selection_widgets.dart';
-
 import 'package:turfpro/user_booking/presentation/blocs/slot_selection/slot_selection_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/slot_selection/slot_selection_state.dart';
+import 'package:turfpro/common/services/remote_config_service.dart';
 
 class BookingSummaryScreen extends StatelessWidget {
   const BookingSummaryScreen({super.key});
@@ -45,7 +45,7 @@ class BookingSummaryScreen extends StatelessWidget {
 
     return BlocBuilder<SlotSelectionCubit, SlotSelectionState>(
       builder: (context, state) {
-        const double platformFee = 25.0;
+        final double platformFee = RemoteConfigService().platformFee;
 
         // Loyalty Points Logic
         double pointsDiscount = 0.0;
@@ -569,6 +569,4 @@ class BookingSummaryScreen extends StatelessWidget {
       ),
     );
   }
-
-  
 }
