@@ -62,6 +62,9 @@ import 'package:turfpro/common/constants/colors.dart';
 import 'package:turfpro/user_booking/data/services/deep_link_service.dart';
 import 'package:turfpro/user_booking/data/services/shorebird_service.dart';
 import 'package:turfpro/utils/app_scroll_behavior.dart';
+import 'package:turfpro/common/services/cashfree_service.dart';
+import 'package:turfpro/common/services/live_activity_service.dart';
+import 'package:timezone/data/latest_all.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -76,12 +79,18 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   debugPrint("DEBUG: [Main] App starting. Full URL: ${Uri.base}");
 
+  initializeTimeZones();
+  
   // Silent OTA updates
   ShorebirdService.checkForUpdates();
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  // Initialize Cashfree Service
+  CashfreeService().init();
+  LiveActivityService().init();
 
   // Set background message handler
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);

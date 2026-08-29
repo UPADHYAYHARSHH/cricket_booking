@@ -1,13 +1,13 @@
-﻿import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/common/constants/colors.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import 'package:turfpro/user_booking/data/repositories/payment_repository.dart';
 import 'package:turfpro/user_booking/domain/models/slot_models.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:turfpro/user_booking/presentation/screens/my_booking/my_booking_screen.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:turfpro/user_booking/di/get_it/get_it.dart';
 import 'package:turfpro/user_booking/constants/route_constants.dart';
 import 'package:turfpro/user_booking/presentation/widgets/slot_selection_widgets.dart';
@@ -19,6 +19,11 @@ import 'package:turfpro/user_booking/domain/repositories/wallet_repository.dart'
 import 'package:turfpro/user_booking/domain/repositories/slot_repository.dart';
 import 'package:turfpro/common/config/feature_config.dart';
 
+import 'package:turfpro/common/services/cashfree_service.dart';
+import 'package:turfpro/common/services/notification_service.dart';
+import 'package:turfpro/common/services/live_activity_service.dart';
+import 'package:intl/intl.dart';
+
 class TimeSlotSelectionScreen extends StatefulWidget {
   const TimeSlotSelectionScreen({super.key});
 
@@ -27,31 +32,32 @@ class TimeSlotSelectionScreen extends StatefulWidget {
 }
 
 class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
-  late Razorpay _razorpay;
   final _paymentRepo = getIt<PaymentRepository>();
   final _loyaltyRepo = getIt<LoyaltyRepository>();
 
   double? _pendingAmount;
   List<TimeSlot>? _pendingSlots;
   DateTime? _pendingDate;
+  int _pendingAppliedPoints = 0;
+  double _pendingAppliedWallet = 0.0;
   bool _isBookingInProgress = false;
 
   @override
   void initState() {
     super.initState();
-    _razorpay = Razorpay();
-    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
-    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
-    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+    // Configure Cashfree callbacks
+    CashfreeService().setCheckoutCallbacks(
+      onSuccess: _handlePaymentSuccess,
+      onError: _handlePaymentError,
+    );
   }
 
   @override
   void dispose() {
-    _razorpay.clear();
     super.dispose();
   }
 
-  void _handlePaymentSuccess(PaymentSuccessResponse response) async {
+  void _handlePaymentSuccess(String orderId) async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -60,11 +66,8 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
     );
 
     try {
-      final isValid = await _paymentRepo.verifyPayment(
-        orderId: response.orderId!,
-        paymentId: response.paymentId!,
-        signature: response.signature!,
-      );
+      // In a real app, verify payment on the backend here
+      final isValid = await _paymentRepo.verifyPayment(orderId: orderId);
 
       final cubit = context.read<SlotSelectionCubit>();
       final ground = cubit.state.selectedTurf;
@@ -74,29 +77,75 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
             ? _pendingSlots!.map((s) => "${s.startTime} - ${s.endTime}").join(', ')
             : cubit.state.selectedPeriod;
 
-        final bookingData = await _paymentRepo.saveBooking(
+        // Save booking using bypass for now until backend is ready
+        final bookingData = await _paymentRepo.saveDirectBooking(
           groundId: ground.id,
-          slotTime: _pendingDate!,
-          amount: (_pendingAmount! * 100).toInt(),
-          orderId: response.orderId!,
-          paymentId: response.paymentId!,
-          signature: response.signature!,
+          date: _pendingDate!,
+          amount: (_pendingAmount!).toInt(),
           sportName: cubit.state.selectedSport,
           period: slotTimesPeriod,
-          slotStartTimes: _pendingSlots?.map((s) => s.startTime).toList(),
+          slotStartTimes: _pendingSlots?.map((s) => s.startTime).toList() ?? [],
         );
 
         final int displayId = bookingData['display_id'] ?? 0;
         if (!mounted) return;
-        Navigator.pop(context);
+        Navigator.pop(context); // pop loading
 
+        // Deduct from wallet if used
+        if (FeatureConfig.isWalletEnabled && _pendingAppliedWallet > 0) {
+          final walletRepo = getIt<WalletRepository>();
+          final currentBalance = await walletRepo.getBalance();
+          await walletRepo.updateBalance(currentBalance - _pendingAppliedWallet);
+          await walletRepo.addTransaction(
+            amount: _pendingAppliedWallet,
+            type: 'debit',
+            description: 'Used for booking @ ${ground.name}',
+          );
+        }
+
+        if (FeatureConfig.isLoyaltyEnabled) {
+          if (_pendingAppliedPoints > 0) await _loyaltyRepo.redeemPoints(_pendingAppliedPoints);
+          final pointsEarned = ((_pendingAmount ?? 0) / 10).floor();
+          if (pointsEarned > 0) await _loyaltyRepo.earnPoints(pointsEarned);
+        }
+
+        // Trigger Notification and Live Activity
+        try {
+          if (_pendingSlots != null && _pendingSlots!.isNotEmpty && _pendingDate != null) {
+            final timeFormat = DateFormat("h:mm a");
+            final startTimeParsed = timeFormat.parse(_pendingSlots!.first.startTime);
+            final bookingStartDateTime = DateTime(
+              _pendingDate!.year,
+              _pendingDate!.month,
+              _pendingDate!.day,
+              startTimeParsed.hour,
+              startTimeParsed.minute,
+            );
+            
+            NotificationService.scheduleBookingReminder(
+              id: displayId,
+              title: "Upcoming Booking!",
+              body: "Your game at ${ground.name} starts in 30 minutes.",
+              bookingStartTime: bookingStartDateTime,
+            );
+
+            LiveActivityService().startBookingActivity(
+              groundName: ground.name,
+              startTime: bookingStartDateTime,
+            );
+          }
+        } catch (e) {
+          debugPrint("Error scheduling notification/live activity: $e");
+        }
+
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (_) => ViewTicketScreen(
               isFromBookingFlow: true,
               ticket: TicketModel(
-                bookingId: bookingData['id'] ?? response.orderId ?? 'N/A',
+                bookingId: bookingData['id'] ?? orderId,
                 groundId: ground.id,
                 displayId: displayId,
                 venueName: ground.name,
@@ -118,25 +167,40 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
               ),
             ),
           ),
-        );} else {
+        );
+      } else {
         if (!mounted) return;
         Navigator.pop(context);
-        Navigator.pushNamed(context, AppRoutes.paymentFailedScreen);
+        Navigator.pushNamed(
+          context, 
+          AppRoutes.paymentFailedScreen,
+          arguments: BookingFailureArguments(
+            errorMessage: 'Payment verification failed or was cancelled.',
+            groundId: ground?.id,
+          ),
+        );
       }
     } catch (_) {
       if (!mounted) return;
       Navigator.pop(context);
-      Navigator.pushNamed(context, AppRoutes.paymentFailedScreen);
+      Navigator.pushNamed(
+        context, 
+        AppRoutes.paymentFailedScreen,
+        arguments: BookingFailureArguments(
+          errorMessage: 'An unexpected error occurred during payment.',
+        ),
+      );
     }
   }
 
-  void _handlePaymentError(PaymentFailureResponse response) {
-    Navigator.pushNamed(context, AppRoutes.paymentFailedScreen);
-  }
-
-  void _handleExternalWallet(ExternalWalletResponse response) {
-    ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('External Wallet: ${response.walletName}')));
+  void _handlePaymentError(dynamic error, String orderId) {
+    Navigator.pushNamed(
+      context, 
+      AppRoutes.paymentFailedScreen,
+      arguments: BookingFailureArguments(
+        errorMessage: 'Payment Failed: ${error.toString()}',
+      ),
+    );
   }
 
   void _onConfirmBooking(
@@ -229,71 +293,63 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
         return;
       }
 
-      // Deduct from wallet if used
-      if (FeatureConfig.isWalletEnabled && appliedWallet > 0) {
-        final walletRepo = getIt<WalletRepository>();
-        final currentBalance = await walletRepo.getBalance();
-        await walletRepo.updateBalance(currentBalance - appliedWallet);
-        await walletRepo.addTransaction(
-          amount: appliedWallet,
-          type: 'debit',
-          description: 'Used for booking @ ${currentGround.name}',
-        );
-      }
+      _pendingAppliedPoints = appliedPoints;
+      _pendingAppliedWallet = appliedWallet;
 
-      final slotTimesPeriod = selectedSlots.isNotEmpty
-          ? selectedSlots.map((s) => "${s.startTime} - ${s.endTime}").join(', ')
-          : cubit.state.selectedPeriod;
+      // Note: Wallet deduction and Loyalty points are now processed in _handlePaymentSuccess
 
-      final bookingData = await _paymentRepo.saveDirectBooking(
-        groundId: currentGround.id,
-        date: _pendingDate!,
-        slotStartTimes: selectedSlots.map((s) => s.startTime).toList(),
-        amount: totalPrice.toInt(),
-        sportName: cubit.state.selectedSport,
-        period: slotTimesPeriod,
-      );
-
-      final int displayId = bookingData['display_id'] ?? 0;
-
-      if (FeatureConfig.isLoyaltyEnabled) {
-        if (appliedPoints > 0) await _loyaltyRepo.redeemPoints(appliedPoints);
-        final pointsEarned = (totalPrice / 10).floor();
-        if (pointsEarned > 0) await _loyaltyRepo.earnPoints(pointsEarned);
-      }
+      // Call backend to create Cashfree order and fetch session ID
+      // We do NOT send returnUrl for Web anymore because we want to enforce the modal drop-in 
+      // without reloading the Flutter Web app.
+      final orderResponse = await _paymentRepo.createOrder(totalPrice.toInt());
+      
+      final String orderId = orderResponse['order_id'] ?? orderResponse['orderId'];
+      final String sessionId = orderResponse['payment_session_id'] ?? orderResponse['paymentSessionId'];
 
       if (!mounted) return;
-      Navigator.pop(context);
+      Navigator.pop(context); // Pop the loading dialog
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ViewTicketScreen(
-            isFromBookingFlow: true,
-            ticket: TicketModel(
-              bookingId: bookingData['id'] ?? 'DIRECT_${DateTime.now().millisecondsSinceEpoch}',
-              groundId: currentGround.id,
-              displayId: displayId,
-              venueName: currentGround.name,
-              pitchName: "Main Pitch",
-              date: _pendingDate!,
-              time: slotTimesPeriod,
-              bookedBy: "User",
-              location: currentGround.address.isNotEmpty ? currentGround.address : (currentGround.city.isNotEmpty ? currentGround.city : "Location"),
-              latitude: currentGround.latitude,
-              longitude: currentGround.longitude,
-              price: totalPrice,
-              imageUrl: currentGround.imageUrl,
-              images: currentGround.images,
-              isPaid: true,
-              sportName: cubit.state.selectedSport ?? "Sport",
-              period: slotTimesPeriod,
-              ownerId: currentGround.ownerId,
-              amenities: currentGround.amenities,
-            ),
-          ),
-        ),
-      );} catch (e) {
+      // Setup Polling as a fallback (Very useful for Web where callbacks might drop)
+      bool isPolling = true;
+      int pollCount = 0;
+      void startPolling() async {
+        while (isPolling && pollCount < 60) { // Poll for up to 5 minutes (60 * 5s)
+          await Future.delayed(const Duration(seconds: 5));
+          if (!mounted || !isPolling) break;
+          pollCount++;
+          try {
+            final isValid = await _paymentRepo.verifyPayment(orderId: orderId);
+            if (isValid && isPolling && mounted) {
+              isPolling = false;
+              _handlePaymentSuccess(orderId);
+              break;
+            }
+          } catch (_) {}
+        }
+      }
+      startPolling();
+
+      // Ensure polling stops if we get the callback directly or user leaves
+      CashfreeService().setCheckoutCallbacks(
+        onSuccess: (id) {
+          isPolling = false;
+          _handlePaymentSuccess(id);
+        },
+        onError: (error, id) {
+          isPolling = false;
+          _handlePaymentError(error, id);
+        },
+      );
+
+      // Call Cashfree Service with actual backend session
+      CashfreeService().doPayment(
+        orderId: orderId, 
+        paymentSessionId: sessionId,
+      );
+
+      // Note: The rest of the booking save logic and navigation to ViewTicketScreen
+      // has been moved to _handlePaymentSuccess() at the top of this file!
+    } catch (e) {
       if (mounted) {
         try {
           Navigator.pop(context);
@@ -307,24 +363,6 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
           _isBookingInProgress = false;
         });
       }
-    }
-  }
-
-  String _getSlotPeriod(String? time) {
-    if (time == null || time.isEmpty) return 'Day';
-    try {
-      final timeParts = time.split(' ');
-      final timeH = timeParts[0].split(':');
-      int hour = int.parse(timeH[0]);
-      final ampm = timeParts.length > 1 ? timeParts[1].toUpperCase() : 'AM';
-      if (ampm == 'PM' && hour != 12) hour += 12;
-      if (ampm == 'AM' && hour == 12) hour = 0;
-      if (hour < 6) return 'Midnight';
-      if (hour < 12) return 'Day';
-      if (hour < 18) return 'Evening';
-      return 'Night';
-    } catch (_) {
-      return 'Day';
     }
   }
 

@@ -5,13 +5,18 @@ import 'package:firebase_auth/firebase_auth.dart';
 class PaymentRepository {
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  /// CREATE RAZORPAY ORDER VIA EDGE FUNCTION
-  Future<Map<String, dynamic>> createOrder(int amount) async {
-    debugPrint('PaymentRepository: createOrder called with amount: $amount');
+  /// CREATE CASHFREE ORDER VIA EDGE FUNCTION
+  Future<Map<String, dynamic>> createOrder(int amount, {String? returnUrl}) async {
+    debugPrint('PaymentRepository: createOrder called with amount: $amount, returnUrl: $returnUrl');
     try {
+      final Map<String, dynamic> body = {'amount': amount};
+      if (returnUrl != null) {
+        body['return_url'] = returnUrl;
+      }
+      
       final response = await _supabase.functions.invoke(
         'create-order',
-        body: {'amount': amount},
+        body: body,
       );
       debugPrint('PaymentRepository: create-order Response Status: ${response.status}');
 
@@ -28,19 +33,13 @@ class PaymentRepository {
   }
 
   /// VERIFY PAYMENT VIA EDGE FUNCTION
-  Future<bool> verifyPayment({
-    required String orderId,
-    required String paymentId,
-    required String signature,
-  }) async {
-    debugPrint('PaymentRepository: verifyPayment called');
+  Future<bool> verifyPayment({required String orderId}) async {
+    debugPrint('PaymentRepository: verifyPayment called for order: $orderId');
     try {
       final response = await _supabase.functions.invoke(
         'verify-payment',
         body: {
-          'razorpay_order_id': orderId,
-          'razorpay_payment_id': paymentId,
-          'razorpay_signature': signature,
+          'order_id': orderId,
         },
       );
       debugPrint('PaymentRepository: verify-payment Response Status: ${response.status}');
