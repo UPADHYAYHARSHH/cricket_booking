@@ -51,17 +51,15 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            const AppSizedBox(height: 16),
-            _buildTabBar(),
-            const AppSizedBox(height: 16),
-            Expanded(child: _buildBookingList()),
-          ],
-        ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeader(),
+          const AppSizedBox(height: 16),
+          _buildTabBar(),
+          const AppSizedBox(height: 16),
+          Expanded(child: _buildBookingList()),
+        ],
       ),
     );
   }
@@ -69,7 +67,11 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+      padding: EdgeInsets.only(
+          top: MediaQuery.of(context).padding.top + 24,
+          left: 20,
+          right: 20,
+          bottom: 24),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF0B8457), Color(0xFF065B3C)],
@@ -189,7 +191,8 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                     if (amPm == 'PM' && h != 12) h += 12;
                     if (amPm == 'AM' && h == 12) h = 0;
                     // Adding 1 hour to the start time of the last slot to represent its end time.
-                    endTime = DateTime(localDate.year, localDate.month, localDate.day, h + 1, m);
+                    endTime = DateTime(localDate.year, localDate.month,
+                        localDate.day, h + 1, m);
                   }
                 }
               }
@@ -291,10 +294,11 @@ class _BookingCardState extends State<_BookingCard> {
 
     // If no locationId or no user, can't rate — hide the button
     if (user == null || locationId.isEmpty) {
-      if (mounted) setState(() {
-        _hasRated = true; // treat as "already rated" to hide the button
-        _isLoadingRating = false;
-      });
+      if (mounted)
+        setState(() {
+          _hasRated = true; // treat as "already rated" to hide the button
+          _isLoadingRating = false;
+        });
       return;
     }
 
@@ -310,10 +314,11 @@ class _BookingCardState extends State<_BookingCard> {
     } catch (e) {
       debugPrint("Error checking user rating: $e");
       // On error, hide button to avoid confusion
-      if (mounted) setState(() {
-        _hasRated = true;
-        _isLoadingRating = false;
-      });
+      if (mounted)
+        setState(() {
+          _hasRated = true;
+          _isLoadingRating = false;
+        });
     }
   }
 
@@ -358,7 +363,8 @@ class _BookingCardState extends State<_BookingCard> {
 
   Widget _buildTopSection(BuildContext context) {
     return Stack(
-      children: [        GroundImageCarousel(
+      children: [
+        GroundImageCarousel(
           images: widget.booking.ground?.images ?? [],
           fallbackImageUrl: widget.booking.ground?.imageUrl ??
               "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e",
@@ -391,7 +397,7 @@ class _BookingCardState extends State<_BookingCard> {
                   const SizedBox(width: 4),
                   Text(
                     'Checked In',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
@@ -406,12 +412,17 @@ class _BookingCardState extends State<_BookingCard> {
   }
 
   String _getFormattedTimeRange() {
-    if (widget.booking.period == null || !widget.booking.period!.contains('|')) {
+    if (widget.booking.period == null ||
+        !widget.booking.period!.contains('|')) {
       return '';
     }
     final parts = widget.booking.period!.split('|');
     if (parts.length <= 1) return '';
-    final times = parts[1].split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+    final times = parts[1]
+        .split(',')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
     if (times.isEmpty) return '';
 
     List<int> hours24 = [];
@@ -437,7 +448,8 @@ class _BookingCardState extends State<_BookingCard> {
     String formatHour(int h) {
       int wrappedH = h % 24;
       final amPm = wrappedH >= 12 ? 'PM' : 'AM';
-      int hour12 = wrappedH > 12 ? wrappedH - 12 : (wrappedH == 0 ? 12 : wrappedH);
+      int hour12 =
+          wrappedH > 12 ? wrappedH - 12 : (wrappedH == 0 ? 12 : wrappedH);
       return '${hour12.toString().padLeft(2, '0')}:00 $amPm';
     }
 
@@ -474,7 +486,8 @@ class _BookingCardState extends State<_BookingCard> {
           const SizedBox(width: 6),
           Expanded(
             child: AppText(
-              text: DateFormat('EEE, d MMM yyyy').format(widget.booking.slotTime) +
+              text: DateFormat('EEE, d MMM yyyy')
+                      .format(widget.booking.slotTime) +
                   (timeRange.isNotEmpty ? '  •  $timeRange' : ''),
               textStyle: TextStyle(
                 fontSize: 13,
@@ -579,10 +592,34 @@ class _BookingCardState extends State<_BookingCard> {
               ),
             ],
           ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              HugeIcon(
+                icon: HugeIcons.strokeRoundedLocation01,
+                size: 14,
+                color: onSurface.withValues(alpha: 0.5),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: AppText(
+                  text: (widget.booking.ground?.address != null &&
+                          widget.booking.ground!.address.isNotEmpty)
+                      ? widget.booking.ground!.address
+                      : "Location not available",
+                  textStyle: TextStyle(
+                    fontSize: 12,
+                    color: onSurface.withValues(alpha: 0.5),
+                  ),
+                  maxLines: 2,
+                ),
+              ),
+            ],
+          ),
 
-          
           // Check-in time display
-          if (widget.booking.checkedIn && widget.booking.checkedInAt != null) ...[
+          if (widget.booking.checkedIn &&
+              widget.booking.checkedInAt != null) ...[
             const SizedBox(height: 6),
             Row(
               children: [
@@ -626,7 +663,8 @@ class _BookingCardState extends State<_BookingCard> {
             final amPm = mPart.length > 1 ? mPart[1].toUpperCase() : '';
             if (amPm == 'PM' && h != 12) h += 12;
             if (amPm == 'AM' && h == 12) h = 0;
-            endTime = DateTime(localDate.year, localDate.month, localDate.day, h + 1, m);
+            endTime = DateTime(
+                localDate.year, localDate.month, localDate.day, h + 1, m);
           }
         }
       }
@@ -635,64 +673,61 @@ class _BookingCardState extends State<_BookingCard> {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-      child: Row(
-        children: [
-          Expanded(
-            child: ElevatedButton(
-              onPressed: () => _viewTicket(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    AppColors.primaryDarkGreen.withValues(alpha: 0.1),
-                foregroundColor: AppColors.primaryDarkGreen,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-              child: const Text("View Ticket",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+      child: Row(children: [
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () => _viewTicket(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor:
+                  AppColors.primaryDarkGreen.withValues(alpha: 0.1),
+              foregroundColor: AppColors.primaryDarkGreen,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+              padding: const EdgeInsets.symmetric(vertical: 12),
             ),
+            child: const Text("View Ticket",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
           ),
-          if (isPast) ...[
-            const SizedBox(width: 8),
-            if (!_hasRated && !_isLoadingRating) ...[
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () => _showRatingSheet(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.amber.shade700,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  child: const Text("Rate Venue",
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                ),
-              ),
-              const SizedBox(width: 8),
-            ],
+        ),
+        if (isPast) ...[
+          const SizedBox(width: 8),
+          if (!_hasRated && !_isLoadingRating) ...[
             Expanded(
               child: ElevatedButton(
-                onPressed: () => _rebook(context),
+                onPressed: () => _showRatingSheet(context),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryDarkGreen,
+                  backgroundColor: Colors.amber.shade700,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10)),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
-                child: const Text("Rebook",
+                child: const Text("Rate Venue",
                     style:
                         TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               ),
             ),
+            const SizedBox(width: 8),
           ],
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () => _rebook(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryDarkGreen,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: const Text("Rebook",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            ),
+          ),
         ],
-      ),
+      ]),
     );
   }
 
@@ -743,7 +778,7 @@ class _BookingCardState extends State<_BookingCard> {
             venueName: widget.booking.ground?.name ?? "Venue",
             locationName: widget.booking.ground?.locationName ?? '',
             pitchName: "Main Pitch",
-            date: widget.booking.slotTime, // Keep as DateTime
+            date: widget.booking.slotTime,
             time: DateFormat('hh:mm a').format(widget.booking.slotTime),
             bookedBy: "User",
             location: widget.booking.ground?.address ?? "Location",
@@ -779,7 +814,8 @@ class ViewTicketScreen extends StatefulWidget {
   final TicketModel ticket;
 
   final bool isFromBookingFlow;
-  const ViewTicketScreen({super.key, required this.ticket, this.isFromBookingFlow = false});
+  const ViewTicketScreen(
+      {super.key, required this.ticket, this.isFromBookingFlow = false});
 
   @override
   State<ViewTicketScreen> createState() => _ViewTicketScreenState();
@@ -788,7 +824,6 @@ class ViewTicketScreen extends StatefulWidget {
 class _ViewTicketScreenState extends State<ViewTicketScreen> {
   bool _isSaving = false;
   List<TimeSlot> _bookedSlots = [];
-  
 
   @override
   void initState() {
@@ -800,9 +835,11 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
     try {
       final periodParts = (widget.ticket.period).split('|');
       if (periodParts.length > 1 && periodParts[1].isNotEmpty) {
-        final slotTimes = periodParts[1].split(',').map((s) => s.trim()).toList();
-        final pricePerSlot = widget.ticket.price / (slotTimes.isEmpty ? 1 : slotTimes.length);
-        
+        final slotTimes =
+            periodParts[1].split(',').map((s) => s.trim()).toList();
+        final pricePerSlot =
+            widget.ticket.price / (slotTimes.isEmpty ? 1 : slotTimes.length);
+
         final slots = slotTimes.map((st) {
           final endTime = _calculateEndTime(st);
           return TimeSlot(
@@ -816,7 +853,6 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
         if (mounted) {
           setState(() {
             _bookedSlots = slots;
-  
           });
         }
         return; // We got the slots locally!
@@ -850,14 +886,11 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
       if (mounted) {
         setState(() {
           _bookedSlots = slots;
-
         });
       }
     } catch (e) {
       debugPrint("[VIEW_TICKET] Error loading slots: $e");
-      if (mounted) {
-
-      }
+      if (mounted) {}
     }
   }
 
@@ -943,7 +976,9 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
 
   Future<void> _openMap() async {
     await TicketUtil.openMap(widget.ticket.latitude, widget.ticket.longitude);
-  }  @override
+  }
+
+  @override
   Widget build(BuildContext context) {
     final double discountAmount = 0.0; // TODO: Fetch from actual booking model
     final theme = Theme.of(context);
@@ -966,7 +1001,7 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
           child: IconButton(
             icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 20,
               color: Colors.white,
-              
+
             ),
             onPressed: () => Navigator.pop(context),
           ),
@@ -1281,8 +1316,8 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
               icon: const Icon(Icons.home_rounded, color: Colors.white),
               label: const Text(
                 "Back to Home",
-                style: TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold),
+                style:
+                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryDarkGreen,

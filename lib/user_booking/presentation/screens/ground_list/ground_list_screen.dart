@@ -222,10 +222,10 @@ class _GroundListScreenState extends State<GroundListScreen> {
           // Content
           Padding(
             padding: EdgeInsets.only(
-              top: MediaQuery.of(context).padding.top + 20,
+              top: MediaQuery.of(context).padding.top + 12,
               left: 20,
               right: 20,
-              bottom: 24,
+              bottom: 12,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

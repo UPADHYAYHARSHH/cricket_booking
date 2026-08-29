@@ -23,8 +23,7 @@ class _SavedGroundsScreenState extends State<SavedGroundsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
-        child: BlocBuilder<SavedGroundCubit, SavedGroundState>(
+      body: BlocBuilder<SavedGroundCubit, SavedGroundState>(
           builder: (context, savedState) {
             return BlocBuilder<LocationListCubit, LocationListState>(
               builder: (context, locationState) {
@@ -72,7 +71,6 @@ class _SavedGroundsScreenState extends State<SavedGroundsScreen> {
             );
           },
         ),
-      ),
     );
   }
 
