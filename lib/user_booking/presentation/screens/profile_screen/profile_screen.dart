@@ -11,9 +11,7 @@ import '../../../constants/route_constants.dart';
 import 'package:turfpro/common/config/feature_config.dart';
 
 import 'package:turfpro/user_booking/presentation/blocs/profile/profile_cubit.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart';
-import 'package:image_cropper/image_cropper.dart';
 import 'package:turfpro/user_booking/di/get_it/get_it.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
@@ -217,67 +215,9 @@ class ProfileScreen extends StatelessWidget {
                     ),
             ),
           ),
-          Positioned(
-            bottom: 0,
-            right: 0,
-            child: GestureDetector(
-              onTap: () => _pickImage(context),
-              child: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: AppColors.accentOrange,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.white, width: 2),
-                ),
-                child: const Icon(
-                  Icons.edit,
-                  size: 14,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
-  }
-
-  Future<void> _pickImage(BuildContext context) async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.gallery);
-
-    if (image != null && context.mounted) {
-      if (kIsWeb) {
-        context.read<ProfileCubit>().uploadImage(XFile(image.path));
-        return;
-      }
-
-      final croppedFile = await ImageCropper().cropImage(
-        sourcePath: image.path,
-        aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
-        uiSettings: [
-          AndroidUiSettings(
-            toolbarTitle: 'Crop Profile Picture',
-            toolbarColor: AppColors.primaryDarkGreen,
-            toolbarWidgetColor: Colors.white,
-            lockAspectRatio: true,
-          ),
-          IOSUiSettings(
-            title: 'Crop Profile Picture',
-            aspectRatioLockEnabled: true,
-            resetAspectRatioEnabled: false,
-          ),
-          WebUiSettings(
-            context: context,
-            presentStyle: WebPresentStyle.page,
-          ),
-        ],
-      );
-
-      if (croppedFile != null && context.mounted) {
-        context.read<ProfileCubit>().uploadImage(XFile(croppedFile.path));
-      }
-    }
   }
 
   Widget _buildWalletCard(BuildContext context, ProfileState state) {
