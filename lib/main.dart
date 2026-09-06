@@ -65,6 +65,8 @@ import 'package:turfpro/utils/app_scroll_behavior.dart';
 import 'package:turfpro/common/services/cashfree_service.dart';
 import 'package:turfpro/common/services/live_activity_service.dart';
 import 'package:timezone/data/latest_all.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:timezone/standalone.dart' as tz;
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -75,16 +77,14 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint('Booking App - Background message: ${message.messageId}');
 }
 
-import 'package:flutter_timezone/flutter_timezone.dart';
-import 'package:timezone/standalone.dart' as tz;
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   debugPrint("DEBUG: [Main] App starting. Full URL: ${Uri.base}");
 
   initializeTimeZones();
   try {
-    final String timeZoneName = await FlutterTimezone.getLocalTimezone();
+    final timeZoneInfo = await FlutterTimezone.getLocalTimezone();
+    final String timeZoneName = timeZoneInfo.identifier;
     tz.setLocalLocation(tz.getLocation(timeZoneName));
     debugPrint("DEBUG: [Main] Local timezone set to $timeZoneName");
   } catch (e) {
