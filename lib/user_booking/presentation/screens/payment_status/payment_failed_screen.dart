@@ -73,7 +73,7 @@ class PaymentFailedScreen extends StatelessWidget {
 
             /// SUBTITLE / ERROR MESSAGE
             AppText(
-              text: args.errorMessage,
+              text: _formatErrorMessage(args.errorMessage),
               align: TextAlign.center,
               textStyle: AppTextTheme.grey14.copyWith(
                 color: theme.colorScheme.onSurface.withOpacity(0.6),
@@ -132,21 +132,37 @@ class PaymentFailedScreen extends StatelessWidget {
               ),
             ),
 
-            const Spacer(flex: 2),
-
-            /// CUSTOMER SUPPORT
-            AppText(
-              text: "Facing issues? Contact Customer Support",
-              textStyle: AppTextTheme.grey12.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.5),
-                decoration: TextDecoration.underline,
-              ),
-            ),
-
-            const AppSizedBox(height: 32),
+            const Spacer(),
           ],
         ),
       ),
     );
+  }
+
+  String _formatErrorMessage(String? message) {
+    if (message == null || message.trim().isEmpty) {
+      return "Your payment could not be processed. If any amount was deducted, it will be automatically refunded to your account within 5-7 business days.";
+    }
+
+    final lower = message.toLowerCase();
+    if (lower.contains("cferrorresponse") ||
+        lower.contains("instance of") ||
+        lower.contains("exception") ||
+        lower.contains("error:") ||
+        lower == "payment failed") {
+      return "Your payment could not be processed. If any amount was deducted, it will be automatically refunded to your account within 5-7 business days.";
+    }
+
+    if (message.startsWith("Payment Failed: ")) {
+      final clean = message.substring("Payment Failed: ".length).trim();
+      if (clean.toLowerCase().contains("cferrorresponse") ||
+          clean.toLowerCase().contains("instance of") ||
+          clean.isEmpty) {
+        return "Your payment could not be processed. If any amount was deducted, it will be automatically refunded to your account within 5-7 business days.";
+      }
+      return clean;
+    }
+
+    return message;
   }
 }

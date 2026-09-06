@@ -211,11 +211,30 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
   }
 
   void _handlePaymentError(dynamic error, String orderId) {
+    String message =
+        'Your payment could not be processed. If any amount was deducted, it will be automatically refunded within 5-7 business days.';
+    try {
+      if (error != null) {
+        final errStr = error.toString();
+        // If error object provides getMessage or a clean string that is not raw instance dump
+        dynamic msg;
+        try {
+          msg = (error as dynamic).getMessage?.call();
+        } catch (_) {}
+        if (msg is String && msg.trim().isNotEmpty) {
+          message = msg.trim();
+        } else if (!errStr.toLowerCase().contains('cferrorresponse') &&
+            !errStr.toLowerCase().contains('instance of')) {
+          message = errStr;
+        }
+      }
+    } catch (_) {}
+
     Navigator.pushNamed(
       context,
       AppRoutes.paymentFailedScreen,
       arguments: BookingFailureArguments(
-        errorMessage: 'Payment Failed: ${error.toString()}',
+        errorMessage: message,
       ),
     );
   }
