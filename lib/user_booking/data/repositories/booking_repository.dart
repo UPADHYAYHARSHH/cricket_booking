@@ -32,34 +32,36 @@ class BookingRepository {
       try {
         final groundsResponse = await _supabase
             .from('grounds')
-            .select('id, name, images, image_urls, ground_images(image_url), locations(name, address, city, location_images(image_url))')
+            .select('*, ground_images(image_url), locations(*, location_images(image_url))')
             .inFilter('id', groundIds.toList());
         
         final Map<String, dynamic> groundDataMap = {};
         for (var row in (groundsResponse as List)) {
           final List<String> allImages = [];
-          if (row['ground_images'] is List) {
+          if (row['ground_images'] != null && row['ground_images'] is List) {
             for (var img in (row['ground_images'] as List)) {
               if (img is Map && img['image_url'] != null) {
                 allImages.add(img['image_url'].toString());
               }
             }
           }
-          if (row['images'] is List) {
+          if (row['images'] != null && row['images'] is List) {
             allImages.addAll((row['images'] as List).map((i) => i.toString()));
           }
-          if (row['image_urls'] is List) {
-            allImages.addAll((row['image_urls'] as List).map((i) => i.toString()));
-          }
-          if (row['locations'] is Map && row['locations']['location_images'] is List) {
-            for (var img in (row['locations']['location_images'] as List)) {
-              if (img is Map && img['image_url'] != null) {
-                allImages.add(img['image_url'].toString());
+          if (row['locations'] != null && row['locations'] is Map) {
+            final loc = row['locations'];
+            if (loc['location_images'] != null && loc['location_images'] is List) {
+              for (var img in (loc['location_images'] as List)) {
+                if (img is Map && img['image_url'] != null) {
+                  allImages.add(img['image_url'].toString());
+                }
               }
             }
           }
           final uniqueImages = allImages.where((url) => url.isNotEmpty).toSet().toList();
-          final mainImg = uniqueImages.isNotEmpty ? uniqueImages.first : '';
+          final mainImg = uniqueImages.isNotEmpty 
+              ? uniqueImages.first 
+              : (row['image_url']?.toString() ?? row['imageUrl']?.toString() ?? '');
 
           groundDataMap[row['id'].toString()] = {
             'name': row['name'],
@@ -92,9 +94,9 @@ class BookingRepository {
             if (booking['grounds']['city'] == null && gData['city'] != null) {
               booking['grounds']['city'] = gData['city'];
             }
-            final existingImages = booking['grounds']['images'];
-            if (existingImages == null || (existingImages is List && existingImages.isEmpty)) {
-              booking['grounds']['images'] = gData['images'];
+            final gImages = (gData['images'] as List?)?.map((e) => e.toString()).toList() ?? [];
+            if (gImages.isNotEmpty) {
+              booking['grounds']['images'] = gImages;
             }
             final existingImgUrl = booking['grounds']['imageUrl'];
             if (existingImgUrl == null || existingImgUrl.toString().isEmpty) {
