@@ -475,9 +475,15 @@ class BookingSummaryScreen extends StatelessWidget {
     required bool isDark,
     required ColorScheme colorScheme,
   }) {
-    String formattedDate = "${activeDate.month} ${activeDate.date}, ${DateTime.now().year}";
-    if (activeDate.dayName != null && activeDate.dayName.toString().isNotEmpty) {
-      formattedDate = "${activeDate.dayName}, $formattedDate";
+    String formattedDate = '';
+    try {
+      if (activeDate is DateItem) {
+        formattedDate = "${activeDate.day}, ${activeDate.date} ${activeDate.month} ${activeDate.fullDate.year}";
+      } else {
+        formattedDate = "${activeDate.day}, ${activeDate.date} ${activeDate.month}";
+      }
+    } catch (_) {
+      formattedDate = "${activeDate.date} ${activeDate.month}";
     }
 
     return Container(
