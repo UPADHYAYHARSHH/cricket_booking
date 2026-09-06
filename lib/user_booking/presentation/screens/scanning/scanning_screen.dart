@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:hugeicons/hugeicons.dart';
+import 'package:turfpro/common/widgets/discover_app_bar.dart';
 import 'package:turfpro/common/constants/colors.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import 'package:turfpro/utils/toast_util.dart';
@@ -108,7 +110,15 @@ class _ScanningScreenState extends State<ScanningScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Scan Booking QR"),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: const DiscoverAppBarBackground(),
+        leading: IconButton(
+          icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 20, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text("Scan Booking QR", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+        centerTitle: true,
         actions: [
           IconButton(
             icon: ValueListenableBuilder<MobileScannerState>(

@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/common/widgets/discover_app_bar.dart';
 import '../../../constants/widgets/app_text.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -41,8 +43,15 @@ class _SearchScreenState extends State<SearchScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: const DiscoverAppBarBackground(),
         leading: IconButton(
-          icon: HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 20, color: Theme.of(context).colorScheme.onSurface),
+          icon: const HugeIcon(
+            icon: HugeIcons.strokeRoundedArrowLeft01,
+            size: 20,
+            color: Colors.white,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         titleSpacing: 0,
@@ -58,34 +67,30 @@ class _SearchScreenState extends State<SearchScreen> {
                 onChanged: (value) {
                   setState(() {});
                 },
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
+                style: const TextStyle(
+                  color: AppColors.textPrimaryLight,
+                  fontSize: 14,
                 ),
                 decoration: InputDecoration(
                   hintText: "Search turfs...",
                   hintStyle: TextStyle(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.4),
+                    color: AppColors.textSecondaryLight.withValues(alpha: 0.8),
+                    fontSize: 14,
                   ),
-                  prefixIcon: Padding(
-                    padding: const EdgeInsets.all(12),
+                  prefixIcon: const Padding(
+                    padding: EdgeInsets.all(12),
                     child: HugeIcon(
                       icon: HugeIcons.strokeRoundedSearch01,
                       size: 18,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.4),
+                      color: AppColors.textSecondaryLight,
                     ),
                   ),
                   prefixIconConstraints: const BoxConstraints(
                     minWidth: 40,
                   ),
                   filled: true,
-                  fillColor: Theme.of(context).scaffoldBackgroundColor,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
                     borderSide: BorderSide.none,

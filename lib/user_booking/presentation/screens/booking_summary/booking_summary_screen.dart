@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart';
 import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/common/widgets/discover_app_bar.dart';
 import 'package:turfpro/common/config/feature_config.dart';
 import 'package:turfpro/common/services/remote_config_service.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
@@ -27,8 +28,15 @@ class BookingSummaryScreen extends StatelessWidget {
     if (rawArgs == null || rawArgs is! BookingSummaryArguments) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text("Booking Summary"),
+          title: const Text("Booking Summary", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           centerTitle: true,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 20, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+          flexibleSpace: const DiscoverAppBarBackground(),
         ),
         body: const Center(
           child: AppText(text: "Invalid booking data"),
@@ -79,37 +87,31 @@ class BookingSummaryScreen extends StatelessWidget {
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
-            systemOverlayStyle: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+            systemOverlayStyle: SystemUiOverlayStyle.light,
+            flexibleSpace: const DiscoverAppBarBackground(),
             leading: IconButton(
               icon: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white,
+                  color: Colors.white.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
                 ),
-                child: HugeIcon(
+                child: const HugeIcon(
                   icon: HugeIcons.strokeRoundedArrowLeft01,
                   size: 18,
-                  color: colorScheme.onSurface,
+                  color: Colors.white,
                 ),
               ),
               onPressed: () => Navigator.pop(context),
             ),
             title: Column(
               children: [
-                AppText(
+                const AppText(
                   text: "Review & Pay",
                   textStyle: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -118,7 +120,7 @@ class BookingSummaryScreen extends StatelessWidget {
                   textStyle: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
-                    color: colorScheme.onSurface.withValues(alpha: 0.5),
+                    color: Colors.white.withValues(alpha: 0.8),
                   ),
                 ),
               ],

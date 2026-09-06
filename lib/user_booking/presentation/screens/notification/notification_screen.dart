@@ -8,6 +8,7 @@ import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
 import 'package:turfpro/user_booking/constants/text_theme.dart';
 import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/common/widgets/discover_app_bar.dart';
 import 'package:turfpro/user_booking/constants/route_constants.dart';
 import 'package:turfpro/common/config/feature_config.dart';
 
@@ -31,13 +32,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: const DiscoverAppBarBackground(),
         leading: IconButton(
-          icon: HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 20, color: theme.colorScheme.onSurface),
+          icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 20, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         title: const AppText(
           text: "Notifications",
-          textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
         ),
         centerTitle: true,
         actions: [
@@ -54,7 +58,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     context.read<NotificationCubit>().clearAll();
                   }
                 },
-                icon: Icon(Icons.more_vert, color: theme.colorScheme.onSurface),
+                icon: const Icon(Icons.more_vert, color: Colors.white),
                 itemBuilder: (context) => [
                   const PopupMenuItem(
                     value: 'mark_read',

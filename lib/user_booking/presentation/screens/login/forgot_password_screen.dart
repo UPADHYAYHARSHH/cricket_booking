@@ -2,6 +2,8 @@ import 'package:turfpro/user_booking/presentation/blocs/auth/auth_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/auth/auth_state.dart';
 import 'package:turfpro/utils/toast_util.dart';
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
+import 'package:turfpro/common/widgets/discover_app_bar.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../constants/widgets/app_button.dart';
 import '../../../constants/widgets/app_sizedBox.dart';
@@ -42,9 +44,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             appBar: AppBar(
               backgroundColor: Colors.transparent,
               elevation: 0,
-              iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
-              title: const AppText(text: "Forgot Password", size: 18, weight: FontWeight.w600),
+              flexibleSpace: const DiscoverAppBarBackground(),
+              iconTheme: const IconThemeData(color: Colors.white),
+              title: const AppText(text: "Forgot Password", size: 18, weight: FontWeight.w600, color: Colors.white),
               centerTitle: true,
+              leading: IconButton(
+                icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 20, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
             ),
             body: SafeArea(
               child: Center(

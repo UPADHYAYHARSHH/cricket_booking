@@ -36,60 +36,105 @@ class SlotSelectionWidgets {
     final colorScheme = theme.colorScheme;
 
     return Container(
-      color: colorScheme.surface,
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 8,
-        left: 8,
-        right: 8,
-        bottom: 12,
-      ),
-      child: Row(
-        children: [
-          IconButton(
-            icon: HugeIcon(
-              icon: HugeIcons.strokeRoundedArrowLeft01,
-              size: 20,
-              color: colorScheme.onSurface,
-            ),
-            onPressed: () => Navigator.pop(context),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0B8457), Color(0xFF065B3C)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryDarkGreen.withValues(alpha: 0.3),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
           ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        ],
+      ),
+      child: Stack(
+        children: [
+          // Top right circular containers matching Discover navbar
+          Positioned(
+            top: -30,
+            right: -25,
+            child: Container(
+              width: 110,
+              height: 110,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.08),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 25,
+            right: 35,
+            child: Container(
+              width: 55,
+              height: 55,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.05),
+              ),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 8,
+              left: 8,
+              right: 8,
+              bottom: 12,
+            ),
+            child: Row(
               children: [
-                AppText(
-                  text: title ?? ground?.name ?? 'Loading Turf...',
-                  align: TextAlign.left,
-                  textStyle: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: colorScheme.onSurface,
+                IconButton(
+                  icon: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedArrowLeft01,
+                    size: 20,
+                    color: Colors.white,
                   ),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppText(
+                        text: title ?? ground?.name ?? 'Loading Turf...',
+                        align: TextAlign.left,
+                        textStyle: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: isSaved
+                      ? const Icon(
+                          Icons.favorite,
+                          size: 22,
+                          color: AppColors.error,
+                        )
+                      : const HugeIcon(
+                          icon: HugeIcons.strokeRoundedFavourite,
+                          size: 22,
+                          color: Colors.white,
+                        ),
+                  onPressed: onToggleFav,
+                ),
+                IconButton(
+                  icon: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedShare01,
+                    size: 22,
+                    color: Colors.white,
+                  ),
+                  onPressed: onShare,
                 ),
               ],
             ),
-          ),
-          IconButton(
-            icon: isSaved
-                ? const Icon(
-                    Icons.favorite,
-                    size: 22,
-                    color: AppColors.error,
-                  )
-                : HugeIcon(
-                    icon: HugeIcons.strokeRoundedFavourite,
-                    size: 22,
-                    color: colorScheme.onSurface,
-                  ),
-            onPressed: onToggleFav,
-          ),
-          IconButton(
-            icon: HugeIcon(
-              icon: HugeIcons.strokeRoundedShare01,
-              size: 22,
-              color: colorScheme.onSurface,
-            ),
-            onPressed: onShare,
           ),
         ],
       ),

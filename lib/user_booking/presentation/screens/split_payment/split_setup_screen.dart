@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../common/constants/colors.dart';
+import 'package:turfpro/common/widgets/discover_app_bar.dart';
 
 import '../../../constants/widgets/app_sizedBox.dart';
 import '../../../constants/widgets/app_text.dart';
@@ -99,14 +100,17 @@ class _SplitSetupScreenState extends State<SplitSetupScreen> {
         return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            flexibleSpace: const DiscoverAppBarBackground(),
             leading: IconButton(
-              icon: HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 20,
-                  color: Theme.of(context).colorScheme.onSurface),
+              icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 20,
+                  color: Colors.white),
               onPressed: () => Navigator.pop(context),
             ),
             title: const AppText(
               text: "Split Bill",
-              textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
             ),
             centerTitle: true,
           ),

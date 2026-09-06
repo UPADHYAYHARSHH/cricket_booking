@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:turfpro/user_booking/data/models/review_model.dart';
 import 'package:turfpro/user_booking/presentation/widgets/slot_selection_widgets.dart';
+import 'package:hugeicons/hugeicons.dart';
+import 'package:turfpro/common/widgets/discover_app_bar.dart';
 import 'package:turfpro/common/constants/colors.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 
@@ -20,12 +22,21 @@ class ReviewsScreen extends StatelessWidget {
           textStyle: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        flexibleSpace: const DiscoverAppBarBackground(),
+        leading: IconButton(
+          icon: const HugeIcon(
+            icon: HugeIcons.strokeRoundedArrowLeft01,
+            size: 20,
+            color: Colors.white,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: Container(
         color: Colors.grey.shade50,

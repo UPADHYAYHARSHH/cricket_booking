@@ -103,33 +103,70 @@ class _SavedGroundsScreenState extends State<SavedGroundsScreen> {
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 24,
-        left: 20,
-        right: 20,
-        bottom: 24,
-      ),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
           colors: [Color(0xFF0B8457), Color(0xFF065B3C)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const AppText(
-            text: "Saved Locations",
-            size: 22,
-            weight: FontWeight.w700,
-            color: AppColors.white,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryDarkGreen.withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
-          const SizedBox(height: 4),
-          AppText(
-            text: "Your favorite venues ready for the next match.",
-            size: 13,
-            color: AppColors.white.withValues(alpha: 0.7),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            top: -40,
+            right: -30,
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.06),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 60,
+            right: 40,
+            child: Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.04),
+              ),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 24,
+              left: 20,
+              right: 20,
+              bottom: 24,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const AppText(
+                  text: "Saved Locations",
+                  size: 22,
+                  weight: FontWeight.w700,
+                  color: AppColors.white,
+                ),
+                const SizedBox(height: 4),
+                AppText(
+                  text: "Your favorite venues ready for the next match.",
+                  size: 13,
+                  color: AppColors.white.withValues(alpha: 0.7),
+                ),
+              ],
+            ),
           ),
         ],
       ),

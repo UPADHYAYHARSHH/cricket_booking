@@ -62,38 +62,36 @@ class ProfileScreen extends StatelessWidget {
         ],
         child: Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          body: SafeArea(
-            child: BlocBuilder<ProfileCubit, ProfileState>(
-              builder: (context, profileState) {
-                debugPrint(
-                    "[PROFILE_SCREEN] State: isLoading=${profileState.isLoading}, name=${profileState.name}, error=${profileState.error}");
+          body: BlocBuilder<ProfileCubit, ProfileState>(
+            builder: (context, profileState) {
+              debugPrint(
+                  "[PROFILE_SCREEN] State: isLoading=${profileState.isLoading}, name=${profileState.name}, error=${profileState.error}");
 
-                if (profileState.isLoading && profileState.name == null) {
-                  return const _ProfileSkeleton();
-                }
+              if (profileState.isLoading && profileState.name == null) {
+                return const _ProfileSkeleton();
+              }
 
-                return Column(
-                  children: [
-                    _buildProfileHeader(context, profileState),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                        child: Column(
-                          children: [
-                            if (FeatureConfig.isWalletEnabled) ...[
-                              _buildWalletCard(context, profileState),
-                              const SizedBox(height: 28),
-                            ],
-                            _buildMenuList(context),
-                            const SizedBox(height: 16),
+              return Column(
+                children: [
+                  _buildProfileHeader(context, profileState),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                      child: Column(
+                        children: [
+                          if (FeatureConfig.isWalletEnabled) ...[
+                            _buildWalletCard(context, profileState),
+                            const SizedBox(height: 28),
                           ],
-                        ),
+                          _buildMenuList(context),
+                          const SizedBox(height: 16),
+                        ],
                       ),
                     ),
-                  ],
-                );
-              },
-            ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -103,40 +101,81 @@ class ProfileScreen extends StatelessWidget {
   Widget _buildProfileHeader(BuildContext context, ProfileState state) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 24,
-        left: 20,
-        right: 20,
-        bottom: 40,
-      ),
-      decoration: const BoxDecoration(
-        color: AppColors.primaryDarkGreen,
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              AppText(
-                text: "Profile",
-                size: 20,
-                weight: FontWeight.w700,
-                color: AppColors.white,
-              ),
-              _buildGlassCircle(
-                AppText(
-                  text: _getInitials(state.name ?? "P"),
-                  color: AppColors.white,
-                  weight: FontWeight.w700,
-                ),
-                bordered: true,
-              ),
-            ],
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0B8457), Color(0xFF065B3C)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryDarkGreen.withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
-          const SizedBox(height: 24),
-          _buildAvatar(context, state),
-          const SizedBox(height: 14),
-          _buildNameSection(context, state),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            top: -40,
+            right: -30,
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.06),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 60,
+            right: 40,
+            child: Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.04),
+              ),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 24,
+              left: 20,
+              right: 20,
+              bottom: 40,
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const AppText(
+                      text: "Profile",
+                      size: 20,
+                      weight: FontWeight.w700,
+                      color: AppColors.white,
+                    ),
+                    _buildGlassCircle(
+                      AppText(
+                        text: _getInitials(state.name ?? "P"),
+                        color: AppColors.white,
+                        weight: FontWeight.w700,
+                      ),
+                      bordered: true,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                _buildAvatar(context, state),
+                const SizedBox(height: 14),
+                _buildNameSection(context, state),
+              ],
+            ),
+          ),
         ],
       ),
     );

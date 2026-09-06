@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../common/constants/colors.dart';
+import 'package:turfpro/common/widgets/discover_app_bar.dart';
 
 import '../../../constants/widgets/app_sizedBox.dart';
 import '../../../constants/widgets/app_text.dart';
@@ -44,7 +45,12 @@ class _SplitOverviewScreenState extends State<SplitOverviewScreen> {
 
         if (state is! SplitPaymentOverviewLoaded) {
           return Scaffold(
-            appBar: AppBar(),
+            appBar: AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              flexibleSpace: const DiscoverAppBarBackground(),
+              iconTheme: const IconThemeData(color: Colors.white),
+            ),
             body: const Center(child: AppText(text: "Something went wrong")),
           );
         }
@@ -61,14 +67,16 @@ class _SplitOverviewScreenState extends State<SplitOverviewScreen> {
         return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            flexibleSpace: const DiscoverAppBarBackground(),
             leading: IconButton(
-              icon: Icon(Icons.close,
-                  color: Theme.of(context).colorScheme.onSurface),
+              icon: const Icon(Icons.close, color: Colors.white),
               onPressed: () => Navigator.pop(context),
             ),
             title: const AppText(
               text: "Split Overview",
-              textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
             ),
             centerTitle: true,
           ),

@@ -1,6 +1,7 @@
 import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/material.dart';
 import '../../../../common/constants/colors.dart';
+import 'package:turfpro/common/widgets/discover_app_bar.dart';
 import '../../../constants/text_theme.dart';
 import '../../../constants/widgets/app_sizedBox.dart';
 import '../../../constants/widgets/app_text.dart';
@@ -19,18 +20,23 @@ class PaymentFailedScreen extends StatelessWidget {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: const DiscoverAppBarBackground(),
         leading: IconButton(
-          icon: HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 20,
-            color: theme.colorScheme.onSurface,
-            
+          icon: const HugeIcon(
+            icon: HugeIcons.strokeRoundedArrowLeft01,
+            size: 20,
+            color: Colors.white,
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: AppText(
+        title: const AppText(
           text: "Payment Status",
-          textStyle: AppTextTheme.black16.copyWith(
-            color: theme.colorScheme.onSurface,
+          textStyle: TextStyle(
+            color: Colors.white,
             fontWeight: FontWeight.w600,
+            fontSize: 16,
           ),
         ),
       ),

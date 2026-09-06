@@ -1,6 +1,7 @@
 import 'package:hugeicons/hugeicons.dart';
 import 'dart:async';
 import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/common/widgets/discover_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -108,15 +109,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             backgroundColor: theme.scaffoldBackgroundColor,
             appBar: AppBar(
               centerTitle: true,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              flexibleSpace: const DiscoverAppBarBackground(),
               leading: IconButton(
-                icon: HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 20, color: colorScheme.onSurface),
+                icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 20, color: Colors.white),
                 onPressed: () => Navigator.pop(context),
               ),
-              title: Text(
+              title: const Text(
                 'Edit Profile',
                 style: TextStyle(
-                  color: colorScheme.onSurface,
+                  color: Colors.white,
                   fontWeight: FontWeight.bold,
+                  fontSize: 18,
                 ),
               ),
             ),

@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../../common/constants/colors.dart';
+import 'package:turfpro/common/widgets/discover_app_bar.dart';
 import '../../../constants/widgets/app_sizedBox.dart';
 import '../../../constants/widgets/app_text.dart';
 
@@ -60,9 +61,13 @@ class _SplitShareScreenState extends State<SplitShareScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("Share Payment Card"),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: const DiscoverAppBarBackground(),
+        title: const Text("Share Payment Card", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+        centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.close),
+          icon: const Icon(Icons.close, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
       ),

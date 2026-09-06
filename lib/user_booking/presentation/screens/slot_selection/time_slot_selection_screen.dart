@@ -1,4 +1,6 @@
+import 'package:hugeicons/hugeicons.dart';
 import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/common/widgets/discover_app_bar.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import 'package:turfpro/user_booking/data/repositories/payment_repository.dart';
@@ -425,15 +427,24 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
       appBar: AppBar(
         title: AppText(
           text: cubit.state.selectedTurf?.name ?? "Select Slots",
-          textStyle: TextStyle(
+          textStyle: const TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w700,
-            color: theme.colorScheme.onSurface,
+            color: Colors.white,
           ),
         ),
-        backgroundColor: theme.scaffoldBackgroundColor,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const HugeIcon(
+            icon: HugeIcons.strokeRoundedArrowLeft01,
+            size: 20,
+            color: Colors.white,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: IconThemeData(color: theme.colorScheme.onSurface),
+        flexibleSpace: const DiscoverAppBarBackground(),
       ),
       body: BlocBuilder<SlotSelectionCubit, SlotSelectionState>(
         builder: (context, state) {

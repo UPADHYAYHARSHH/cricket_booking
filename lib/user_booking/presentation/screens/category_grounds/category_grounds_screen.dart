@@ -13,6 +13,7 @@ import 'package:turfpro/user_booking/presentation/screens/ground_list/widgets/gr
 
 import 'dart:math';
 import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/common/widgets/discover_app_bar.dart';
 import 'package:turfpro/user_booking/domain/models/filter_criteria.dart';
 import 'package:turfpro/user_booking/presentation/screens/ground_list/widgets/filter_bottom_sheet.dart';
 import 'package:turfpro/user_booking/data/models/ground_model.dart';
@@ -164,13 +165,16 @@ class _CategoryGroundsScreenState extends State<CategoryGroundsScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: const DiscoverAppBarBackground(),
         leading: IconButton(
-          icon: HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 20, color: theme.colorScheme.onSurface),
+          icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 20, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         title: AppText(
           text: category,
-          textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
         ),
         centerTitle: true,
         actions: [
@@ -185,7 +189,7 @@ class _CategoryGroundsScreenState extends State<CategoryGroundsScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryDarkGreen,
+                      color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const HugeIcon(
