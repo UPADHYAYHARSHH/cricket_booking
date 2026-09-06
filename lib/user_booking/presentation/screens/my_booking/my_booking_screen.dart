@@ -39,11 +39,19 @@ class MyBookingsScreen extends StatefulWidget {
 
 class _MyBookingsScreenState extends State<MyBookingsScreen> {
   int _selectedTab = 0;
+  late final PageController _pageController;
 
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: _selectedTab);
     context.read<BookingCubit>().getBookings();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   @override
@@ -134,7 +142,14 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
 
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _selectedTab = index),
+        onTap: () {
+          setState(() => _selectedTab = index);
+          _pageController.animateToPage(
+            index,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+        },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           margin: const EdgeInsets.all(4),
@@ -158,7 +173,6 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   }
 
   Widget _buildBookingList() {
-    final theme = Theme.of(context);
     return BlocBuilder<BookingCubit, BookingState>(
       builder: (context, state) {
         if (state is BookingLoading) {
@@ -172,99 +186,118 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
         }
 
         if (state is BookingLoaded) {
-          final now = DateTime.now();
-          final bookings = state.bookings.where((b) {
-            final localDate = b.slotTime.toLocal();
-            DateTime endTime = localDate;
-            if (b.period != null && b.period!.contains('|')) {
-              final parts = b.period!.split('|');
-              if (parts.length > 1) {
-                final times = parts[1].split(',');
-                if (times.isNotEmpty) {
-                  final lastTime = times.last.trim();
-                  final timeParts = lastTime.split(':');
-                  if (timeParts.length >= 2) {
-                    int h = int.tryParse(timeParts[0]) ?? 0;
-                    final mPart = timeParts[1].trim().split(' ');
-                    final m = int.tryParse(mPart[0]) ?? 0;
-                    final amPm = mPart.length > 1 ? mPart[1].toUpperCase() : '';
-                    if (amPm == 'PM' && h != 12) h += 12;
-                    if (amPm == 'AM' && h == 12) h = 0;
-                    // Adding 1 hour to the start time of the last slot to represent its end time.
-                    endTime = DateTime(localDate.year, localDate.month,
-                        localDate.day, h + 1, m);
-                  }
-                }
-              }
-            }
-
-            // A booking is considered "Completed" once its end time has passed.
-            if (_selectedTab == 0) {
-              return endTime.isAfter(now);
-            } else {
-              return endTime.isBefore(now);
-            }
-          }).toList();
-
-          // Sort chronologically: earlier should first (ascending)
-          bookings.sort((a, b) => a.slotTime.compareTo(b.slotTime));
-
-          if (bookings.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surface,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.calendar_today_outlined,
-                      size: 64,
-                      color: AppColors.primaryDarkGreen.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  const AppSizedBox(height: 24),
-                  AppText(
-                    text: "No bookings yet",
-                    textStyle: AppTextTheme.black18.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
-                    ),
-                  ),
-                  const AppSizedBox(height: 8),
-                  AppText(
-                    text: "Your upcoming matches will appear here",
-                    textStyle: AppTextTheme.grey13.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return RefreshIndicator(
-            onRefresh: () => context.read<BookingCubit>().getBookings(),
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: bookings.length,
-              itemBuilder: (_, i) => _BookingCard(booking: bookings[i]),
-            ),
+          return PageView(
+            controller: _pageController,
+            onPageChanged: (index) {
+              setState(() {
+                _selectedTab = index;
+              });
+            },
+            children: [
+              _buildSingleTabBookingList(state.bookings, isUpcoming: true),
+              _buildSingleTabBookingList(state.bookings, isUpcoming: false),
+            ],
           );
         }
 
         return const SizedBox();
       },
+    );
+  }
+
+  Widget _buildSingleTabBookingList(List<BookingModel> allBookings, {required bool isUpcoming}) {
+    final theme = Theme.of(context);
+    final now = DateTime.now();
+
+    final bookings = allBookings.where((b) {
+      final localDate = b.slotTime.toLocal();
+      DateTime endTime = localDate;
+      if (b.period != null && b.period!.contains('|')) {
+        final parts = b.period!.split('|');
+        if (parts.length > 1) {
+          final times = parts[1].split(',');
+          if (times.isNotEmpty) {
+            final lastTime = times.last.trim();
+            final timeParts = lastTime.split(':');
+            if (timeParts.length >= 2) {
+              int h = int.tryParse(timeParts[0]) ?? 0;
+              final mPart = timeParts[1].trim().split(' ');
+              final m = int.tryParse(mPart[0]) ?? 0;
+              final amPm = mPart.length > 1 ? mPart[1].toUpperCase() : '';
+              if (amPm == 'PM' && h != 12) h += 12;
+              if (amPm == 'AM' && h == 12) h = 0;
+              endTime = DateTime(localDate.year, localDate.month, localDate.day, h + 1, m);
+            }
+          }
+        }
+      }
+
+      if (isUpcoming) {
+        return endTime.isAfter(now);
+      } else {
+        return endTime.isBefore(now);
+      }
+    }).toList();
+
+    if (isUpcoming) {
+      bookings.sort((a, b) => a.slotTime.compareTo(b.slotTime));
+    } else {
+      bookings.sort((a, b) => b.slotTime.compareTo(a.slotTime));
+    }
+
+    if (bookings.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.calendar_today_outlined,
+                size: 64,
+                color: AppColors.primaryDarkGreen.withValues(alpha: 0.3),
+              ),
+            ),
+            const AppSizedBox(height: 24),
+            AppText(
+              text: isUpcoming ? "No upcoming bookings" : "No completed bookings",
+              textStyle: AppTextTheme.black18.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+              ),
+            ),
+            const AppSizedBox(height: 8),
+            AppText(
+              text: isUpcoming
+                  ? "Your upcoming matches will appear here"
+                  : "Matches you have played will appear here",
+              textStyle: AppTextTheme.grey13.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () => context.read<BookingCubit>().getBookings(),
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: bookings.length,
+        itemBuilder: (_, i) => _BookingCard(booking: bookings[i]),
+      ),
     );
   }
 }
@@ -362,15 +395,68 @@ class _BookingCardState extends State<_BookingCard> {
   }
 
   Widget _buildTopSection(BuildContext context) {
+    final rawSport = widget.booking.sportName ?? widget.booking.ground?.categories.firstOrNull ?? '';
+    final sportFormatted = rawSport.replaceAll('_', ' ').toUpperCase();
+
     return Stack(
       children: [
         GroundImageCarousel(
           images: widget.booking.ground?.images ?? [],
           fallbackImageUrl: widget.booking.ground?.imageUrl ??
               "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e",
-          height: 160,
+          height: 165,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+          allowFullScreen: true,
         ),
+
+        // Gradient overlay at bottom of image
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 44,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  Colors.black.withValues(alpha: 0.35),
+                ],
+              ),
+            ),
+          ),
+        ),
+
+        // Sport badge on top-left
+        if (sportFormatted.isNotEmpty)
+          Positioned(
+            top: 12,
+            left: 12,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.primaryDarkGreen.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.25),
+                    blurRadius: 4,
+                  ),
+                ],
+              ),
+              child: Text(
+                sportFormatted,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ),
 
         // Status Badge
         Positioned(
@@ -382,22 +468,28 @@ class _BookingCardState extends State<_BookingCard> {
         // Check-in Badge
         if (widget.booking.checkedIn)
           Positioned(
-            top: 12,
+            bottom: 10,
             left: 12,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
                 color: AppColors.primaryDarkGreen,
                 borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 4,
+                  ),
+                ],
               ),
-              child: Row(
+              child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.check_circle, color: Colors.white, size: 14),
-                  const SizedBox(width: 4),
+                  Icon(Icons.check_circle, color: Colors.white, size: 14),
+                  SizedBox(width: 4),
                   Text(
                     'Checked In',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
                       fontSize: 11,
                       fontWeight: FontWeight.bold,

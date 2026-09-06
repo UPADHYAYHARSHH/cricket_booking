@@ -32,33 +32,78 @@ class BookingRepository {
       try {
         final groundsResponse = await _supabase
             .from('grounds')
-            .select('id, name, locations(name)')
+            .select('id, name, images, image_urls, ground_images(image_url), locations(name, address, city, location_images(image_url))')
             .inFilter('id', groundIds.toList());
         
         final Map<String, dynamic> groundDataMap = {};
         for (var row in (groundsResponse as List)) {
-           groundDataMap[row['id'].toString()] = {
-             'name': row['name'],
-             'location_name': (row['locations'] is Map) ? row['locations']['name'] : null,
-           };
+          final List<String> allImages = [];
+          if (row['ground_images'] is List) {
+            for (var img in (row['ground_images'] as List)) {
+              if (img is Map && img['image_url'] != null) {
+                allImages.add(img['image_url'].toString());
+              }
+            }
+          }
+          if (row['images'] is List) {
+            allImages.addAll((row['images'] as List).map((i) => i.toString()));
+          }
+          if (row['image_urls'] is List) {
+            allImages.addAll((row['image_urls'] as List).map((i) => i.toString()));
+          }
+          if (row['locations'] is Map && row['locations']['location_images'] is List) {
+            for (var img in (row['locations']['location_images'] as List)) {
+              if (img is Map && img['image_url'] != null) {
+                allImages.add(img['image_url'].toString());
+              }
+            }
+          }
+          final uniqueImages = allImages.where((url) => url.isNotEmpty).toSet().toList();
+          final mainImg = uniqueImages.isNotEmpty ? uniqueImages.first : '';
+
+          groundDataMap[row['id'].toString()] = {
+            'name': row['name'],
+            'location_name': (row['locations'] is Map) ? row['locations']['name'] : null,
+            'address': (row['locations'] is Map) ? row['locations']['address'] : null,
+            'city': (row['locations'] is Map) ? row['locations']['city'] : null,
+            'images': uniqueImages,
+            'imageUrl': mainImg,
+          };
         }
         
         for (var booking in uniqueBookings.values) {
-           final gid = booking['ground_id']?.toString();
-           if (gid != null && groundDataMap.containsKey(gid)) {
-              if (booking['grounds'] == null) {
-                 booking['grounds'] = {};
-              }
-              if (booking['grounds']['location_name'] == null) {
-                 booking['grounds']['location_name'] = groundDataMap[gid]['location_name'];
-              }
-              if (booking['grounds']['name'] == null) {
-                 booking['grounds']['name'] = groundDataMap[gid]['name'];
-              }
-           }
+          final gid = booking['ground_id']?.toString();
+          if (gid != null && groundDataMap.containsKey(gid)) {
+            if (booking['grounds'] == null) {
+              booking['grounds'] = <String, dynamic>{};
+            } else if (booking['grounds'] is Map) {
+              booking['grounds'] = Map<String, dynamic>.from(booking['grounds'] as Map);
+            }
+            final gData = groundDataMap[gid] as Map<String, dynamic>;
+            if (booking['grounds']['location_name'] == null) {
+              booking['grounds']['location_name'] = gData['location_name'];
+            }
+            if (booking['grounds']['name'] == null) {
+              booking['grounds']['name'] = gData['name'];
+            }
+            if (booking['grounds']['address'] == null && gData['address'] != null) {
+              booking['grounds']['address'] = gData['address'];
+            }
+            if (booking['grounds']['city'] == null && gData['city'] != null) {
+              booking['grounds']['city'] = gData['city'];
+            }
+            final existingImages = booking['grounds']['images'];
+            if (existingImages == null || (existingImages is List && existingImages.isEmpty)) {
+              booking['grounds']['images'] = gData['images'];
+            }
+            final existingImgUrl = booking['grounds']['imageUrl'];
+            if (existingImgUrl == null || existingImgUrl.toString().isEmpty) {
+              booking['grounds']['imageUrl'] = gData['imageUrl'];
+            }
+          }
         }
       } catch (e) {
-        debugPrint("[BOOKING_REPO] Failed to fetch ground locations: $e");
+        debugPrint("[BOOKING_REPO] Failed to fetch ground details: $e");
       }
     }
 
