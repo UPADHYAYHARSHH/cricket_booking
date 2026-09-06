@@ -793,6 +793,7 @@ class _BookingCardState extends State<_BookingCard> {
             period: widget.booking.period ?? "Day",
             amenities: widget.booking.ground?.amenities,
             ownerId: widget.booking.ground?.ownerId ?? "N/A",
+            platformFee: widget.booking.platformFee,
           ),
         ),
       ),
@@ -966,6 +967,7 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
       selectedPeriod: widget.ticket.period.split('|').first,
       groundId: widget.ticket.groundId,
       ownerId: widget.ticket.ownerId,
+      platformFee: widget.ticket.platformFee,
       amenities: widget.ticket.amenities,
       onLoadingStarted: () => setState(() => _isSaving = true),
       onLoadingFinished: () {
@@ -1379,3 +1381,5 @@ class TicketModel {
     this.platformFee = 0.0,
   });
 }
+
+

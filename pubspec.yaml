@@ -85,6 +85,7 @@ dependencies:
   flutter_cashfree_pg_sdk: ^2.4.0+52
   timezone: ^0.10.1
   live_activities: ^2.4.9
+  flutter_timezone: ^5.1.0
 flutter_launcher_icons:
   android: true
   ios: true

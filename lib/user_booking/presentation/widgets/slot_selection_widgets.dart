@@ -2472,9 +2472,12 @@ class SlotSelectionWidgets {
           ),
           const SizedBox(height: 16),
           InkWell(
-            onTap: () {
+            onTap: () async {
               final googleMapsUrl = 'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude';
-              Share.share('Check out this venue:\n$address\n$googleMapsUrl');
+              final uri = Uri.parse(googleMapsUrl);
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              }
             },
             child: Container(
               height: 160,

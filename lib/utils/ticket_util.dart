@@ -346,9 +346,9 @@ class TicketUtil {
                           ),
                           child: pw.Column(
                             children: [
-                              _pdfPaymentRow('Slot Booking Amount', 'Rs ${(totalPrice - (platformFee > 0 ? platformFee : 30.0)).clamp(0.0, totalPrice).toStringAsFixed(0)}'),
+                              _pdfPaymentRow('Slot Booking Amount', 'Rs ${(totalPrice - platformFee).clamp(0.0, totalPrice).toStringAsFixed(0)}'),
                               pw.SizedBox(height: 6),
-                              _pdfPaymentRow('Platform Fee', '+ Rs ${(platformFee > 0 ? platformFee : 30.0).toStringAsFixed(0)}'),
+                              _pdfPaymentRow('Platform Fee', '+ Rs ${platformFee.toStringAsFixed(0)}'),
                               pw.SizedBox(height: 6),
                               _pdfPaymentRow('Taxes & Charges', 'Included'),
                               pw.SizedBox(height: 8),

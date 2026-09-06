@@ -75,11 +75,21 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint('Booking App - Background message: ${message.messageId}');
 }
 
+import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:timezone/standalone.dart' as tz;
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   debugPrint("DEBUG: [Main] App starting. Full URL: ${Uri.base}");
 
   initializeTimeZones();
+  try {
+    final String timeZoneName = await FlutterTimezone.getLocalTimezone();
+    tz.setLocalLocation(tz.getLocation(timeZoneName));
+    debugPrint("DEBUG: [Main] Local timezone set to $timeZoneName");
+  } catch (e) {
+    debugPrint("DEBUG: [Main] Could not get local timezone: $e");
+  }
   
   // Silent OTA updates
   ShorebirdService.checkForUpdates();

@@ -8,22 +8,26 @@ class PaymentRepository {
   final SupabaseClient _supabase = Supabase.instance.client;
 
   /// CREATE CASHFREE ORDER VIA EDGE FUNCTION
-  Future<Map<String, dynamic>> createOrder(int amount, {String? returnUrl}) async {
-    debugPrint('PaymentRepository: createOrder called with amount: $amount, returnUrl: $returnUrl');
+  Future<Map<String, dynamic>> createOrder(int amount,
+      {String? returnUrl}) async {
+    debugPrint(
+        'PaymentRepository: createOrder called with amount: $amount, returnUrl: $returnUrl');
     try {
       final Map<String, dynamic> body = {'amount': amount};
       if (returnUrl != null) {
         body['return_url'] = returnUrl;
       }
-      
+
       final response = await _supabase.functions.invoke(
         'create-order',
         body: body,
       );
-      debugPrint('PaymentRepository: create-order Response Status: ${response.status}');
+      debugPrint(
+          'PaymentRepository: create-order Response Status: ${response.status}');
 
       if (response.status != 200) {
-        debugPrint('PaymentRepository: create-order Error Data: ${response.data}');
+        debugPrint(
+            'PaymentRepository: create-order Error Data: ${response.data}');
         throw Exception('Failed to create order: ${response.data}');
       }
 
@@ -44,7 +48,8 @@ class PaymentRepository {
           'order_id': orderId,
         },
       );
-      debugPrint('PaymentRepository: verify-payment Response Status: ${response.status}');
+      debugPrint(
+          'PaymentRepository: verify-payment Response Status: ${response.status}');
 
       if (response.status != 200) {
         debugPrint('PaymentRepository: verify-payment Error: ${response.data}');
@@ -78,7 +83,8 @@ class PaymentRepository {
 
     debugPrint('PaymentRepository: Inserting booking via RPC');
 
-    final combinedPeriod = "${period ?? 'Day'}|${slotStartTimes?.join(',') ?? ''}";
+    final combinedPeriod =
+        "${period ?? 'Day'}|${slotStartTimes?.join(',') ?? ''}";
 
     final response = await _supabase.rpc('save_booking', params: {
       'p_user_id': user.uid,
@@ -96,7 +102,8 @@ class PaymentRepository {
 
     // Sync: Update slots table to mark as booked
     if (slotStartTimes != null && slotStartTimes.isNotEmpty) {
-      final formattedDate = "${slotTime.year}-${slotTime.month.toString().padLeft(2, '0')}-${slotTime.day.toString().padLeft(2, '0')}";
+      final formattedDate =
+          "${slotTime.year}-${slotTime.month.toString().padLeft(2, '0')}-${slotTime.day.toString().padLeft(2, '0')}";
       for (final startTime in slotStartTimes) {
         await _supabase.rpc('upsert_slot', params: {
           'p_ground_id': groundId,
@@ -110,25 +117,33 @@ class PaymentRepository {
 
     await _updateBookingFinancialSnapshot(response, amount.toDouble());
 
+    if (response is String) {
+      return jsonDecode(response) as Map<String, dynamic>;
+    }
     return response as Map<String, dynamic>;
   }
 
-  Future<void> _updateBookingFinancialSnapshot(dynamic bookingResponse, double totalAmount) async {
+  Future<void> _updateBookingFinancialSnapshot(
+      dynamic bookingResponse, double totalAmount) async {
     try {
-      debugPrint('👉 _updateBookingFinancialSnapshot called with totalAmount: $totalAmount');
-      debugPrint('👉 Raw bookingResponse: $bookingResponse (${bookingResponse.runtimeType})');
+      debugPrint(
+          '?? _updateBookingFinancialSnapshot called with totalAmount: $totalAmount');
+      debugPrint(
+          '?? Raw bookingResponse: $bookingResponse (${bookingResponse.runtimeType})');
 
       String? bookingId;
       if (bookingResponse is Map) {
-        bookingId = bookingResponse['id']?.toString() ?? bookingResponse['booking_id']?.toString();
+        bookingId = bookingResponse['id']?.toString() ??
+            bookingResponse['booking_id']?.toString();
       } else if (bookingResponse is String) {
         try {
           final decoded = jsonDecode(bookingResponse);
           if (decoded is Map) {
-            bookingId = decoded['id']?.toString() ?? decoded['booking_id']?.toString();
+            bookingId =
+                decoded['id']?.toString() ?? decoded['booking_id']?.toString();
           }
         } catch (e) {
-          debugPrint('⚠️ Error decoding bookingResponse JSON: $e');
+          debugPrint('?? Error decoding bookingResponse JSON: $e');
         }
       }
 
@@ -136,7 +151,8 @@ class PaymentRepository {
 
       // Fallback: If bookingId couldn't be extracted from RPC response, find latest booking for user
       if ((bookingId == null || bookingId.isEmpty) && user != null) {
-        debugPrint('⚠️ bookingId not found in RPC response, querying latest booking for user ${user.uid}...');
+        debugPrint(
+            '?? bookingId not found in RPC response, querying latest booking for user ${user.uid}...');
         final List latestRows = await _supabase
             .from('bookings')
             .select('id')
@@ -145,35 +161,42 @@ class PaymentRepository {
             .limit(1);
         if (latestRows.isNotEmpty) {
           bookingId = latestRows.first['id']?.toString();
-          debugPrint('👉 Found latest bookingId from DB query: $bookingId');
+          debugPrint('?? Found latest bookingId from DB query: $bookingId');
         }
       }
 
       double currentPlatformFee = RemoteConfigService().platformFee;
-      if (currentPlatformFee <= 0) currentPlatformFee = 30.0;
-      double currentCommissionRate = RemoteConfigService().commissionRate;
-      bool currentCommissionIsPercentage = RemoteConfigService().commissionIsPercentage;
+            double currentCommissionRate = RemoteConfigService().commissionRate;
+      bool currentCommissionIsPercentage =
+          RemoteConfigService().commissionIsPercentage;
 
-      final double baseAmount = (totalAmount - currentPlatformFee).clamp(0.0, totalAmount);
+      final double baseAmount =
+          (totalAmount - currentPlatformFee).clamp(0.0, totalAmount);
       final double commissionDeduction = currentCommissionIsPercentage
           ? (baseAmount * (currentCommissionRate / 100.0))
           : currentCommissionRate;
-      final double ownerEarnings = (baseAmount - commissionDeduction).clamp(0.0, baseAmount);
+      final double ownerEarnings =
+          (baseAmount - commissionDeduction).clamp(0.0, baseAmount);
 
       if (bookingId != null && bookingId.isNotEmpty) {
-        final updateRes = await _supabase.from('bookings').update({
-          'platform_fee': currentPlatformFee,
-          'commission_rate': currentCommissionRate,
-          'commission_is_percentage': currentCommissionIsPercentage,
-          'base_amount': baseAmount,
-          'owner_earnings': ownerEarnings,
-        }).eq('id', bookingId).select();
-        debugPrint('✅ FINANCIAL SNAPSHOT UPDATED FOR BOOKING $bookingId: $updateRes');
+        final updateRes = await _supabase
+            .from('bookings')
+            .update({
+              'platform_fee': currentPlatformFee,
+              'commission_rate': currentCommissionRate,
+              'commission_is_percentage': currentCommissionIsPercentage,
+              'base_amount': baseAmount,
+              'owner_earnings': ownerEarnings,
+            })
+            .eq('id', bookingId)
+            .select();
+        debugPrint(
+            '? FINANCIAL SNAPSHOT UPDATED FOR BOOKING $bookingId: $updateRes');
       } else {
-        debugPrint('❌ FAILED TO RESOLVE BOOKING ID FOR FINANCIAL SNAPSHOT!');
+        debugPrint('? FAILED TO RESOLVE BOOKING ID FOR FINANCIAL SNAPSHOT!');
       }
     } catch (e, stack) {
-      debugPrint('❌ EXCEPTION IN _updateBookingFinancialSnapshot: $e\n$stack');
+      debugPrint('? EXCEPTION IN _updateBookingFinancialSnapshot: $e\n$stack');
     }
   }
 
@@ -185,8 +208,10 @@ class PaymentRepository {
     required int amount,
     String? sportName,
     String? period,
+    String? orderId,
   }) async {
-    debugPrint('PaymentRepository: saveDirectBooking called - Ground: $groundId, Date: $date, Amount: $amount');
+    debugPrint(
+        'PaymentRepository: saveDirectBooking called - Ground: $groundId, Date: $date, Amount: $amount');
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       debugPrint('PaymentRepository: Error - User not authenticated');
@@ -197,22 +222,32 @@ class PaymentRepository {
       final combinedPeriod = "${period ?? 'Day'}|${slotStartTimes.join(',')}";
 
       debugPrint('PaymentRepository: Inserting booking via RPC');
-      final bookingResponse = await _supabase.rpc('save_booking', params: {
+      final Map<String, dynamic> rpcParams = {
         'p_user_id': user.uid,
         'p_ground_id': groundId,
         'p_slot_time': date.toUtc().toIso8601String(),
         'p_amount': amount,
-        'p_status': 'confirmed',
+        'p_status': 'paid',
         'p_sport_name': sportName,
         'p_period': combinedPeriod,
-      });
-      debugPrint('PaymentRepository: Booking record created successfully');
+      };
+
+      if (orderId != null) {
+        rpcParams['p_razorpay_order_id'] = orderId;
+      }
+
+      debugPrint('PaymentRepository: Inserting booking via RPC with params: $rpcParams');
+      final bookingResponse =
+          await _supabase.rpc('save_booking', params: rpcParams);
+      debugPrint('PaymentRepository: Booking record created successfully. Response: $bookingResponse');
 
       await _updateBookingFinancialSnapshot(bookingResponse, amount.toDouble());
 
       // 2. Block Slots in Database via RPC
-      final formattedDate = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
-      debugPrint('PaymentRepository: Blocking ${slotStartTimes.length} slots for date: $formattedDate');
+      final formattedDate =
+          "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+      debugPrint(
+          'PaymentRepository: Blocking ${slotStartTimes.length} slots for date: $formattedDate');
 
       for (final startTime in slotStartTimes) {
         debugPrint('PaymentRepository: Upserting slot: $startTime');
@@ -226,14 +261,57 @@ class PaymentRepository {
         debugPrint('PaymentRepository: Slot $startTime upsert completed');
       }
 
+      // 3. Manually send push notification to owner
+      try {
+        final groundData = await _supabase
+            .from('grounds')
+            .select('owner_id, name')
+            .eq('id', groundId)
+            .single();
+            
+        final String ownerId = groundData['owner_id']?.toString() ?? '';
+        final String groundName = groundData['name']?.toString() ?? 'your turf';
+        
+        String bookingId = '';
+        if (bookingResponse is Map) {
+          bookingId = bookingResponse['id']?.toString() ?? '';
+        } else if (bookingResponse is String) {
+          try {
+            final decoded = jsonDecode(bookingResponse);
+            bookingId = decoded['id']?.toString() ?? '';
+          } catch (_) {}
+        }
+
+        if (ownerId.isNotEmpty) {
+          await _supabase.from('notifications').insert({
+            'user_id': ownerId,
+            'title': 'New Booking',
+            'message': 'You have a new booking at $groundName.',
+            'type': 'booking',
+            'data': {'booking_id': bookingId},
+            'is_read': false,
+            'created_at': DateTime.now().toUtc().toIso8601String(),
+          });
+          debugPrint('PaymentRepository: Manually inserted push notification for owner.');
+        }
+      } catch (e) {
+        debugPrint('PaymentRepository: Error sending owner notification: $e');
+      }
+
       debugPrint('PaymentRepository: saveDirectBooking FULLY completed');
+
+      if (bookingResponse is String) {
+        return jsonDecode(bookingResponse) as Map<String, dynamic>;
+      }
       return bookingResponse as Map<String, dynamic>;
     } catch (e) {
       debugPrint('PaymentRepository: EXCEPTION in saveDirectBooking: $e');
       if (e is PostgrestException) {
-        debugPrint('Postgrest Details - Message: ${e.message}, Code: ${e.code}, Hint: ${e.hint}');
+        debugPrint(
+            'Postgrest Details - Message: ${e.message}, Code: ${e.code}, Hint: ${e.hint}');
       }
       rethrow;
     }
   }
 }
+

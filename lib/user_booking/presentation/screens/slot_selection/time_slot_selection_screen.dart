@@ -23,12 +23,14 @@ import 'package:turfpro/common/services/cashfree_service.dart';
 import 'package:turfpro/common/services/notification_service.dart';
 import 'package:turfpro/common/services/live_activity_service.dart';
 import 'package:intl/intl.dart';
+import 'package:turfpro/common/services/remote_config_service.dart';
 
 class TimeSlotSelectionScreen extends StatefulWidget {
   const TimeSlotSelectionScreen({super.key});
 
   @override
-  State<TimeSlotSelectionScreen> createState() => _TimeSlotSelectionScreenState();
+  State<TimeSlotSelectionScreen> createState() =>
+      _TimeSlotSelectionScreenState();
 }
 
 class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
@@ -41,6 +43,7 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
   int _pendingAppliedPoints = 0;
   double _pendingAppliedWallet = 0.0;
   bool _isBookingInProgress = false;
+  bool _isPaymentHandled = false;
 
   @override
   void initState() {
@@ -58,6 +61,8 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
   }
 
   void _handlePaymentSuccess(String orderId) async {
+    if (_isPaymentHandled) return;
+    _isPaymentHandled = true;
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -73,9 +78,12 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
       final ground = cubit.state.selectedTurf;
 
       if (isValid && ground != null && _pendingDate != null) {
-        final slotTimesPeriod = (_pendingSlots != null && _pendingSlots!.isNotEmpty)
-            ? _pendingSlots!.map((s) => "${s.startTime} - ${s.endTime}").join(', ')
-            : cubit.state.selectedPeriod;
+        final slotTimesPeriod =
+            (_pendingSlots != null && _pendingSlots!.isNotEmpty)
+                ? _pendingSlots!
+                    .map((s) => "${s.startTime} - ${s.endTime}")
+                    .join(', ')
+                : cubit.state.selectedPeriod;
 
         // Save booking using bypass for now until backend is ready
         final bookingData = await _paymentRepo.saveDirectBooking(
@@ -85,6 +93,7 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
           sportName: cubit.state.selectedSport,
           period: slotTimesPeriod,
           slotStartTimes: _pendingSlots?.map((s) => s.startTime).toList() ?? [],
+          orderId: orderId,
         );
 
         final int displayId = bookingData['display_id'] ?? 0;
@@ -95,7 +104,8 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
         if (FeatureConfig.isWalletEnabled && _pendingAppliedWallet > 0) {
           final walletRepo = getIt<WalletRepository>();
           final currentBalance = await walletRepo.getBalance();
-          await walletRepo.updateBalance(currentBalance - _pendingAppliedWallet);
+          await walletRepo
+              .updateBalance(currentBalance - _pendingAppliedWallet);
           await walletRepo.addTransaction(
             amount: _pendingAppliedWallet,
             type: 'debit',
@@ -104,16 +114,20 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
         }
 
         if (FeatureConfig.isLoyaltyEnabled) {
-          if (_pendingAppliedPoints > 0) await _loyaltyRepo.redeemPoints(_pendingAppliedPoints);
+          if (_pendingAppliedPoints > 0)
+            await _loyaltyRepo.redeemPoints(_pendingAppliedPoints);
           final pointsEarned = ((_pendingAmount ?? 0) / 10).floor();
           if (pointsEarned > 0) await _loyaltyRepo.earnPoints(pointsEarned);
         }
 
         // Trigger Notification and Live Activity
         try {
-          if (_pendingSlots != null && _pendingSlots!.isNotEmpty && _pendingDate != null) {
+          if (_pendingSlots != null &&
+              _pendingSlots!.isNotEmpty &&
+              _pendingDate != null) {
             final timeFormat = DateFormat("h:mm a");
-            final startTimeParsed = timeFormat.parse(_pendingSlots!.first.startTime);
+            final startTimeParsed =
+                timeFormat.parse(_pendingSlots!.first.startTime);
             final bookingStartDateTime = DateTime(
               _pendingDate!.year,
               _pendingDate!.month,
@@ -121,7 +135,7 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
               startTimeParsed.hour,
               startTimeParsed.minute,
             );
-            
+
             NotificationService.scheduleBookingReminder(
               id: displayId,
               title: "Upcoming Booking!",
@@ -153,7 +167,9 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
                 date: _pendingDate!,
                 time: slotTimesPeriod,
                 bookedBy: "User",
-                location: ground.address.isNotEmpty ? ground.address : (ground.city.isNotEmpty ? ground.city : "Location"),
+                location: ground.address.isNotEmpty
+                    ? ground.address
+                    : (ground.city.isNotEmpty ? ground.city : "Location"),
                 latitude: ground.latitude,
                 longitude: ground.longitude,
                 price: _pendingAmount!,
@@ -163,6 +179,7 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
                 sportName: cubit.state.selectedSport ?? "Sport",
                 period: slotTimesPeriod,
                 ownerId: ground.ownerId,
+                  platformFee: RemoteConfigService().platformFee,
                 amenities: ground.amenities,
               ),
             ),
@@ -172,7 +189,7 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
         if (!mounted) return;
         Navigator.pop(context);
         Navigator.pushNamed(
-          context, 
+          context,
           AppRoutes.paymentFailedScreen,
           arguments: BookingFailureArguments(
             errorMessage: 'Payment verification failed or was cancelled.',
@@ -184,7 +201,7 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
       if (!mounted) return;
       Navigator.pop(context);
       Navigator.pushNamed(
-        context, 
+        context,
         AppRoutes.paymentFailedScreen,
         arguments: BookingFailureArguments(
           errorMessage: 'An unexpected error occurred during payment.',
@@ -195,7 +212,7 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
 
   void _handlePaymentError(dynamic error, String orderId) {
     Navigator.pushNamed(
-      context, 
+      context,
       AppRoutes.paymentFailedScreen,
       arguments: BookingFailureArguments(
         errorMessage: 'Payment Failed: ${error.toString()}',
@@ -239,16 +256,22 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
 
       // 1. Double check availability in DB to prevent duplicate bookings
       final slotRepo = getIt<SlotRepository>();
-      final dbSlots = await slotRepo.fetchSlotsForGround(currentGround.id, _pendingDate!);
-      
+      final dbSlots =
+          await slotRepo.fetchSlotsForGround(currentGround.id, _pendingDate!);
+
       final alreadyBookedSlots = <String>[];
       for (final selectedSlot in selectedSlots) {
         final matchedDbSlot = dbSlots.firstWhere(
           (dbSlot) => dbSlot.startTime == selectedSlot.startTime,
-          orElse: () => TimeSlot(startTime: '', endTime: '', price: 0, status: SlotStatus.available),
+          orElse: () => TimeSlot(
+              startTime: '',
+              endTime: '',
+              price: 0,
+              status: SlotStatus.available),
         );
-        if (matchedDbSlot.startTime.isNotEmpty && 
-            (matchedDbSlot.status == SlotStatus.booked || matchedDbSlot.status == SlotStatus.blocked)) {
+        if (matchedDbSlot.startTime.isNotEmpty &&
+            (matchedDbSlot.status == SlotStatus.booked ||
+                matchedDbSlot.status == SlotStatus.blocked)) {
           alreadyBookedSlots.add(selectedSlot.startTime);
         }
       }
@@ -264,14 +287,17 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
                 textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
               ),
               content: AppText(
-                text: "The following slots have already been booked by another user:\n\n${alreadyBookedSlots.join(', ')}\n\nPlease choose different slots.",
+                text:
+                    "The following slots have already been booked by another user:\n\n${alreadyBookedSlots.join(', ')}\n\nPlease choose different slots.",
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
                   child: const AppText(
                     text: "OK",
-                    textStyle: TextStyle(color: AppColors.primaryDarkGreen, fontWeight: FontWeight.bold),
+                    textStyle: TextStyle(
+                        color: AppColors.primaryDarkGreen,
+                        fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -299,12 +325,14 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
       // Note: Wallet deduction and Loyalty points are now processed in _handlePaymentSuccess
 
       // Call backend to create Cashfree order and fetch session ID
-      // We do NOT send returnUrl for Web anymore because we want to enforce the modal drop-in 
+      // We do NOT send returnUrl for Web anymore because we want to enforce the modal drop-in
       // without reloading the Flutter Web app.
       final orderResponse = await _paymentRepo.createOrder(totalPrice.toInt());
-      
-      final String orderId = orderResponse['order_id'] ?? orderResponse['orderId'];
-      final String sessionId = orderResponse['payment_session_id'] ?? orderResponse['paymentSessionId'];
+
+      final String orderId =
+          orderResponse['order_id'] ?? orderResponse['orderId'];
+      final String sessionId = orderResponse['payment_session_id'] ??
+          orderResponse['paymentSessionId'];
 
       if (!mounted) return;
       Navigator.pop(context); // Pop the loading dialog
@@ -313,7 +341,8 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
       bool isPolling = true;
       int pollCount = 0;
       void startPolling() async {
-        while (isPolling && pollCount < 60) { // Poll for up to 5 minutes (60 * 5s)
+        while (isPolling && pollCount < 60) {
+          // Poll for up to 5 minutes (60 * 5s)
           await Future.delayed(const Duration(seconds: 5));
           if (!mounted || !isPolling) break;
           pollCount++;
@@ -327,6 +356,7 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
           } catch (_) {}
         }
       }
+
       startPolling();
 
       // Ensure polling stops if we get the callback directly or user leaves
@@ -343,7 +373,7 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
 
       // Call Cashfree Service with actual backend session
       CashfreeService().doPayment(
-        orderId: orderId, 
+        orderId: orderId,
         paymentSessionId: sessionId,
       );
 
@@ -370,7 +400,7 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cubit = context.read<SlotSelectionCubit>();
-    
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
@@ -410,7 +440,8 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SlotSelectionWidgets.buildDateSelector(context, state.dates, (index) {
+                      SlotSelectionWidgets.buildDateSelector(
+                          context, state.dates, (index) {
                         cubit.selectDate(index, currentTurf.id,
                             openingTime: currentTurf.openingTime,
                             closingTime: currentTurf.closingTime,
@@ -435,14 +466,18 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
                       else if (state.slots.isEmpty)
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 40, horizontal: 20),
+                          margin: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(
                             color: Theme.of(context).colorScheme.surface,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                                color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-                                width: 1.5,
+                              color: Theme.of(context)
+                                  .dividerColor
+                                  .withValues(alpha: 0.3),
+                              width: 1.5,
                             ),
                           ),
                           child: Column(
@@ -487,7 +522,8 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
                 SlotSelectionWidgets.buildBottomBar(
                     context, selectedSlots, activeDate, totalPrice, () async {
                   if (state.selectedTurf == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Error: No turf selected")));
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                        content: Text("Error: No turf selected")));
                     return;
                   }
                   try {
@@ -509,7 +545,8 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
                     }
                   } catch (e, st) {
                     debugPrint("Error pushing BookingSummaryScreen: $e\n$st");
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+                    ScaffoldMessenger.of(context)
+                        .showSnackBar(SnackBar(content: Text("Error: $e")));
                   }
                 }),
             ],
@@ -519,3 +556,5 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
     );
   }
 }
+
+
