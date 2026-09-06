@@ -478,13 +478,13 @@ class BookingSummaryScreen extends StatelessWidget {
   }) {
     String formattedDate = '';
     try {
-      if (activeDate is DateItem) {
-        formattedDate = "${activeDate.day}, ${activeDate.date} ${activeDate.month} ${activeDate.fullDate.year}";
-      } else {
-        formattedDate = "${activeDate.day}, ${activeDate.date} ${activeDate.month}";
-      }
+      final day = activeDate?.day?.toString() ?? '';
+      final date = activeDate?.date?.toString() ?? '';
+      final month = activeDate?.month?.toString() ?? '';
+      final year = activeDate?.fullDate?.year?.toString() ?? DateTime.now().year.toString();
+      formattedDate = day.isNotEmpty ? "$day, $date $month $year" : "$date $month $year";
     } catch (_) {
-      formattedDate = "${activeDate.date} ${activeDate.month}";
+      formattedDate = DateFormat('EEEE, MMM d, yyyy').format(DateTime.now());
     }
 
     return Container(
