@@ -7,6 +7,7 @@ import 'package:turfpro/common/constants/colors.dart';
 import 'package:turfpro/common/config/feature_config.dart';
 import 'package:turfpro/common/services/remote_config_service.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
+import 'package:turfpro/user_booking/domain/models/slot_models.dart';
 import 'package:turfpro/user_booking/domain/models/booking_arguments.dart';
 import 'package:turfpro/user_booking/presentation/blocs/slot_selection/slot_selection_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/slot_selection/slot_selection_state.dart';
