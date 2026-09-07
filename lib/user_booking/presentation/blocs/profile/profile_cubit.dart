@@ -164,12 +164,25 @@ class ProfileCubit extends Cubit<ProfileState> {
     }
   }
 
-  Future<void> uploadImage(XFile file, {bool isDirectUpdate = true}) async {
+  Future<void> uploadImage(XFile file, {bool isDirectUpdate = false}) async {
     emit(state.copyWith(isLoading: true, error: null));
     try {
       final bytes = await file.readAsBytes();
       final url = await userRepository.uploadProfileImage(bytes);
       if (url != null) {
+        // Persist photo_url immediately to database so it is saved even if user doesn't click save
+        try {
+          await upsertUserProfile(
+            name: state.name ?? '',
+            gender: state.gender ?? 'Other',
+            dob: state.dob,
+            photoUrl: url,
+            username: state.username,
+          );
+        } catch (saveErr) {
+          debugPrint("[PROFILE_CUBIT] Immediate photo_url persist warning: $saveErr");
+        }
+
         if (isDirectUpdate) {
           await saveProfile(
             name: state.name ?? '',

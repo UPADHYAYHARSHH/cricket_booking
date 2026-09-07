@@ -64,9 +64,16 @@ class UserRepositoryImpl implements UserRepository {
       data['username'] = username;
     }
 
-    // Primary: Use SECURITY DEFINER RPC function to bypass RLS.
-    // The RLS policy on `users` requires auth.email() which returns null
-    // for Firebase Auth users, so direct upserts are blocked by RLS.
+    // Try direct upsert first (works with RLS disabled for Firebase Auth)
+    try {
+      await supabase.from('users').upsert(data);
+      debugPrint("[USER_REPO] Direct profile upsert successful");
+      return;
+    } catch (directError) {
+      debugPrint("[USER_REPO] Direct upsert failed: $directError, falling back to RPC");
+    }
+
+    // Fallback: Use SECURITY DEFINER RPC function to bypass RLS.
     try {
       await supabase.rpc('upsert_user_profile', params: {
         'p_id': user.uid,
@@ -76,6 +83,18 @@ class UserRepositoryImpl implements UserRepository {
         'p_dob': dob?.toIso8601String() ?? '',
         'p_username': username ?? '',
       });
+
+      // If photoUrl was provided, update photo_url directly on the row
+      if (photoUrl != null) {
+        try {
+          await supabase.from('users').update({
+            'photo_url': photoUrl,
+            'updated_at': DateTime.now().toIso8601String(),
+          }).eq('id', user.uid);
+        } catch (e) {
+          debugPrint("[USER_REPO] Updating photo_url fallback failed: $e");
+        }
+      }
       return;
     } catch (rpcError) {
       debugPrint("[USER_REPO] RPC upsert_user_profile failed: $rpcError");
@@ -113,24 +132,56 @@ class UserRepositoryImpl implements UserRepository {
 
     final fileName = '${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
     final path = 'profile_images/$fileName';
+    final candidateBuckets = ['avatars', 'venue_media', 'profile_images'];
 
-    try {
-      await supabase.storage.from('avatars').uploadBinary(
-            path,
-            imageBytes,
-            fileOptions:
-                const FileOptions(contentType: 'image/jpeg', upsert: true),
-          );
+    Object? lastError;
+    for (final bucket in candidateBuckets) {
+      // 1. Try nested folder path
+      try {
+        debugPrint("[USER_REPO] Trying storage upload to '$bucket' at '$path'");
+        await supabase.storage.from(bucket).uploadBinary(
+              path,
+              imageBytes,
+              fileOptions: const FileOptions(
+                contentType: 'image/jpeg',
+                upsert: true,
+              ),
+            );
 
-      final String publicUrl =
-          supabase.storage.from('avatars').getPublicUrl(path);
-      // Ensure url is returning with a cache buster if it's updated rapidly
-      return "$publicUrl?t=${DateTime.now().millisecondsSinceEpoch}";
-    } catch (e) {
-      print("Storage Upload Error: $e");
-      throw Exception(
-          "Failed to upload image. Make sure 'avatars' bucket exists and RLS allows it.");
+        final String publicUrl =
+            supabase.storage.from(bucket).getPublicUrl(path);
+        debugPrint("[USER_REPO] Upload successful to '$bucket': $publicUrl");
+        return "$publicUrl?t=${DateTime.now().millisecondsSinceEpoch}";
+      } catch (e) {
+        debugPrint("[USER_REPO] Upload to '$bucket' with path '$path' failed: $e");
+        lastError = e;
+      }
+
+      // 2. Try flat file path
+      try {
+        debugPrint("[USER_REPO] Trying storage upload to '$bucket' at '$fileName'");
+        await supabase.storage.from(bucket).uploadBinary(
+              fileName,
+              imageBytes,
+              fileOptions: const FileOptions(
+                contentType: 'image/jpeg',
+                upsert: true,
+              ),
+            );
+
+        final String publicUrl =
+            supabase.storage.from(bucket).getPublicUrl(fileName);
+        debugPrint("[USER_REPO] Flat upload successful to '$bucket': $publicUrl");
+        return "$publicUrl?t=${DateTime.now().millisecondsSinceEpoch}";
+      } catch (e2) {
+        debugPrint("[USER_REPO] Flat upload to '$bucket' failed: $e2");
+        lastError = e2;
+      }
     }
+
+    debugPrint("Storage Upload Error: $lastError");
+    throw Exception(
+        "Failed to upload image. Please check storage bucket permissions: $lastError");
   }
 
   /// FETCH PERSISTED CITY FROM SUPABASE USERS TABLE (AND LOCAL CACHE)

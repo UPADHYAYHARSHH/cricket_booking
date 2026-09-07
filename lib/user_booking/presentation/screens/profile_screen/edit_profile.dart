@@ -301,20 +301,35 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ],
             ),
             child: ClipOval(
-              child: state.photoUrl != null
-                  ? Image.network(
-                      state.photoUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _defaultAvatar(),
-                    )
-                  : _defaultAvatar(),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  state.photoUrl != null
+                      ? Image.network(
+                          state.photoUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _defaultAvatar(),
+                        )
+                      : _defaultAvatar(),
+                  if (state.isLoading)
+                    Container(
+                      color: Colors.black.withValues(alpha: 0.45),
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 3,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
           Positioned(
             bottom: 5,
             right: 5,
             child: GestureDetector(
-              onTap: () => _pickImage(context),
+              onTap: state.isLoading ? null : () => _pickImage(context),
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: const BoxDecoration(
@@ -343,7 +358,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _pickImage(BuildContext context) async {
     final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.gallery);
+    final image = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+    );
 
     if (image != null && context.mounted) {
       if (kIsWeb) {
@@ -353,32 +371,41 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         return;
       }
 
-      final croppedFile = await ImageCropper().cropImage(
-        sourcePath: image.path,
-        aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
-        uiSettings: [
-          AndroidUiSettings(
-            toolbarTitle: 'Crop Profile Picture',
-            toolbarColor: AppColors.primaryDarkGreen,
-            toolbarWidgetColor: Colors.white,
-            lockAspectRatio: true,
-          ),
-          IOSUiSettings(
-            title: 'Crop Profile Picture',
-            aspectRatioLockEnabled: true,
-            resetAspectRatioEnabled: false,
-          ),
-          WebUiSettings(
-            context: context,
-            presentStyle: WebPresentStyle.page,
-          ),
-        ],
-      );
+      XFile fileToUpload = XFile(image.path);
+      try {
+        final croppedFile = await ImageCropper().cropImage(
+          sourcePath: image.path,
+          aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+          uiSettings: [
+            AndroidUiSettings(
+              toolbarTitle: 'Crop Profile Picture',
+              toolbarColor: AppColors.primaryDarkGreen,
+              toolbarWidgetColor: Colors.white,
+              lockAspectRatio: true,
+            ),
+            IOSUiSettings(
+              title: 'Crop Profile Picture',
+              aspectRatioLockEnabled: true,
+              resetAspectRatioEnabled: false,
+            ),
+            WebUiSettings(
+              context: context,
+              presentStyle: WebPresentStyle.page,
+            ),
+          ],
+        );
 
-      if (croppedFile != null && context.mounted) {
+        if (croppedFile != null) {
+          fileToUpload = XFile(croppedFile.path);
+        }
+      } catch (e) {
+        debugPrint("[EDIT_PROFILE] Image cropper fallback to original image: $e");
+      }
+
+      if (context.mounted) {
         context
             .read<ProfileCubit>()
-            .uploadImage(XFile(croppedFile.path), isDirectUpdate: false);
+            .uploadImage(fileToUpload, isDirectUpdate: false);
       }
     }
   }
@@ -481,6 +508,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           username: _usernameController.text.trim(),
           gender: _selectedGender,
           dob: _selectedDate,
+          photoUrl: context.read<ProfileCubit>().state.photoUrl,
         );
   }
 

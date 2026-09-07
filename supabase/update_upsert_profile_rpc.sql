@@ -22,24 +22,26 @@ CREATE OR REPLACE FUNCTION public.upsert_user_profile(
     p_email TEXT,
     p_gender TEXT,
     p_dob TEXT,
-    p_username TEXT DEFAULT NULL
+    p_username TEXT DEFAULT NULL,
+    p_photo_url TEXT DEFAULT NULL
 )
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
-    INSERT INTO public.users (id, name, email, gender, dob, username, updated_at)
-    VALUES (p_id, p_name, p_email, p_gender, p_dob::timestamptz, p_username, now())
+    INSERT INTO public.users (id, name, email, gender, dob, username, photo_url, updated_at)
+    VALUES (p_id, p_name, p_email, p_gender, p_dob::timestamptz, p_username, p_photo_url, now())
     ON CONFLICT (id) DO UPDATE SET
         name = EXCLUDED.name,
         email = EXCLUDED.email,
         gender = EXCLUDED.gender,
         dob = EXCLUDED.dob,
         username = COALESCE(EXCLUDED.username, public.users.username),
+        photo_url = COALESCE(EXCLUDED.photo_url, public.users.photo_url),
         updated_at = now();
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.upsert_user_profile(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) TO anon;
-GRANT EXECUTE ON FUNCTION public.upsert_user_profile(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.upsert_user_profile(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) TO anon;
+GRANT EXECUTE ON FUNCTION public.upsert_user_profile(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) TO authenticated;
