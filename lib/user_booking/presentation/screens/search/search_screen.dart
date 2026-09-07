@@ -26,9 +26,15 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _focusNode.requestFocus();
-    });
+    final groundCubit = context.read<GroundCubit>();
+    if (groundCubit.state is GroundInitial) {
+      final loc = context.read<LocationCubit>().state;
+      groundCubit.getGrounds(
+        city: loc.city,
+        userLat: loc.hasGpsLocation ? loc.latitude : null,
+        userLng: loc.hasGpsLocation ? loc.longitude : null,
+      );
+    }
   }
 
   @override
@@ -57,44 +63,43 @@ class _SearchScreenState extends State<SearchScreen> {
         titleSpacing: 0,
         title: Padding(
           padding: const EdgeInsets.only(right: 16),
-          child: Hero(
-            tag: 'search_bar',
-            child: Material(
-              color: Colors.transparent,
-              child: TextField(
-                controller: _searchController,
-                focusNode: _focusNode,
-                onChanged: (value) {
-                  setState(() {});
-                },
-                style: const TextStyle(
-                  color: AppColors.textPrimaryLight,
+          child: SizedBox(
+            height: 40,
+            child: TextField(
+              controller: _searchController,
+              focusNode: _focusNode,
+              autofocus: true,
+              onChanged: (value) {
+                setState(() {});
+              },
+              style: const TextStyle(
+                color: AppColors.textPrimaryLight,
+                fontSize: 14,
+              ),
+              decoration: InputDecoration(
+                hintText: "Search turfs...",
+                hintStyle: TextStyle(
+                  color: AppColors.textSecondaryLight.withValues(alpha: 0.8),
                   fontSize: 14,
                 ),
-                decoration: InputDecoration(
-                  hintText: "Search turfs...",
-                  hintStyle: TextStyle(
-                    color: AppColors.textSecondaryLight.withValues(alpha: 0.8),
-                    fontSize: 14,
+                prefixIcon: const Padding(
+                  padding: EdgeInsets.all(10),
+                  child: HugeIcon(
+                    icon: HugeIcons.strokeRoundedSearch01,
+                    size: 18,
+                    color: AppColors.textSecondaryLight,
                   ),
-                  prefixIcon: const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: HugeIcon(
-                      icon: HugeIcons.strokeRoundedSearch01,
-                      size: 18,
-                      color: AppColors.textSecondaryLight,
-                    ),
-                  ),
-                  prefixIconConstraints: const BoxConstraints(
-                    minWidth: 40,
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide.none,
-                  ),
+                ),
+                prefixIconConstraints: const BoxConstraints(
+                  minWidth: 38,
+                ),
+                isDense: true,
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide.none,
                 ),
               ),
             ),
@@ -108,7 +113,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildGroundSearch(BuildContext context) {
     return BlocBuilder<GroundCubit, GroundState>(
       builder: (context, state) {
-        if (state is GroundLoading) {
+        if (state is GroundLoading || state is GroundInitial) {
           return ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: 5,

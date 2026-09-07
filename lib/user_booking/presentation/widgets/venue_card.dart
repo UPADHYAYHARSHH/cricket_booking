@@ -72,6 +72,7 @@ class _VenueCardState extends State<VenueCard>
       onTapDown: (_) => _pressController.forward(),
       onTapUp: (_) {
         _pressController.reverse();
+        if (widget.venue.pitches.isEmpty) return;
         Navigator.pushNamed(
           context,
           AppRoutes.slotSelection,

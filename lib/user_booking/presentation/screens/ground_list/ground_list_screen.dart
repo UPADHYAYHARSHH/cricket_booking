@@ -356,59 +356,53 @@ class _GroundListScreenState extends State<GroundListScreen> {
           HapticFeedback.lightImpact();
           Navigator.pushNamed(context, AppRoutes.search);
         },
-        child: Hero(
-          tag: 'search_bar',
-          child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.06)
+                : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
               color: isDark
-                  ? Colors.white.withValues(alpha: 0.06)
-                  : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : AppColors.borderLight,
-                width: 1,
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : AppColors.borderLight,
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color:
-                      Colors.black.withValues(alpha: isDark ? 0.1 : 0.04),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color:
-                        AppColors.primaryDarkGreen.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const HugeIcon(
-                    icon: HugeIcons.strokeRoundedSearch01,
-                    size: 16,
-                    color: AppColors.primaryDarkGreen,
-                  ),
+                child: const HugeIcon(
+                  icon: HugeIcons.strokeRoundedSearch01,
+                  size: 16,
+                  color: AppColors.primaryDarkGreen,
                 ),
-                const SizedBox(width: 12),
-                AppText(
-                  text: "Search grounds, sports...",
-                  textStyle: TextStyle(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.4),
-                    fontSize: 14,
-                  ),
+              ),
+              const SizedBox(width: 12),
+              AppText(
+                text: "Search grounds, sports...",
+                textStyle: TextStyle(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.4),
+                  fontSize: 14,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
