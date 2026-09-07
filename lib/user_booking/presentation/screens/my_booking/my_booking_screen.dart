@@ -10,6 +10,7 @@ import 'package:turfpro/common/widgets/status_badge.dart';
 import 'package:turfpro/utils/ticket_util.dart';
 import 'package:turfpro/utils/qr_crypto.dart';
 import 'package:turfpro/utils/id_util.dart';
+import 'package:turfpro/common/widgets/discover_app_bar.dart';
 
 import '../../../../common/constants/colors.dart';
 import '../../../constants/text_theme.dart';
@@ -1124,6 +1125,7 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        flexibleSpace: const DiscoverAppBarBackground(),
         leading: Container(
           margin: const EdgeInsets.all(8),
           decoration: BoxDecoration(
@@ -1131,20 +1133,25 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
             borderRadius: BorderRadius.circular(8),
           ),
           child: IconButton(
-            icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 20,
+            icon: const HugeIcon(
+              icon: HugeIcons.strokeRoundedArrowLeft01,
+              size: 20,
               color: Colors.white,
-
             ),
             onPressed: () => Navigator.pop(context),
           ),
         ),
         title: const AppText(
           text: "Booking Details",
-          textStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: Colors.white),
+          textStyle: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+            color: Colors.white,
+          ),
         ),
         titleSpacing: 0,
       ),
-      extendBodyBehindAppBar: true,
+      extendBodyBehindAppBar: false,
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1157,14 +1164,14 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    AppColors.primaryDarkGreen,
-                    Color(0xFF0FA968),
+                    Color(0xFF0B8457),
+                    Color(0xFF065B3C),
                   ],
                 ),
               ),
-              padding: EdgeInsets.fromLTRB(
+              padding: const EdgeInsets.fromLTRB(
                 24,
-                MediaQuery.of(context).padding.top + 60,
+                16,
                 24,
                 24,
               ),
