@@ -222,10 +222,10 @@ class _GroundListScreenState extends State<GroundListScreen> {
           // Content
           Padding(
             padding: EdgeInsets.only(
-              top: MediaQuery.of(context).padding.top + 12,
-              left: 20,
-              right: 20,
-              bottom: 12,
+              top: MediaQuery.of(context).padding.top + 8,
+              left: 16,
+              right: 16,
+              bottom: 10,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -254,7 +254,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
                           child: Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(6),
+                                padding: const EdgeInsets.all(5),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(8),
@@ -262,7 +262,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
                                 child: const HugeIcon(
                                   icon: HugeIcons.strokeRoundedLocation01,
                                   color: Colors.white,
-                                  size: 16,
+                                  size: 15,
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -276,7 +276,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
                               HugeIcon(
                                 icon: HugeIcons.strokeRoundedArrowDown01,
                                 color: Colors.white.withValues(alpha: 0.6),
-                                size: 16,
+                                size: 15,
                               ),
                             ],
                           ),
@@ -316,25 +316,25 @@ class _GroundListScreenState extends State<GroundListScreen> {
 
   Widget _buildNotificationBell(bool hasUnread) {
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Stack(
         children: [
           const HugeIcon(
             icon: HugeIcons.strokeRoundedNotification03,
             color: Colors.white,
-            size: 20,
+            size: 18,
           ),
           if (hasUnread)
             Positioned(
               top: 0,
               right: 0,
               child: Container(
-                width: 8,
-                height: 8,
+                width: 7,
+                height: 7,
                 decoration: BoxDecoration(
                   color: AppColors.error,
                   shape: BoxShape.circle,
@@ -350,19 +350,19 @@ class _GroundListScreenState extends State<GroundListScreen> {
   // ─── SEARCH BAR ──────────────────────────────────────────────
   Widget _buildSearchBar(BuildContext context, bool isDark) {
     return Padding(
-      padding: const EdgeInsets.only(top: 24),
+      padding: const EdgeInsets.only(top: 12),
       child: GestureDetector(
         onTap: () {
           HapticFeedback.lightImpact();
           Navigator.pushNamed(context, AppRoutes.search);
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
             color: isDark
                 ? Colors.white.withValues(alpha: 0.06)
                 : Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isDark
                   ? Colors.white.withValues(alpha: 0.08)
@@ -372,7 +372,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.04),
-                blurRadius: 10,
+                blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
             ],
@@ -380,18 +380,18 @@ class _GroundListScreenState extends State<GroundListScreen> {
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
                   color: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(7),
                 ),
                 child: const HugeIcon(
                   icon: HugeIcons.strokeRoundedSearch01,
-                  size: 16,
+                  size: 15,
                   color: AppColors.primaryDarkGreen,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               AppText(
                 text: "Search grounds, sports...",
                 textStyle: TextStyle(
@@ -399,7 +399,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
                       .colorScheme
                       .onSurface
                       .withValues(alpha: 0.4),
-                  fontSize: 14,
+                  fontSize: 13,
                 ),
               ),
             ],
