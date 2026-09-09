@@ -21,6 +21,8 @@ class BookingModel {
   final bool commissionIsPercentage;
   final double baseAmount;
   final double ownerEarnings;
+  final DateTime? createdAt;
+  final DateTime? approvedAt;
 
   BookingModel({
     required this.id,
@@ -43,6 +45,8 @@ class BookingModel {
     this.commissionIsPercentage = true,
     this.baseAmount = 0.0,
     this.ownerEarnings = 0.0,
+    this.createdAt,
+    this.approvedAt,
   });
 
   factory BookingModel.fromJson(Map<String, dynamic> json) {
@@ -67,6 +71,25 @@ class BookingModel {
       commissionIsPercentage: json['commission_is_percentage'] ?? true,
       baseAmount: (json['base_amount'] as num?)?.toDouble() ?? 0.0,
       ownerEarnings: (json['owner_earnings'] as num?)?.toDouble() ?? 0.0,
+      createdAt: _parseUtcToLocal(json['created_at']),
+      approvedAt: _parseUtcToLocal(json['approved_at']),
     );
+  }
+
+  static DateTime? _parseUtcToLocal(dynamic value) {
+    if (value == null) return null;
+    String s = value.toString().trim();
+    if (s.isEmpty) return null;
+    if (s.contains(' ') && !s.contains('T')) {
+      s = s.replaceFirst(' ', 'T');
+    }
+    if (!s.endsWith('Z') && !s.contains('+') && !RegExp(r'-\d{2}:?\d{2}$').hasMatch(s)) {
+      s = '${s}Z';
+    }
+    try {
+      return DateTime.parse(s).toLocal();
+    } catch (_) {
+      return DateTime.tryParse(value.toString())?.toLocal();
+    }
   }
 }

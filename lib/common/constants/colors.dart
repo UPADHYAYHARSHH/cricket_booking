@@ -57,13 +57,19 @@ class AppColors {
 
   static Color bookingStatusColor(String status) {
     switch (status.toLowerCase()) {
+      case 'requested':
+        return const Color(0xFFF57C00);
       case 'pending':
         return statusPending;
+      case 'approved':
+        return const Color(0xFF0288D1);
       case 'confirmed':
       case 'completed':
       case 'paid':
         return statusConfirmed;
+      case 'declined':
       case 'cancelled':
+      case 'expired':
         return statusCancelled;
       default:
         return textSecondaryLight;
@@ -72,13 +78,19 @@ class AppColors {
 
   static Color bookingStatusBgColor(String status) {
     switch (status.toLowerCase()) {
+      case 'requested':
+        return const Color(0xFFFFF3E0);
       case 'pending':
         return statusPendingBg;
+      case 'approved':
+        return const Color(0xFFE1F5FE);
       case 'confirmed':
       case 'completed':
       case 'paid':
         return statusConfirmedBg;
+      case 'declined':
       case 'cancelled':
+      case 'expired':
         return statusCancelledBg;
       default:
         return borderLight;
@@ -86,8 +98,16 @@ class AppColors {
   }
 
   static Color bookingStatusBorderColor(String status) {
-    if (status.toLowerCase() == 'pending') return statusPendingBorder;
-    return borderLight;
+    switch (status.toLowerCase()) {
+      case 'requested':
+        return const Color(0xFFFFB74D);
+      case 'approved':
+        return const Color(0xFF81D4FA);
+      case 'pending':
+        return statusPendingBorder;
+      default:
+        return borderLight;
+    }
   }
 
   static ThemeData getLightTheme() {

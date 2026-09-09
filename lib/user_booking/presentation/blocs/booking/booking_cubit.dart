@@ -9,14 +9,18 @@ class BookingCubit extends Cubit<BookingState> {
 
   BookingCubit(this.repository, this.analytics) : super(BookingInitial());
 
-  Future<void> getBookings() async {
-    emit(BookingLoading());
+  Future<void> getBookings({bool forceLoading = false}) async {
+    if (forceLoading || state is! BookingLoaded) {
+      emit(BookingLoading());
+    }
     try {
       final bookings = await repository.getUserBookings();
       analytics.logBookingStarted(groundId: 'all', groundName: 'Fetch My Bookings');
       emit(BookingLoaded(bookings));
     } catch (e) {
-      emit(BookingError(e.toString()));
+      if (state is! BookingLoaded) {
+        emit(BookingError(e.toString()));
+      }
     }
   }
 }

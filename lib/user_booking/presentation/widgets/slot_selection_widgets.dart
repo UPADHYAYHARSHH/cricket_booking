@@ -2501,21 +2501,25 @@ class SlotSelectionWidgets {
   static Widget buildMapSection(BuildContext context,
       {required double latitude,
       required double longitude,
-      required String address}) {
+      required String address,
+      bool showTitle = true,
+      EdgeInsetsGeometry? padding}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      padding: padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const AppText(
-            text: "LOCATION",
-            textStyle: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.2,
+          if (showTitle) ...[
+            const AppText(
+              text: "LOCATION",
+              textStyle: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
+          ],
           InkWell(
             onTap: () async {
               final googleMapsUrl = 'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude';

@@ -109,6 +109,29 @@ class BookingRepository {
       }
     }
 
+    // Ensure created_at and approved_at are populated
+    final missingDateIds = uniqueBookings.entries
+        .where((e) => e.value['created_at'] == null || e.value['approved_at'] == null)
+        .map((e) => e.key)
+        .toList();
+    if (missingDateIds.isNotEmpty) {
+      try {
+        final datesRes = await _supabase
+            .from('bookings')
+            .select('id, created_at, approved_at')
+            .inFilter('id', missingDateIds);
+        for (var row in (datesRes as List)) {
+          final id = row['id']?.toString();
+          if (id != null && uniqueBookings.containsKey(id)) {
+            uniqueBookings[id]['created_at'] ??= row['created_at'];
+            uniqueBookings[id]['approved_at'] ??= row['approved_at'];
+          }
+        }
+      } catch (e) {
+        debugPrint("[BOOKING_REPO] Note: direct dates query fallback: $e");
+      }
+    }
+
     debugPrint("[BOOKING_REPO] Bookings fetched: ${data.length}, Unique: ${uniqueBookings.length}");
     return uniqueBookings.values.map((json) => BookingModel.fromJson(json)).toList();
   }

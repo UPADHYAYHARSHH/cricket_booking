@@ -14,11 +14,17 @@ class StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (status.isEmpty) return const SizedBox.shrink();
     final color = AppColors.bookingStatusColor(status);
     final bgColor = AppColors.bookingStatusBgColor(status);
-    final displayText = capitalize
-        ? '${status[0].toUpperCase()}${status.substring(1)}'
-        : status;
+    String displayText = status;
+    if (status.toLowerCase() == 'requested') {
+      displayText = 'Pending Approval';
+    } else if (status.toLowerCase() == 'approved') {
+      displayText = 'Approved - Pay Now';
+    } else if (capitalize && status.isNotEmpty) {
+      displayText = '${status[0].toUpperCase()}${status.substring(1)}';
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

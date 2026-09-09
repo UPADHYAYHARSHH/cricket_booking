@@ -14,9 +14,43 @@ import 'package:turfpro/user_booking/presentation/blocs/slot_selection/slot_sele
 import 'package:turfpro/user_booking/presentation/blocs/slot_selection/slot_selection_state.dart';
 import 'package:turfpro/user_booking/presentation/widgets/ground_image_carousel.dart';
 import 'package:turfpro/user_booking/presentation/widgets/slot_selection_widgets.dart';
+import 'package:turfpro/user_booking/di/get_it/get_it.dart';
+import 'package:turfpro/user_booking/data/repositories/payment_repository.dart';
 
-class BookingSummaryScreen extends StatelessWidget {
+class BookingSummaryScreen extends StatefulWidget {
   const BookingSummaryScreen({super.key});
+
+  @override
+  State<BookingSummaryScreen> createState() => _BookingSummaryScreenState();
+}
+
+class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
+  bool _requiresApproval = false;
+  bool _initialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _initialized = true;
+      _checkApprovalRequirement();
+    }
+  }
+
+  Future<void> _checkApprovalRequirement() async {
+    final rawArgs = ModalRoute.of(context)?.settings.arguments;
+    if (rawArgs != null && rawArgs is BookingSummaryArguments) {
+      final ownerId = rawArgs.ground.ownerId;
+      if (ownerId.isNotEmpty) {
+        final isReq = await getIt<PaymentRepository>().checkOwnerRequiresApproval(ownerId);
+        if (mounted) {
+          setState(() {
+            _requiresApproval = isReq;
+          });
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -183,6 +217,11 @@ class BookingSummaryScreen extends StatelessWidget {
 
                 // 5. Trust & Assurance Banner
                 _buildTrustBanner(context, isDark, colorScheme),
+
+                if (_requiresApproval) ...[
+                  const SizedBox(height: 16),
+                  _buildApprovalRequiredNotice(context, isDark, colorScheme),
+                ],
               ],
             ),
           ),
@@ -191,6 +230,7 @@ class BookingSummaryScreen extends StatelessWidget {
             context,
             grandTotal: grandTotal,
             totalDiscount: totalDiscount,
+            isApprovalRequired: _requiresApproval,
             onConfirm: () {
               HapticFeedback.mediumImpact();
               Navigator.pop(context, {
@@ -198,6 +238,7 @@ class BookingSummaryScreen extends StatelessWidget {
                 'appliedPoints':
                     state.useLoyaltyPoints ? pointsDiscount.toInt() : 0,
                 'appliedWallet': state.useWallet ? walletDiscount : 0.0,
+                'isApprovalRequired': _requiresApproval,
               });
             },
             isDark: isDark,
@@ -450,17 +491,6 @@ class BookingSummaryScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  if (ground.amenities.isNotEmpty) ...[
-                    const SizedBox(height: 14),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: (ground.amenities as List)
-                          .take(4)
-                          .map((amenity) => SlotSelectionWidgets.amenityChip(context, amenity.toString()))
-                          .toList(),
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -1079,6 +1109,59 @@ class BookingSummaryScreen extends StatelessWidget {
     );
   }
 
+  // ─── 5b. APPROVAL REQUIRED NOTICE BANNER ──────────────────────────
+  Widget _buildApprovalRequiredNotice(BuildContext context, bool isDark, ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.amber.withValues(alpha: isDark ? 0.15 : 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: Colors.amber.withValues(alpha: 0.4),
+          width: 1.2,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.amber.withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.info_outline_rounded, color: Colors.amber, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Owner Confirmation Required",
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "The owner will review your booking request. Once requested, the owner has 45 minutes to confirm. You will only pay after confirmation.",
+                  style: TextStyle(
+                    fontSize: 12,
+                    height: 1.35,
+                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ─── 6. STICKY BOTTOM CHECKOUT BAR ─────────────────────────────
   Widget _buildStickyBottomBar(
     BuildContext context, {
@@ -1087,6 +1170,7 @@ class BookingSummaryScreen extends StatelessWidget {
     required VoidCallback onConfirm,
     required bool isDark,
     required ColorScheme colorScheme,
+    bool isApprovalRequired = false,
   }) {
     return Container(
       padding: EdgeInsets.only(
@@ -1122,7 +1206,7 @@ class BookingSummaryScreen extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      "TOTAL TO PAY",
+                      isApprovalRequired ? "ESTIMATED TOTAL" : "TOTAL TO PAY",
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
@@ -1156,33 +1240,36 @@ class BookingSummaryScreen extends StatelessWidget {
             ),
           ),
 
-          // Confirm & Pay CTA Button
+          // CTA Button (Request Booking or Proceed to Pay)
           Expanded(
             flex: 3,
             child: ElevatedButton(
               onPressed: onConfirm,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryDarkGreen,
+                backgroundColor: isApprovalRequired ? Colors.amber.shade700 : AppColors.primaryDarkGreen,
                 foregroundColor: Colors.white,
                 elevation: 4,
-                shadowColor: AppColors.primaryDarkGreen.withValues(alpha: 0.4),
+                shadowColor: (isApprovalRequired ? Colors.amber.shade700 : AppColors.primaryDarkGreen).withValues(alpha: 0.4),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    "Proceed to Pay",
-                    style: TextStyle(
+                    isApprovalRequired ? "Request Booking" : "Proceed to Pay",
+                    style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(width: 8),
-                  Icon(Icons.arrow_forward_rounded, size: 18),
+                  const SizedBox(width: 8),
+                  Icon(
+                    isApprovalRequired ? Icons.send_rounded : Icons.arrow_forward_rounded,
+                    size: 18,
+                  ),
                 ],
               ),
             ),

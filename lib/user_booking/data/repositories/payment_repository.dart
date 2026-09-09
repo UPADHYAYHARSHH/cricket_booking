@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:turfpro/common/services/remote_config_service.dart';
+import 'package:turfpro/user_booking/domain/models/slot_models.dart';
 
 class PaymentRepository {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -121,6 +122,238 @@ class PaymentRepository {
       return jsonDecode(response) as Map<String, dynamic>;
     }
     return response as Map<String, dynamic>;
+  }
+
+  /// Checks if a ground owner has enabled require_booking_approval
+  Future<bool> checkOwnerRequiresApproval(String ownerId) async {
+    if (ownerId.isEmpty) return false;
+    try {
+      final res = await _supabase
+          .from('owner_details')
+          .select('require_booking_approval')
+          .eq('id', ownerId)
+          .maybeSingle();
+      return res?['require_booking_approval'] == true;
+    } catch (e) {
+      debugPrint('Error checking owner approval setting: $e');
+      return false;
+    }
+  }
+
+  /// Saves a booking request (status = 'requested') when owner approval is required
+  Future<Map<String, dynamic>> requestBooking({
+    required String groundId,
+    DateTime? slotTime,
+    DateTime? bookingDate,
+    num? amount,
+    num? totalAmount,
+    String? sportName,
+    String? sport,
+    String? period,
+    List<String>? slotStartTimes,
+    List<TimeSlot>? selectedSlots,
+    String? groundName,
+    String? groundAddress,
+    int appliedPoints = 0,
+    double appliedWallet = 0.0,
+  }) async {
+    debugPrint('PaymentRepository: requestBooking called');
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw Exception('User not authenticated');
+
+    final effectiveSlotTime = slotTime ?? bookingDate ?? DateTime.now();
+    final effectiveAmount = (amount ?? totalAmount ?? 0).toInt();
+    final effectiveSport = sportName ?? sport ?? 'Sport';
+    final effectiveSlotTimes = slotStartTimes ??
+        selectedSlots?.map((s) => s.startTime).toList() ??
+        <String>[];
+
+    final combinedPeriod =
+        "${period ?? 'Day'}|${effectiveSlotTimes.join(',')}";
+
+    dynamic response;
+    try {
+      response = await _supabase.rpc('request_booking', params: {
+        'p_user_id': user.uid,
+        'p_ground_id': groundId,
+        'p_slot_time': effectiveSlotTime.toUtc().toIso8601String(),
+        'p_amount': effectiveAmount,
+        'p_sport_name': effectiveSport,
+        'p_period': combinedPeriod,
+        'p_player_name': user.displayName ?? 'Player',
+        'p_player_phone': user.phoneNumber ?? '',
+      });
+    } catch (e) {
+      debugPrint('request_booking RPC not found, trying save_booking with status requested: $e');
+      try {
+        response = await _supabase.rpc('save_booking', params: {
+          'p_user_id': user.uid,
+          'p_ground_id': groundId,
+          'p_slot_time': effectiveSlotTime.toUtc().toIso8601String(),
+          'p_amount': effectiveAmount,
+          'p_status': 'requested',
+          'p_sport_name': effectiveSport,
+          'p_period': combinedPeriod,
+          'p_razorpay_order_id': 'REQUESTED',
+          'p_razorpay_payment_id': 'PENDING',
+          'p_razorpay_signature': '',
+        });
+      } catch (saveErr) {
+        debugPrint('Fallback to direct insert for requestBooking: $saveErr');
+        final res = await _supabase.from('bookings').insert({
+          'user_id': user.uid,
+          'ground_id': groundId,
+          'slot_time': effectiveSlotTime.toUtc().toIso8601String(),
+          'amount': effectiveAmount,
+          'status': 'requested',
+          'sport_name': effectiveSport,
+          'period': combinedPeriod,
+          'created_at': DateTime.now().toIso8601String(),
+        }).select().single();
+        response = res;
+      }
+
+      // Notify owner of new booking request
+      try {
+        final groundRes = await _supabase
+            .from('grounds')
+            .select('name, owner_id')
+            .eq('id', groundId)
+            .maybeSingle();
+        final ownerId = groundRes?['owner_id'];
+        final targetGroundName = groundName ?? groundRes?['name'] ?? 'the ground';
+        if (ownerId != null) {
+          final bookingId = response is Map ? response['id'] : null;
+          await _supabase.from('notifications').insert({
+            'user_id': ownerId,
+            'title': 'New Booking Request! ⚡',
+            'message':
+                '${user.displayName ?? "A player"} requested a slot at $targetGroundName. You have 45 minutes to confirm.',
+            'type': 'booking_request',
+            'data': {
+              'booking_id': bookingId,
+              'ground_id': groundId,
+              'amount': effectiveAmount,
+            },
+            'is_read': false,
+            'created_at': DateTime.now().toIso8601String(),
+          });
+        }
+      } catch (_) {}
+    }
+
+    // Sync: Update slots table to mark as held/requested
+    if (effectiveSlotTimes.isNotEmpty) {
+      final formattedDate =
+          "${effectiveSlotTime.year}-${effectiveSlotTime.month.toString().padLeft(2, '0')}-${effectiveSlotTime.day.toString().padLeft(2, '0')}";
+      for (final startTime in effectiveSlotTimes) {
+        try {
+          await _supabase.rpc('upsert_slot', params: {
+            'p_ground_id': groundId,
+            'p_date': formattedDate,
+            'p_start_time': startTime,
+            'p_status': 'held',
+            'p_price': (effectiveAmount / effectiveSlotTimes.length).toInt(),
+          });
+        } catch (_) {}
+      }
+    }
+
+    await _updateBookingFinancialSnapshot(response, effectiveAmount.toDouble());
+
+    if (response is String) {
+      return jsonDecode(response) as Map<String, dynamic>;
+    }
+    return response as Map<String, dynamic>;
+  }
+
+  /// Updates an approved booking to paid after user completes payment
+  Future<Map<String, dynamic>> confirmApprovedBookingPayment({
+    required String bookingId,
+    required String paymentId,
+    String? orderId,
+    String signature = '',
+    String? groundId,
+    DateTime? slotTime,
+    required double amount,
+    List<String>? slotStartTimes,
+  }) async {
+    final Map<String, dynamic> updateData = {
+      'status': 'paid',
+      'razorpay_payment_id': paymentId,
+    };
+    if (orderId != null && orderId.isNotEmpty) {
+      updateData['razorpay_order_id'] = orderId;
+    }
+    if (signature.isNotEmpty) {
+      updateData['razorpay_signature'] = signature;
+    }
+
+    final updateRes = await _supabase
+        .from('bookings')
+        .update(updateData)
+        .eq('id', bookingId)
+        .select('*, grounds(name, owner_id)')
+        .single();
+
+    final effectiveGroundId =
+        groundId ?? updateRes['ground_id']?.toString() ?? '';
+    final rawSlotTime = slotTime ??
+        (updateRes['slot_time'] != null
+            ? DateTime.tryParse(updateRes['slot_time'].toString())
+            : null);
+
+    // Parse slotStartTimes from period if not provided
+    List<String> effectiveSlotTimes = slotStartTimes ?? [];
+    if (effectiveSlotTimes.isEmpty && updateRes['period'] != null) {
+      final periodStr = updateRes['period'].toString();
+      if (periodStr.contains('|')) {
+        final parts = periodStr.split('|');
+        if (parts.length > 1) {
+          effectiveSlotTimes = parts[1]
+              .split(',')
+              .map((s) => s.trim())
+              .where((s) => s.isNotEmpty)
+              .toList();
+        }
+      }
+    }
+
+    // Mark slot as permanently booked
+    if (effectiveSlotTimes.isNotEmpty &&
+        rawSlotTime != null &&
+        effectiveGroundId.isNotEmpty) {
+      final formattedDate =
+          "${rawSlotTime.year}-${rawSlotTime.month.toString().padLeft(2, '0')}-${rawSlotTime.day.toString().padLeft(2, '0')}";
+      for (final startTime in effectiveSlotTimes) {
+        try {
+          await _supabase.rpc('upsert_slot', params: {
+            'p_ground_id': effectiveGroundId,
+            'p_date': formattedDate,
+            'p_start_time': startTime,
+            'p_status': 'booked',
+            'p_price': (amount / effectiveSlotTimes.length).toInt(),
+          });
+        } catch (_) {}
+      }
+    }
+
+    await _updateBookingFinancialSnapshot(updateRes, amount);
+    return updateRes;
+  }
+
+  /// Deletes or expires a booking and frees the slot
+  Future<void> deleteOrExpireBooking(String bookingId, {String reason = 'expired'}) async {
+    try {
+      await _supabase.rpc('delete_or_expire_booking', params: {
+        'p_booking_id': bookingId,
+        'p_reason': reason,
+      });
+    } catch (_) {
+      try {
+        await _supabase.from('bookings').delete().eq('id', bookingId);
+      } catch (_) {}
+    }
   }
 
   Future<void> _updateBookingFinancialSnapshot(

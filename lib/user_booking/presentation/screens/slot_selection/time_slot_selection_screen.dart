@@ -417,6 +417,197 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
     }
   }
 
+  void _onRequestBooking(
+    double totalPrice,
+    dynamic activeDate,
+    List<TimeSlot> selectedSlots, {
+    int appliedPoints = 0,
+    double appliedWallet = 0.0,
+  }) async {
+    HapticFeedback.mediumImpact();
+    final cubit = context.read<SlotSelectionCubit>();
+    final currentGround = cubit.state.selectedTurf;
+    if (selectedSlots.isEmpty || currentGround == null) return;
+    if (_isBookingInProgress) return;
+
+    setState(() {
+      _isBookingInProgress = true;
+    });
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+          child: CircularProgressIndicator(color: AppColors.accentOrange)),
+    );
+
+    try {
+      final now = DateTime.now();
+      DateTime bookingDate = DateTime(now.year, now.month, activeDate.date);
+      if (bookingDate.isBefore(DateTime(now.year, now.month, now.day))) {
+        bookingDate = DateTime(now.year, now.month + 1, activeDate.date);
+      }
+
+      // 1. Check slot availability
+      final slotRepo = getIt<SlotRepository>();
+      final dbSlots =
+          await slotRepo.fetchSlotsForGround(currentGround.id, bookingDate);
+
+      final alreadyBookedSlots = <String>[];
+      for (final selectedSlot in selectedSlots) {
+        final matchedDbSlot = dbSlots.firstWhere(
+          (dbSlot) => dbSlot.startTime == selectedSlot.startTime,
+          orElse: () => TimeSlot(
+              startTime: '',
+              endTime: '',
+              price: 0,
+              status: SlotStatus.available),
+        );
+        if (matchedDbSlot.startTime.isNotEmpty &&
+            (matchedDbSlot.status == SlotStatus.booked ||
+                matchedDbSlot.status == SlotStatus.blocked)) {
+          alreadyBookedSlots.add(selectedSlot.startTime);
+        }
+      }
+
+      if (alreadyBookedSlots.isNotEmpty) {
+        if (mounted) {
+          Navigator.pop(context); // Pop loading
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const AppText(
+                text: "Slots Already Booked",
+                textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+              content: AppText(
+                text:
+                    "The following slots have already been booked:\n\n${alreadyBookedSlots.join(', ')}\n\nPlease choose different slots.",
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const AppText(
+                    text: "OK",
+                    textStyle: TextStyle(
+                        color: AppColors.primaryDarkGreen,
+                        fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+          );
+          cubit.loadSlots(
+            currentGround.id,
+            bookingDate,
+            openingTime: currentGround.openingTime,
+            closingTime: currentGround.closingTime,
+            pricePerSlot: currentGround.pricePerHour.toDouble(),
+          );
+        }
+        setState(() {
+          _isBookingInProgress = false;
+        });
+        return;
+      }
+
+      // 2. Request booking via repository
+      await _paymentRepo.requestBooking(
+        groundId: currentGround.id,
+        groundName: currentGround.name,
+        groundAddress: currentGround.address,
+        sport: cubit.state.selectedSport ?? "Sport",
+        bookingDate: bookingDate,
+        selectedSlots: selectedSlots,
+        totalAmount: totalPrice,
+        appliedPoints: appliedPoints,
+        appliedWallet: appliedWallet,
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context); // Pop loading
+
+      // 3. Show dialog confirming request sent
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogCtx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          icon: const Icon(Icons.timer_outlined, color: Colors.amber, size: 48),
+          title: const Text(
+            "Booking Requested!",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Your booking request has been submitted to the turf owner.",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.schedule, color: Colors.amber, size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        "The owner has 45 minutes to confirm. Once confirmed, you will have 45 minutes to complete payment.",
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryDarkGreen,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                minimumSize: const Size(double.infinity, 44),
+              ),
+              onPressed: () {
+                Navigator.pop(dialogCtx);
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  AppRoutes.myBookingScreen,
+                  (route) => route.isFirst,
+                );
+              },
+              child: const Text("View My Bookings", style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        try {
+          Navigator.pop(context);
+        } catch (_) {}
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error requesting booking: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isBookingInProgress = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -568,10 +759,24 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
                           basePrice: totalPrice,
                         ));
                     if (result != null && result is Map<String, dynamic>) {
-                      _onConfirmBooking(
-                          result['finalAmount'], activeDate, selectedSlots,
-                          appliedPoints: result['appliedPoints'],
-                          appliedWallet: result['appliedWallet'] ?? 0.0);
+                      if (result['isApprovalRequired'] == true) {
+                        _onRequestBooking(
+                          (result['finalAmount'] as num).toDouble(),
+                          activeDate,
+                          selectedSlots,
+                          appliedPoints: result['appliedPoints'] ?? 0,
+                          appliedWallet:
+                              (result['appliedWallet'] as num?)?.toDouble() ?? 0.0,
+                        );
+                      } else {
+                        _onConfirmBooking(
+                            (result['finalAmount'] as num).toDouble(),
+                            activeDate,
+                            selectedSlots,
+                            appliedPoints: result['appliedPoints'] ?? 0,
+                            appliedWallet:
+                                (result['appliedWallet'] as num?)?.toDouble() ?? 0.0);
+                      }
                     }
                   } catch (e, st) {
                     debugPrint("Error pushing BookingSummaryScreen: $e\n$st");

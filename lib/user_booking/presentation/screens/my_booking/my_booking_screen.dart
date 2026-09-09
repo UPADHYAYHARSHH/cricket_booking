@@ -27,9 +27,12 @@ import 'package:turfpro/user_booking/domain/repositories/review_repository.dart'
 import 'package:turfpro/user_booking/presentation/widgets/add_review_bottom_sheet.dart';
 import 'package:turfpro/user_booking/presentation/widgets/slot_selection_widgets.dart';
 import 'package:turfpro/user_booking/presentation/widgets/ground_image_carousel.dart';
+import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:turfpro/user_booking/domain/models/slot_models.dart';
+import 'package:turfpro/user_booking/data/repositories/payment_repository.dart';
+import 'package:turfpro/common/services/cashfree_service.dart';
 
 class MyBookingsScreen extends StatefulWidget {
   const MyBookingsScreen({super.key});
@@ -271,9 +274,22 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
         }
       }
 
+      final status = b.status.toLowerCase();
       if (isUpcoming) {
+        if (status == 'expired' || status == 'declined' || status == 'cancelled') {
+          return false;
+        }
+        if (status == 'requested' || status == 'approved') {
+          return true;
+        }
         return endTime.isAfter(now);
       } else {
+        if (status == 'expired' || status == 'declined' || status == 'cancelled') {
+          return true;
+        }
+        if (status == 'requested' || status == 'approved') {
+          return false;
+        }
         return endTime.isBefore(now);
       }
     }).toList();
@@ -331,11 +347,14 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     }
 
     return RefreshIndicator(
-      onRefresh: () => context.read<BookingCubit>().getBookings(),
+      onRefresh: () => context.read<BookingCubit>().getBookings(forceLoading: true),
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: bookings.length,
-        itemBuilder: (_, i) => _BookingCard(booking: bookings[i]),
+        itemBuilder: (_, i) => _BookingCard(
+          key: ValueKey(bookings[i].id),
+          booking: bookings[i],
+        ),
       ),
     );
   }
@@ -344,7 +363,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
 class _BookingCard extends StatefulWidget {
   final BookingModel booking;
 
-  const _BookingCard({required this.booking});
+  const _BookingCard({super.key, required this.booking});
 
   @override
   State<_BookingCard> createState() => _BookingCardState();
@@ -353,11 +372,116 @@ class _BookingCard extends StatefulWidget {
 class _BookingCardState extends State<_BookingCard> {
   bool _hasRated = false;
   bool _isLoadingRating = true;
+  Timer? _countdownTimer;
+  Duration _remaining = Duration.zero;
+  bool _isExpired = false;
+  bool _isProcessingPayment = false;
+  bool _hasHandledExpiration = false;
 
   @override
   void initState() {
     super.initState();
     _checkIfRated();
+    _initCountdown();
+  }
+
+  @override
+  void didUpdateWidget(covariant _BookingCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.booking.id != widget.booking.id ||
+        oldWidget.booking.status != widget.booking.status) {
+      _countdownTimer?.cancel();
+      _hasHandledExpiration = false;
+      _initCountdown();
+    }
+  }
+
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    super.dispose();
+  }
+
+  void _initCountdown() {
+    final status = widget.booking.status.toLowerCase();
+    if (status != 'requested' && status != 'approved') {
+      _countdownTimer?.cancel();
+      _countdownTimer = null;
+      return;
+    }
+
+    DateTime? referenceTime;
+    if (status == 'requested') {
+      referenceTime = widget.booking.createdAt;
+    } else if (status == 'approved') {
+      referenceTime = widget.booking.approvedAt ?? widget.booking.createdAt;
+    }
+
+    if (referenceTime == null) {
+      _countdownTimer?.cancel();
+      _countdownTimer = null;
+      return;
+    }
+
+    final expiryTime = referenceTime.add(const Duration(minutes: 45));
+    final diff = expiryTime.difference(DateTime.now());
+
+    if (diff.isNegative || diff == Duration.zero) {
+      _remaining = Duration.zero;
+      _isExpired = true;
+      _countdownTimer?.cancel();
+      _countdownTimer = null;
+      if (!_hasHandledExpiration) {
+        _hasHandledExpiration = true;
+        _expireSilently(status);
+      }
+    } else {
+      _remaining = diff;
+      _isExpired = false;
+      _countdownTimer?.cancel();
+      _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        final newDiff = expiryTime.difference(DateTime.now());
+        if (newDiff.isNegative || newDiff == Duration.zero) {
+          timer.cancel();
+          if (mounted) {
+            setState(() {
+              _remaining = Duration.zero;
+              _isExpired = true;
+            });
+            if (!_hasHandledExpiration) {
+              _hasHandledExpiration = true;
+              _expireSilently(status);
+            }
+          }
+        } else {
+          if (mounted) {
+            setState(() {
+              _remaining = newDiff;
+            });
+          }
+        }
+      });
+    }
+  }
+
+  void _expireSilently(String status) async {
+    final reason = status == 'requested'
+        ? 'expired_owner_timeout'
+        : 'expired_user_payment_timeout';
+    try {
+      await getIt<PaymentRepository>().deleteOrExpireBooking(
+        widget.booking.id,
+        reason: reason,
+      );
+    } catch (e) {
+      debugPrint("Error expiring booking: $e");
+    }
+  }
+
+  String _formatDuration(Duration d) {
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$m:$s';
   }
 
   Future<void> _checkIfRated() async {
@@ -423,6 +547,7 @@ class _BookingCardState extends State<_BookingCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildTopSection(context),
+              _buildStatusCountdownBanner(context),
               _buildDateSection(context),
               _buildInfoSection(context, onSurface),
               _buildActionRow(context),
@@ -776,7 +901,304 @@ class _BookingCardState extends State<_BookingCard> {
     );
   }
 
+  Widget _buildStatusCountdownBanner(BuildContext context) {
+    final status = widget.booking.status.toLowerCase();
+    if (status != 'requested' && status != 'approved') {
+      return const SizedBox.shrink();
+    }
+
+    final isRequested = status == 'requested';
+    final color = isRequested ? Colors.amber.shade800 : Colors.green.shade700;
+    final bgColor = isRequested
+        ? Colors.amber.withValues(alpha: 0.12)
+        : Colors.green.withValues(alpha: 0.12);
+    final borderColor = isRequested
+        ? Colors.amber.withValues(alpha: 0.3)
+        : Colors.green.withValues(alpha: 0.3);
+
+    String title;
+    String sub;
+    IconData icon;
+
+    if (_isExpired) {
+      title = isRequested ? "Request Expired" : "Payment Window Expired";
+      sub = isRequested
+          ? "Owner didn't respond within 45 minutes. Slots released."
+          : "Payment was not completed within 45 minutes. Slots released.";
+      icon = Icons.cancel_outlined;
+    } else if (isRequested) {
+      title = "Awaiting Owner Approval (${_formatDuration(_remaining)})";
+      sub = "Owner has 45 minutes to confirm. You will pay once approved.";
+      icon = Icons.hourglass_top_rounded;
+    } else {
+      title = "Booking Approved! Pay Now (${_formatDuration(_remaining)})";
+      sub = "Complete payment within 45 minutes to secure your slots.";
+      icon = Icons.timer_outlined;
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: bgColor,
+        border: Border(
+          bottom: BorderSide(color: borderColor, width: 1),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  sub,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.65),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _payForApprovedBooking(BuildContext context) async {
+    if (_isProcessingPayment || _isExpired) return;
+
+    setState(() {
+      _isProcessingPayment = true;
+    });
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(color: AppColors.accentOrange),
+      ),
+    );
+
+    try {
+      final paymentRepo = getIt<PaymentRepository>();
+      final amount = widget.booking.amount;
+      final orderResponse = await paymentRepo.createOrder(amount.toInt());
+      final String orderId =
+          orderResponse['order_id'] ?? orderResponse['orderId'];
+      final String sessionId = orderResponse['payment_session_id'] ??
+          orderResponse['paymentSessionId'];
+
+      if (!mounted) return;
+      Navigator.pop(context); // Pop loading dialog
+
+      bool isPolling = true;
+      int pollCount = 0;
+
+      void onPaidSuccessfully(String id) async {
+        isPolling = false;
+        try {
+          await paymentRepo.confirmApprovedBookingPayment(
+            bookingId: widget.booking.id,
+            paymentId: id,
+            orderId: orderId,
+            groundId: widget.booking.groundId,
+            slotTime: widget.booking.slotTime,
+            amount: amount,
+          );
+          if (!mounted) return;
+          context.read<BookingCubit>().getBookings();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Payment Successful! Booking Confirmed."),
+              backgroundColor: Colors.green,
+            ),
+          );
+          _viewTicket(context);
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text("Confirmation error: $e"),
+                  backgroundColor: Colors.red),
+            );
+          }
+        }
+      }
+
+      // Polling fallback
+      void startPolling() async {
+        while (isPolling && pollCount < 60) {
+          await Future.delayed(const Duration(seconds: 5));
+          if (!mounted || !isPolling) break;
+          pollCount++;
+          try {
+            final isValid = await paymentRepo.verifyPayment(orderId: orderId);
+            if (isValid && isPolling && mounted) {
+              onPaidSuccessfully(orderId);
+              break;
+            }
+          } catch (_) {}
+        }
+      }
+
+      startPolling();
+
+      CashfreeService().setCheckoutCallbacks(
+        onSuccess: (id) => onPaidSuccessfully(id),
+        onError: (error, id) {
+          isPolling = false;
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text("Payment was not completed: $error"),
+                  backgroundColor: Colors.red),
+            );
+          }
+        },
+      );
+
+      CashfreeService().doPayment(
+        orderId: orderId,
+        paymentSessionId: sessionId,
+      );
+    } catch (e) {
+      if (mounted) {
+        try {
+          Navigator.pop(context);
+        } catch (_) {}
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Payment error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessingPayment = false;
+        });
+      }
+    }
+  }
+
   Widget _buildActionRow(BuildContext context) {
+    final status = widget.booking.status.toLowerCase();
+
+    // 1. Approved status -> primary "Pay Now" button
+    if (status == 'approved') {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+        child: Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: (_isExpired || _isProcessingPayment)
+                    ? null
+                    : () => _payForApprovedBooking(context),
+                icon: const Icon(Icons.payment_rounded, size: 16),
+                label: Text(
+                  _isExpired
+                      ? "Expired"
+                      : "Pay Now (₹${widget.booking.amount.toStringAsFixed(0)})",
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryDarkGreen,
+                  foregroundColor: Colors.white,
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 2. Requested status -> "Awaiting Approval"
+    if (status == 'requested') {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+        child: Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: null,
+                icon: Icon(
+                  _isExpired
+                      ? Icons.cancel_outlined
+                      : Icons.hourglass_empty_rounded,
+                  size: 16,
+                  color: Colors.amber.shade800,
+                ),
+                label: Text(
+                  _isExpired
+                      ? "Request Expired"
+                      : "Awaiting Approval (${_formatDuration(_remaining)})",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: Colors.amber.shade800,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: Colors.amber.shade400),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 3. Expired or declined
+    if (status == 'expired' || status == 'declined') {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+        child: Row(
+          children: [
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () => _rebook(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryDarkGreen,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: const Text("Rebook",
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final now = DateTime.now();
     final localDate = widget.booking.slotTime.toLocal();
     DateTime endTime = localDate;
@@ -1156,38 +1578,22 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Green gradient header with status badge glow
+            // Header with booking id and status badge
             Container(
               width: double.infinity,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF0B8457),
-                    Color(0xFF065B3C),
-                  ],
-                ),
-              ),
-              padding: const EdgeInsets.fromLTRB(
-                24,
-                16,
-                24,
-                24,
-              ),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AppText(
-                          text: "Booking #CB$displayIdStr",
-                          textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-                        ),
-                      ],
+                    child: AppText(
+                      text: "Booking #CB$displayIdStr",
+                      textStyle: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -1199,8 +1605,8 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
                       borderRadius: BorderRadius.circular(100),
                       boxShadow: [
                         BoxShadow(
-                          color: (widget.ticket.isPaid ? const Color(0xFF4CAF50) : const Color(0xFFFF9800)).withValues(alpha: 0.25),
-                          blurRadius: 8,
+                          color: (widget.ticket.isPaid ? const Color(0xFF4CAF50) : const Color(0xFFFF9800)).withValues(alpha: 0.15),
+                          blurRadius: 6,
                           offset: const Offset(0, 2),
                         ),
                       ],
@@ -1208,7 +1614,7 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
                     child: AppText(
                       text: widget.ticket.isPaid ? "Confirmed" : "Pending",
                       textStyle: TextStyle(
-                        color: widget.ticket.isPaid ? const Color(0xFF4CAF50) : const Color(0xFFFF9800),
+                        color: widget.ticket.isPaid ? const Color(0xFF2E7D32) : const Color(0xFFEF6C00),
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1218,7 +1624,7 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1243,12 +1649,11 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
                               color: theme.colorScheme.onSurface,
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 20),
                         ],
                       ),
                     ),
                   ],
-                  const SizedBox(height: 24),
                   const SectionLabel(title: "BOOKING DETAILS"),
                   const SizedBox(height: 12),
 
@@ -1378,6 +1783,8 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
                     latitude: widget.ticket.latitude,
                     longitude: widget.ticket.longitude,
                     address: widget.ticket.location,
+                    showTitle: false,
+                    padding: EdgeInsets.zero,
                   ),
 
                   const SizedBox(height: 24),
