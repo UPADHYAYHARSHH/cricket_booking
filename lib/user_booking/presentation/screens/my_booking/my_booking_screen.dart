@@ -33,6 +33,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:turfpro/user_booking/domain/models/slot_models.dart';
 import 'package:turfpro/user_booking/data/repositories/payment_repository.dart';
 import 'package:turfpro/common/services/cashfree_service.dart';
+import '../support/help_support_screen.dart';
 
 class MyBookingsScreen extends StatefulWidget {
   const MyBookingsScreen({super.key});
@@ -126,20 +127,45 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
               right: 20,
               bottom: 24,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const AppText(
-                  text: "My Bookings",
-                  size: 26,
-                  weight: FontWeight.w700,
-                  color: AppColors.white,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const AppText(
+                      text: "My Bookings",
+                      size: 26,
+                      weight: FontWeight.w700,
+                      color: AppColors.white,
+                    ),
+                    const SizedBox(height: 6),
+                    AppText(
+                      text: "View and manage your reservations",
+                      size: 14,
+                      color: AppColors.white.withValues(alpha: 0.7),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 6),
-                AppText(
-                  text: "View and manage your reservations",
-                  size: 14,
-                  color: AppColors.white.withValues(alpha: 0.7),
+                IconButton(
+                  icon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.help_outline_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                  tooltip: "Help & Support",
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const HelpSupportScreen()),
+                  ),
                 ),
               ],
             ),

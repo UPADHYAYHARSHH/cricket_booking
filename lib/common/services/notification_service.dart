@@ -34,15 +34,22 @@ class NotificationService {
       await _updateTokenInSupabase(newToken);
     });
 
-    // 5. Handle foreground messages (mobile only)
+    // 5. Keep token synced when user logs in or auth state changes
+    FirebaseAuth.instance.authStateChanges().listen((user) async {
+      if (user != null) {
+        await updateFcmToken();
+      }
+    });
+
+    // 6. Handle foreground messages (mobile only)
     if (!kIsWeb) {
       FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
     }
 
-    // 6. Handle background tap
+    // 7. Handle background tap
     FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageTap);
 
-    // 7. Check if app opened from a notification
+    // 8. Check if app opened from a notification
     final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
     if (initialMessage != null) {
       _handleMessageTap(initialMessage);
@@ -76,23 +83,60 @@ class NotificationService {
         debugPrint('Local notification tapped: ${details.payload}');
       },
     );
+
+    // Explicitly create notification channels on Android
+    final androidPlugin = _localNotifications.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    if (androidPlugin != null) {
+      await androidPlugin.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'user_notifications',
+          'User Notifications',
+          description: 'General notifications for users',
+          importance: Importance.high,
+          playSound: true,
+        ),
+      );
+      await androidPlugin.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'booking_confirmed_channel',
+          'Booking Confirmed',
+          description: 'Plays sound when a booking is confirmed or approved',
+          importance: Importance.max,
+          playSound: true,
+          sound: RawResourceAndroidNotificationSound('booking_confirmed'),
+        ),
+      );
+      await androidPlugin.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'owner_notifications',
+          'Owner Notifications',
+          description: 'Notifications for venue owners',
+          importance: Importance.high,
+          playSound: true,
+        ),
+      );
+    }
   }
 
   static void _handleForegroundMessage(RemoteMessage message) {
-    debugPrint('Foreground message: ${message.messageId}');
+    debugPrint('Foreground message: ${message.messageId} data: ${message.data}');
 
     final notification = message.notification;
-    if (notification == null) return;
+    String title = notification?.title ?? message.data['title']?.toString() ?? '';
+    String body = notification?.body ?? message.data['message']?.toString() ?? message.data['body']?.toString() ?? '';
+
+    if (title.isEmpty && body.isEmpty) return;
 
     final type = message.data['type']?.toString() ?? '';
-    final isBooking = type == 'booking_confirmed' || type == 'new_booking';
+    final isBookingSound = type == 'booking_confirmed' || type == 'booking_approved' || type == 'new_booking';
 
     _showLocalNotification(
-      id: notification.hashCode,
-      title: notification.title ?? '',
-      body: notification.body ?? '',
+      id: message.hashCode,
+      title: title,
+      body: body,
       payload: message.data.toString(),
-      isBookingSound: isBooking,
+      isBookingSound: isBookingSound,
     );
   }
 
