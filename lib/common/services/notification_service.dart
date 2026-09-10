@@ -225,7 +225,7 @@ class NotificationService {
           scheduledDate.minute,
         ),
         details,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
       );
       debugPrint("DEBUG: [NotificationService] Scheduled reminder for $scheduledDate");
@@ -267,49 +267,15 @@ class NotificationService {
 
       // Check if token already exists to bypass strict unique constraints on upsert
       final platform = 'user_${kIsWeb ? 'web' : defaultTargetPlatform.name}';
-      final existingTokens = await Supabase.instance.client
-          .from('fcm_tokens')
-          .select('id')
-          .eq('token', token)
-          .limit(1);
-
-      if (existingTokens.isNotEmpty) {
-        await Supabase.instance.client.from('fcm_tokens').update({
-          'user_id': user.uid,
-          'platform': platform,
-          'last_used_at': DateTime.now().toIso8601String(),
-          'updated_at': DateTime.now().toIso8601String(),
-        }).eq('token', token);
-      } else {
-        await Supabase.instance.client.from('fcm_tokens').insert({
-          'user_id': user.uid,
-          'token': token,
-          'platform': platform,
-          'last_used_at': DateTime.now().toIso8601String(),
-          'updated_at': DateTime.now().toIso8601String(),
-        });
-      }
-
-      // Also keep legacy column in sync
-      await Supabase.instance.client
-          .from('users')
-          .update({
-            'fcm_token': token,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', user.uid);
+      await Supabase.instance.client.from('fcm_tokens').upsert({
+        'user_id': user.uid,
+        'token': token,
+        'platform': platform,
+        'last_used_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      }, onConflict: 'token');
     } catch (e) {
-      debugPrint("DEBUG: [NotificationService] Failed to update token in Supabase: $e");
-      try {
-        final user = FirebaseAuth.instance.currentUser;
-        await Supabase.instance.client.from('fcm_tokens').insert({
-          'user_id': user?.uid ?? 'unknown',
-          'token': 'ERROR: ${e.toString().substring(0, e.toString().length > 200 ? 200 : e.toString().length)}',
-          'platform': 'error_log',
-          'last_used_at': DateTime.now().toIso8601String(),
-          'updated_at': DateTime.now().toIso8601String(),
-        });
-      } catch (_) {}
+      debugPrint("Failed to update token in Supabase: $e");
     }
   }
 
