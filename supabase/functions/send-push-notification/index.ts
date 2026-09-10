@@ -110,6 +110,7 @@ serve(async (req) => {
     }
 
     let sentCount = 0;
+    const fcmErrors: string[] = [];
     for (const row of targetTokens) {
       try {
         const messagePayload: any = {
@@ -156,13 +157,15 @@ serve(async (req) => {
         } else {
           const err = await response.text();
           console.error(`FCM error for token ${row.token}: ${err}`);
+          fcmErrors.push(err);
         }
       } catch (e) {
         console.error(`Failed to send to ${row.token}: ${e}`);
+        fcmErrors.push(String(e));
       }
     }
 
-    return new Response(JSON.stringify({ success: true, sent: sentCount, target_count: targetTokens.length, original_count: tokens.length }), {
+    return new Response(JSON.stringify({ success: true, sent: sentCount, target_count: targetTokens.length, original_count: tokens.length, errors: fcmErrors }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
