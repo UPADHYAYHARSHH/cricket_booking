@@ -156,7 +156,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
-                      HugeIcons.strokeRoundedHelpCircle,
+                      Icons.help_outline_rounded,
                       color: Colors.white,
                       size: 20,
                     ),

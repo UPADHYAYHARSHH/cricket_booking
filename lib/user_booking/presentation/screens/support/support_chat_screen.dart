@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../common/constants/colors.dart';
 import '../../blocs/support/support_cubit.dart';
 import '../../blocs/support/support_state.dart';
-import '../../data/models/support_message_model.dart';
+import 'package:turfpro/user_booking/data/models/support_message_model.dart';
 import '../my_booking/my_booking_screen.dart';
 
 class SupportChatScreen extends StatefulWidget {
@@ -106,7 +105,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                 ),
               ),
               child: const Icon(
-                HugeIcons.strokeRoundedChatting01,
+                Icons.chat_bubble_outline_rounded,
                 size: 20,
                 color: AppColors.primaryDarkGreen,
               ),
@@ -151,7 +150,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
         actions: [
           IconButton(
             icon: const Icon(
-              HugeIcons.strokeRoundedWhatsapp,
+              Icons.chat_rounded,
               color: Color(0xFF25D366),
               size: 22,
             ),
@@ -348,7 +347,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                   return ElevatedButton.icon(
                     onPressed: () => _handleAction(action),
                     icon: Icon(
-                      isWhatsApp ? HugeIcons.strokeRoundedWhatsapp : Icons.open_in_new_rounded,
+                      isWhatsApp ? Icons.chat_rounded : Icons.open_in_new_rounded,
                       size: 15,
                       color: isWhatsApp ? const Color(0xFF25D366) : AppColors.primaryDarkGreen,
                     ),
