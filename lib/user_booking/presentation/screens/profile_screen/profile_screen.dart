@@ -15,6 +15,7 @@ import 'package:flutter/foundation.dart';
 import 'package:turfpro/user_booking/di/get_it/get_it.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
+import '../support/help_support_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -428,6 +429,10 @@ class ProfileScreen extends StatelessWidget {
         iconBg: Colors.purple.withValues(alpha: isDark ? 0.2 : 0.1),
         iconColor: isDark ? Colors.purpleAccent : const Color(0xFF7B1FA2),
         isLogout: false,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const HelpSupportScreen()),
+        ),
       ),
       _MenuItem(
         icon: Icons.logout_rounded,

@@ -8,6 +8,27 @@ import 'package:turfpro/user_booking/domain/models/slot_models.dart';
 class PaymentRepository {
   final SupabaseClient _supabase = Supabase.instance.client;
 
+  Future<String> _fetchUserName(String uid) async {
+    try {
+      final res = await _supabase.from('users').select('name').eq('id', uid).maybeSingle();
+      if (res != null && res['name']?.toString().trim().isNotEmpty == true) {
+        return res['name'].toString().trim();
+      }
+    } catch (_) {}
+    return 'A player';
+  }
+
+  Future<void> _invokePushNotification(String notificationId) async {
+    try {
+      final res = await _supabase.functions.invoke('send-push-notification', body: {
+        'notification_id': notificationId,
+      });
+      debugPrint('[PaymentRepository] Push notification response: ${res.data}');
+    } catch (e) {
+      debugPrint('[PaymentRepository] Push notification invoke error: $e');
+    }
+  }
+
   /// CREATE CASHFREE ORDER VIA EDGE FUNCTION
   Future<Map<String, dynamic>> createOrder(int amount,
       {String? returnUrl}) async {
@@ -116,6 +137,55 @@ class PaymentRepository {
       }
     }
 
+    // Notify owner of new booking and payment
+    try {
+      final groundRes = await _supabase
+          .from('grounds')
+          .select('name, owner_id, locations(owner_id)')
+          .eq('id', groundId)
+          .maybeSingle();
+      final ownerId = groundRes?['owner_id']?.toString() ??
+          groundRes?['locations']?['owner_id']?.toString();
+      final targetGroundName = groundRes?['name']?.toString() ?? 'your venue';
+      final playerName = user.displayName?.trim().isNotEmpty == true
+          ? user.displayName!
+          : await _fetchUserName(user.uid);
+
+      String? bookingId;
+      if (response is Map) {
+        bookingId = response['id']?.toString();
+      } else if (response is String) {
+        try {
+          final decoded = jsonDecode(response);
+          if (decoded is Map) bookingId = decoded['id']?.toString();
+        } catch (_) {}
+      }
+
+      if (ownerId != null && ownerId.isNotEmpty) {
+        final notifInsert = await _supabase.from('notifications').insert({
+          'user_id': ownerId,
+          'title': 'New Booking! ⚡ Confirmed',
+          'message':
+              '$playerName booked a slot at $targetGroundName for ₹$amount.',
+          'type': 'booking_confirmed',
+          'data': {
+            'booking_id': bookingId,
+            'ground_id': groundId,
+            'amount': amount,
+          },
+          'is_read': false,
+          'created_at': DateTime.now().toUtc().toIso8601String(),
+        }).select('id').maybeSingle();
+
+        final notifId = notifInsert?['id']?.toString();
+        if (notifId != null) {
+          _invokePushNotification(notifId);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error sending owner notification for saveBooking: $e');
+    }
+
     await _updateBookingFinancialSnapshot(response, amount.toDouble());
 
     if (response is String) {
@@ -208,38 +278,83 @@ class PaymentRepository {
           'status': 'requested',
           'sport_name': effectiveSport,
           'period': combinedPeriod,
-          'created_at': DateTime.now().toIso8601String(),
+          'created_at': DateTime.now().toUtc().toIso8601String(),
         }).select().single();
         response = res;
       }
+    }
 
-      // Notify owner of new booking request
+    // Extract bookingId from response
+    String? bookingId;
+    if (response is Map) {
+      bookingId = response['id']?.toString();
+    } else if (response is String) {
       try {
-        final groundRes = await _supabase
-            .from('grounds')
-            .select('name, owner_id')
-            .eq('id', groundId)
-            .maybeSingle();
-        final ownerId = groundRes?['owner_id'];
-        final targetGroundName = groundName ?? groundRes?['name'] ?? 'the ground';
-        if (ownerId != null) {
-          final bookingId = response is Map ? response['id'] : null;
-          await _supabase.from('notifications').insert({
+        final decoded = jsonDecode(response);
+        if (decoded is Map) bookingId = decoded['id']?.toString();
+      } catch (_) {}
+    }
+
+    // Notify owner of new booking request (1. User request booking -> owner gets notification)
+    try {
+      final groundRes = await _supabase
+          .from('grounds')
+          .select('name, owner_id, location_id, locations(owner_id)')
+          .eq('id', groundId)
+          .maybeSingle();
+      final ownerId = groundRes?['owner_id']?.toString() ??
+          groundRes?['locations']?['owner_id']?.toString();
+      final targetGroundName = groundName ?? groundRes?['name']?.toString() ?? 'the venue';
+
+      String playerName = user.displayName?.trim() ?? '';
+      if (playerName.isEmpty) {
+        playerName = await _fetchUserName(user.uid);
+      }
+
+      if (ownerId != null && ownerId.isNotEmpty) {
+        // Prevent duplicate notification if database RPC already inserted one
+        final recentNotifs = await _supabase
+            .from('notifications')
+            .select('id, created_at')
+            .match({'user_id': ownerId, 'type': 'booking_request'})
+            .order('created_at', ascending: false)
+            .limit(1);
+
+        String? notifId;
+        bool alreadyExists = false;
+        if (recentNotifs.isNotEmpty) {
+          final lastCreated = DateTime.tryParse(recentNotifs.first['created_at']?.toString() ?? '');
+          if (lastCreated != null && DateTime.now().difference(lastCreated).inSeconds < 4) {
+            alreadyExists = true;
+            notifId = recentNotifs.first['id']?.toString();
+          }
+        }
+
+        if (!alreadyExists) {
+          final notifInsert = await _supabase.from('notifications').insert({
             'user_id': ownerId,
             'title': 'New Booking Request! ⚡',
             'message':
-                '${user.displayName ?? "A player"} requested a slot at $targetGroundName. You have 45 minutes to confirm.',
+                '$playerName requested a slot at $targetGroundName. You have 45 minutes to confirm.',
             'type': 'booking_request',
             'data': {
               'booking_id': bookingId,
               'ground_id': groundId,
               'amount': effectiveAmount,
+              'action': 'owner_approval_required',
             },
             'is_read': false,
-            'created_at': DateTime.now().toIso8601String(),
-          });
+            'created_at': DateTime.now().toUtc().toIso8601String(),
+          }).select('id').maybeSingle();
+          notifId = notifInsert?['id']?.toString();
         }
-      } catch (_) {}
+
+        if (notifId != null) {
+          _invokePushNotification(notifId);
+        }
+      }
+    } catch (notifErr) {
+      debugPrint('Error sending owner request notification: $notifErr');
     }
 
     // Sync: Update slots table to mark as held/requested
@@ -336,6 +451,49 @@ class PaymentRepository {
           });
         } catch (_) {}
       }
+    }
+
+    // Notify owner of payment completion & booking confirmation (3. User do payment -> owner gets notification)
+    try {
+      final groundRes = await _supabase
+          .from('grounds')
+          .select('name, owner_id, location_id, locations(owner_id)')
+          .eq('id', effectiveGroundId)
+          .maybeSingle();
+      final ownerId = groundRes?['owner_id']?.toString() ??
+          groundRes?['locations']?['owner_id']?.toString();
+      final targetGroundName = groundRes?['name']?.toString() ?? 'your venue';
+
+      final user = FirebaseAuth.instance.currentUser;
+      String playerName = user?.displayName?.trim() ?? '';
+      if (playerName.isEmpty && user != null) {
+        playerName = await _fetchUserName(user.uid);
+      }
+      if (playerName.isEmpty) playerName = 'A player';
+
+      if (ownerId != null && ownerId.isNotEmpty) {
+        final notifInsert = await _supabase.from('notifications').insert({
+          'user_id': ownerId,
+          'title': 'Payment Received! 💰 Booking Confirmed',
+          'message':
+              '$playerName completed payment of ₹${amount.toInt()} for $targetGroundName. Booking is confirmed!',
+          'type': 'booking_confirmed',
+          'data': {
+            'booking_id': bookingId,
+            'ground_id': effectiveGroundId,
+            'amount': amount,
+          },
+          'is_read': false,
+          'created_at': DateTime.now().toUtc().toIso8601String(),
+        }).select('id').maybeSingle();
+
+        final notifId = notifInsert?['id']?.toString();
+        if (notifId != null) {
+          _invokePushNotification(notifId);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error notifying owner of approved booking payment: $e');
     }
 
     await _updateBookingFinancialSnapshot(updateRes, amount);
@@ -516,7 +674,7 @@ class PaymentRepository {
         }
 
         if (ownerId.isNotEmpty) {
-          await _supabase.from('notifications').insert({
+          final notifInsert = await _supabase.from('notifications').insert({
             'user_id': ownerId,
             'title': 'New Booking',
             'message': 'You have a new booking at $groundName.',
@@ -524,7 +682,11 @@ class PaymentRepository {
             'data': {'booking_id': bookingId},
             'is_read': false,
             'created_at': DateTime.now().toUtc().toIso8601String(),
-          });
+          }).select('id').maybeSingle();
+          final notifId = notifInsert?['id']?.toString();
+          if (notifId != null) {
+            _invokePushNotification(notifId);
+          }
           debugPrint('PaymentRepository: Manually inserted push notification for owner.');
         }
       } catch (e) {
