@@ -1,6 +1,6 @@
 // lib/user_booking/domain/models/slot_models.dart
 
-enum SlotStatus { available, booked, selected, blocked, advance, peak }
+enum SlotStatus { available, booked, selected, blocked, advance, peak, requested }
 
 class DateItem {
   final String day;

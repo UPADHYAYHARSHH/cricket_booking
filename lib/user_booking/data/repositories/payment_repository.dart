@@ -281,6 +281,22 @@ class PaymentRepository {
           'created_at': DateTime.now().toUtc().toIso8601String(),
         }).select().single();
         response = res;
+
+        // Block the requested slots
+        final dateStr = "${effectiveSlotTime.year}-${effectiveSlotTime.month.toString().padLeft(2, '0')}-${effectiveSlotTime.day.toString().padLeft(2, '0')}";
+        for (final startTime in effectiveSlotTimes) {
+          try {
+            await _supabase.rpc('upsert_slot', params: {
+              'p_ground_id': groundId,
+              'p_date': dateStr,
+              'p_start_time': startTime,
+              'p_status': 'requested',
+              'p_price': effectiveAmount > 0 ? (effectiveAmount / effectiveSlotTimes.length).round() : 0,
+            });
+          } catch (e) {
+            debugPrint('Error updating slot status to requested: $e');
+          }
+        }
       }
     }
 
