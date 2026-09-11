@@ -456,7 +456,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
               ),
             ),
             SizedBox(
-              height: 330,
+              height: 295,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),

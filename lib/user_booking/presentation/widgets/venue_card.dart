@@ -311,7 +311,7 @@ class _VenueCardState extends State<VenueCard>
                   text: widget.venue.address.isNotEmpty
                       ? widget.venue.address
                       : "Location not available",
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textStyle: TextStyle(
                     fontSize: 12,
@@ -442,7 +442,7 @@ class _VenueCardState extends State<VenueCard>
                     children: [
                       TextSpan(
                         text: "₹${widget.venue.pitches.first.pricePerHour}",
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
                           color: AppColors.primaryDarkGreen,
@@ -456,17 +456,6 @@ class _VenueCardState extends State<VenueCard>
                           color: onSurface.withValues(alpha: 0.5),
                         ),
                       ),
-                      if (widget.venue.pitches.first.weekendPrice > 0 &&
-                          widget.venue.pitches.first.weekendPrice != widget.venue.pitches.first.pricePerHour) ...[
-                        TextSpan(
-                          text: "  •  Weekend: ₹${widget.venue.pitches.first.weekendPrice}/hr",
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.accentOrange,
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ),
