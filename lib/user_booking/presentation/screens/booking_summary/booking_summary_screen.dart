@@ -118,7 +118,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
 
         final double totalDiscount = pointsDiscount + walletDiscount;
         final double grandTotal =
-            ((basePrice - totalDiscount) + platformFee).clamp(0.0, double.infinity);
+            ((basePrice - totalDiscount)).clamp(0.0, double.infinity);
 
         return Scaffold(
           backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF7F9FA),
@@ -1009,10 +1009,39 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
                   ),
                 ],
                 const SizedBox(height: 10),
-                _buildInvoiceRow(
-                  "Platform Fee",
-                  "₹${platformFee.toStringAsFixed(0)}",
-                  colorScheme: colorScheme,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Platform Fee",
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Text(
+                          "₹${platformFee.toStringAsFixed(0)}",
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurface.withValues(alpha: 0.4),
+                            decoration: TextDecoration.lineThrough,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        const Text(
+                          "Free",
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primaryDarkGreen,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 10),
                 _buildInvoiceRow(
