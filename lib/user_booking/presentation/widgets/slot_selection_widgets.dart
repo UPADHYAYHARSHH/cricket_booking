@@ -2086,7 +2086,7 @@ class SlotSelectionWidgets {
                       )
                     else
                       Text(
-                        isSelected ? "Selected â€¢ â‚¹${slot.price.toStringAsFixed(0)}" : "â‚¹${slot.price.toStringAsFixed(0)}",
+                        isSelected ? "Selected • ₹${slot.price.toStringAsFixed(0)}" : "₹${slot.price.toStringAsFixed(0)}",
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w800,
@@ -2185,7 +2185,7 @@ class SlotSelectionWidgets {
             children: [
               AppText(
                 text:
-                    '${selectedSlots.length} Slot â€¢ ${activeDate.month} ${activeDate.date}, ${firstSlot.startTime}',
+                    '${selectedSlots.length} Slot${selectedSlots.length > 1 ? "s" : ""} • ${activeDate.month} ${activeDate.date}, ${firstSlot.startTime}',
                 textStyle: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -2193,7 +2193,7 @@ class SlotSelectionWidgets {
                 ),
               ),
               AppText(
-                text: 'â‚¹${totalPrice.toStringAsFixed(0)}',
+                text: '₹${totalPrice.toStringAsFixed(0)}',
                 textStyle: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
