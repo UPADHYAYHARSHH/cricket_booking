@@ -514,7 +514,7 @@ class _BookingCardState extends State<_BookingCard> {
     final user = FirebaseAuth.instance.currentUser;
     final locationId = widget.booking.ground?.locationId ?? '';
 
-    // If no locationId or no user, can't rate â€” hide the button
+    // If no locationId or no user, can't rate Ã¢â‚¬â€ hide the button
     if (user == null || locationId.isEmpty) {
       if (mounted)
         setState(() {
@@ -770,7 +770,7 @@ class _BookingCardState extends State<_BookingCard> {
             child: AppText(
               text: DateFormat('EEE, d MMM yyyy')
                       .format(widget.booking.slotTime) +
-                  (timeRange.isNotEmpty ? '  â€¢  $timeRange' : ''),
+                  (timeRange.isNotEmpty ? '  Ã¢â‚¬Â¢  $timeRange' : ''),
               textStyle: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
@@ -865,7 +865,7 @@ class _BookingCardState extends State<_BookingCard> {
                 ),
               ),
               AppText(
-                text: "â‚¹${widget.booking.amount}",
+                text: "Ã¢â€šÂ¹${widget.booking.amount}",
                 textStyle: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
@@ -879,20 +879,20 @@ class _BookingCardState extends State<_BookingCard> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppColors.errorRed.withValues(alpha: 0.1),
+                color: Colors.red.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.errorRed.withValues(alpha: 0.3)),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, size: 16, color: AppColors.errorRed),
+                  Icon(Icons.info_outline, size: 16, color: Colors.red),
                   const SizedBox(width: 8),
                   Expanded(
                     child: AppText(
                       text: "Reason: ${widget.booking.notes}",
                       textStyle: TextStyle(
                         fontSize: 12,
-                        color: AppColors.errorRed,
+                        color: Colors.red,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1168,7 +1168,7 @@ class _BookingCardState extends State<_BookingCard> {
                 label: Text(
                   _isExpired
                       ? "Expired"
-                      : "Pay Now (â‚¹${widget.booking.amount.toStringAsFixed(0)})",
+                      : "Pay Now (Ã¢â€šÂ¹${widget.booking.amount.toStringAsFixed(0)})",
                   style: const TextStyle(
                       fontWeight: FontWeight.bold, fontSize: 13),
                 ),
@@ -1763,18 +1763,18 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
                       children: [
                         PaymentRow(
                           label: "Slot Booking Amount",
-                          value: "â‚¹${(widget.ticket.price - widget.ticket.platformFee).clamp(0.0, widget.ticket.price).toStringAsFixed(0)}",
+                          value: "Ã¢â€šÂ¹${(widget.ticket.price - widget.ticket.platformFee).clamp(0.0, widget.ticket.price).toStringAsFixed(0)}",
                         ),
                         const RowDivider(),
                         PaymentRow(
                           label: "Platform Fee",
-                          value: "+ â‚¹${widget.ticket.platformFee.toStringAsFixed(0)}",
+                          value: "+ Ã¢â€šÂ¹${widget.ticket.platformFee.toStringAsFixed(0)}",
                         ),
                         const RowDivider(),
                         if (discountAmount > 0) ...[
                           PaymentRow(
                             label: "Discount",
-                            value: "- â‚¹${discountAmount.toStringAsFixed(0)}",
+                            value: "- Ã¢â€šÂ¹${discountAmount.toStringAsFixed(0)}",
                             valueColor: const Color(0xFFE53935),
                           ),
                           const RowDivider(),
@@ -1787,7 +1787,7 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
                         const RowDivider(),
                         PaymentRow(
                           label: "Total Paid",
-                          value: "â‚¹${widget.ticket.price.toStringAsFixed(0)}",
+                          value: "Ã¢â€šÂ¹${widget.ticket.price.toStringAsFixed(0)}",
                           valueColor: AppColors.primaryDarkGreen,
                         ),
                       ],
