@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:turfpro/user_booking/presentation/widgets/shared_booking_widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -122,10 +122,10 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
           ),
           Padding(
             padding: EdgeInsets.only(
-              top: MediaQuery.of(context).padding.top + 24,
+              top: MediaQuery.of(context).padding.top + 12,
               left: 20,
               right: 20,
-              bottom: 24,
+              bottom: 16,
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -136,14 +136,14 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                   children: [
                     const AppText(
                       text: "My Bookings",
-                      size: 26,
+                      size: 20,
                       weight: FontWeight.w700,
                       color: AppColors.white,
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     AppText(
                       text: "View and manage your reservations",
-                      size: 14,
+                      size: 13,
                       color: AppColors.white.withValues(alpha: 0.7),
                     ),
                   ],
@@ -770,7 +770,7 @@ class _BookingCardState extends State<_BookingCard> {
             child: AppText(
               text: DateFormat('EEE, d MMM yyyy')
                       .format(widget.booking.slotTime) +
-                  (timeRange.isNotEmpty ? '  Ã¢â‚¬Â¢  $timeRange' : ''),
+                  (timeRange.isNotEmpty ? '  •  $timeRange' : ''),
               textStyle: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
@@ -865,7 +865,7 @@ class _BookingCardState extends State<_BookingCard> {
                 ),
               ),
               AppText(
-                text: "Ã¢â€šÂ¹${widget.booking.amount}",
+                text: "₹${widget.booking.amount}",
                 textStyle: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
@@ -1168,7 +1168,7 @@ class _BookingCardState extends State<_BookingCard> {
                 label: Text(
                   _isExpired
                       ? "Expired"
-                      : "Pay Now (Ã¢â€šÂ¹${widget.booking.amount.toStringAsFixed(0)})",
+                      : "Pay Now (₹${widget.booking.amount.toStringAsFixed(0)})",
                   style: const TextStyle(
                       fontWeight: FontWeight.bold, fontSize: 13),
                 ),
@@ -1763,18 +1763,18 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
                       children: [
                         PaymentRow(
                           label: "Slot Booking Amount",
-                          value: "Ã¢â€šÂ¹${(widget.ticket.price - widget.ticket.platformFee).clamp(0.0, widget.ticket.price).toStringAsFixed(0)}",
+                          value: "₹${(widget.ticket.price - widget.ticket.platformFee).clamp(0.0, widget.ticket.price).toStringAsFixed(0)}",
                         ),
                         const RowDivider(),
                         PaymentRow(
                           label: "Platform Fee",
-                          value: "+ Ã¢â€šÂ¹${widget.ticket.platformFee.toStringAsFixed(0)}",
+                          value: "+ ₹${widget.ticket.platformFee.toStringAsFixed(0)}",
                         ),
                         const RowDivider(),
                         if (discountAmount > 0) ...[
                           PaymentRow(
                             label: "Discount",
-                            value: "- Ã¢â€šÂ¹${discountAmount.toStringAsFixed(0)}",
+                            value: "- ₹${discountAmount.toStringAsFixed(0)}",
                             valueColor: const Color(0xFFE53935),
                           ),
                           const RowDivider(),
@@ -1787,7 +1787,7 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
                         const RowDivider(),
                         PaymentRow(
                           label: "Total Paid",
-                          value: "Ã¢â€šÂ¹${widget.ticket.price.toStringAsFixed(0)}",
+                          value: "₹${widget.ticket.price.toStringAsFixed(0)}",
                           valueColor: AppColors.primaryDarkGreen,
                         ),
                       ],

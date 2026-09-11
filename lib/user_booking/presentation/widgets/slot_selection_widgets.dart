@@ -859,7 +859,7 @@ class SlotSelectionWidgets {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: AppText(
-                                  text: "â‚¹${turf.pricePerHour}/hr",
+                                  text: "₹${turf.pricePerHour}/hr",
                                   textStyle: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 12,
