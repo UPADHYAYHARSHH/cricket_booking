@@ -16,6 +16,10 @@ import 'package:turfpro/user_booking/presentation/widgets/ground_image_carousel.
 import 'package:turfpro/user_booking/presentation/widgets/slot_selection_widgets.dart';
 import 'package:turfpro/user_booking/di/get_it/get_it.dart';
 import 'package:turfpro/user_booking/data/repositories/payment_repository.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:turfpro/user_booking/data/models/sport_model.dart';
+import 'package:turfpro/user_booking/presentation/blocs/sport/sport_cubit.dart';
+import 'package:turfpro/user_booking/presentation/blocs/sport/sport_state.dart';
 
 class BookingSummaryScreen extends StatefulWidget {
   const BookingSummaryScreen({super.key});
@@ -351,7 +355,34 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(getSportIcon(), color: Colors.white, size: 14),
+                            BlocBuilder<SportCubit, SportState>(
+                              builder: (context, sportState) {
+                                final sports = sportState is SportLoaded ? sportState.sports : <SportModel>[];
+                                SportModel? sportData;
+                                try {
+                                  sportData = sports.firstWhere((s) => s.slug == sport || s.name == sport);
+                                } catch (_) {}
+
+                                if (sportData != null && sportData.iconUrl.isNotEmpty) {
+                                  return CachedNetworkImage(
+                                    imageUrl: sportData.iconUrl,
+                                    width: 14,
+                                    height: 14,
+                                    color: Colors.white,
+                                    errorWidget: (_, __, ___) => Icon(getSportIcon(), color: Colors.white, size: 14),
+                                  );
+                                } else if (sportData != null && sportData.localAsset.isNotEmpty) {
+                                  return Image.asset(
+                                    sportData.localAsset,
+                                    width: 14,
+                                    height: 14,
+                                    color: Colors.white,
+                                    errorBuilder: (_, __, ___) => Icon(getSportIcon(), color: Colors.white, size: 14),
+                                  );
+                                }
+                                return Icon(getSportIcon(), color: Colors.white, size: 14);
+                              },
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               sportDisplay,
