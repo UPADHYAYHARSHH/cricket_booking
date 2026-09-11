@@ -364,18 +364,36 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
                                 } catch (_) {}
 
                                 if (sportData != null && sportData.iconUrl.isNotEmpty) {
-                                  return CachedNetworkImage(
-                                    imageUrl: sportData.iconUrl,
-                                    width: 16,
-                                    height: 16,
-                                    errorWidget: (_, __, ___) => Icon(getSportIcon(), color: Colors.white, size: 14),
+                                  return Container(
+                                    decoration: const BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: ClipOval(
+                                      child: CachedNetworkImage(
+                                        imageUrl: sportData.iconUrl,
+                                        width: 16,
+                                        height: 16,
+                                        fit: BoxFit.cover,
+                                        errorWidget: (_, __, ___) => Icon(getSportIcon(), color: AppColors.primaryDarkGreen, size: 12),
+                                      ),
+                                    ),
                                   );
                                 } else if (sportData != null && sportData.localAsset.isNotEmpty) {
-                                  return Image.asset(
-                                    sportData.localAsset,
-                                    width: 16,
-                                    height: 16,
-                                    errorBuilder: (_, __, ___) => Icon(getSportIcon(), color: Colors.white, size: 14),
+                                  return Container(
+                                    decoration: const BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: ClipOval(
+                                      child: Image.asset(
+                                        sportData.localAsset,
+                                        width: 16,
+                                        height: 16,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Icon(getSportIcon(), color: AppColors.primaryDarkGreen, size: 12),
+                                      ),
+                                    ),
                                   );
                                 }
                                 return Icon(getSportIcon(), color: Colors.white, size: 14);
