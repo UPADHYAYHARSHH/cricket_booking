@@ -260,6 +260,17 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
     required bool isDark,
     required ColorScheme colorScheme,
   }) {
+    IconData getSportIcon() {
+      final s = sport.toLowerCase();
+      if (s.contains('cricket')) return Icons.sports_cricket_rounded;
+      if (s.contains('football') || s.contains('soccer')) return Icons.sports_soccer_rounded;
+      if (s.contains('tennis') || s.contains('badminton')) return Icons.sports_tennis_rounded;
+      if (s.contains('basket')) return Icons.sports_basketball_rounded;
+      if (s.contains('volley')) return Icons.sports_volleyball_rounded;
+      if (s.contains('kabaddi')) return Icons.sports_kabaddi_rounded;
+      return Icons.sports_rounded;
+    }
+
     final images = (ground.images as List?)?.map((e) => e.toString()).toList() ?? <String>[];
     final fallbackImg = ground.imageUrl?.toString() ?? '';
     final sportDisplay = sport.replaceAll('_', ' ').toUpperCase();
@@ -340,7 +351,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.sports_cricket_rounded, color: Colors.white, size: 14),
+                            Icon(getSportIcon(), color: Colors.white, size: 14),
                             const SizedBox(width: 4),
                             Text(
                               sportDisplay,
