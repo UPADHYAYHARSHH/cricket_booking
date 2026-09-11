@@ -366,17 +366,15 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
                                 if (sportData != null && sportData.iconUrl.isNotEmpty) {
                                   return CachedNetworkImage(
                                     imageUrl: sportData.iconUrl,
-                                    width: 14,
-                                    height: 14,
-                                    color: Colors.white,
+                                    width: 16,
+                                    height: 16,
                                     errorWidget: (_, __, ___) => Icon(getSportIcon(), color: Colors.white, size: 14),
                                   );
                                 } else if (sportData != null && sportData.localAsset.isNotEmpty) {
                                   return Image.asset(
                                     sportData.localAsset,
-                                    width: 14,
-                                    height: 14,
-                                    color: Colors.white,
+                                    width: 16,
+                                    height: 16,
                                     errorBuilder: (_, __, ___) => Icon(getSportIcon(), color: Colors.white, size: 14),
                                   );
                                 }
