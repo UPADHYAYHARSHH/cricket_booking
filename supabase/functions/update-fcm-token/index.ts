@@ -26,13 +26,17 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { error } = await supabase.from('fcm_tokens').upsert({
+    // Clean up stale mappings for this device token or user
+    await supabase.from('fcm_tokens').delete().eq('token', token);
+    await supabase.from('fcm_tokens').delete().eq('user_id', user_id);
+
+    const { error } = await supabase.from('fcm_tokens').insert({
       user_id,
       token,
       platform,
       last_used_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
-    }, { onConflict: 'token' });
+    });
 
     if (error) throw error;
 

@@ -1,3 +1,4 @@
+import 'package:turfpro/common/services/notification_service.dart';
 import 'package:turfpro/firebase_options.dart';
 import 'package:turfpro/user_booking/di/get_it/get_it.dart' as di;
 import 'package:turfpro/user_booking/presentation/blocs/auth/auth_cubit.dart';
@@ -132,6 +133,7 @@ void main() async {
     ),
   );
   debugPrint("DEBUG: [Main] Supabase Initialized.");
+  await NotificationService.initialize();
   SystemChrome.setPreferredOrientations(
     [
       DeviceOrientation.portraitUp,
