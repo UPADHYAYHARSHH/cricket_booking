@@ -13,11 +13,11 @@ CREATE TABLE IF NOT EXISTS public.owner_wallets (
 -- RLS for owner_wallets
 ALTER TABLE public.owner_wallets ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY ""Owners can view their own wallet"" 
+CREATE POLICY "Owners can view their own wallet" 
 ON public.owner_wallets FOR SELECT 
 USING (auth.uid()::text = owner_id);
 
-CREATE POLICY ""Admin/Edge Functions can manage wallets"" 
+CREATE POLICY "Admin/Edge Functions can manage wallets" 
 ON public.owner_wallets FOR ALL 
 USING (auth.jwt()->>'role' = 'service_role' OR auth.jwt()->>'role' = 'admin');
 
@@ -36,15 +36,15 @@ CREATE TABLE IF NOT EXISTS public.withdrawals (
 -- RLS for withdrawals
 ALTER TABLE public.withdrawals ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY ""Owners can view their own withdrawals"" 
+CREATE POLICY "Owners can view their own withdrawals" 
 ON public.withdrawals FOR SELECT 
 USING (auth.uid()::text = owner_id);
 
-CREATE POLICY ""Owners can create withdrawals""
+CREATE POLICY "Owners can create withdrawals"
 ON public.withdrawals FOR INSERT
 WITH CHECK (auth.uid()::text = owner_id);
 
-CREATE POLICY ""Admin/Edge Functions can manage withdrawals"" 
+CREATE POLICY "Admin/Edge Functions can manage withdrawals" 
 ON public.withdrawals FOR ALL 
 USING (auth.jwt()->>'role' = 'service_role' OR auth.jwt()->>'role' = 'admin');
 
