@@ -55,7 +55,7 @@ ADD COLUMN IF NOT EXISTS withdrawal_id UUID REFERENCES public.withdrawals(id);
 
 -- 4. Trigger to automatically credit owner wallet when booking is PAID/CONFIRMED
 CREATE OR REPLACE FUNCTION update_owner_wallet_on_payment()
-RETURNS TRIGGER AS $
+RETURNS TRIGGER AS $$
 DECLARE
     v_owner_id TEXT;
 BEGIN
@@ -78,7 +78,7 @@ BEGIN
     
     RETURN NEW;
 END;
-$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 DROP TRIGGER IF EXISTS trigger_update_owner_wallet ON public.bookings;
 CREATE TRIGGER trigger_update_owner_wallet
@@ -91,7 +91,7 @@ CREATE OR REPLACE FUNCTION request_withdrawal(p_amount NUMERIC)
 RETURNS JSON
 LANGUAGE plpgsql
 SECURITY DEFINER
-AS $
+AS $$
 DECLARE
     v_owner_id TEXT;
     v_wallet public.owner_wallets%ROWTYPE;
@@ -135,7 +135,7 @@ BEGIN
 
     RETURN result;
 END;
-$;
+$$;
 
 GRANT EXECUTE ON FUNCTION public.request_withdrawal(NUMERIC) TO authenticated;
 
@@ -144,7 +144,7 @@ CREATE OR REPLACE FUNCTION get_owner_wallet()
 RETURNS JSON
 LANGUAGE plpgsql
 SECURITY DEFINER
-AS $
+AS $$
 DECLARE
     v_owner_id TEXT;
     result JSON;
@@ -166,6 +166,6 @@ BEGIN
 
     RETURN result;
 END;
-$;
+$$;
 
 GRANT EXECUTE ON FUNCTION public.get_owner_wallet() TO authenticated;
