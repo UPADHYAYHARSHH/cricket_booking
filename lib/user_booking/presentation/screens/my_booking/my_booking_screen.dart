@@ -122,10 +122,10 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
           ),
           Padding(
             padding: EdgeInsets.only(
-              top: MediaQuery.of(context).padding.top + 24,
+              top: MediaQuery.of(context).padding.top + 12,
               left: 20,
               right: 20,
-              bottom: 24,
+              bottom: 16,
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -136,14 +136,14 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                   children: [
                     const AppText(
                       text: "My Bookings",
-                      size: 26,
+                      size: 20,
                       weight: FontWeight.w700,
                       color: AppColors.white,
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     AppText(
                       text: "View and manage your reservations",
-                      size: 14,
+                      size: 13,
                       color: AppColors.white.withValues(alpha: 0.7),
                     ),
                   ],
@@ -514,7 +514,7 @@ class _BookingCardState extends State<_BookingCard> {
     final user = FirebaseAuth.instance.currentUser;
     final locationId = widget.booking.ground?.locationId ?? '';
 
-    // If no locationId or no user, can't rate — hide the button
+    // If no locationId or no user, can't rate Ã¢â‚¬â€ hide the button
     if (user == null || locationId.isEmpty) {
       if (mounted)
         setState(() {
@@ -874,6 +874,33 @@ class _BookingCardState extends State<_BookingCard> {
               ),
             ],
           ),
+          if (widget.booking.status.toLowerCase() == 'declined' && widget.booking.notes != null && widget.booking.notes!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, size: 16, color: Colors.red),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: AppText(
+                      text: "Reason: ${widget.booking.notes}",
+                      textStyle: TextStyle(
+                        fontSize: 12,
+                        color: Colors.red,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 8),
           Row(
             children: [

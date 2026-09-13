@@ -1045,7 +1045,7 @@ class SlotSelectionWidgets {
     }
   }
 
-  // ── Turf Image Card ───────────────────────────────────────────────────────
+  // â”€â”€ Turf Image Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   static double _calculateDistance(
       double lat1, double lon1, double lat2, double lon2) {
@@ -1262,7 +1262,7 @@ class SlotSelectionWidgets {
     );
   }
 
-  // ── Date Selector ─────────────────────────────────────────────────────────
+  // â”€â”€ Date Selector â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   static Widget buildDateSelector(
       BuildContext context, List<DateItem> dates, Function(int) onSelectDate) {
@@ -1360,7 +1360,7 @@ class SlotSelectionWidgets {
     );
   }
 
-  // ── Period Filter ─────────────────────────────────────────────────────────
+  // â”€â”€ Period Filter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   static Widget buildPeriodFilter(
       BuildContext context, String selectedPeriod, Function(String) onSelect) {
     final theme = Theme.of(context);
@@ -1453,7 +1453,7 @@ class SlotSelectionWidgets {
     }
   }
 
-  // ── Slot Section ──────────────────────────────────────────────────────────
+  // â”€â”€ Slot Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   static Widget buildSlotSection(
       BuildContext context, List<TimeSlot> slots, Function(int) onToggleSlot) {
@@ -1595,7 +1595,7 @@ class SlotSelectionWidgets {
     );
   }
 
-  // ── Grouped Slot Section (all periods in one screen) ──────────────────────
+  // â”€â”€ Grouped Slot Section (all periods in one screen) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   static Widget buildGroupedSlotSection(
       BuildContext context, List<TimeSlot> slots, Function(int) onToggleSlot, {DateTime? selectedDate}) {
@@ -1889,6 +1889,7 @@ class SlotSelectionWidgets {
     final bool isSelected = slot.status == SlotStatus.selected;
     final bool isAdvance = slot.status == SlotStatus.advance;
     final bool isAvailable = slot.status == SlotStatus.available;
+    final bool isRequested = slot.status == SlotStatus.requested;
 
     // Check if slot has passed
     final bool isExpired = selectedDate != null && isSlotExpired(slot.startTime, selectedDate);
@@ -1916,6 +1917,13 @@ class SlotSelectionWidgets {
       timeColor = AppColors.accentOrange;
       statusColor = AppColors.accentOrange;
       borderColor = AppColors.accentOrange;
+    } else if (isRequested) {
+      // Requested slot - pending state
+      accentColor = Colors.orangeAccent.withValues(alpha: 0.8);
+      bgColor = isDark ? Colors.orangeAccent.withValues(alpha: 0.05) : Colors.orange.withValues(alpha: 0.05);
+      timeColor = colorScheme.onSurface.withValues(alpha: 0.5);
+      statusColor = Colors.orangeAccent;
+      borderColor = Colors.transparent;
     } else if (isBooked) {
       accentColor = AppColors.slotBlocked;
       bgColor = isDark
@@ -1948,6 +1956,12 @@ class SlotSelectionWidgets {
             message: "This slot has already passed.",
             type: ToastType.info,
           );
+        } else if (isRequested) {
+          ToastUtil.show(
+            context,
+            message: "This slot is already requested and pending approval.",
+            type: ToastType.info,
+          );
         } else if (isBooked) {
           ToastUtil.show(
             context,
@@ -1964,7 +1978,7 @@ class SlotSelectionWidgets {
           color: bgColor,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? borderColor : (isBooked || isExpired ? Colors.transparent : borderColor),
+            color: isSelected ? borderColor : (isBooked || isRequested || isExpired ? Colors.transparent : borderColor),
             width: isSelected ? 1.5 : 1,
           ),
           boxShadow: isSelected
@@ -2032,6 +2046,25 @@ class SlotSelectionWidgets {
                           ),
                         ],
                       )
+                    else if (isRequested)
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.pending_actions,
+                            size: 10,
+                            color: statusColor,
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            "Requested",
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: statusColor,
+                            ),
+                          ),
+                        ],
+                      )
                     else if (isBooked)
                       Row(
                         children: [
@@ -2066,7 +2099,7 @@ class SlotSelectionWidgets {
               ),
             ),
             // Status indicator
-            if (!isBooked && !isExpired)
+            if (!isBooked && !isRequested && !isExpired)
               Padding(
                 padding: const EdgeInsets.only(right: 10),
                 child: Icon(
@@ -2093,7 +2126,7 @@ class SlotSelectionWidgets {
     return "$start - $end";
   }
 
-  // ── Bottom Bar ────────────────────────────────────────────────────────────
+  // â”€â”€ Bottom Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   static Widget buildBottomBar(
       BuildContext context,
@@ -2152,7 +2185,7 @@ class SlotSelectionWidgets {
             children: [
               AppText(
                 text:
-                    '${selectedSlots.length} Slot • ${activeDate.month} ${activeDate.date}, ${firstSlot.startTime}',
+                    '${selectedSlots.length} Slot${selectedSlots.length > 1 ? "s" : ""} • ${activeDate.month} ${activeDate.date}, ${firstSlot.startTime}',
                 textStyle: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -2207,7 +2240,7 @@ class SlotSelectionWidgets {
     );
   }
 
-  // ── Description Section ───────────────────────────────────────────────────
+  // â”€â”€ Description Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   static Widget buildDescriptionSection(
       BuildContext context, String? description, {String? locationName}) {
@@ -2240,7 +2273,7 @@ class SlotSelectionWidgets {
     );
   }
 
-  // ── Amenities Section ──────────────────────────────────────────────────────
+  // â”€â”€ Amenities Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   static Widget buildAmenitiesSection(
       BuildContext context, List<String>? amenities) {
@@ -2496,7 +2529,7 @@ class SlotSelectionWidgets {
     );
   }
 
-  // ── Address & Map Section ──────────────────────────────────────────────────
+  // â”€â”€ Address & Map Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   static Widget buildMapSection(BuildContext context,
       {required double latitude,

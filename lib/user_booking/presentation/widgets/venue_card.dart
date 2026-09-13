@@ -155,33 +155,34 @@ class _VenueCardState extends State<VenueCard>
         ),
 
         // City name on image
-        Positioned(
-          bottom: 6,
-          left: 8,
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(6),
+        if (widget.venue.city.isNotEmpty)
+          Positioned(
+            bottom: 6,
+            left: 8,
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedLocation01,
+                    size: 12,
+                    color: Colors.white,
+                  ),
                 ),
-                child: const HugeIcon(
-                  icon: HugeIcons.strokeRoundedLocation01,
-                  size: 12,
+                const SizedBox(width: 6),
+                AppText(
+                  text: widget.venue.city,
+                  size: 14,
+                  weight: FontWeight.w700,
                   color: Colors.white,
                 ),
-              ),
-              const SizedBox(width: 6),
-              AppText(
-                text: widget.venue.city,
-                size: 14,
-                weight: FontWeight.w700,
-                color: Colors.white,
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
 
         // Favorite Button
         Positioned(
@@ -310,7 +311,7 @@ class _VenueCardState extends State<VenueCard>
                   text: widget.venue.address.isNotEmpty
                       ? widget.venue.address
                       : "Location not available",
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textStyle: TextStyle(
                     fontSize: 12,
@@ -441,7 +442,7 @@ class _VenueCardState extends State<VenueCard>
                     children: [
                       TextSpan(
                         text: "₹${widget.venue.pitches.first.pricePerHour}",
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
                           color: AppColors.primaryDarkGreen,
@@ -455,17 +456,6 @@ class _VenueCardState extends State<VenueCard>
                           color: onSurface.withValues(alpha: 0.5),
                         ),
                       ),
-                      if (widget.venue.pitches.first.weekendPrice > 0 &&
-                          widget.venue.pitches.first.weekendPrice != widget.venue.pitches.first.pricePerHour) ...[
-                        TextSpan(
-                          text: "  •  Weekend: ₹${widget.venue.pitches.first.weekendPrice}/hr",
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.accentOrange,
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ),

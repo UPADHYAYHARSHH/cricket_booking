@@ -16,6 +16,10 @@ import 'package:turfpro/user_booking/presentation/widgets/ground_image_carousel.
 import 'package:turfpro/user_booking/presentation/widgets/slot_selection_widgets.dart';
 import 'package:turfpro/user_booking/di/get_it/get_it.dart';
 import 'package:turfpro/user_booking/data/repositories/payment_repository.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:turfpro/user_booking/data/models/sport_model.dart';
+import 'package:turfpro/user_booking/presentation/blocs/sport/sport_cubit.dart';
+import 'package:turfpro/user_booking/presentation/blocs/sport/sport_state.dart';
 
 class BookingSummaryScreen extends StatefulWidget {
   const BookingSummaryScreen({super.key});
@@ -114,7 +118,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
 
         final double totalDiscount = pointsDiscount + walletDiscount;
         final double grandTotal =
-            ((basePrice - totalDiscount) + platformFee).clamp(0.0, double.infinity);
+            ((basePrice - totalDiscount)).clamp(0.0, double.infinity);
 
         return Scaffold(
           backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF7F9FA),
@@ -260,6 +264,17 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
     required bool isDark,
     required ColorScheme colorScheme,
   }) {
+    IconData getSportIcon() {
+      final s = sport.toLowerCase();
+      if (s.contains('cricket')) return Icons.sports_cricket_rounded;
+      if (s.contains('football') || s.contains('soccer')) return Icons.sports_soccer_rounded;
+      if (s.contains('tennis') || s.contains('badminton')) return Icons.sports_tennis_rounded;
+      if (s.contains('basket')) return Icons.sports_basketball_rounded;
+      if (s.contains('volley')) return Icons.sports_volleyball_rounded;
+      if (s.contains('kabaddi')) return Icons.sports_kabaddi_rounded;
+      return Icons.sports_rounded;
+    }
+
     final images = (ground.images as List?)?.map((e) => e.toString()).toList() ?? <String>[];
     final fallbackImg = ground.imageUrl?.toString() ?? '';
     final sportDisplay = sport.replaceAll('_', ' ').toUpperCase();
@@ -340,7 +355,50 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.sports_cricket_rounded, color: Colors.white, size: 14),
+                            BlocBuilder<SportCubit, SportState>(
+                              builder: (context, sportState) {
+                                final sports = sportState is SportLoaded ? sportState.sports : <SportModel>[];
+                                SportModel? sportData;
+                                try {
+                                  sportData = sports.firstWhere((s) => s.slug == sport || s.name == sport);
+                                } catch (_) {}
+
+                                if (sportData != null && sportData.iconUrl.isNotEmpty) {
+                                  return Container(
+                                    decoration: const BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: ClipOval(
+                                      child: CachedNetworkImage(
+                                        imageUrl: sportData.iconUrl,
+                                        width: 16,
+                                        height: 16,
+                                        fit: BoxFit.cover,
+                                        errorWidget: (_, __, ___) => Icon(getSportIcon(), color: AppColors.primaryDarkGreen, size: 12),
+                                      ),
+                                    ),
+                                  );
+                                } else if (sportData != null && sportData.localAsset.isNotEmpty) {
+                                  return Container(
+                                    decoration: const BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: ClipOval(
+                                      child: Image.asset(
+                                        sportData.localAsset,
+                                        width: 16,
+                                        height: 16,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Icon(getSportIcon(), color: AppColors.primaryDarkGreen, size: 12),
+                                      ),
+                                    ),
+                                  );
+                                }
+                                return Icon(getSportIcon(), color: Colors.white, size: 14);
+                              },
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               sportDisplay,
@@ -951,10 +1009,39 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
                   ),
                 ],
                 const SizedBox(height: 10),
-                _buildInvoiceRow(
-                  "Platform Fee",
-                  "₹${platformFee.toStringAsFixed(0)}",
-                  colorScheme: colorScheme,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Platform Fee",
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Text(
+                          "₹${platformFee.toStringAsFixed(0)}",
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurface.withValues(alpha: 0.4),
+                            decoration: TextDecoration.lineThrough,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        const Text(
+                          "Free",
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primaryDarkGreen,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 10),
                 _buildInvoiceRow(

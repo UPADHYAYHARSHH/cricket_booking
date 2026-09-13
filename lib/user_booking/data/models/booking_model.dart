@@ -23,6 +23,7 @@ class BookingModel {
   final double ownerEarnings;
   final DateTime? createdAt;
   final DateTime? approvedAt;
+  final String? notes;
 
   BookingModel({
     required this.id,
@@ -47,6 +48,7 @@ class BookingModel {
     this.ownerEarnings = 0.0,
     this.createdAt,
     this.approvedAt,
+    this.notes,
   });
 
   factory BookingModel.fromJson(Map<String, dynamic> json) {
@@ -73,6 +75,7 @@ class BookingModel {
       ownerEarnings: (json['owner_earnings'] as num?)?.toDouble() ?? 0.0,
       createdAt: _parseUtcToLocal(json['created_at']),
       approvedAt: _parseUtcToLocal(json['approved_at']),
+      notes: json['notes'],
     );
   }
 
