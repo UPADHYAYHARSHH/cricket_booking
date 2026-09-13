@@ -292,7 +292,8 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
         );
         if (matchedDbSlot.startTime.isNotEmpty &&
             (matchedDbSlot.status == SlotStatus.booked ||
-                matchedDbSlot.status == SlotStatus.blocked)) {
+                matchedDbSlot.status == SlotStatus.blocked ||
+                matchedDbSlot.status == SlotStatus.requested)) {
           alreadyBookedSlots.add(selectedSlot.startTime);
         }
       }
@@ -465,7 +466,8 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
         );
         if (matchedDbSlot.startTime.isNotEmpty &&
             (matchedDbSlot.status == SlotStatus.booked ||
-                matchedDbSlot.status == SlotStatus.blocked)) {
+                matchedDbSlot.status == SlotStatus.blocked ||
+                matchedDbSlot.status == SlotStatus.requested)) {
           alreadyBookedSlots.add(selectedSlot.startTime);
         }
       }
@@ -581,8 +583,9 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
                 Navigator.pop(dialogCtx);
                 Navigator.pushNamedAndRemoveUntil(
                   context,
-                  AppRoutes.myBookingScreen,
-                  (route) => route.isFirst,
+                  AppRoutes.nav,
+                  (route) => false,
+                  arguments: 1,
                 );
               },
               child: const Text("View My Bookings", style: TextStyle(fontWeight: FontWeight.bold)),

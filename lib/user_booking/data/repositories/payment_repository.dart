@@ -238,8 +238,53 @@ class PaymentRepository {
         selectedSlots?.map((s) => s.startTime).toList() ??
         <String>[];
 
-    final combinedPeriod =
-        "${period ?? 'Day'}|${effectiveSlotTimes.join(',')}";
+    // ---- Canonical period-label resolver (SINGLE SOURCE OF TRUTH).
+    // Mirrors slot_selection_widgets._getSlotPeriod so the DB label
+    // always matches what the user saw in the UI grid:
+    //   Morning   = 06:00 – 12:00
+    //   Afternoon = 12:00 – 16:00
+    //   Evening   = 16:00 – 20:00
+    //   Night     = 20:00 – 06:00   (includes midnight hours)
+    //   Midnight  = fallback for empty strings
+    String _resolvePeriodLabel(String? startTimeLabel) {
+      if (startTimeLabel == null || startTimeLabel.trim().isEmpty) {
+        return 'Night';
+      }
+      final t = startTimeLabel.trim().toUpperCase();
+      final parts = t.split(' ');
+      final hhmm = parts.first.split(':');
+      int h;
+      try {
+        h = int.parse(hhmm.first);
+      } catch (_) {
+        return 'Night';
+      }
+      final m = hhmm.length > 1 ? int.tryParse(hhmm[1]) ?? 0 : 0;
+      final ampm = parts.length > 1 ? parts[1] : '';
+      if (ampm == 'PM' && h != 12) h += 12;
+      if (ampm == 'AM' && h == 12) h = 0;
+      if (h >= 6 && h < 12) return 'Morning';
+      if (h >= 12 && h < 16) return 'Afternoon';
+      if (h >= 16 && h < 20) return 'Evening';
+      return 'Night';
+    }
+
+    // Choose the period label:
+    //   1) explicit caller-provided `period` wins
+    //   2) else derive from the FIRST slot's start time (matches grid grouping)
+    //   3) else fall back to "Night" (covers midnight / legacy case)
+    String derivedLabel;
+    if (period != null && period.trim().isNotEmpty) {
+      derivedLabel = period.trim();
+    } else if (effectiveSlotTimes.isNotEmpty) {
+      derivedLabel = _resolvePeriodLabel(effectiveSlotTimes.first);
+    } else {
+      derivedLabel = _resolvePeriodLabel(null);
+    }
+    debugPrint('[PAYMENT_REPO] slotStartTimes=$effectiveSlotTimes period=$period -> derivedLabel=$derivedLabel');
+
+    final combinedPeriod = "$derivedLabel|${effectiveSlotTimes.join(',')}";
+    debugPrint('[PAYMENT_REPO] combinedPeriod stored in DB = $combinedPeriod');
 
     dynamic response;
     try {
@@ -383,7 +428,7 @@ class PaymentRepository {
             'p_ground_id': groundId,
             'p_date': formattedDate,
             'p_start_time': startTime,
-            'p_status': 'held',
+            'p_status': 'requested',
             'p_price': (effectiveAmount / effectiveSlotTimes.length).toInt(),
           });
         } catch (_) {}
@@ -518,16 +563,93 @@ class PaymentRepository {
 
   /// Deletes or expires a booking and frees the slot
   Future<void> deleteOrExpireBooking(String bookingId, {String reason = 'expired'}) async {
+    debugPrint('=== [USER APP] [DELETE/EXPIRE BOOKING START] bookingId: $bookingId, reason: $reason ===');
+    // 1. Fetch booking to get details needed to free the slots
+    Map<String, dynamic>? bookingData;
     try {
+      debugPrint('[deleteOrExpireBooking] Fetching booking details...');
+      final fetched = await _supabase.from('bookings').select('*').eq('id', bookingId).maybeSingle();
+      if (fetched != null) {
+        bookingData = Map<String, dynamic>.from(fetched);
+        debugPrint('[deleteOrExpireBooking] Fetched bookingData: $bookingData');
+      } else {
+        debugPrint('[deleteOrExpireBooking] Booking not found in DB before delete!');
+      }
+    } catch (e) {
+      debugPrint('[deleteOrExpireBooking] Error fetching booking: $e');
+    }
+
+    try {
+      debugPrint('[deleteOrExpireBooking] Calling delete_or_expire_booking RPC...');
       await _supabase.rpc('delete_or_expire_booking', params: {
         'p_booking_id': bookingId,
         'p_reason': reason,
       });
-    } catch (_) {
+      debugPrint('[deleteOrExpireBooking] RPC succeeded.');
+    } catch (e) {
+      debugPrint('[deleteOrExpireBooking] RPC failed, falling back to direct delete: $e');
       try {
         await _supabase.from('bookings').delete().eq('id', bookingId);
-      } catch (_) {}
+        debugPrint('[deleteOrExpireBooking] Direct delete succeeded.');
+      } catch (e2) {
+        debugPrint('[deleteOrExpireBooking] Direct delete failed: $e2');
+      }
     }
+
+    // 2. Free the specific slots
+    if (bookingData != null) {
+      final groundId = bookingData['ground_id'];
+      final slotTimeStr = bookingData['slot_time']?.toString();
+      final periodStr = bookingData['period']?.toString();
+      debugPrint('[deleteOrExpireBooking] Data to free slots -> groundId: $groundId, slotTimeStr: $slotTimeStr, periodStr: $periodStr');
+
+      if (slotTimeStr != null && groundId != null && periodStr != null) {
+        final slotDate = DateTime.tryParse(slotTimeStr)?.toLocal();
+        debugPrint('[deleteOrExpireBooking] Parsed slotDate (local): $slotDate');
+        if (slotDate != null) {
+          final dateStr = "${slotDate.year}-${slotDate.month.toString().padLeft(2, '0')}-${slotDate.day.toString().padLeft(2, '0')}";
+          debugPrint('[deleteOrExpireBooking] Formatted dateStr: $dateStr');
+          
+          if (periodStr.contains('|')) {
+            final parts = periodStr.split('|');
+            if (parts.length > 1) {
+              final startTimes = parts[1].split(',').map((s) => s.trim()).where((s) => s.isNotEmpty);
+              final amount = double.tryParse(bookingData['amount']?.toString() ?? '0') ?? 0;
+              final startTimesList = startTimes.toList();
+              final slotPrice = startTimesList.isNotEmpty ? (amount / startTimesList.length).toInt() : 0;
+              debugPrint('[deleteOrExpireBooking] startTimesList: $startTimesList, calculated slotPrice: $slotPrice');
+
+              for (final startTime in startTimesList) {
+                try {
+                  debugPrint('[deleteOrExpireBooking] Calling upsert_slot for $startTime...');
+                  final res = await _supabase.rpc('upsert_slot', params: {
+                    'p_ground_id': groundId,
+                    'p_date': dateStr,
+                    'p_start_time': startTime,
+                    'p_status': 'available',
+                    'p_price': slotPrice,
+                  });
+                  debugPrint('[deleteOrExpireBooking] upsert_slot success for $startTime. Res: $res');
+                } catch (e) {
+                  debugPrint('[deleteOrExpireBooking] Error in upsert_slot for $startTime: $e');
+                }
+              }
+            } else {
+              debugPrint('[deleteOrExpireBooking] periodStr parts length <= 1');
+            }
+          } else {
+            debugPrint('[deleteOrExpireBooking] periodStr does not contain |');
+          }
+        } else {
+          debugPrint('[deleteOrExpireBooking] slotDate parsing failed for $slotTimeStr');
+        }
+      } else {
+        debugPrint('[deleteOrExpireBooking] Missing groundId, slotTimeStr, or periodStr');
+      }
+    } else {
+      debugPrint('[deleteOrExpireBooking] Skipping slot free because bookingData is null.');
+    }
+    debugPrint('=== [USER APP] [DELETE/EXPIRE BOOKING END] ===');
   }
 
   Future<void> _updateBookingFinancialSnapshot(

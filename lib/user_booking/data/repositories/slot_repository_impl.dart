@@ -88,6 +88,7 @@ class SlotRepositoryImpl implements SlotRepository {
       case 'blocked':
         return SlotStatus.blocked;
       case 'requested':
+      case 'held':
         return SlotStatus.requested;
       default:
         return SlotStatus.available;

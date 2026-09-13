@@ -110,21 +110,31 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
     }
   }
 
+  // Canonical 4-period mapping — MUST match slot_selection_widgets._getSlotPeriod
+  // and payment_repository._resolvePeriodLabel so user, DB, and owner all agree.
+  //   Morning   = 06:00 – 12:00
+  //   Afternoon = 12:00 – 16:00
+  //   Evening   = 16:00 – 20:00
+  //   Night     = 20:00 – 06:00  (includes midnight slots 00:00–06:00)
   String _getSlotPeriod(String? time) {
-    if (time == null || time.isEmpty) return 'Day';
+    if (time == null || time.isEmpty) return 'Night';
     try {
-      final timeParts = time.split(' ');
+      final timeParts = time.trim().split(' ');
       final timeH = timeParts[0].split(':');
       int hour = int.parse(timeH[0]);
+      final int minute = timeH.length > 1
+          ? (int.tryParse(timeH[1]) ?? 0)
+          : 0;
       final ampm = timeParts.length > 1 ? timeParts[1].toUpperCase() : 'AM';
       if (ampm == 'PM' && hour != 12) hour += 12;
       if (ampm == 'AM' && hour == 12) hour = 0;
-      if (hour < 6) return 'Midnight';
-      if (hour < 12) return 'Day';
-      if (hour < 18) return 'Evening';
+      final minutes = hour * 60 + minute;
+      if (minutes >= 6 * 60 && minutes < 12 * 60) return 'Morning';
+      if (minutes >= 12 * 60 && minutes < 16 * 60) return 'Afternoon';
+      if (minutes >= 16 * 60 && minutes < 20 * 60) return 'Evening';
       return 'Night';
     } catch (_) {
-      return 'Day';
+      return 'Night';
     }
   }
 

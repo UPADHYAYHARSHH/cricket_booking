@@ -398,7 +398,7 @@ class _NotificationTile extends StatelessWidget {
       case 'booking_confirmed':
       case 'booking_cancelled':
         // Navigate to bookings tab if possible or specific booking
-        Navigator.pushNamed(context, AppRoutes.myBookingScreen);
+        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.nav, (route) => false, arguments: 1);
         break;
       case 'loyalty_points':
         if (FeatureConfig.isLoyaltyEnabled) {
