@@ -63,14 +63,28 @@ class NotificationService {
       sound: true,
     );
     debugPrint('User granted permission: ${settings.authorizationStatus}');
+
+    if (!kIsWeb) {
+      final androidPlugin = _localNotifications.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      await androidPlugin?.requestNotificationsPermission();
+
+      final iosPlugin = _localNotifications.resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin>();
+      await iosPlugin?.requestPermissions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+    }
   }
 
   static Future<void> _initializeLocalNotifications() async {
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: false,
-      requestBadgePermission: false,
-      requestSoundPermission: false,
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
     );
     const initSettings = InitializationSettings(
       android: androidSettings,
@@ -105,6 +119,15 @@ class NotificationService {
           importance: Importance.max,
           playSound: true,
           sound: RawResourceAndroidNotificationSound('booking_confirmed'),
+        ),
+      );
+      await androidPlugin.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'booking_reminders',
+          'Booking Reminders',
+          description: 'Notifications for upcoming bookings',
+          importance: Importance.max,
+          playSound: true,
         ),
       );
       await androidPlugin.createNotificationChannel(
@@ -214,46 +237,88 @@ class NotificationService {
     required DateTime bookingStartTime,
   }) async {
     if (kIsWeb) return;
-    
-    // Make sure timezones are initialized! (Done in main.dart)
-    final scheduledDate = bookingStartTime.subtract(const Duration(minutes: 30));
-    if (scheduledDate.isBefore(DateTime.now())) return;
 
-    final androidDetails = const AndroidNotificationDetails(
+    final now = DateTime.now();
+    if (bookingStartTime.isBefore(now)) {
+      debugPrint("DEBUG: [NotificationService] Booking time is already in the past: $bookingStartTime");
+      return;
+    }
+
+    const androidDetails = AndroidNotificationDetails(
       'booking_reminders',
       'Booking Reminders',
       channelDescription: 'Notifications for upcoming bookings',
       importance: Importance.max,
       priority: Priority.high,
+      playSound: true,
     );
 
-    final iosDetails = const DarwinNotificationDetails();
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
 
-    final details = NotificationDetails(
+    const details = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );
 
+    final scheduledDate = bookingStartTime.subtract(const Duration(minutes: 30));
+
+    // If game starts in 30 minutes or less, show an immediate notification
+    if (scheduledDate.isBefore(now)) {
+      final minutesLeft = bookingStartTime.difference(now).inMinutes;
+      final immediateBody = minutesLeft > 0
+          ? "Your game starts in $minutesLeft minute${minutesLeft == 1 ? '' : 's'}!"
+          : "Your game starts now!";
+      try {
+        await _localNotifications.show(
+          id,
+          title,
+          immediateBody,
+          details,
+        );
+        debugPrint("DEBUG: [NotificationService] Showed immediate reminder because game starts in $minutesLeft minutes");
+      } catch (e) {
+        debugPrint("DEBUG: [NotificationService] Failed to show immediate reminder: $e");
+      }
+      return;
+    }
+
+    // Convert DateTime to TZDateTime in local timezone
+    final tzScheduledDate = tz.TZDateTime.from(scheduledDate, tz.local);
+
     try {
+      // Attempt exact alarm first
       await _localNotifications.zonedSchedule(
         id,
         title,
         body,
-        tz.TZDateTime(
-          tz.local,
-          scheduledDate.year,
-          scheduledDate.month,
-          scheduledDate.day,
-          scheduledDate.hour,
-          scheduledDate.minute,
-        ),
+        tzScheduledDate,
         details,
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
       );
-      debugPrint("DEBUG: [NotificationService] Scheduled reminder for $scheduledDate");
+      debugPrint("DEBUG: [NotificationService] Scheduled exact reminder for $tzScheduledDate");
     } catch (e) {
-      debugPrint("DEBUG: [NotificationService] Failed to schedule reminder: $e");
+      debugPrint("DEBUG: [NotificationService] Exact alarm failed ($e), falling back to inexact");
+      try {
+        await _localNotifications.zonedSchedule(
+          id,
+          title,
+          body,
+          tzScheduledDate,
+          details,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
+        );
+        debugPrint("DEBUG: [NotificationService] Scheduled inexact reminder for $tzScheduledDate");
+      } catch (fallbackError) {
+        debugPrint("DEBUG: [NotificationService] Failed to schedule reminder: $fallbackError");
+      }
     }
   }
 

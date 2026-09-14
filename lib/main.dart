@@ -67,7 +67,7 @@ import 'package:turfpro/common/services/cashfree_service.dart';
 import 'package:turfpro/common/services/live_activity_service.dart';
 import 'package:timezone/data/latest_all.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
-import 'package:timezone/standalone.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -90,6 +90,10 @@ void main() async {
     debugPrint("DEBUG: [Main] Local timezone set to $timeZoneName");
   } catch (e) {
     debugPrint("DEBUG: [Main] Could not get local timezone: $e");
+    try {
+      tz.setLocalLocation(tz.getLocation('Asia/Kolkata'));
+      debugPrint("DEBUG: [Main] Fallback timezone set to Asia/Kolkata");
+    } catch (_) {}
   }
   
   // Silent OTA updates

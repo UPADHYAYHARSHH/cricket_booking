@@ -6,7 +6,6 @@ import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import 'package:turfpro/user_booking/data/repositories/payment_repository.dart';
 import 'package:turfpro/user_booking/domain/models/slot_models.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:turfpro/user_booking/presentation/screens/my_booking/my_booking_screen.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -127,9 +126,23 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
           if (_pendingSlots != null &&
               _pendingSlots!.isNotEmpty &&
               _pendingDate != null) {
-            final timeFormat = DateFormat("h:mm a");
-            final startTimeParsed =
-                timeFormat.parse(_pendingSlots!.first.startTime);
+            final rawStartTime =
+                _pendingSlots!.first.startTime.trim().toUpperCase();
+            DateTime startTimeParsed;
+            try {
+              startTimeParsed = DateFormat("h:mm a").parse(rawStartTime);
+            } catch (_) {
+              try {
+                startTimeParsed = DateFormat("hh:mm a").parse(rawStartTime);
+              } catch (_) {
+                try {
+                  startTimeParsed = DateFormat("HH:mm").parse(rawStartTime);
+                } catch (_) {
+                  startTimeParsed = DateFormat("HH:mm:ss").parse(rawStartTime);
+                }
+              }
+            }
+
             final bookingStartDateTime = DateTime(
               _pendingDate!.year,
               _pendingDate!.month,
@@ -138,8 +151,14 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
               startTimeParsed.minute,
             );
 
+            final notifId = (displayId > 0)
+                ? displayId
+                : ((bookingData['id']?.toString().hashCode ??
+                        bookingStartDateTime.millisecondsSinceEpoch) &
+                    0x7FFFFFFF);
+
             NotificationService.scheduleBookingReminder(
-              id: displayId,
+              id: notifId,
               title: "Upcoming Booking!",
               body: "Your game at ${ground.name} starts in 30 minutes.",
               bookingStartTime: bookingStartDateTime,
