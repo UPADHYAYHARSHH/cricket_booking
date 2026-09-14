@@ -1400,6 +1400,8 @@ class _BookingCardState extends State<_BookingCard> {
             amenities: widget.booking.ground?.amenities,
             ownerId: widget.booking.ground?.ownerId ?? "N/A",
             platformFee: widget.booking.platformFee,
+            isCheckedIn: widget.booking.checkedIn,
+            checkedInAt: widget.booking.checkedInAt,
           ),
         ),
       ),
@@ -1590,7 +1592,13 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
   Widget build(BuildContext context) {
     final double discountAmount = 0.0; // TODO: Fetch from actual booking model
     final theme = Theme.of(context);
-    final String timeStr = widget.ticket.period.split('|').first;
+    String timeStr = widget.ticket.period.split('|').first;
+    if (_bookedSlots.isNotEmpty) {
+      timeStr = _bookedSlots.map((s) => "${s.startTime} - ${s.endTime}").join(', ');
+    } else if (widget.ticket.period.contains('|')) {
+      timeStr = widget.ticket.period.split('|').last.trim();
+    }
+    
     final String displayIdStr = (widget.ticket.displayId != 0)
         ? widget.ticket.displayId.toString().padLeft(3, '0')
         : IdUtil.getShortId(widget.ticket.bookingId);
@@ -1707,6 +1715,15 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
                       ),
                     ),
                   ],
+                  if (widget.ticket.isPaid) ...[
+                    _CheckInBanner(
+                      isCheckedIn: widget.ticket.isCheckedIn,
+                      checkedInAt: widget.ticket.checkedInAt != null
+                          ? DateFormat('d MMM yyyy, h:mm a').format(widget.ticket.checkedInAt!)
+                          : null,
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                   const SectionLabel(title: "BOOKING DETAILS"),
                   const SizedBox(height: 12),
 
@@ -1741,7 +1758,7 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
                         const RowDivider(),
                         DetailRow(
                           label: "Time",
-                          value: timeStr.replaceAll('', ''),
+                          value: timeStr,
                           iconData: Icons.access_time_rounded,
                         ),
                         const RowDivider(),
@@ -1931,6 +1948,82 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
   }
 }
 
+class _CheckInBanner extends StatelessWidget {
+  final bool isCheckedIn;
+  final String? checkedInAt;
+
+  const _CheckInBanner({required this.isCheckedIn, this.checkedInAt});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isCheckedIn
+        ? const Color(0xFF0B8457)
+        : const Color(0xFFEF6C00);
+    final bg = isCheckedIn
+        ? const Color(0xFFE8F5E9)
+        : const Color(0xFFFFF3E0);
+    final border = isCheckedIn
+        ? const Color(0xFF81C784)
+        : const Color(0xFFFFCC80);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: 20,
+        vertical: 16,
+      ),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: border, width: 1),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              isCheckedIn ? Icons.check_circle_rounded : Icons.schedule_rounded,
+              color: color,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppText(
+                  text: isCheckedIn ? "Checked In" : "Not Checked In Yet",
+                  textStyle: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
+                ),
+                if (isCheckedIn && checkedInAt != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: AppText(
+                      text: checkedInAt!,
+                      textStyle: const TextStyle(
+                        fontSize: 11,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class TicketModel {
   final String bookingId;
   final String groundId;
@@ -1953,6 +2046,8 @@ class TicketModel {
   final List<String>? amenities;
   final String ownerId;
   final double platformFee;
+  final bool isCheckedIn;
+  final DateTime? checkedInAt;
 
   TicketModel({
     required this.bookingId,
@@ -1976,6 +2071,8 @@ class TicketModel {
     this.amenities,
     this.ownerId = "N/A",
     this.platformFee = 0.0,
+    this.isCheckedIn = false,
+    this.checkedInAt,
   });
 }
 
