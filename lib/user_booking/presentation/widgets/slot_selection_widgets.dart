@@ -1885,11 +1885,11 @@ class SlotSelectionWidgets {
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
 
-    final bool isBooked = slot.status == SlotStatus.booked;
+    final bool isBooked = slot.status == SlotStatus.booked || slot.status == SlotStatus.requested;
     final bool isSelected = slot.status == SlotStatus.selected;
     final bool isAdvance = slot.status == SlotStatus.advance;
     final bool isAvailable = slot.status == SlotStatus.available;
-    final bool isRequested = slot.status == SlotStatus.requested;
+    final bool isRequested = false;
 
     // Check if slot has passed
     final bool isExpired = selectedDate != null && isSlotExpired(slot.startTime, selectedDate);
