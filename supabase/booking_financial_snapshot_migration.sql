@@ -55,18 +55,26 @@ DECLARE
     v_db_fee TEXT;
     v_db_comm TEXT;
     v_db_is_pct TEXT;
+    v_db_fee_free TEXT;
+    v_is_fee_free BOOLEAN;
     result JSON;
 BEGIN
     -- Fetch dynamic configuration from app_config table
     SELECT value INTO v_db_fee FROM public.app_config WHERE key = 'platform_fee' LIMIT 1;
     SELECT value INTO v_db_comm FROM public.app_config WHERE key = 'commission_rate' LIMIT 1;
     SELECT value INTO v_db_is_pct FROM public.app_config WHERE key = 'commission_is_percentage' LIMIT 1;
+    SELECT value INTO v_db_fee_free FROM public.app_config WHERE key IN ('platform_fee_is_free', 'is_platform_fee_free', 'convenience_fee_is_free') LIMIT 1;
 
     v_platform_fee := COALESCE(NULLIF(v_db_fee, '')::numeric, 30.0);
     v_commission_rate := COALESCE(NULLIF(v_db_comm, '')::numeric, 0.0);
     v_commission_is_pct := COALESCE((v_db_is_pct IS NULL OR v_db_is_pct = 'true' OR v_db_is_pct = '1'), true);
+    v_is_fee_free := COALESCE((v_db_fee_free = 'true' OR v_db_fee_free = '1'), false);
 
-    v_base_amount := GREATEST(0.0, p_amount - v_platform_fee);
+    IF v_is_fee_free THEN
+        v_base_amount := p_amount;
+    ELSE
+        v_base_amount := GREATEST(0.0, p_amount - v_platform_fee);
+    END IF;
 
     IF v_commission_is_pct THEN
         v_owner_earnings := GREATEST(0.0, v_base_amount - (v_base_amount * (v_commission_rate / 100.0)));

@@ -20,8 +20,14 @@ class RemoteConfigService {
   double _platformFee = 0.0;
   double _commissionRate = 0.0;
   bool _commissionIsPercentage = true;
+  double _convenienceFee = 20.0;
+  bool _isConvenienceFeeFree = true;
+  double _gstRate = 0.0;
+  bool _gstIsPercentage = true;
+  bool _gstIsFree = false;
 
   final StreamController<bool> _maintenanceController = StreamController<bool>.broadcast();
+  final StreamController<void> _configUpdateController = StreamController<void>.broadcast();
   StreamSubscription? _remoteConfigSubscription;
 
   Future<void> initialize() async {
@@ -43,6 +49,7 @@ class RemoteConfigService {
           await remoteConfig.activate();
           _readFromFirebase(remoteConfig);
           _maintenanceController.add(isMaintenanceMode);
+          _configUpdateController.add(null);
         });
       } catch (e) {
         debugPrint('⚠️ FIREBASE REMOTE CONFIG INIT NOTICE: $e');
@@ -52,6 +59,7 @@ class RemoteConfigService {
       await fetchAndActivate();
 
       _maintenanceController.add(isMaintenanceMode);
+      _configUpdateController.add(null);
 
       Supabase.instance.client
           .channel('public:app_config')
@@ -63,6 +71,7 @@ class RemoteConfigService {
               debugPrint('🚀 SUPABASE CONFIG UPDATED: ${payload.newRecord}');
               await fetchAndActivate();
               _maintenanceController.add(isMaintenanceMode);
+              _configUpdateController.add(null);
             },
           )
           .subscribe((status, [error]) {
@@ -100,6 +109,38 @@ class RemoteConfigService {
       if (keys.containsKey('commission_is_percentage')) {
         _commissionIsPercentage = remoteConfig.getBool('commission_is_percentage') ||
             remoteConfig.getString('commission_is_percentage') == 'true';
+      }
+      if (keys.containsKey('convenience_fee')) {
+        final feeNum = remoteConfig.getDouble('convenience_fee');
+        if (feeNum > 0) {
+          _convenienceFee = feeNum;
+        } else {
+          _convenienceFee = double.tryParse(remoteConfig.getString('convenience_fee')) ?? _convenienceFee;
+        }
+      }
+      if (keys.containsKey('convenience_fee_is_free')) {
+        _isConvenienceFeeFree = remoteConfig.getBool('convenience_fee_is_free') ||
+            remoteConfig.getString('convenience_fee_is_free') == 'true';
+      }
+      if (keys.containsKey('platform_fee_is_free')) {
+        _isConvenienceFeeFree = remoteConfig.getBool('platform_fee_is_free') ||
+            remoteConfig.getString('platform_fee_is_free') == 'true';
+      }
+      if (keys.containsKey('gst_rate')) {
+        final gstNum = remoteConfig.getDouble('gst_rate');
+        if (gstNum >= 0) {
+          _gstRate = gstNum;
+        } else {
+          _gstRate = double.tryParse(remoteConfig.getString('gst_rate')) ?? _gstRate;
+        }
+      }
+      if (keys.containsKey('gst_is_percentage')) {
+        _gstIsPercentage = remoteConfig.getBool('gst_is_percentage') ||
+            remoteConfig.getString('gst_is_percentage') == 'true';
+      }
+      if (keys.containsKey('gst_is_free')) {
+        _gstIsFree = remoteConfig.getBool('gst_is_free') ||
+            remoteConfig.getString('gst_is_free') == 'true';
       }
       if (keys.containsKey('user_app_maintenance')) {
         _isMaintenanceMode = remoteConfig.getBool('user_app_maintenance') ||
@@ -146,6 +187,24 @@ class RemoteConfigService {
           case 'commission_is_percentage':
             _commissionIsPercentage = val == 'true' || val == '1';
             break;
+          case 'convenience_fee':
+            final parsedFee = double.tryParse(val);
+            if (parsedFee != null) _convenienceFee = parsedFee;
+            break;
+          case 'convenience_fee_is_free':
+          case 'platform_fee_is_free':
+            _isConvenienceFeeFree = val == 'true' || val == '1';
+            break;
+          case 'gst_rate':
+            final parsedGst = double.tryParse(val);
+            if (parsedGst != null) _gstRate = parsedGst;
+            break;
+          case 'gst_is_percentage':
+            _gstIsPercentage = val == 'true' || val == '1';
+            break;
+          case 'gst_is_free':
+            _gstIsFree = val == 'true' || val == '1';
+            break;
           case 'user_app_maintenance':
             _isMaintenanceMode = val == 'true' || val == '1';
             break;
@@ -163,7 +222,7 @@ class RemoteConfigService {
             break;
         }
       }
-      debugPrint('🔥 FETCH AND ACTIVATE SUCCESS: platformFee=$_platformFee');
+      debugPrint('🔥 FETCH AND ACTIVATE SUCCESS: platformFee=$_platformFee, convFee=$_convenienceFee (free: $_isConvenienceFeeFree), gstRate=$_gstRate');
     } catch (e) {
       debugPrint('❌ FETCH AND ACTIVATE FAILED: $e');
     }
@@ -172,6 +231,7 @@ class RemoteConfigService {
   void dispose() {
     _remoteConfigSubscription?.cancel();
     _maintenanceController.close();
+    _configUpdateController.close();
   }
 
   Stream<bool> get maintenanceModeStream => _maintenanceController.stream;
@@ -190,11 +250,33 @@ class RemoteConfigService {
     return _updateUrlAndroid;
   }
 
-  double get platformFee => _platformFee;
+  double get platformFee => _platformFee > 0 ? _platformFee : _convenienceFee;
 
   double get commissionRate => _commissionRate;
 
   bool get commissionIsPercentage => _commissionIsPercentage;
+
+  Stream<void> get configUpdatesStream => _configUpdateController.stream;
+
+  double get convenienceFee => platformFee;
+
+  bool get isConvenienceFeeFree => _isConvenienceFeeFree;
+
+  bool get isPlatformFeeFree => _isConvenienceFeeFree;
+
+  double get gstRate => _gstRate;
+
+  bool get gstIsPercentage => _gstIsPercentage;
+
+  bool get gstIsFree => _gstIsFree;
+
+  double calculateGst(double basePrice) {
+    if (_gstIsFree || _gstRate <= 0) return 0.0;
+    if (_gstIsPercentage) {
+      return (basePrice * _gstRate) / 100.0;
+    }
+    return _gstRate;
+  }
 
   Future<bool> isUpdateRequired() async {
     try {

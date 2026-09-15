@@ -25,6 +25,7 @@ import 'package:turfpro/common/services/notification_service.dart';
 import 'package:turfpro/common/services/live_activity_service.dart';
 import 'package:intl/intl.dart';
 import 'package:turfpro/common/services/remote_config_service.dart';
+import 'package:turfpro/user_booking/domain/models/booking_summary_data.dart';
 
 class TimeSlotSelectionScreen extends StatefulWidget {
   const TimeSlotSelectionScreen({super.key});
@@ -43,6 +44,7 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
   DateTime? _pendingDate;
   int _pendingAppliedPoints = 0;
   double _pendingAppliedWallet = 0.0;
+  BookingSummaryData? _pendingSummaryData;
   bool _isBookingInProgress = false;
   bool _isPaymentHandled = false;
 
@@ -92,9 +94,10 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
           date: _pendingDate!,
           amount: (_pendingAmount!).toInt(),
           sportName: cubit.state.selectedSport,
-          period: slotTimesPeriod,
+          period: cubit.state.selectedPeriod,
           slotStartTimes: _pendingSlots?.map((s) => s.startTime).toList() ?? [],
           orderId: orderId,
+          summaryData: _pendingSummaryData,
         );
 
         final int displayId = bookingData['display_id'] ?? 0;
@@ -184,6 +187,7 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
                 groundId: ground.id,
                 displayId: displayId,
                 venueName: ground.name,
+                locationName: ground.locationName,
                 pitchName: "Main Pitch",
                 date: _pendingDate!,
                 time: slotTimesPeriod,
@@ -198,10 +202,13 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
                 images: ground.images,
                 isPaid: true,
                 sportName: cubit.state.selectedSport ?? "Sport",
-                period: slotTimesPeriod,
+                period: "${cubit.state.selectedPeriod}|${_pendingSlots?.map((s) => s.startTime).join(',') ?? ''}",
                 ownerId: ground.ownerId,
-                  platformFee: RemoteConfigService().platformFee,
+                platformFee: RemoteConfigService().platformFee,
                 amenities: ground.amenities,
+                createdAt: DateTime.tryParse(bookingData['created_at']?.toString() ?? '')?.toLocal() ?? DateTime.now(),
+                status: 'paid',
+                summaryData: _pendingSummaryData,
               ),
             ),
           ),
@@ -264,6 +271,7 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
       double totalPrice, dynamic activeDate, List<TimeSlot> selectedSlots,
       {int appliedPoints = 0,
       double appliedWallet = 0.0,
+      BookingSummaryData? summaryData,
       bool fromRetry = false}) async {
     HapticFeedback.mediumImpact();
     final cubit = context.read<SlotSelectionCubit>();
@@ -285,6 +293,7 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
     try {
       _pendingAmount = totalPrice;
       _pendingSlots = selectedSlots;
+      _pendingSummaryData = summaryData;
 
       if (!fromRetry) {
         final now = DateTime.now();
@@ -443,6 +452,7 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
     List<TimeSlot> selectedSlots, {
     int appliedPoints = 0,
     double appliedWallet = 0.0,
+    BookingSummaryData? summaryData,
   }) async {
     HapticFeedback.mediumImpact();
     final cubit = context.read<SlotSelectionCubit>();
@@ -543,6 +553,7 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
         totalAmount: totalPrice,
         appliedPoints: appliedPoints,
         appliedWallet: appliedWallet,
+        summaryData: summaryData,
       );
 
       if (!mounted) return;
@@ -781,6 +792,8 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
                           basePrice: totalPrice,
                         ));
                     if (result != null && result is Map<String, dynamic>) {
+                      final summaryData =
+                          result['summaryData'] as BookingSummaryData?;
                       if (result['isApprovalRequired'] == true) {
                         _onRequestBooking(
                           (result['finalAmount'] as num).toDouble(),
@@ -789,15 +802,18 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
                           appliedPoints: result['appliedPoints'] ?? 0,
                           appliedWallet:
                               (result['appliedWallet'] as num?)?.toDouble() ?? 0.0,
+                          summaryData: summaryData,
                         );
                       } else {
                         _onConfirmBooking(
-                            (result['finalAmount'] as num).toDouble(),
-                            activeDate,
-                            selectedSlots,
-                            appliedPoints: result['appliedPoints'] ?? 0,
-                            appliedWallet:
-                                (result['appliedWallet'] as num?)?.toDouble() ?? 0.0);
+                          (result['finalAmount'] as num).toDouble(),
+                          activeDate,
+                          selectedSlots,
+                          appliedPoints: result['appliedPoints'] ?? 0,
+                          appliedWallet:
+                              (result['appliedWallet'] as num?)?.toDouble() ?? 0.0,
+                          summaryData: summaryData,
+                        );
                       }
                     }
                   } catch (e, st) {

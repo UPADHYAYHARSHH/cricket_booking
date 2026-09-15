@@ -8,18 +8,18 @@ import 'package:turfpro/common/widgets/discover_app_bar.dart';
 import 'package:turfpro/common/config/feature_config.dart';
 import 'package:turfpro/common/services/remote_config_service.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
-import 'package:turfpro/user_booking/domain/models/slot_models.dart';
 import 'package:turfpro/user_booking/domain/models/booking_arguments.dart';
 import 'package:turfpro/user_booking/presentation/blocs/slot_selection/slot_selection_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/slot_selection/slot_selection_state.dart';
 import 'package:turfpro/user_booking/presentation/widgets/ground_image_carousel.dart';
-import 'package:turfpro/user_booking/presentation/widgets/slot_selection_widgets.dart';
 import 'package:turfpro/user_booking/di/get_it/get_it.dart';
 import 'package:turfpro/user_booking/data/repositories/payment_repository.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:turfpro/user_booking/data/models/sport_model.dart';
 import 'package:turfpro/user_booking/presentation/blocs/sport/sport_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/sport/sport_state.dart';
+import 'package:turfpro/user_booking/domain/models/booking_summary_data.dart';
+import 'package:turfpro/user_booking/presentation/widgets/booking_price_summary_card.dart';
 
 class BookingSummaryScreen extends StatefulWidget {
   const BookingSummaryScreen({super.key});
@@ -89,165 +89,186 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
     final activeDate = args.activeDate;
     final selectedSport = args.selectedSport;
 
-    return BlocBuilder<SlotSelectionCubit, SlotSelectionState>(
-      builder: (context, state) {
-        final double platformFee = RemoteConfigService().platformFee;
+    return StreamBuilder<void>(
+      stream: RemoteConfigService().configUpdatesStream,
+      builder: (context, _) {
+        return BlocBuilder<SlotSelectionCubit, SlotSelectionState>(
+          builder: (context, state) {
+            final remoteConfig = RemoteConfigService();
+            final double platformFee = remoteConfig.platformFee;
+            final bool isPlatformFeeFree = remoteConfig.isPlatformFeeFree;
+            final double effectivePlatformFee = isPlatformFeeFree ? 0.0 : platformFee;
+            final double gstAmount = remoteConfig.calculateGst(basePrice);
 
-        // Loyalty Points Logic
-        double pointsDiscount = 0.0;
-        if (FeatureConfig.isLoyaltyEnabled) {
-          bool canRedeem = state.availableLoyaltyPoints >= 50;
-          if (state.useLoyaltyPoints && canRedeem) {
-            double maxDiscount = basePrice * 0.5;
-            pointsDiscount = state.availableLoyaltyPoints > maxDiscount
-                ? maxDiscount
-                : state.availableLoyaltyPoints.toDouble();
-          }
-        }
+            // Loyalty Points Logic
+            double pointsDiscount = 0.0;
+            if (FeatureConfig.isLoyaltyEnabled) {
+              bool canRedeem = state.availableLoyaltyPoints >= 50;
+              if (state.useLoyaltyPoints && canRedeem) {
+                double maxDiscount = basePrice * 0.5;
+                pointsDiscount = state.availableLoyaltyPoints > maxDiscount
+                    ? maxDiscount
+                    : state.availableLoyaltyPoints.toDouble();
+              }
+            }
 
-        // Wallet Balance Logic
-        double walletDiscount = 0.0;
-        if (FeatureConfig.isWalletEnabled &&
-            state.useWallet &&
-            state.walletBalance > 0) {
-          double remainingAfterLoyalty = basePrice - pointsDiscount;
-          walletDiscount = state.walletBalance > remainingAfterLoyalty
-              ? remainingAfterLoyalty
-              : state.walletBalance;
-        }
+            // Wallet Balance Logic
+            double walletDiscount = 0.0;
+            if (FeatureConfig.isWalletEnabled &&
+                state.useWallet &&
+                state.walletBalance > 0) {
+              double remainingAfterLoyalty = basePrice - pointsDiscount;
+              walletDiscount = state.walletBalance > remainingAfterLoyalty
+                  ? remainingAfterLoyalty
+                  : state.walletBalance;
+            }
 
-        final double totalDiscount = pointsDiscount + walletDiscount;
-        final double grandTotal =
-            ((basePrice - totalDiscount)).clamp(0.0, double.infinity);
+            final double totalDiscount = pointsDiscount + walletDiscount;
+            final double grandTotal =
+                ((basePrice + gstAmount + effectivePlatformFee - totalDiscount))
+                    .clamp(0.0, double.infinity);
 
-        return Scaffold(
-          backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF7F9FA),
-          appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            systemOverlayStyle: SystemUiOverlayStyle.light,
-            flexibleSpace: const DiscoverAppBarBackground(),
-            leading: IconButton(
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
+            final summaryData = BookingSummaryData(
+              slotPrice: basePrice,
+              gstAmount: gstAmount,
+              platformFee: platformFee,
+              isPlatformFeeFree: isPlatformFeeFree,
+              pointsDiscount: pointsDiscount,
+              walletDiscount: walletDiscount,
+              grandTotal: grandTotal,
+            );
+
+            return Scaffold(
+              backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF7F9FA),
+              appBar: AppBar(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                systemOverlayStyle: SystemUiOverlayStyle.light,
+                flexibleSpace: const DiscoverAppBarBackground(),
+                leading: IconButton(
+                  icon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const HugeIcon(
+                      icon: HugeIcons.strokeRoundedArrowLeft01,
+                      size: 18,
+                      color: Colors.white,
+                    ),
+                  ),
+                  onPressed: () => Navigator.pop(context),
                 ),
-                child: const HugeIcon(
-                  icon: HugeIcons.strokeRoundedArrowLeft01,
-                  size: 18,
-                  color: Colors.white,
+                title: Column(
+                  children: [
+                    const AppText(
+                      text: "Review & Pay",
+                      textStyle: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    AppText(
+                      text: "Step 2 of 2",
+                      textStyle: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ],
+                ),
+                centerTitle: true,
+              ),
+              body: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 120),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 1. Ground Details Hero Card
+                    _buildGroundHeroCard(
+                      context,
+                      ground: ground,
+                      sport: selectedSport,
+                      activeDate: activeDate,
+                      slotsCount: selectedSlots.length,
+                      basePrice: basePrice,
+                      isDark: isDark,
+                      colorScheme: colorScheme,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // 2. Selected Time Slots Card
+                    _buildTimeSlotsCard(
+                      context,
+                      selectedSlots: selectedSlots,
+                      activeDate: activeDate,
+                      isDark: isDark,
+                      colorScheme: colorScheme,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // 3. Rewards & Wallet Discounts Section
+                    if (FeatureConfig.isLoyaltyEnabled || FeatureConfig.isWalletEnabled)
+                      _buildOffersSection(
+                        context,
+                        state: state,
+                        basePrice: basePrice,
+                        pointsDiscount: pointsDiscount,
+                        walletDiscount: walletDiscount,
+                        isDark: isDark,
+                        colorScheme: colorScheme,
+                      ),
+
+                    // 4. Payment Breakdown Receipt
+                    BookingPriceSummaryCard(
+                      summaryData: summaryData,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // 4b. Location Refund Policy Card
+                    _buildRefundPolicyCard(
+                      context,
+                      policy: ground.privacyPolicy,
+                      isDark: isDark,
+                      colorScheme: colorScheme,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // 5. Trust & Assurance Banner
+                    _buildTrustBanner(context, isDark, colorScheme),
+
+                    if (_requiresApproval) ...[
+                      const SizedBox(height: 16),
+                      _buildApprovalRequiredNotice(context, isDark, colorScheme),
+                    ],
+                  ],
                 ),
               ),
-              onPressed: () => Navigator.pop(context),
-            ),
-            title: Column(
-              children: [
-                const AppText(
-                  text: "Review & Pay",
-                  textStyle: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                AppText(
-                  text: "Step 2 of 2 • Checkout",
-                  textStyle: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white.withValues(alpha: 0.8),
-                  ),
-                ),
-              ],
-            ),
-            centerTitle: true,
-          ),
-          body: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 120),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 1. Ground Details Hero Card
-                _buildGroundHeroCard(
-                  context,
-                  ground: ground,
-                  sport: selectedSport,
-                  activeDate: activeDate,
-                  slotsCount: selectedSlots.length,
-                  basePrice: basePrice,
-                  isDark: isDark,
-                  colorScheme: colorScheme,
-                ),
-                const SizedBox(height: 20),
-
-                // 2. Selected Time Slots Card
-                _buildTimeSlotsCard(
-                  context,
-                  selectedSlots: selectedSlots,
-                  activeDate: activeDate,
-                  isDark: isDark,
-                  colorScheme: colorScheme,
-                ),
-                const SizedBox(height: 20),
-
-                // 3. Rewards & Wallet Discounts Section
-                if (FeatureConfig.isLoyaltyEnabled || FeatureConfig.isWalletEnabled)
-                  _buildOffersSection(
-                    context,
-                    state: state,
-                    basePrice: basePrice,
-                    pointsDiscount: pointsDiscount,
-                    walletDiscount: walletDiscount,
-                    isDark: isDark,
-                    colorScheme: colorScheme,
-                  ),
-
-                // 4. Payment Breakdown Receipt
-                _buildPriceBreakdownCard(
-                  context,
-                  basePrice: basePrice,
-                  pointsDiscount: pointsDiscount,
-                  walletDiscount: walletDiscount,
-                  platformFee: platformFee,
-                  grandTotal: grandTotal,
-                  isDark: isDark,
-                  colorScheme: colorScheme,
-                ),
-                const SizedBox(height: 20),
-
-                // 5. Trust & Assurance Banner
-                _buildTrustBanner(context, isDark, colorScheme),
-
-                if (_requiresApproval) ...[
-                  const SizedBox(height: 16),
-                  _buildApprovalRequiredNotice(context, isDark, colorScheme),
-                ],
-              ],
-            ),
-          ),
-          // 6. Fixed Sticky Checkout Bottom Bar
-          bottomNavigationBar: _buildStickyBottomBar(
-            context,
-            grandTotal: grandTotal,
-            totalDiscount: totalDiscount,
-            isApprovalRequired: _requiresApproval,
-            onConfirm: () {
-              HapticFeedback.mediumImpact();
-              Navigator.pop(context, {
-                'finalAmount': grandTotal,
-                'appliedPoints':
-                    state.useLoyaltyPoints ? pointsDiscount.toInt() : 0,
-                'appliedWallet': state.useWallet ? walletDiscount : 0.0,
-                'isApprovalRequired': _requiresApproval,
-              });
-            },
-            isDark: isDark,
-            colorScheme: colorScheme,
-          ),
+              // 6. Fixed Sticky Checkout Bottom Bar
+              bottomNavigationBar: _buildStickyBottomBar(
+                context,
+                grandTotal: grandTotal,
+                totalDiscount: totalDiscount,
+                isApprovalRequired: _requiresApproval,
+                onConfirm: () {
+                  HapticFeedback.mediumImpact();
+                  Navigator.pop(context, {
+                    'finalAmount': grandTotal,
+                    'appliedPoints':
+                        state.useLoyaltyPoints ? pointsDiscount.toInt() : 0,
+                    'appliedWallet': state.useWallet ? walletDiscount : 0.0,
+                    'isApprovalRequired': _requiresApproval,
+                    'summaryData': summaryData,
+                  });
+                },
+                isDark: isDark,
+                colorScheme: colorScheme,
+              ),
+            );
+          },
         );
       },
     );
@@ -817,7 +838,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
                 ),
                 Switch.adaptive(
                   value: state.useLoyaltyPoints,
-                  activeColor: AppColors.primaryDarkGreen,
+                  activeTrackColor: AppColors.primaryDarkGreen,
                   onChanged: state.availableLoyaltyPoints >= 50
                       ? (_) {
                           HapticFeedback.selectionClick();
@@ -913,7 +934,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
                 ),
                 Switch.adaptive(
                   value: state.useWallet,
-                  activeColor: Colors.blue,
+                  activeTrackColor: Colors.blue,
                   onChanged: state.walletBalance > 0
                       ? (_) {
                           HapticFeedback.selectionClick();
@@ -930,221 +951,171 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
     );
   }
 
-  // ─── 4. PRICE BREAKDOWN CARD ───────────────────────────────────
-  Widget _buildPriceBreakdownCard(
+
+  // ─── 4b. LOCATION REFUND POLICY CARD ────────────────────────────
+  Widget _buildRefundPolicyCard(
     BuildContext context, {
-    required double basePrice,
-    required double pointsDiscount,
-    required double walletDiscount,
-    required double platformFee,
-    required double grandTotal,
+    required String policy,
     required bool isDark,
     required ColorScheme colorScheme,
   }) {
-    final double totalSavings = pointsDiscount + walletDiscount;
+    final hasPolicy = policy.trim().isNotEmpty;
+    const defaultPolicy =
+        "• Bookings can be cancelled only if requested **in advance** according to venue rules.\n"
+        "• **No cancellation or refund** will be allowed after the slot start time.\n"
+        "• In case of cancellation from the **venue side**, a full refund will be processed.\n"
+        "• Users are requested to coordinate directly with the venue for special requests.";
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isDark ? Colors.white.withValues(alpha: 0.08) : AppColors.borderLight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-            child: Row(
-              children: [
-                const Icon(Icons.receipt_long_rounded, size: 18, color: AppColors.primaryDarkGreen),
-                const SizedBox(width: 8),
-                Text(
-                  "Price Breakdown",
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
+    final policyText = hasPolicy ? policy.trim() : defaultPolicy;
 
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                _buildInvoiceRow(
-                  "Slot Booking Amount",
-                  "₹${basePrice.toStringAsFixed(0)}",
-                  colorScheme: colorScheme,
-                ),
-                if (pointsDiscount > 0) ...[
-                  const SizedBox(height: 10),
-                  _buildInvoiceRow(
-                    "Loyalty Points Discount",
-                    "- ₹${pointsDiscount.toStringAsFixed(0)}",
-                    valueColor: AppColors.primaryDarkGreen,
-                    colorScheme: colorScheme,
-                  ),
-                ],
-                if (walletDiscount > 0) ...[
-                  const SizedBox(height: 10),
-                  _buildInvoiceRow(
-                    "Wallet Balance Applied",
-                    "- ₹${walletDiscount.toStringAsFixed(0)}",
-                    valueColor: Colors.blue,
-                    colorScheme: colorScheme,
-                  ),
-                ],
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Platform Fee",
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: colorScheme.onSurface.withValues(alpha: 0.6),
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          "₹${platformFee.toStringAsFixed(0)}",
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: colorScheme.onSurface.withValues(alpha: 0.4),
-                            decoration: TextDecoration.lineThrough,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        const Text(
-                          "Free",
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.primaryDarkGreen,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                _buildInvoiceRow(
-                  "Taxes & Convenience",
-                  "Included",
-                  valueColor: colorScheme.onSurface.withValues(alpha: 0.6),
-                  colorScheme: colorScheme,
-                ),
-                const SizedBox(height: 14),
+    final lines = policyText
+        .split('\n')
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty)
+        .toList();
 
-                // Dashed Line Divider
-                CustomPaint(
-                  painter: _DashedLinePainter(
-                    color: isDark ? Colors.white24 : Colors.black12,
-                  ),
-                  size: const Size(double.infinity, 1),
-                ),
-                const SizedBox(height: 14),
-
-                // Total Row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Total Amount to Pay",
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    Text(
-                      "₹${grandTotal.toStringAsFixed(0)}",
-                      style: const TextStyle(
-                        fontSize: 19,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primaryDarkGreen,
-                      ),
-                    ),
-                  ],
-                ),
-
-                // Savings Pill if any
-                if (totalSavings > 0) ...[
-                  const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.check_circle_rounded, size: 16, color: AppColors.primaryDarkGreen),
-                        const SizedBox(width: 6),
-                        Text(
-                          "Total savings of ₹${totalSavings.toStringAsFixed(0)} applied!",
-                          style: const TextStyle(
-                            color: AppColors.primaryDarkGreen,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInvoiceRow(
-    String label,
-    String value, {
-    Color? valueColor,
-    required ColorScheme colorScheme,
-  }) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            color: colorScheme.onSurface.withValues(alpha: 0.6),
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Cancellation policy",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              if (hasPolicy)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    "Venue Specified",
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryDarkGreen,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: valueColor ?? colorScheme.onSurface,
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : const Color(0xFFE5E7EB),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.03),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: lines.map((line) {
+              String cleanLine = line;
+              if (cleanLine.startsWith('•') ||
+                  cleanLine.startsWith('-') ||
+                  cleanLine.startsWith('*')) {
+                cleanLine = cleanLine.substring(1).trim();
+              }
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12.0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2.5, right: 8.0),
+                      child: Text(
+                        "•",
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+                          height: 1.3,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: RichText(
+                        text: TextSpan(
+                          children: _parseInlineBold(
+                            cleanLine,
+                            isDark: isDark,
+                            colorScheme: colorScheme,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
           ),
         ),
       ],
     );
+  }
+
+  List<TextSpan> _parseInlineBold(
+    String text, {
+    required bool isDark,
+    required ColorScheme colorScheme,
+  }) {
+    final normalColor = isDark
+        ? Colors.white.withValues(alpha: 0.72)
+        : const Color(0xFF4B5563);
+    final boldColor = isDark ? Colors.white : const Color(0xFF111827);
+
+    final normalStyle = TextStyle(
+      fontSize: 13,
+      height: 1.45,
+      fontWeight: FontWeight.w400,
+      color: normalColor,
+    );
+
+    final boldStyle = TextStyle(
+      fontSize: 13,
+      height: 1.45,
+      fontWeight: FontWeight.w700,
+      color: boldColor,
+    );
+
+    final List<TextSpan> spans = [];
+    final parts = text.split('**');
+
+    for (int i = 0; i < parts.length; i++) {
+      if (parts[i].isEmpty) continue;
+      if (i % 2 == 1) {
+        // Odd index: inside ** ... **
+        spans.add(TextSpan(text: parts[i], style: boldStyle));
+      } else {
+        // Even index: normal text
+        spans.add(TextSpan(text: parts[i], style: normalStyle));
+      }
+    }
+
+    return spans;
   }
 
   // ─── 5. TRUST & ASSURANCE BANNER ───────────────────────────────
@@ -1367,25 +1338,4 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
   }
 }
 
-// ─── DASHED LINE PAINTER ──────────────────────────────────────────
-class _DashedLinePainter extends CustomPainter {
-  final Color color;
-  _DashedLinePainter({required this.color});
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1;
-    const dashWidth = 5.0;
-    const dashSpace = 4.0;
-    double startX = 0;
-    while (startX < size.width) {
-      canvas.drawLine(Offset(startX, 0), Offset(startX + dashWidth, 0), paint);
-      startX += dashWidth + dashSpace;
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}

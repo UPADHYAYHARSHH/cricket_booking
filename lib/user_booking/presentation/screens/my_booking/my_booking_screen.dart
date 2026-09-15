@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:turfpro/user_booking/presentation/widgets/shared_booking_widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'dart:math';
 import 'package:turfpro/common/widgets/status_badge.dart';
 import 'package:turfpro/utils/ticket_util.dart';
 import 'package:turfpro/utils/qr_crypto.dart';
 import 'package:turfpro/utils/id_util.dart';
+import 'package:turfpro/common/utils/booking_time_util.dart';
 import 'package:turfpro/common/widgets/discover_app_bar.dart';
+import 'package:turfpro/user_booking/domain/models/booking_summary_data.dart';
+import 'package:turfpro/user_booking/presentation/widgets/booking_price_summary_card.dart';
+import 'dart:convert';
 
 import '../../../../common/constants/colors.dart';
 import '../../../constants/text_theme.dart';
@@ -784,6 +785,22 @@ class _BookingCardState extends State<_BookingCard> {
   }
 
   Widget _buildInfoSection(BuildContext context, Color onSurface) {
+    final String? declineReason = () {
+      final raw = widget.booking.notes;
+      if (raw == null || raw.trim().isEmpty) return null;
+      if (raw.trim().startsWith('{')) {
+        try {
+          final decoded = jsonDecode(raw);
+          if (decoded is Map) {
+            return decoded['reason']?.toString() ??
+                decoded['decline_reason']?.toString();
+          }
+        } catch (_) {}
+        return null;
+      }
+      return raw;
+    }();
+
     return Padding(
       padding: const EdgeInsets.all(14),
       child: Column(
@@ -874,7 +891,9 @@ class _BookingCardState extends State<_BookingCard> {
               ),
             ],
           ),
-          if (widget.booking.status.toLowerCase() == 'declined' && widget.booking.notes != null && widget.booking.notes!.isNotEmpty) ...[
+          if (widget.booking.status.toLowerCase() == 'declined' &&
+              declineReason != null &&
+              declineReason.isNotEmpty) ...[
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(10),
@@ -885,12 +904,12 @@ class _BookingCardState extends State<_BookingCard> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, size: 16, color: Colors.red),
+                  const Icon(Icons.info_outline, size: 16, color: Colors.red),
                   const SizedBox(width: 8),
                   Expanded(
                     child: AppText(
-                      text: "Reason: ${widget.booking.notes}",
-                      textStyle: TextStyle(
+                      text: "Reason: $declineReason",
+                      textStyle: const TextStyle(
                         fontSize: 12,
                         color: Colors.red,
                         fontWeight: FontWeight.w600,
@@ -1067,6 +1086,7 @@ class _BookingCardState extends State<_BookingCard> {
       void onPaidSuccessfully(String id) async {
         isPolling = false;
         try {
+          final summaryData = BookingSummaryData.fromBookingModel(widget.booking);
           await paymentRepo.confirmApprovedBookingPayment(
             bookingId: widget.booking.id,
             paymentId: id,
@@ -1074,6 +1094,7 @@ class _BookingCardState extends State<_BookingCard> {
             groundId: widget.booking.groundId,
             slotTime: widget.booking.slotTime,
             amount: amount,
+            summaryData: summaryData,
           );
           if (!mounted) return;
           context.read<BookingCubit>().getBookings();
@@ -1402,6 +1423,10 @@ class _BookingCardState extends State<_BookingCard> {
             platformFee: widget.booking.platformFee,
             isCheckedIn: widget.booking.checkedIn,
             checkedInAt: widget.booking.checkedInAt,
+            createdAt: widget.booking.createdAt,
+            status: widget.booking.status,
+            summaryData:
+                BookingSummaryData.fromBookingModel(widget.booking),
           ),
         ),
       ),
@@ -1590,18 +1615,24 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final double discountAmount = 0.0; // TODO: Fetch from actual booking model
     final theme = Theme.of(context);
-    String timeStr = widget.ticket.period.split('|').first;
-    if (_bookedSlots.isNotEmpty) {
-      timeStr = _bookedSlots.map((s) => "${s.startTime} - ${s.endTime}").join(', ');
-    } else if (widget.ticket.period.contains('|')) {
-      timeStr = widget.ticket.period.split('|').last.trim();
-    }
+    final timeStr = BookingTimeUtil.formatBookingTime(
+      period: widget.ticket.period,
+      slotTime: widget.ticket.date,
+    );
     
-    final String displayIdStr = (widget.ticket.displayId != 0)
-        ? widget.ticket.displayId.toString().padLeft(3, '0')
-        : IdUtil.getShortId(widget.ticket.bookingId);
+    final String displayIdStr = IdUtil.formatBookingId(
+      widget.ticket.displayId,
+      widget.ticket.bookingId,
+    );
+
+    final rawStatus = (widget.ticket.status ?? (widget.ticket.isPaid ? 'confirmed' : 'pending')).toLowerCase();
+    final isConfirmed = rawStatus == 'confirmed' || rawStatus == 'paid';
+    final statusDisplay = isConfirmed
+        ? 'Confirmed'
+        : (rawStatus.isNotEmpty ? '${rawStatus[0].toUpperCase()}${rawStatus.substring(1)}' : 'Pending');
+    final badgeColor = isConfirmed ? const Color(0xFF2E7D32) : const Color(0xFFEF6C00);
+    final badgeBg = isConfirmed ? const Color(0xFFE8F5E9) : const Color(0xFFFFF3E0);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -1639,7 +1670,7 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header with booking id and status badge
+            // Header with booking id, booked on date, and status badge
             Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
@@ -1648,13 +1679,29 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
-                    child: AppText(
-                      text: "Booking #CB$displayIdStr",
-                      textStyle: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurface,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppText(
+                          text: "Booking #CB$displayIdStr",
+                          textStyle: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                        if (widget.ticket.createdAt != null) ...[
+                          const SizedBox(height: 3),
+                          AppText(
+                            text: "Booked on ${DateFormat('d MMM yyyy, h:mm a').format(widget.ticket.createdAt!)}",
+                            textStyle: TextStyle(
+                              fontSize: 11,
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -1662,20 +1709,20 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
                     margin: const EdgeInsets.only(top: 2),
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                     decoration: BoxDecoration(
-                      color: widget.ticket.isPaid ? const Color(0xFFE8F5E9) : const Color(0xFFFFF3E0),
+                      color: badgeBg,
                       borderRadius: BorderRadius.circular(100),
                       boxShadow: [
                         BoxShadow(
-                          color: (widget.ticket.isPaid ? const Color(0xFF4CAF50) : const Color(0xFFFF9800)).withValues(alpha: 0.15),
+                          color: badgeColor.withValues(alpha: 0.15),
                           blurRadius: 6,
                           offset: const Offset(0, 2),
                         ),
                       ],
                     ),
                     child: AppText(
-                      text: widget.ticket.isPaid ? "Confirmed" : "Pending",
+                      text: statusDisplay,
                       textStyle: TextStyle(
-                        color: widget.ticket.isPaid ? const Color(0xFF2E7D32) : const Color(0xFFEF6C00),
+                        color: badgeColor,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1772,43 +1819,21 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
                   ),
 
                   const SizedBox(height: 24),
-                  const SectionLabel(title: "PAYMENT SUMMARY"),
-                  const SizedBox(height: 12),
-
-                  SectionCard(
-                    child: Column(
-                      children: [
-                        PaymentRow(
-                          label: "Slot Booking Amount",
-                          value: "₹${(widget.ticket.price - widget.ticket.platformFee).clamp(0.0, widget.ticket.price).toStringAsFixed(0)}",
+                  BookingPriceSummaryCard(
+                    summaryData: widget.ticket.summaryData ??
+                        BookingSummaryData(
+                          slotPrice: (widget.ticket.price -
+                                  widget.ticket.platformFee)
+                              .clamp(0.0, widget.ticket.price),
+                          gstAmount: 0.0,
+                          platformFee: widget.ticket.platformFee,
+                          isPlatformFeeFree: widget.ticket.platformFee == 0.0,
+                          pointsDiscount: 0.0,
+                          walletDiscount: 0.0,
+                          grandTotal: widget.ticket.price,
                         ),
-                        const RowDivider(),
-                        PaymentRow(
-                          label: "Platform Fee",
-                          value: "+ ₹${widget.ticket.platformFee.toStringAsFixed(0)}",
-                        ),
-                        const RowDivider(),
-                        if (discountAmount > 0) ...[
-                          PaymentRow(
-                            label: "Discount",
-                            value: "- ₹${discountAmount.toStringAsFixed(0)}",
-                            valueColor: const Color(0xFFE53935),
-                          ),
-                          const RowDivider(),
-                        ],
-
-                        const PaymentRow(
-                          label: "Taxes & Charges",
-                          value: "Included",
-                        ),
-                        const RowDivider(),
-                        PaymentRow(
-                          label: "Total Paid",
-                          value: "₹${widget.ticket.price.toStringAsFixed(0)}",
-                          valueColor: AppColors.primaryDarkGreen,
-                        ),
-                      ],
-                    ),
+                    title: "Booking summary",
+                    totalLabel: isConfirmed ? "Total Paid" : "Total Amount to Pay",
                   ),
 
                   const SizedBox(height: 24),
@@ -2048,6 +2073,9 @@ class TicketModel {
   final double platformFee;
   final bool isCheckedIn;
   final DateTime? checkedInAt;
+  final DateTime? createdAt;
+  final String? status;
+  final BookingSummaryData? summaryData;
 
   TicketModel({
     required this.bookingId,
@@ -2073,6 +2101,9 @@ class TicketModel {
     this.platformFee = 0.0,
     this.isCheckedIn = false,
     this.checkedInAt,
+    this.createdAt,
+    this.status,
+    this.summaryData,
   });
 }
 

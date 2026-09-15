@@ -28,4 +28,18 @@ class IdUtil {
   static String formatDisplayId(int displayId) {
     return displayId.toString().padLeft(3, '0');
   }
+
+  static String formatBookingId(dynamic rawDisplayId, dynamic rawId) {
+    if (rawDisplayId != null) {
+      final parsed = int.tryParse(rawDisplayId.toString());
+      if (parsed != null && parsed > 0) {
+        return parsed.toString().padLeft(3, '0');
+      }
+      final s = rawDisplayId.toString().trim();
+      if (s.isNotEmpty && s != '0') {
+        return s;
+      }
+    }
+    return getShortId((rawId ?? '').toString());
+  }
 }

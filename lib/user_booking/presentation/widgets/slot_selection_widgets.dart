@@ -2383,7 +2383,7 @@ class SlotSelectionWidgets {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const AppText(
-            text: "RULES & PRIVACY POLICY",
+            text: "REFUND POLICY",
             textStyle: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,

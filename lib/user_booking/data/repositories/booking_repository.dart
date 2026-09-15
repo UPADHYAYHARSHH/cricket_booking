@@ -109,26 +109,35 @@ class BookingRepository {
       }
     }
 
-    // Ensure created_at and approved_at are populated
-    final missingDateIds = uniqueBookings.entries
-        .where((e) => e.value['created_at'] == null || e.value['approved_at'] == null)
-        .map((e) => e.key)
-        .toList();
-    if (missingDateIds.isNotEmpty) {
+    // Ensure display_id, notes, created_at, and approved_at are populated from bookings table
+    final allBookingIds = uniqueBookings.keys.toList();
+    if (allBookingIds.isNotEmpty) {
       try {
-        final datesRes = await _supabase
+        final bookingRows = await _supabase
             .from('bookings')
-            .select('id, created_at, approved_at')
-            .inFilter('id', missingDateIds);
-        for (var row in (datesRes as List)) {
+            .select('id, display_id, notes, created_at, approved_at, base_amount, platform_fee')
+            .inFilter('id', allBookingIds);
+        for (var row in (bookingRows as List)) {
           final id = row['id']?.toString();
           if (id != null && uniqueBookings.containsKey(id)) {
+            if (row['display_id'] != null) {
+              uniqueBookings[id]['display_id'] = row['display_id'];
+            }
+            if (row['notes'] != null) {
+              uniqueBookings[id]['notes'] = row['notes'];
+            }
+            if (row['base_amount'] != null) {
+              uniqueBookings[id]['base_amount'] = row['base_amount'];
+            }
+            if (row['platform_fee'] != null) {
+              uniqueBookings[id]['platform_fee'] = row['platform_fee'];
+            }
             uniqueBookings[id]['created_at'] ??= row['created_at'];
             uniqueBookings[id]['approved_at'] ??= row['approved_at'];
           }
         }
       } catch (e) {
-        debugPrint("[BOOKING_REPO] Note: direct dates query fallback: $e");
+        debugPrint("[BOOKING_REPO] Note: direct bookings fields query fallback: $e");
       }
     }
 

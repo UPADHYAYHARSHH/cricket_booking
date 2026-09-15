@@ -393,20 +393,6 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                               ),
                             ),
 
-                          // Privacy Policy
-                          if ((state.selectedTurf?.privacyPolicy ?? '').isNotEmpty || (displayVenue?.privacyPolicy ?? '').isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                              child: SlotSelectionWidgets.buildPremiumCard(
-                                context: context,
-                                child: SlotSelectionWidgets.buildPrivacyPolicySection(
-                                    context,
-                                    (state.selectedTurf?.privacyPolicy ?? '').isNotEmpty
-                                        ? state.selectedTurf?.privacyPolicy
-                                        : displayVenue?.privacyPolicy),
-                              ),
-                            ),
-
                           // Description
                           Builder(
                             builder: (context) {

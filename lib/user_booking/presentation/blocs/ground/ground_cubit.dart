@@ -113,12 +113,14 @@ class GroundCubit extends Cubit<GroundState> {
           totalReviews: g.totalReviews,
           description: g.description,
           locationDescription: g.locationDescription,
+          privacyPolicy: g.privacyPolicy,
           amenities: g.amenities,
           images: g.images,
           categories: g.categories,
           ownerId: g.ownerId,
           locationId: g.locationId,
           isAvailable: g.isAvailable,
+          operatingDays: g.operatingDays,
         );
       }
       return g;

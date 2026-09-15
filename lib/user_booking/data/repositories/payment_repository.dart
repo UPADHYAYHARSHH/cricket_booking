@@ -3,7 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:turfpro/common/services/remote_config_service.dart';
+import 'package:turfpro/common/utils/booking_time_util.dart';
 import 'package:turfpro/user_booking/domain/models/slot_models.dart';
+import 'package:turfpro/user_booking/domain/models/booking_summary_data.dart';
 
 class PaymentRepository {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -103,6 +105,7 @@ class PaymentRepository {
     String? sportName,
     String? period,
     List<String>? slotStartTimes,
+    BookingSummaryData? summaryData,
   }) async {
     debugPrint('PaymentRepository: saveBooking called');
     final user = FirebaseAuth.instance.currentUser;
@@ -110,8 +113,16 @@ class PaymentRepository {
 
     debugPrint('PaymentRepository: Inserting booking via RPC');
 
+    final String cleanPeriodLabel;
+    if (period != null &&
+        {'morning', 'afternoon', 'evening', 'night'}.contains(period.trim().toLowerCase())) {
+      cleanPeriodLabel = '${period.trim()[0].toUpperCase()}${period.trim().substring(1).toLowerCase()}';
+    } else {
+      cleanPeriodLabel = BookingTimeUtil.resolvePeriodLabel(
+          slotStartTimes?.isNotEmpty == true ? slotStartTimes!.first : null);
+    }
     final combinedPeriod =
-        "${period ?? 'Day'}|${slotStartTimes?.join(',') ?? ''}";
+        "$cleanPeriodLabel|${slotStartTimes?.join(',') ?? ''}";
 
     final response = await _supabase.rpc('save_booking', params: {
       'p_user_id': user.uid,
@@ -191,7 +202,8 @@ class PaymentRepository {
       debugPrint('Error sending owner notification for saveBooking: $e');
     }
 
-    await _updateBookingFinancialSnapshot(response, amount.toDouble());
+    await _updateBookingFinancialSnapshot(response, amount.toDouble(),
+        summaryData: summaryData);
 
     if (response is String) {
       return jsonDecode(response) as Map<String, dynamic>;
@@ -231,6 +243,7 @@ class PaymentRepository {
     String? groundAddress,
     int appliedPoints = 0,
     double appliedWallet = 0.0,
+    BookingSummaryData? summaryData,
   }) async {
     debugPrint('PaymentRepository: requestBooking called');
     final user = FirebaseAuth.instance.currentUser;
@@ -251,7 +264,7 @@ class PaymentRepository {
     //   Evening   = 16:00 – 20:00
     //   Night     = 20:00 – 06:00   (includes midnight hours)
     //   Midnight  = fallback for empty strings
-    String _resolvePeriodLabel(String? startTimeLabel) {
+    String resolvePeriodLabel(String? startTimeLabel) {
       if (startTimeLabel == null || startTimeLabel.trim().isEmpty) {
         return 'Night';
       }
@@ -264,7 +277,6 @@ class PaymentRepository {
       } catch (_) {
         return 'Night';
       }
-      final m = hhmm.length > 1 ? int.tryParse(hhmm[1]) ?? 0 : 0;
       final ampm = parts.length > 1 ? parts[1] : '';
       if (ampm == 'PM' && h != 12) h += 12;
       if (ampm == 'AM' && h == 12) h = 0;
@@ -282,9 +294,9 @@ class PaymentRepository {
     if (period != null && period.trim().isNotEmpty) {
       derivedLabel = period.trim();
     } else if (effectiveSlotTimes.isNotEmpty) {
-      derivedLabel = _resolvePeriodLabel(effectiveSlotTimes.first);
+      derivedLabel = resolvePeriodLabel(effectiveSlotTimes.first);
     } else {
-      derivedLabel = _resolvePeriodLabel(null);
+      derivedLabel = resolvePeriodLabel(null);
     }
     debugPrint('[PAYMENT_REPO] slotStartTimes=$effectiveSlotTimes period=$period -> derivedLabel=$derivedLabel');
 
@@ -440,7 +452,8 @@ class PaymentRepository {
       }
     }
 
-    await _updateBookingFinancialSnapshot(response, effectiveAmount.toDouble());
+    await _updateBookingFinancialSnapshot(response, effectiveAmount.toDouble(),
+        summaryData: summaryData);
 
     if (response is String) {
       return jsonDecode(response) as Map<String, dynamic>;
@@ -458,6 +471,7 @@ class PaymentRepository {
     DateTime? slotTime,
     required double amount,
     List<String>? slotStartTimes,
+    BookingSummaryData? summaryData,
   }) async {
     final Map<String, dynamic> updateData = {
       'status': 'paid',
@@ -562,7 +576,8 @@ class PaymentRepository {
       debugPrint('Error notifying owner of approved booking payment: $e');
     }
 
-    await _updateBookingFinancialSnapshot(updateRes, amount);
+    await _updateBookingFinancialSnapshot(updateRes, amount,
+        summaryData: summaryData);
     return updateRes;
   }
 
@@ -658,26 +673,30 @@ class PaymentRepository {
   }
 
   Future<void> _updateBookingFinancialSnapshot(
-      dynamic bookingResponse, double totalAmount) async {
+      dynamic bookingResponse, double totalAmount,
+      {BookingSummaryData? summaryData}) async {
     try {
       debugPrint(
-          '?? _updateBookingFinancialSnapshot called with totalAmount: $totalAmount');
+          '🔍 _updateBookingFinancialSnapshot called with totalAmount: $totalAmount');
       debugPrint(
-          '?? Raw bookingResponse: $bookingResponse (${bookingResponse.runtimeType})');
+          '🔍 Raw bookingResponse: $bookingResponse (${bookingResponse.runtimeType})');
 
       String? bookingId;
+      Map<String, dynamic>? responseMap;
       if (bookingResponse is Map) {
-        bookingId = bookingResponse['id']?.toString() ??
-            bookingResponse['booking_id']?.toString();
+        responseMap = Map<String, dynamic>.from(bookingResponse);
+        bookingId = responseMap['id']?.toString() ??
+            responseMap['booking_id']?.toString();
       } else if (bookingResponse is String) {
         try {
           final decoded = jsonDecode(bookingResponse);
           if (decoded is Map) {
+            responseMap = Map<String, dynamic>.from(decoded);
             bookingId =
-                decoded['id']?.toString() ?? decoded['booking_id']?.toString();
+                responseMap['id']?.toString() ?? responseMap['booking_id']?.toString();
           }
         } catch (e) {
-          debugPrint('?? Error decoding bookingResponse JSON: $e');
+          debugPrint('⚠️ Error decoding bookingResponse JSON: $e');
         }
       }
 
@@ -686,46 +705,86 @@ class PaymentRepository {
       // Fallback: If bookingId couldn't be extracted from RPC response, find latest booking for user
       if ((bookingId == null || bookingId.isEmpty) && user != null) {
         debugPrint(
-            '?? bookingId not found in RPC response, querying latest booking for user ${user.uid}...');
+            '🔍 bookingId not found in RPC response, querying latest booking for user ${user.uid}...');
         final List latestRows = await _supabase
             .from('bookings')
-            .select('id')
+            .select('*')
             .eq('user_id', user.uid)
             .order('created_at', ascending: false)
             .limit(1);
         if (latestRows.isNotEmpty) {
-          bookingId = latestRows.first['id']?.toString();
-          debugPrint('?? Found latest bookingId from DB query: $bookingId');
+          responseMap = Map<String, dynamic>.from(latestRows.first);
+          bookingId = responseMap['id']?.toString();
+          debugPrint('🔍 Found latest bookingId from DB query: $bookingId');
         }
       }
 
-      double currentPlatformFee = RemoteConfigService().platformFee;
-            double currentCommissionRate = RemoteConfigService().commissionRate;
-      bool currentCommissionIsPercentage =
+      // If summaryData was not directly passed, attempt to parse from booking notes
+      BookingSummaryData? effectiveSummary = summaryData;
+      if (effectiveSummary == null && responseMap != null && responseMap['notes'] != null) {
+        try {
+          final notesStr = responseMap['notes'].toString().trim();
+          if (notesStr.startsWith('{') && notesStr.endsWith('}')) {
+            effectiveSummary = BookingSummaryData.fromJson(jsonDecode(notesStr));
+          }
+        } catch (_) {}
+      }
+
+      // If still null, try fetching existing booking from DB to see if notes were stored earlier
+      if (effectiveSummary == null && bookingId != null) {
+        try {
+          final existing = await _supabase.from('bookings').select('notes').eq('id', bookingId).maybeSingle();
+          if (existing != null && existing['notes'] != null) {
+            final notesStr = existing['notes'].toString().trim();
+            if (notesStr.startsWith('{') && notesStr.endsWith('}')) {
+              effectiveSummary = BookingSummaryData.fromJson(jsonDecode(notesStr));
+            }
+          }
+        } catch (_) {}
+      }
+
+      final double currentPlatformFee = effectiveSummary?.platformFee ?? RemoteConfigService().platformFee;
+      final bool isPlatformFeeFree = effectiveSummary?.isPlatformFeeFree ??
+          RemoteConfigService().isPlatformFeeFree;
+      final double currentCommissionRate = RemoteConfigService().commissionRate;
+      final bool currentCommissionIsPercentage =
           RemoteConfigService().commissionIsPercentage;
 
-      final double baseAmount =
-          (totalAmount - currentPlatformFee).clamp(0.0, totalAmount);
+      // When platform fee is free: do NOT deduct platform fee from the price, give all price to the owner.
+      // When platform fee is not free: deduct the platform fee from the total paid to get the slot base price.
+      final double baseAmount;
+      if (effectiveSummary != null && effectiveSummary.slotPrice > 0) {
+        baseAmount = effectiveSummary.slotPrice;
+      } else if (isPlatformFeeFree) {
+        baseAmount = totalAmount;
+      } else {
+        baseAmount = (totalAmount - currentPlatformFee).clamp(0.0, totalAmount);
+      }
+
       final double commissionDeduction = currentCommissionIsPercentage
           ? (baseAmount * (currentCommissionRate / 100.0))
           : currentCommissionRate;
-      final double ownerEarnings =
-          (baseAmount - commissionDeduction).clamp(0.0, baseAmount);
+
+      final Map<String, dynamic> updateFields = {
+        'platform_fee': currentPlatformFee,
+        'commission_rate': currentCommissionRate,
+        'commission_is_percentage': currentCommissionIsPercentage,
+        'base_amount': effectiveSummary?.grandTotal ?? 0,
+        'owner_earnings': baseAmount,
+      };
+
+      if (effectiveSummary != null) {
+        updateFields['notes'] = jsonEncode(effectiveSummary.toJson());
+      }
 
       if (bookingId != null && bookingId.isNotEmpty) {
         final updateRes = await _supabase
             .from('bookings')
-            .update({
-              'platform_fee': currentPlatformFee,
-              'commission_rate': currentCommissionRate,
-              'commission_is_percentage': currentCommissionIsPercentage,
-              'base_amount': baseAmount,
-              'owner_earnings': ownerEarnings,
-            })
+            .update(updateFields)
             .eq('id', bookingId)
             .select();
         debugPrint(
-            '? FINANCIAL SNAPSHOT UPDATED FOR BOOKING $bookingId: $updateRes');
+            '✅ FINANCIAL SNAPSHOT UPDATED FOR BOOKING $bookingId: $updateRes');
       } else {
         debugPrint('? FAILED TO RESOLVE BOOKING ID FOR FINANCIAL SNAPSHOT!');
       }
@@ -743,6 +802,7 @@ class PaymentRepository {
     String? sportName,
     String? period,
     String? orderId,
+    BookingSummaryData? summaryData,
   }) async {
     debugPrint(
         'PaymentRepository: saveDirectBooking called - Ground: $groundId, Date: $date, Amount: $amount');
@@ -753,7 +813,15 @@ class PaymentRepository {
     }
 
     try {
-      final combinedPeriod = "${period ?? 'Day'}|${slotStartTimes.join(',')}";
+      final String cleanPeriodLabel;
+      if (period != null &&
+          {'morning', 'afternoon', 'evening', 'night'}.contains(period.trim().toLowerCase())) {
+        cleanPeriodLabel = '${period.trim()[0].toUpperCase()}${period.trim().substring(1).toLowerCase()}';
+      } else {
+        cleanPeriodLabel = BookingTimeUtil.resolvePeriodLabel(
+            slotStartTimes.isNotEmpty ? slotStartTimes.first : null);
+      }
+      final combinedPeriod = "$cleanPeriodLabel|${slotStartTimes.join(',')}";
 
       debugPrint('PaymentRepository: Inserting booking via RPC');
       final Map<String, dynamic> rpcParams = {
@@ -775,7 +843,8 @@ class PaymentRepository {
           await _supabase.rpc('save_booking', params: rpcParams);
       debugPrint('PaymentRepository: Booking record created successfully. Response: $bookingResponse');
 
-      await _updateBookingFinancialSnapshot(bookingResponse, amount.toDouble());
+      await _updateBookingFinancialSnapshot(bookingResponse, amount.toDouble(),
+          summaryData: summaryData);
 
       // 2. Block Slots in Database via RPC
       final formattedDate =
