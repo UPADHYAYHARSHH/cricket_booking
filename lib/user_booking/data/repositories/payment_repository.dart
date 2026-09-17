@@ -303,6 +303,22 @@ class PaymentRepository {
     final combinedPeriod = "$derivedLabel|${effectiveSlotTimes.join(',')}";
     debugPrint('[PAYMENT_REPO] combinedPeriod stored in DB = $combinedPeriod');
 
+    final rc = RemoteConfigService();
+    final double earlyPlatformFee = summaryData?.platformFee ?? rc.platformFee;
+    final bool earlyIsPlatformFeeFree = summaryData?.isPlatformFeeFree ?? rc.isPlatformFeeFree;
+    final double earlyGstAmount = summaryData?.gstAmount ?? rc.calculateGst(effectiveAmount.toDouble());
+    final double earlyCommissionRate = rc.commissionRate;
+    final bool earlyCommissionIsPercentage = rc.commissionIsPercentage;
+    final double earlyBaseAmount = summaryData != null && summaryData.slotPrice > 0
+        ? summaryData.slotPrice
+        : (earlyIsPlatformFeeFree
+            ? (effectiveAmount - earlyGstAmount).clamp(0.0, effectiveAmount.toDouble())
+            : (effectiveAmount - earlyPlatformFee - earlyGstAmount).clamp(0.0, effectiveAmount.toDouble()));
+    final double earlyCommissionDeduction = earlyCommissionIsPercentage
+        ? (earlyBaseAmount * (earlyCommissionRate / 100.0))
+        : earlyCommissionRate;
+    final double earlyOwnerEarnings = (earlyBaseAmount - earlyCommissionDeduction).clamp(0.0, earlyBaseAmount);
+
     dynamic response;
     try {
       response = await _supabase.rpc('request_booking', params: {
@@ -312,6 +328,11 @@ class PaymentRepository {
         'p_amount': effectiveAmount,
         'p_sport_name': effectiveSport,
         'p_period': combinedPeriod,
+        'p_platform_fee': earlyPlatformFee,
+        'p_commission_rate': earlyCommissionRate,
+        'p_commission_is_percentage': earlyCommissionIsPercentage,
+        'p_base_amount': earlyBaseAmount,
+        'p_owner_earnings': earlyOwnerEarnings,
         'p_player_name': user.displayName ?? 'Player',
         'p_player_phone': user.phoneNumber ?? '',
       });
@@ -332,6 +353,24 @@ class PaymentRepository {
         });
       } catch (saveErr) {
         debugPrint('Fallback to direct insert for requestBooking: $saveErr');
+        final notesData = summaryData != null
+            ? Map<String, dynamic>.from(summaryData.toJson())
+            : <String, dynamic>{
+                'slot_price': earlyBaseAmount,
+                'gst_amount': earlyGstAmount,
+                'platform_fee': earlyPlatformFee,
+                'is_platform_fee_free': earlyIsPlatformFeeFree,
+                'points_discount': 0.0,
+                'wallet_discount': 0.0,
+                'grand_total': effectiveAmount,
+              };
+        notesData['owner_earnings'] = earlyOwnerEarnings;
+        notesData['commission_fee'] = earlyCommissionDeduction;
+        notesData['commission_rate'] = earlyCommissionRate;
+        notesData['commission_is_percentage'] = earlyCommissionIsPercentage;
+        notesData['is_platform_fee_free'] = earlyIsPlatformFeeFree;
+        notesData['gst_amount'] = earlyGstAmount;
+
         final res = await _supabase.from('bookings').insert({
           'user_id': user.uid,
           'ground_id': groundId,
@@ -340,6 +379,12 @@ class PaymentRepository {
           'status': 'requested',
           'sport_name': effectiveSport,
           'period': combinedPeriod,
+          'platform_fee': earlyPlatformFee,
+          'commission_rate': earlyCommissionRate,
+          'commission_is_percentage': earlyCommissionIsPercentage,
+          'base_amount': earlyBaseAmount,
+          'owner_earnings': earlyOwnerEarnings,
+          'notes': jsonEncode(notesData),
           'created_at': DateTime.now().toUtc().toIso8601String(),
         }).select().single();
         response = res;
@@ -746,36 +791,55 @@ class PaymentRepository {
       final double currentPlatformFee = effectiveSummary?.platformFee ?? RemoteConfigService().platformFee;
       final bool isPlatformFeeFree = effectiveSummary?.isPlatformFeeFree ??
           RemoteConfigService().isPlatformFeeFree;
+      final double currentGstAmount = effectiveSummary?.gstAmount ??
+          RemoteConfigService().calculateGst(totalAmount);
       final double currentCommissionRate = RemoteConfigService().commissionRate;
       final bool currentCommissionIsPercentage =
           RemoteConfigService().commissionIsPercentage;
 
-      // When platform fee is free: do NOT deduct platform fee from the price, give all price to the owner.
-      // When platform fee is not free: deduct the platform fee from the total paid to get the slot base price.
+      // Deduct platform fee (if not free) and GST to resolve owner's gross slot base price
       final double baseAmount;
       if (effectiveSummary != null && effectiveSummary.slotPrice > 0) {
         baseAmount = effectiveSummary.slotPrice;
       } else if (isPlatformFeeFree) {
-        baseAmount = totalAmount;
+        baseAmount = (totalAmount - currentGstAmount).clamp(0.0, totalAmount);
       } else {
-        baseAmount = (totalAmount - currentPlatformFee).clamp(0.0, totalAmount);
+        baseAmount = (totalAmount - currentPlatformFee - currentGstAmount).clamp(0.0, totalAmount);
       }
 
       final double commissionDeduction = currentCommissionIsPercentage
           ? (baseAmount * (currentCommissionRate / 100.0))
           : currentCommissionRate;
 
+      final double calculatedOwnerEarnings =
+          (baseAmount - commissionDeduction).clamp(0.0, baseAmount);
+
+      final Map<String, dynamic> notesMap = effectiveSummary != null
+          ? Map<String, dynamic>.from(effectiveSummary.toJson())
+          : <String, dynamic>{
+              'slot_price': baseAmount,
+              'gst_amount': currentGstAmount,
+              'platform_fee': currentPlatformFee,
+              'is_platform_fee_free': isPlatformFeeFree,
+              'points_discount': 0.0,
+              'wallet_discount': 0.0,
+              'grand_total': totalAmount,
+            };
+      notesMap['owner_earnings'] = calculatedOwnerEarnings;
+      notesMap['commission_fee'] = commissionDeduction;
+      notesMap['commission_rate'] = currentCommissionRate;
+      notesMap['commission_is_percentage'] = currentCommissionIsPercentage;
+      notesMap['is_platform_fee_free'] = isPlatformFeeFree;
+      notesMap['gst_amount'] = currentGstAmount;
+
       final Map<String, dynamic> updateFields = {
         'platform_fee': currentPlatformFee,
         'commission_rate': currentCommissionRate,
         'commission_is_percentage': currentCommissionIsPercentage,
-        'base_amount': effectiveSummary?.grandTotal ?? 0,
-        'owner_earnings': baseAmount,
+        'base_amount': baseAmount,
+        'owner_earnings': calculatedOwnerEarnings,
+        'notes': jsonEncode(notesMap),
       };
-
-      if (effectiveSummary != null) {
-        updateFields['notes'] = jsonEncode(effectiveSummary.toJson());
-      }
 
       if (bookingId != null && bookingId.isNotEmpty) {
         final updateRes = await _supabase
@@ -786,7 +850,7 @@ class PaymentRepository {
         debugPrint(
             '✅ FINANCIAL SNAPSHOT UPDATED FOR BOOKING $bookingId: $updateRes');
       } else {
-        debugPrint('? FAILED TO RESOLVE BOOKING ID FOR FINANCIAL SNAPSHOT!');
+        debugPrint('⚠️ FAILED TO RESOLVE BOOKING ID FOR FINANCIAL SNAPSHOT!');
       }
     } catch (e, stack) {
       debugPrint('? EXCEPTION IN _updateBookingFinancialSnapshot: $e\n$stack');

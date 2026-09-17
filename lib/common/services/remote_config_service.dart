@@ -32,132 +32,137 @@ class RemoteConfigService {
 
   Future<void> initialize() async {
     try {
-      debugPrint('🚀 REMOTE CONFIG INIT STARTED (Firebase & Supabase)');
+      debugPrint('🚀 REMOTE CONFIG INIT STARTED (Firebase Remote Config)');
 
       // 1. Initialize Firebase Remote Config
-      try {
-        final remoteConfig = FirebaseRemoteConfig.instance;
-        await remoteConfig.setConfigSettings(RemoteConfigSettings(
-          fetchTimeout: const Duration(seconds: 10),
-          minimumFetchInterval: Duration.zero,
-        ));
-        await remoteConfig.fetchAndActivate();
+      final remoteConfig = FirebaseRemoteConfig.instance;
+      await remoteConfig.setConfigSettings(RemoteConfigSettings(
+        fetchTimeout: const Duration(seconds: 10),
+        minimumFetchInterval: Duration.zero,
+      ));
+      await remoteConfig.fetchAndActivate();
+      _readFromFirebase(remoteConfig);
+
+      // Realtime listener for Firebase Remote Config
+      _remoteConfigSubscription = remoteConfig.onConfigUpdated.listen((event) async {
+        debugPrint('🚀 FIREBASE REMOTE CONFIG UPDATED (User App): ${event.updatedKeys}');
+        await remoteConfig.activate();
         _readFromFirebase(remoteConfig);
-
-        _remoteConfigSubscription = remoteConfig.onConfigUpdated.listen((event) async {
-          debugPrint('🚀 FIREBASE REMOTE CONFIG UPDATED (User App)');
-          await remoteConfig.activate();
-          _readFromFirebase(remoteConfig);
-          _maintenanceController.add(isMaintenanceMode);
-          _configUpdateController.add(null);
-        });
-      } catch (e) {
-        debugPrint('⚠️ FIREBASE REMOTE CONFIG INIT NOTICE: $e');
-      }
-
-      // 2. Fetch Supabase App Config (Realtime Sync & Fallback)
-      await fetchAndActivate();
+        _maintenanceController.add(isMaintenanceMode);
+        _configUpdateController.add(null);
+      });
 
       _maintenanceController.add(isMaintenanceMode);
       _configUpdateController.add(null);
 
-      Supabase.instance.client
-          .channel('public:app_config')
-          .onPostgresChanges(
-            event: PostgresChangeEvent.all,
-            schema: 'public',
-            table: 'app_config',
-            callback: (payload) async {
-              debugPrint('🚀 SUPABASE CONFIG UPDATED: ${payload.newRecord}');
-              await fetchAndActivate();
-              _maintenanceController.add(isMaintenanceMode);
-              _configUpdateController.add(null);
-            },
-          )
-          .subscribe((status, [error]) {
-            debugPrint('🚀 REALTIME STATUS: $status');
-            if (error != null) {
-              debugPrint('❌ REALTIME ERROR: $error');
-            }
-          });
+      // 2. Optional Supabase Realtime Fallback (fail-safe)
+      try {
+        Supabase.instance.client
+            .channel('public:app_config')
+            .onPostgresChanges(
+              event: PostgresChangeEvent.all,
+              schema: 'public',
+              table: 'app_config',
+              callback: (payload) async {
+                debugPrint('🚀 SUPABASE CONFIG UPDATED: ${payload.newRecord}');
+                await fetchAndActivate();
+              },
+            )
+            .subscribe();
+      } catch (e) {
+        debugPrint('ℹ️ Supabase config channel skipped/unavailable: $e');
+      }
     } catch (e, stack) {
-      debugPrint('❌ REMOTE CONFIG INITIALIZATION FAILED');
-      debugPrint(e.toString());
+      debugPrint('❌ REMOTE CONFIG INITIALIZATION FAILED: $e');
       debugPrint(stack.toString());
     }
   }
 
   void _readFromFirebase(FirebaseRemoteConfig remoteConfig) {
     try {
-      final keys = remoteConfig.getAll();
-      if (keys.containsKey('platform_fee')) {
-        final feeNum = remoteConfig.getDouble('platform_fee');
-        if (feeNum > 0) {
-          _platformFee = feeNum;
-        } else {
-          _platformFee = double.tryParse(remoteConfig.getString('platform_fee')) ?? _platformFee;
+      // Platform Fee / Convenience Fee
+      final pfStr = remoteConfig.getString('platform_fee');
+      if (pfStr.isNotEmpty) {
+        final parsed = double.tryParse(pfStr);
+        if (parsed != null) _platformFee = parsed;
+      }
+
+      final convStr = remoteConfig.getString('convenience_fee');
+      if (convStr.isNotEmpty) {
+        final parsed = double.tryParse(convStr);
+        if (parsed != null) _convenienceFee = parsed;
+      }
+
+      if (_platformFee == 0 && _convenienceFee > 0) {
+        _platformFee = _convenienceFee;
+      }
+
+      // Free status
+      final pfFreeStr = remoteConfig.getString('platform_fee_is_free');
+      if (pfFreeStr.isNotEmpty) {
+        _isConvenienceFeeFree = pfFreeStr.toLowerCase() == 'true' || pfFreeStr == '1';
+      } else {
+        final convFreeStr = remoteConfig.getString('convenience_fee_is_free');
+        if (convFreeStr.isNotEmpty) {
+          _isConvenienceFeeFree = convFreeStr.toLowerCase() == 'true' || convFreeStr == '1';
         }
       }
-      if (keys.containsKey('commission_rate')) {
-        final commNum = remoteConfig.getDouble('commission_rate');
-        if (commNum > 0) {
-          _commissionRate = commNum;
-        } else {
-          _commissionRate = double.tryParse(remoteConfig.getString('commission_rate')) ?? _commissionRate;
+
+      // Commission Rate & Percentage
+      final commStr = remoteConfig.getString('commission_rate');
+      if (commStr.isNotEmpty) {
+        final parsed = double.tryParse(commStr);
+        if (parsed != null) _commissionRate = parsed;
+      }
+
+      final commPercStr = remoteConfig.getString('commission_is_percentage');
+      if (commPercStr.isNotEmpty) {
+        _commissionIsPercentage = commPercStr.toLowerCase() == 'true' || commPercStr == '1';
+      }
+
+      // GST
+      final gstStr = remoteConfig.getString('gst_rate');
+      if (gstStr.isNotEmpty) {
+        final parsed = double.tryParse(gstStr);
+        if (parsed != null) _gstRate = parsed;
+      }
+
+      final gstPercStr = remoteConfig.getString('gst_is_percentage');
+      if (gstPercStr.isNotEmpty) {
+        _gstIsPercentage = gstPercStr.toLowerCase() == 'true' || gstPercStr == '1';
+      }
+
+      final gstEnabledStr = remoteConfig.getString('is_gst_enabled');
+      if (gstEnabledStr.isNotEmpty) {
+        final isEnabled = gstEnabledStr.toLowerCase() == 'true' || gstEnabledStr == '1';
+        _gstIsFree = !isEnabled;
+      } else {
+        final gstFreeStr = remoteConfig.getString('gst_is_free');
+        if (gstFreeStr.isNotEmpty) {
+          _gstIsFree = gstFreeStr.toLowerCase() == 'true' || gstFreeStr == '1';
         }
       }
-      if (keys.containsKey('commission_is_percentage')) {
-        _commissionIsPercentage = remoteConfig.getBool('commission_is_percentage') ||
-            remoteConfig.getString('commission_is_percentage') == 'true';
+
+      // Maintenance
+      final maintStr = remoteConfig.getString('user_app_maintenance');
+      if (maintStr.isNotEmpty) {
+        _isMaintenanceMode = maintStr.toLowerCase() == 'true' || maintStr == '1';
       }
-      if (keys.containsKey('convenience_fee')) {
-        final feeNum = remoteConfig.getDouble('convenience_fee');
-        if (feeNum > 0) {
-          _convenienceFee = feeNum;
-        } else {
-          _convenienceFee = double.tryParse(remoteConfig.getString('convenience_fee')) ?? _convenienceFee;
-        }
-      }
-      if (keys.containsKey('convenience_fee_is_free')) {
-        _isConvenienceFeeFree = remoteConfig.getBool('convenience_fee_is_free') ||
-            remoteConfig.getString('convenience_fee_is_free') == 'true';
-      }
-      if (keys.containsKey('platform_fee_is_free')) {
-        _isConvenienceFeeFree = remoteConfig.getBool('platform_fee_is_free') ||
-            remoteConfig.getString('platform_fee_is_free') == 'true';
-      }
-      if (keys.containsKey('gst_rate')) {
-        final gstNum = remoteConfig.getDouble('gst_rate');
-        if (gstNum >= 0) {
-          _gstRate = gstNum;
-        } else {
-          _gstRate = double.tryParse(remoteConfig.getString('gst_rate')) ?? _gstRate;
-        }
-      }
-      if (keys.containsKey('gst_is_percentage')) {
-        _gstIsPercentage = remoteConfig.getBool('gst_is_percentage') ||
-            remoteConfig.getString('gst_is_percentage') == 'true';
-      }
-      if (keys.containsKey('gst_is_free')) {
-        _gstIsFree = remoteConfig.getBool('gst_is_free') ||
-            remoteConfig.getString('gst_is_free') == 'true';
-      }
-      if (keys.containsKey('user_app_maintenance')) {
-        _isMaintenanceMode = remoteConfig.getBool('user_app_maintenance') ||
-            remoteConfig.getString('user_app_maintenance') == 'true';
-      }
-      if (keys.containsKey('user_android_min_version')) {
-        _requiredVersionAndroid = remoteConfig.getString('user_android_min_version');
-      }
-      if (keys.containsKey('user_ios_min_version')) {
-        _requiredVersionIos = remoteConfig.getString('user_ios_min_version');
-      }
-      if (keys.containsKey('user_android_store_url')) {
-        _updateUrlAndroid = remoteConfig.getString('user_android_store_url');
-      }
-      if (keys.containsKey('user_ios_store_url')) {
-        _updateUrlIos = remoteConfig.getString('user_ios_store_url');
-      }
+
+      // Versions & URLs
+      final androidVer = remoteConfig.getString('user_android_min_version');
+      if (androidVer.isNotEmpty) _requiredVersionAndroid = androidVer;
+
+      final iosVer = remoteConfig.getString('user_ios_min_version');
+      if (iosVer.isNotEmpty) _requiredVersionIos = iosVer;
+
+      final androidUrl = remoteConfig.getString('user_android_store_url');
+      if (androidUrl.isNotEmpty) _updateUrlAndroid = androidUrl;
+
+      final iosUrl = remoteConfig.getString('user_ios_store_url');
+      if (iosUrl.isNotEmpty) _updateUrlIos = iosUrl;
+
+      debugPrint('🔥 REMOTE CONFIG LOADED FROM FIREBASE: platformFee=$_platformFee, isFree=$_isConvenienceFeeFree, commission=$_commissionRate ($_commissionIsPercentage%), gst=$_gstRate');
     } catch (e) {
       debugPrint('⚠️ Error reading Firebase Remote Config: $e');
     }
@@ -165,12 +170,19 @@ class RemoteConfigService {
 
   Future<void> fetchAndActivate() async {
     try {
-      try {
-        final remoteConfig = FirebaseRemoteConfig.instance;
-        await remoteConfig.fetchAndActivate();
-        _readFromFirebase(remoteConfig);
-      } catch (_) {}
+      final remoteConfig = FirebaseRemoteConfig.instance;
+      await remoteConfig.setConfigSettings(RemoteConfigSettings(
+        fetchTimeout: const Duration(seconds: 10),
+        minimumFetchInterval: Duration.zero,
+      ));
+      await remoteConfig.fetchAndActivate();
+      _readFromFirebase(remoteConfig);
+    } catch (e) {
+      debugPrint('⚠️ Error fetching Firebase Remote Config: $e');
+    }
 
+    // Optional Supabase fallback (failsafe, never overrides non-zero remote config with empty)
+    try {
       final rows = await Supabase.instance.client.from('app_config').select('key, value');
       for (final row in rows as List<dynamic>) {
         final key = row['key']?.toString();
@@ -178,35 +190,35 @@ class RemoteConfigService {
         switch (key) {
           case 'platform_fee':
             final parsedFee = double.tryParse(val);
-            if (parsedFee != null) _platformFee = parsedFee;
+            if (parsedFee != null && parsedFee > 0) _platformFee = parsedFee;
             break;
           case 'commission_rate':
             final parsedComm = double.tryParse(val);
-            if (parsedComm != null) _commissionRate = parsedComm;
+            if (parsedComm != null && parsedComm > 0) _commissionRate = parsedComm;
             break;
           case 'commission_is_percentage':
-            _commissionIsPercentage = val == 'true' || val == '1';
+            if (val.isNotEmpty) _commissionIsPercentage = val == 'true' || val == '1';
             break;
           case 'convenience_fee':
             final parsedFee = double.tryParse(val);
-            if (parsedFee != null) _convenienceFee = parsedFee;
+            if (parsedFee != null && parsedFee > 0) _convenienceFee = parsedFee;
             break;
           case 'convenience_fee_is_free':
           case 'platform_fee_is_free':
-            _isConvenienceFeeFree = val == 'true' || val == '1';
+            if (val.isNotEmpty) _isConvenienceFeeFree = val == 'true' || val == '1';
             break;
           case 'gst_rate':
             final parsedGst = double.tryParse(val);
             if (parsedGst != null) _gstRate = parsedGst;
             break;
           case 'gst_is_percentage':
-            _gstIsPercentage = val == 'true' || val == '1';
+            if (val.isNotEmpty) _gstIsPercentage = val == 'true' || val == '1';
             break;
           case 'gst_is_free':
-            _gstIsFree = val == 'true' || val == '1';
+            if (val.isNotEmpty) _gstIsFree = val == 'true' || val == '1';
             break;
           case 'user_app_maintenance':
-            _isMaintenanceMode = val == 'true' || val == '1';
+            if (val.isNotEmpty) _isMaintenanceMode = val == 'true' || val == '1';
             break;
           case 'user_android_min_version':
             if (val.isNotEmpty) _requiredVersionAndroid = val;
@@ -222,10 +234,10 @@ class RemoteConfigService {
             break;
         }
       }
-      debugPrint('🔥 FETCH AND ACTIVATE SUCCESS: platformFee=$_platformFee, convFee=$_convenienceFee (free: $_isConvenienceFeeFree), gstRate=$_gstRate');
-    } catch (e) {
-      debugPrint('❌ FETCH AND ACTIVATE FAILED: $e');
-    }
+    } catch (_) {}
+
+    _maintenanceController.add(isMaintenanceMode);
+    _configUpdateController.add(null);
   }
 
   void dispose() {

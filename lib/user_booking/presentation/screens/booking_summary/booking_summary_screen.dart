@@ -38,6 +38,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
     if (!_initialized) {
       _initialized = true;
       _checkApprovalRequirement();
+      RemoteConfigService().fetchAndActivate();
     }
   }
 
