@@ -287,13 +287,13 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                 // Fixed Header
                 BlocBuilder<SavedGroundCubit, SavedGroundState>(
                   builder: (context, savedState) {
-                    final displayLocationId = (state.selectedTurf ?? _ground)?.locationId;
+                    final displayLocationId = displayVenue?.locationId;
                     final isSaved = displayLocationId != null
                         ? savedState.favoriteIds.contains(displayLocationId)
                         : false;
                     return SlotSelectionWidgets.buildHeader(
                       context,
-                      state.selectedTurf ?? _ground,
+                      displayVenue,
                       title: displayVenue?.locationName.isNotEmpty == true
                           ? displayVenue!.locationName
                           : '---',
