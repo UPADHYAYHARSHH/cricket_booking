@@ -82,12 +82,12 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 DROP TRIGGER IF EXISTS trigger_update_owner_wallet ON public.bookings;
 CREATE TRIGGER trigger_update_owner_wallet
-AFTER UPDATE ON public.bookings
+AFTER INSERT OR UPDATE ON public.bookings
 FOR EACH ROW
 EXECUTE FUNCTION update_owner_wallet_on_payment();
 
 -- 5. RPC to safely request a withdrawal
-CREATE OR REPLACE FUNCTION request_withdrawal(p_amount NUMERIC)
+CREATE OR REPLACE FUNCTION request_withdrawal(p_amount NUMERIC, p_owner_id TEXT DEFAULT NULL)
 RETURNS JSON
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -98,7 +98,7 @@ DECLARE
     v_withdrawal_id UUID;
     result JSON;
 BEGIN
-    v_owner_id := auth.uid()::text;
+    v_owner_id := COALESCE(p_owner_id, auth.uid()::text);
     
     IF v_owner_id IS NULL THEN
         RAISE EXCEPTION 'Not authenticated';
@@ -119,6 +119,7 @@ BEGIN
     -- Deduct from available balance immediately to prevent double spending
     UPDATE public.owner_wallets
     SET available_balance = available_balance - p_amount,
+        withdrawn_amount = withdrawn_amount + p_amount,
         updated_at = NOW()
     WHERE owner_id = v_owner_id;
 
@@ -137,10 +138,10 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.request_withdrawal(NUMERIC) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.request_withdrawal(NUMERIC, TEXT) TO authenticated, anon;
 
 -- 6. RPC to get owner wallet details
-CREATE OR REPLACE FUNCTION get_owner_wallet()
+CREATE OR REPLACE FUNCTION get_owner_wallet(p_owner_id TEXT DEFAULT NULL)
 RETURNS JSON
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -149,7 +150,7 @@ DECLARE
     v_owner_id TEXT;
     result JSON;
 BEGIN
-    v_owner_id := auth.uid()::text;
+    v_owner_id := COALESCE(p_owner_id, auth.uid()::text);
     
     IF v_owner_id IS NULL THEN
         RAISE EXCEPTION 'Not authenticated';
@@ -168,4 +169,5 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.get_owner_wallet() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_owner_wallet(TEXT) TO authenticated, anon;
+
