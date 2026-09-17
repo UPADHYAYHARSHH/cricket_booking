@@ -70,8 +70,10 @@ class SplashCubit extends Cubit<SplashState> {
             .rpc('get_user_profile', params: {'p_id': user.uid});
             
         if (userData == null) {
-          debugPrint("DEBUG: [SplashCubit] No record found for ID: ${user.uid}. Redirecting to complete profile.");
-          emit(SplashNavigateToCompleteProfile());
+          debugPrint("DEBUG: [SplashCubit] No record found for ID: ${user.uid}. Redirecting to login.");
+          await FirebaseAuth.instance.signOut();
+          await sb.Supabase.instance.client.auth.signOut();
+          emit(SplashNavigateToLogin());
         } else {
           debugPrint("DEBUG: [SplashCubit] RPC get_user_profile returned: $userData");
           
@@ -94,8 +96,10 @@ class SplashCubit extends Cubit<SplashState> {
         }
       } catch (e) {
         debugPrint("DEBUG: [SplashCubit] Error checking profile: $e");
-        // Fallback to complete profile if we cannot verify DB (prevent incomplete users from entering app)
-        emit(SplashNavigateToCompleteProfile());
+        // Fallback to login if we cannot verify DB or user was deleted from db
+        await FirebaseAuth.instance.signOut();
+        await sb.Supabase.instance.client.auth.signOut();
+        emit(SplashNavigateToLogin());
       }
     } else {
       debugPrint("DEBUG: [SplashCubit] No verified user found. Navigating to Login.");

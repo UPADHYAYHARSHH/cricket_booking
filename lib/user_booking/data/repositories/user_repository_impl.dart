@@ -84,15 +84,14 @@ class UserRepositoryImpl implements UserRepository {
         'p_username': username ?? '',
       });
 
-      // If photoUrl was provided, update photo_url directly on the row
+      // Since the RPC does not take a photo_url parameter, we update it directly.
+      // This should work now that AuthRepositoryImpl syncs the Supabase session.
       if (photoUrl != null) {
         try {
-          await supabase.from('users').update({
-            'photo_url': photoUrl,
-            'updated_at': DateTime.now().toIso8601String(),
-          }).eq('id', user.uid);
-        } catch (e) {
-          debugPrint("[USER_REPO] Updating photo_url fallback failed: $e");
+          await supabase.from('users').update({'photo_url': photoUrl}).eq('id', user.uid);
+          debugPrint("[USER_REPO] Successfully updated photo_url via direct update.");
+        } catch (updateError) {
+          debugPrint("[USER_REPO] Direct update for photo_url failed: $updateError");
         }
       }
       return;

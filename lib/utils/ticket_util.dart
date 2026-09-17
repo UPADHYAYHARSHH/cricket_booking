@@ -358,7 +358,50 @@ class TicketUtil {
                             ],
                           ),
                         ),
-
+                        if (amenities != null && amenities.isNotEmpty) ...[
+                          pw.SizedBox(height: 24),
+                          pw.Container(
+                            width: double.infinity,
+                            child: pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.start,
+                              children: [
+                                pw.Text(
+                                  'AMENITIES',
+                                  style: pw.TextStyle(
+                                      color: _kGrey,
+                                      fontSize: 8,
+                                      fontWeight: pw.FontWeight.bold,
+                                      letterSpacing: 1),
+                                ),
+                                pw.SizedBox(height: 8),
+                                pw.Wrap(
+                                  spacing: 12,
+                                  runSpacing: 8,
+                                  children: amenities.take(6).map((amenity) {
+                                    return pw.Container(
+                                      padding: const pw.EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
+                                      decoration: pw.BoxDecoration(
+                                        color: _kBg,
+                                        borderRadius:
+                                            pw.BorderRadius.circular(4),
+                                        border: pw.Border.all(
+                                            color: _kBorder, width: 0.5),
+                                      ),
+                                      child: pw.Text(
+                                        amenity,
+                                        style: pw.TextStyle(
+                                            color: _kGreen,
+                                            fontSize: 8,
+                                            fontWeight: pw.FontWeight.bold),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                         pw.SizedBox(height: 24),
                         pw.Container(
                           width: double.infinity,

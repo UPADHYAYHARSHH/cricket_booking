@@ -239,20 +239,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
               color: theme.colorScheme.onSurface.withOpacity(0.5),
             ),
           ),
-          const AppSizedBox(height: 32),
-          ElevatedButton.icon(
-            onPressed: () =>
-                context.read<NotificationCubit>().addDummyNotifications(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryDarkGreen,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ),
-            icon: const Icon(Icons.add_circle_outline),
-            label: const Text("Add Dummy Notifications"),
-          ),
         ],
       ),
     );
