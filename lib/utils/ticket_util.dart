@@ -172,7 +172,9 @@ class TicketUtil {
     // ── Formatted values ──────────────────────────────
     final formattedDate = DateFormat('EEEE, d MMMM yyyy').format(date);
     final formattedPrice = '₹${totalPrice.toStringAsFixed(0)}';
-    final shortId = displayId != 0 ? IdUtil.formatDisplayId(displayId) : IdUtil.getShortId(orderId);
+    final shortId = displayId != 0
+        ? IdUtil.formatDisplayId(displayId)
+        : IdUtil.getShortId(orderId);
 
     pdf.addPage(
       pw.Page(
@@ -314,7 +316,15 @@ class TicketUtil {
                           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                           children: [
                             _pdfInfoBlock('BOOKING ID', '#$shortId'),
-                            _pdfInfoBlock('SPORT', sportName.replaceAll('_', ' ').split(' ').map((word) => word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}' : '').join(' '),
+                            _pdfInfoBlock(
+                                'SPORT',
+                                sportName
+                                    .replaceAll('_', ' ')
+                                    .split(' ')
+                                    .map((word) => word.isNotEmpty
+                                        ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}'
+                                        : '')
+                                    .join(' '),
                                 alignRight: true),
                           ],
                         ),
@@ -346,15 +356,19 @@ class TicketUtil {
                           ),
                           child: pw.Column(
                             children: [
-                              _pdfPaymentRow('Slot Booking Amount', 'Rs ${(totalPrice - platformFee).clamp(0.0, totalPrice).toStringAsFixed(0)}'),
+                              _pdfPaymentRow('Slot Booking Amount',
+                                  'Rs ${(totalPrice - platformFee).clamp(0.0, totalPrice).toStringAsFixed(0)}'),
                               pw.SizedBox(height: 6),
-                              _pdfPaymentRow('Platform Fee', '+ Rs ${platformFee.toStringAsFixed(0)}'),
+                              _pdfPaymentRow('Platform Fee',
+                                  '+ Rs ${platformFee.toStringAsFixed(0)}'),
                               pw.SizedBox(height: 6),
                               _pdfPaymentRow('Taxes & Charges', 'Included'),
                               pw.SizedBox(height: 8),
                               pw.Divider(color: _kBorder, thickness: 1),
                               pw.SizedBox(height: 8),
-                              _pdfPaymentRow('Total Paid', 'Rs ${totalPrice.toStringAsFixed(0)}', isBold: true),
+                              _pdfPaymentRow('Total Paid',
+                                  'Rs ${totalPrice.toStringAsFixed(0)}',
+                                  isBold: true),
                             ],
                           ),
                         ),
@@ -472,8 +486,9 @@ class TicketUtil {
       {bool isBold = false, bool alignRight = false}) {
     return pw.Expanded(
       child: pw.Column(
-        crossAxisAlignment:
-            alignRight ? pw.CrossAxisAlignment.end : pw.CrossAxisAlignment.start,
+        crossAxisAlignment: alignRight
+            ? pw.CrossAxisAlignment.end
+            : pw.CrossAxisAlignment.start,
         children: [
           pw.Text(
             label,
@@ -497,7 +512,8 @@ class TicketUtil {
     );
   }
 
-  static pw.Widget _pdfPaymentRow(String label, String value, {bool isBold = false, bool isDiscount = false}) {
+  static pw.Widget _pdfPaymentRow(String label, String value,
+      {bool isBold = false, bool isDiscount = false}) {
     return pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       children: [
@@ -511,7 +527,9 @@ class TicketUtil {
         pw.Text(
           value,
           style: pw.TextStyle(
-            color: isDiscount ? const PdfColor.fromInt(0xFFE53935) : (isBold ? _kGreen : _kDark),
+            color: isDiscount
+                ? const PdfColor.fromInt(0xFFE53935)
+                : (isBold ? _kGreen : _kDark),
             fontSize: isBold ? 11 : 9,
             fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
           ),
