@@ -57,6 +57,12 @@ class VenueModel {
     // Sort pitches by name or ID
     grounds.sort((a, b) => a.name.compareTo(b.name));
 
+    // Collect unique amenities across all grounds of this location
+    final Set<String> allAmenities = {};
+    for (var ground in grounds) {
+      allAmenities.addAll(ground.amenities);
+    }
+
     return VenueModel(
       locationId: locationId,
       name: firstGround.locationName.isNotEmpty 
@@ -71,7 +77,7 @@ class VenueModel {
       latitude: firstGround.latitude,
       longitude: firstGround.longitude,
       privacyPolicy: firstGround.privacyPolicy,
-      amenities: firstGround.amenities,
+      amenities: allAmenities.toList(),
       availableSports: sportsSet.toList()..sort(),
       pitches: grounds,
     );

@@ -7,13 +7,11 @@ import 'package:turfpro/user_booking/domain/models/filter_criteria.dart';
 
 class FilterBottomSheet extends StatefulWidget {
   final FilterCriteria initialCriteria;
-  final List<String>? suggestedAmenities;
   final Function(FilterCriteria) onApply;
 
   const FilterBottomSheet({
     super.key,
     required this.initialCriteria,
-    this.suggestedAmenities,
     required this.onApply,
   });
 
@@ -29,7 +27,6 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
   late bool _isAvailableNow;
   late bool _isNearMe;
   late bool _isTopRated;
-  late List<String> _selectedAmenities;
   late AnimationController _animCtrl;
   late Animation<double> _fadeIn;
 
@@ -37,7 +34,6 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
     int count = 0;
     if (_sortBy != SortBy.none) count++;
     if (_minPrice > 0 || _maxPrice < 5000) count++;
-    if (_selectedAmenities.isNotEmpty) count++;
     if (_isAvailableNow) count++;
     if (_isNearMe) count++;
     if (_isTopRated) count++;
@@ -53,7 +49,6 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
     _isAvailableNow = widget.initialCriteria.isAvailableNow;
     _isNearMe = widget.initialCriteria.isNearMe;
     _isTopRated = widget.initialCriteria.isTopRated;
-    _selectedAmenities = List.from(widget.initialCriteria.selectedAmenities);
     _animCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 400),
@@ -269,79 +264,6 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
                     ),
                     const AppSizedBox(height: 28),
 
-                    // ── Amenities ──
-                    if (widget.suggestedAmenities != null &&
-                        widget.suggestedAmenities!.isNotEmpty) ...[
-                      _buildSectionHeader("Amenities", HugeIcons.strokeRoundedDashboardSquare01, isDark),
-                      const AppSizedBox(height: 14),
-                      Wrap(
-                        spacing: 10,
-                        runSpacing: 10,
-                        children: widget.suggestedAmenities!.map((amenity) {
-                          final isSelected = _selectedAmenities.contains(amenity);
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                isSelected
-                                    ? _selectedAmenities.remove(amenity)
-                                    : _selectedAmenities.add(amenity);
-                              });
-                            },
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 220),
-                              curve: Curves.easeOutCubic,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? AppColors.primaryDarkGreen
-                                    : cardBg,
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? AppColors.primaryDarkGreen
-                                      : (isDark
-                                          ? const Color(0xFF333333)
-                                          : const Color(0xFFE0E0E0)),
-                                  width: 1.5,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (isSelected) ...[
-                                    const Icon(
-                                      Icons.check_rounded,
-                                      size: 16,
-                                      color: Colors.white,
-                                    ),
-                                    const SizedBox(width: 6),
-                                  ],
-                                  Text(
-                                    amenity,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: isSelected
-                                          ? Colors.white
-                                          : (isDark
-                                              ? Colors.grey[300]
-                                              : Colors.grey[800]),
-                                      fontWeight: isSelected
-                                          ? FontWeight.w700
-                                          : FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                      const AppSizedBox(height: 28),
-                    ],
-
                     // ── Quick Filters ──
                     _buildSectionHeader("Quick Filters", HugeIcons.strokeRoundedFlash, isDark),
                     const AppSizedBox(height: 14),
@@ -403,7 +325,6 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
                       sortBy: _sortBy,
                       minPrice: _minPrice,
                       maxPrice: _maxPrice,
-                      selectedAmenities: _selectedAmenities,
                       isAvailableNow: _isAvailableNow,
                       isNearMe: _isNearMe,
                       isTopRated: _isTopRated,
@@ -454,7 +375,6 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
       _isAvailableNow = false;
       _isNearMe = false;
       _isTopRated = false;
-      _selectedAmenities.clear();
     });
   }
 

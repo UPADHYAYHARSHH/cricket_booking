@@ -808,29 +808,6 @@ class _BookingCardState extends State<_BookingCard> {
         children: [
           Row(
             children: [
-              HugeIcon(
-                icon: HugeIcons.strokeRoundedLocation01,
-                size: 14,
-                color: onSurface.withValues(alpha: 0.5),
-              ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: AppText(
-                  text: (widget.booking.ground?.address != null && widget.booking.ground!.address.isNotEmpty)
-                      ? widget.booking.ground!.address
-                      : "Location not available",
-                  textStyle: TextStyle(
-                    fontSize: 12,
-                    color: onSurface.withValues(alpha: 0.5),
-                  ),
-                  maxLines: 2,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -858,11 +835,9 @@ class _BookingCardState extends State<_BookingCard> {
                               ),
                             ),
                             child: ClipOval(
-                              child: Image.asset(
-                                SlotSelectionWidgets.getSportImage(widget.booking.sportName!),
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    const Icon(Icons.sports, size: 14, color: AppColors.primaryDarkGreen),
+                              child: SlotSelectionWidgets.buildSportIcon(
+                                widget.booking.sportName!,
+                                size: 28,
                               ),
                             ),
                           ),
@@ -1917,25 +1892,6 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryDarkGreen,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: OutlinedButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.share_outlined,
-                color: AppColors.primaryDarkGreen),
-            label: const Text("Share with Friends",
-                style: TextStyle(
-                    color: AppColors.primaryDarkGreen,
-                    fontWeight: FontWeight.bold)),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: AppColors.primaryDarkGreen),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
             ),

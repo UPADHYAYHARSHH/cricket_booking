@@ -14,10 +14,7 @@ import 'package:turfpro/user_booking/data/models/venue_model.dart';
 import 'package:turfpro/user_booking/constants/route_constants.dart';
 import 'package:turfpro/user_booking/presentation/widgets/ground_image_carousel.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:turfpro/user_booking/data/models/sport_model.dart';
-import 'package:turfpro/user_booking/presentation/blocs/sport/sport_cubit.dart';
-import 'package:turfpro/user_booking/presentation/blocs/sport/sport_state.dart';
+import 'package:turfpro/user_booking/presentation/widgets/slot_selection_widgets.dart';
 
 class VenueCard extends StatefulWidget {
   final VenueModel venue;
@@ -339,7 +336,7 @@ class _VenueCardState extends State<VenueCard>
                 );
                 return Row(
                   children: [
-                    HugeIcon(
+                    const HugeIcon(
                       icon: HugeIcons.strokeRoundedNavigation01,
                       size: 11,
                       color: AppColors.primaryDarkGreen,
@@ -357,76 +354,60 @@ class _VenueCardState extends State<VenueCard>
             },
           ),
 
-          // Sports icons row
+          // Sports row
           if (widget.venue.availableSports.isNotEmpty) ...[
-            const SizedBox(height: 5),
-            BlocBuilder<SportCubit, SportState>(
-              builder: (context, sportState) {
-                final sports = sportState is SportLoaded ? sportState.sports : <SportModel>[];
-                return SizedBox(
-                  height: 20,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: widget.venue.availableSports.length > 5
-                        ? 5
-                        : widget.venue.availableSports.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 4),
-                    itemBuilder: (context, index) {
-                      final sportSlug = widget.venue.availableSports[index];
-                      SportModel? sportData;
-                      try {
-                        sportData = sports.firstWhere((s) => s.slug.toLowerCase() == sportSlug.toLowerCase() || s.name.toLowerCase() == sportSlug.toLowerCase());
-                      } catch (_) {}
-                      return Container(
-                        padding: const EdgeInsets.all(2),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 28,
+              child: Row(
+                children: [
+                  ...widget.venue.availableSports.take(4).map((sportSlug) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: Container(
+                        width: 28,
+                        height: 28,
                         decoration: BoxDecoration(
-                          color: AppColors.accentOrange.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
+                          shape: BoxShape.circle,
+                          color: AppColors.primaryDarkGreen.withValues(alpha: 0.08),
+                          border: Border.all(
+                            color: AppColors.primaryDarkGreen.withValues(alpha: 0.35),
+                            width: 1.0,
+                          ),
                         ),
-                        child: sportData != null && sportData.iconUrl.isNotEmpty
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(2),
-                                child: CachedNetworkImage(
-                                  imageUrl: sportData.iconUrl,
-                                  width: 16,
-                                  height: 16,
-                                  fit: BoxFit.cover,
-                                  placeholder: (_, __) => const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                  ),
-                                  errorWidget: (_, __, ___) => const Icon(
-                                    Icons.sports,
-                                    size: 14,
-                                    color: AppColors.accentOrange,
-                                  ),
-                                ),
-                              )
-                            : sportData != null && sportData.localAsset.isNotEmpty
-                                ? ClipRRect(
-                                    borderRadius: BorderRadius.circular(2),
-                                    child: Image.asset(
-                                      sportData.localAsset,
-                                      width: 16,
-                                      height: 16,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => const Icon(
-                                        Icons.sports,
-                                        size: 14,
-                                        color: AppColors.accentOrange,
-                                      ),
-                                    ),
-                                  )
-                                : const Icon(
-                                    Icons.sports,
-                                    size: 14,
-                                    color: AppColors.accentOrange,
-                                  ),
-                      );
-                    },
-                  ),
-                );
-              },
+                        child: ClipOval(
+                          child: SlotSelectionWidgets.buildSportIcon(
+                            sportSlug,
+                            size: 28,
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                  if (widget.venue.availableSports.length > 4)
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
+                        border: Border.all(
+                          color: AppColors.primaryDarkGreen.withValues(alpha: 0.35),
+                          width: 1.0,
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        "+${widget.venue.availableSports.length - 4}",
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primaryDarkGreen,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ],
 

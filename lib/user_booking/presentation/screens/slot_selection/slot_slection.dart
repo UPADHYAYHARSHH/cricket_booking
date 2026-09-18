@@ -379,6 +379,28 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                             ),
                           ),
 
+                          // Amenities
+                          Builder(
+                            builder: (context) {
+                              final amenities = <String>{
+                                if (_location != null) ..._location!.amenities,
+                                if (_ground != null) ..._ground!.amenities,
+                                if (state.selectedTurf != null) ...state.selectedTurf!.amenities,
+                                for (final g in state.facilityGrounds) ...g.amenities,
+                                if (displayVenue != null) ...displayVenue.amenities,
+                              }.toList();
+
+                              if (amenities.isEmpty) return const SizedBox.shrink();
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                                child: SlotSelectionWidgets.buildPremiumCard(
+                                  context: context,
+                                  child: SlotSelectionWidgets.buildAmenitiesSection(context, amenities),
+                                ),
+                              );
+                            },
+                          ),
+
                           // Description
                           Builder(
                             builder: (context) {

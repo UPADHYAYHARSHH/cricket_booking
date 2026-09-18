@@ -34,6 +34,23 @@ class _CategoryGroundsScreenState extends State<CategoryGroundsScreen> {
     super.didChangeDependencies();
     if (!_isInitialized) {
       _isInitialized = true;
+      final rawArgs = ModalRoute.of(context)?.settings.arguments;
+      if (rawArgs is String) {
+        final lower = rawArgs.toLowerCase();
+        if (lower.contains('top') || lower.contains('rated')) {
+          _criteria = _criteria.copyWith(isTopRated: true);
+        } else if (lower.contains('near')) {
+          _criteria = _criteria.copyWith(isNearMe: true);
+        }
+      } else if (rawArgs is Map<String, dynamic>) {
+        if (rawArgs['isTopRated'] == true || rawArgs['filter'] == 'top_rated') {
+          _criteria = _criteria.copyWith(isTopRated: true);
+        }
+        if (rawArgs['isNearMe'] == true || rawArgs['filter'] == 'nearby') {
+          _criteria = _criteria.copyWith(isNearMe: true);
+        }
+      }
+
       // Ensure grounds are loaded
       final state = context.read<GroundCubit>().state;
       if (state is! GroundLoaded) {
@@ -47,20 +64,6 @@ class _CategoryGroundsScreenState extends State<CategoryGroundsScreen> {
     }
   }
 
-  List<String> _getSuggestedAmenities(String category) {
-    switch (category.toLowerCase()) {
-      case 'cricket':
-        return ['Turf Wicket', 'Matting', 'Bowling Machine', 'Floodlights', 'Pavilion'];
-      case 'football':
-        return ['Turf', '5v5', '7v7', '11v11', 'Floodlights'];
-      case 'badminton':
-      case 'pickleball':
-        return ['Wooden Court', 'Synthetic Court', 'Indoor', 'AC'];
-      default:
-        return ['Floodlights', 'Washroom', 'Parking', 'Drinking Water'];
-    }
-  }
-
   void _showFilterSheet(BuildContext context, String category) {
     showModalBottomSheet(
       context: context,
@@ -68,7 +71,6 @@ class _CategoryGroundsScreenState extends State<CategoryGroundsScreen> {
       backgroundColor: Colors.transparent,
       builder: (_) => FilterBottomSheet(
         initialCriteria: _criteria,
-        suggestedAmenities: _getSuggestedAmenities(category),
         onApply: (newCriteria) {
           setState(() {
             _criteria = newCriteria;
@@ -107,7 +109,7 @@ class _CategoryGroundsScreenState extends State<CategoryGroundsScreen> {
     return 12742 * asin(sqrt(a));
   }
 
-  List<VenueModel> _applyLocalFilters(List<VenueModel> baseVenues, double? userLat, double? userLng) {
+  List<VenueModel> _applyLocalFilters(List<VenueModel> baseVenues, double? userLat, double? userLng, {bool isTopRatedScreen = false, bool isNearbyScreen = false}) {
     List<VenueModel> filtered = List.from(baseVenues);
 
     filtered = filtered.where((v) { final p = v.pitches.first; return p.pricePerHour >= _criteria.minPrice && p.pricePerHour <= _criteria.maxPrice; }).toList();
@@ -125,11 +127,17 @@ class _CategoryGroundsScreenState extends State<CategoryGroundsScreen> {
     }
 
     if (_criteria.isNearMe && userLat != null && userLng != null) {
-      filtered = filtered.where((v) => _calculateDistance(userLat, userLng, v.latitude, v.longitude) <= 10.0).toList();
+      final nearVenues = filtered.where((v) => _calculateDistance(userLat, userLng, v.latitude, v.longitude) <= 15.0).toList();
+      if (nearVenues.isNotEmpty) {
+        filtered = nearVenues;
+      }
     }
 
     if (_criteria.isTopRated) {
-      filtered = filtered.where((v) => v.rating >= 4.0).toList();
+      final topRatedVenues = filtered.where((v) => v.rating >= 4.0).toList();
+      if (topRatedVenues.isNotEmpty) {
+        filtered = topRatedVenues;
+      }
     }
 
     switch (_criteria.sortBy) {
@@ -140,8 +148,16 @@ class _CategoryGroundsScreenState extends State<CategoryGroundsScreen> {
         filtered.sort((a, b) => b.pitches.first.pricePerHour.compareTo(a.pitches.first.pricePerHour));
         break;
       case SortBy.none:
-      default:
         filtered.sort((a, b) {
+          if (_criteria.isTopRated || isTopRatedScreen) {
+            int ratingComparison = b.rating.compareTo(a.rating);
+            if (ratingComparison != 0) return ratingComparison;
+          }
+          if ((_criteria.isNearMe || isNearbyScreen) && userLat != null && userLng != null) {
+            int distComparison = _calculateDistance(userLat, userLng, a.latitude, a.longitude)
+                .compareTo(_calculateDistance(userLat, userLng, b.latitude, b.longitude));
+            if (distComparison != 0) return distComparison;
+          }
           int ratingComparison = b.rating.compareTo(a.rating);
           if (ratingComparison != 0) return ratingComparison;
           if (userLat != null && userLng != null) {
@@ -158,7 +174,17 @@ class _CategoryGroundsScreenState extends State<CategoryGroundsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final String category = ModalRoute.of(context)!.settings.arguments as String;
+    final rawArgs = ModalRoute.of(context)!.settings.arguments;
+    final String category = (rawArgs is String)
+        ? rawArgs
+        : (rawArgs is Map && rawArgs['title'] != null)
+            ? rawArgs['title'] as String
+            : 'Venues';
+
+    final isTopRatedScreen = category.toLowerCase().contains('top') || category.toLowerCase().contains('rated');
+    final isNearbyScreen = category.toLowerCase().contains('near');
+    final isGeneralVenues = isTopRatedScreen || isNearbyScreen || category.toLowerCase() == 'all';
+
     final theme = Theme.of(context);
     final hasFilters = !_criteria.isDefault;
 
@@ -231,33 +257,40 @@ class _CategoryGroundsScreenState extends State<CategoryGroundsScreen> {
           if (state is GroundLoaded) {
             final locationState = context.read<LocationCubit>().state;
             
-            // Find locationIds that have grounds matching the category
-            final matchingLocationIds = state.allGrounds.where((g) {
-              return g.categories.any((c) {
-                final catLower = c.replaceAll('_', ' ').toLowerCase();
-                final searchLower = category.toLowerCase();
-                return catLower == searchLower || 
-                       catLower.contains(searchLower) || 
-                       searchLower.contains(catLower);
-              });
-            }).map((g) => g.locationId).toSet();
+            final List<VenueModel> baseCategoryVenues;
+            if (isGeneralVenues) {
+              baseCategoryVenues = List<VenueModel>.from(state.venues);
+            } else {
+              // Find locationIds that have grounds matching the category
+              final matchingLocationIds = state.allGrounds.where((g) {
+                return g.categories.any((c) {
+                  final catLower = c.replaceAll('_', ' ').toLowerCase();
+                  final searchLower = category.toLowerCase();
+                  return catLower == searchLower || 
+                         catLower.contains(searchLower) || 
+                         searchLower.contains(catLower);
+                });
+              }).map((g) => g.locationId).toSet();
 
-            // Group ALL grounds belonging to those matching locations
-            final Map<String, List<GroundModel>> grouped = {};
-            for (final ground in state.allGrounds) {
-              if (matchingLocationIds.contains(ground.locationId)) {
-                grouped.putIfAbsent(ground.locationId, () => []).add(ground);
+              // Group ALL grounds belonging to those matching locations
+              final Map<String, List<GroundModel>> grouped = {};
+              for (final ground in state.allGrounds) {
+                if (matchingLocationIds.contains(ground.locationId)) {
+                  grouped.putIfAbsent(ground.locationId, () => []).add(ground);
+                }
               }
+              
+              baseCategoryVenues = grouped.entries
+                  .map((e) => VenueModel.fromGrounds(e.key, e.value))
+                  .toList();
             }
-            
-            final baseCategoryVenues = grouped.entries
-                .map((e) => VenueModel.fromGrounds(e.key, e.value))
-                .toList();
 
             final filteredVenues = _applyLocalFilters(
               baseCategoryVenues,
               locationState.latitude,
               locationState.longitude,
+              isTopRatedScreen: isTopRatedScreen,
+              isNearbyScreen: isNearbyScreen,
             );
 
             if (filteredVenues.isEmpty) {
@@ -272,7 +305,13 @@ class _CategoryGroundsScreenState extends State<CategoryGroundsScreen> {
                     ),
                     const AppSizedBox(height: 16),
                     AppText(
-                      text: hasFilters ? "No grounds match your filters" : "No $category grounds found",
+                      text: hasFilters
+                          ? "No grounds match your filters"
+                          : isTopRatedScreen
+                              ? "No top rated venues found"
+                              : isNearbyScreen
+                                  ? "No nearby venues found"
+                                  : "No $category grounds found",
                       textStyle: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
                     ),
                     if (hasFilters) ...[
@@ -312,7 +351,7 @@ class _CategoryGroundsScreenState extends State<CategoryGroundsScreen> {
                       venue: filteredVenues[index], 
                       showAmenities: true, 
                       isGrid: false,
-                      preferredSport: category,
+                      preferredSport: isGeneralVenues ? null : category,
                     ),
                   );
                 },

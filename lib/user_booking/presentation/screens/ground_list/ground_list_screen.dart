@@ -16,7 +16,6 @@ import '../../../constants/widgets/app_text.dart';
 import '../../blocs/location/location_cubit.dart';
 import '../../blocs/ground/ground_cubit.dart';
 import '../../blocs/ground/ground_state.dart';
-import 'package:turfpro/user_booking/presentation/widgets/ground_card.dart';
 import 'package:turfpro/user_booking/presentation/widgets/venue_card.dart';
 import 'widgets/ground_skeleton.dart';
 import '../../blocs/notification/notification_cubit.dart';
@@ -34,13 +33,6 @@ class GroundListScreen extends StatefulWidget {
 class _GroundListScreenState extends State<GroundListScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-
-  String _greeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
-  }
 
   @override
   void initState() {
@@ -152,15 +144,15 @@ class _GroundListScreenState extends State<GroundListScreen> {
                     // Sport Selection
                     SliverToBoxAdapter(
                         child: _buildSportSelection(context, isDark)),
-  
-                    // Top Venues (Horizontal)
+
+                    // Top Venues (Horizontal, 5 items, larger size)
                     SliverToBoxAdapter(
                         child: _buildTopVenuesSection(context, isDark)),
-  
-                    // Nearby Venues Header
+
+                    // Nearby Venues Header (with View All)
                     SliverToBoxAdapter(
                         child: _buildNearbyVenuesHeader(context, isDark)),
-  
+
                     // Nearby Venues (Vertical List)
                     _buildNearbyVenuesList(),
                   ],
@@ -409,64 +401,160 @@ class _GroundListScreenState extends State<GroundListScreen> {
     ).animate().fadeIn(delay: 200.ms, duration: 400.ms);
   }
 
-  // ─── TOP VENUES (Horizontal) ──────────────────────────────────
+  // ─── SECTION HEADER WITH VIEW ALL ─────────────────────────────
+  Widget _buildSectionHeader({
+    required String title,
+    String? subtitle,
+    required dynamic icon,
+    required Color iconColor,
+    required Color bgColor,
+    VoidCallback? onViewAll,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppSizes.sm),
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+                ),
+                child: HugeIcon(
+                  icon: icon,
+                  color: iconColor,
+                  size: AppSizes.iconMd,
+                ),
+              ),
+              const SizedBox(width: AppSizes.md),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppText(
+                    text: title,
+                    size: 18,
+                    weight: FontWeight.w700,
+                  ),
+                  if (subtitle != null && subtitle.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    AppText(
+                      text: subtitle,
+                      size: 12,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.5),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+          if (onViewAll != null)
+            GestureDetector(
+              onTap: onViewAll,
+              behavior: HitTestBehavior.opaque,
+              child: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AppText(
+                      text: "View All",
+                      size: 13,
+                      weight: FontWeight.w600,
+                      color: AppColors.primaryDarkGreen,
+                    ),
+                    SizedBox(width: 4),
+                    HugeIcon(
+                      icon: HugeIcons.strokeRoundedArrowRight01,
+                      size: 14,
+                      color: AppColors.primaryDarkGreen,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // ─── TOP VENUES (Horizontal - 5 items, Prominent Size) ────────
   Widget _buildTopVenuesSection(BuildContext context, bool isDark) {
     return BlocBuilder<GroundCubit, GroundState>(
       builder: (context, state) {
+        if (state is GroundLoading || state is GroundInitial) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSectionHeader(
+                title: "Top Venues",
+                icon: HugeIcons.strokeRoundedStar,
+                iconColor: AppColors.accentOrange,
+                bgColor: AppColors.accentOrange.withValues(alpha: 0.1),
+                onViewAll: null,
+              ),
+              SizedBox(
+                height: 330,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: 3,
+                  separatorBuilder: (_, __) => const SizedBox(width: 14),
+                  itemBuilder: (context, index) => SizedBox(
+                    width: 295,
+                    child: _buildSkeletonCard(),
+                  ),
+                ),
+              ),
+            ],
+          );
+        }
+
         if (state is! GroundLoaded || state.allGrounds.isEmpty) {
           return const SizedBox.shrink();
         }
 
-        // Get top rated venues (rating >= 4.0 or top 5 by rating)
+        // Get top rated venues (sorted by rating descending, top 5)
         final topVenues = List<VenueModel>.from(state.venues)
           ..sort((a, b) => b.rating.compareTo(a.rating));
-        final displayTopVenues = topVenues.where((v) => v.rating >= 4.0).take(10).toList();
-        if (displayTopVenues.isEmpty && topVenues.isNotEmpty) {
-          displayTopVenues.addAll(topVenues.take(5));
-        }
+        final displayTopVenues = topVenues.take(5).toList();
 
         if (displayTopVenues.isEmpty) return const SizedBox.shrink();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(AppSizes.sm),
-                    decoration: BoxDecoration(
-                      color: AppColors.accentOrange.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(AppSizes.radiusSm),
-                    ),
-                    child: const HugeIcon(
-                      icon: HugeIcons.strokeRoundedStar,
-                      color: AppColors.accentOrange,
-                      size: AppSizes.iconMd,
-                    ),
-                  ),
-                  const SizedBox(width: AppSizes.md),
-                  const AppText(
-                    text: "Top Venues",
-                    size: 18,
-                    weight: FontWeight.w700,
-                  ),
-                ],
-              ),
+            _buildSectionHeader(
+              title: "Top Venues",
+              icon: HugeIcons.strokeRoundedStar,
+              iconColor: AppColors.accentOrange,
+              bgColor: AppColors.accentOrange.withValues(alpha: 0.1),
+              onViewAll: () {
+                HapticFeedback.lightImpact();
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.categoryGrounds,
+                  arguments: 'Top Venues',
+                );
+              },
             ),
             SizedBox(
-              height: 305,
+              height: 330,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: displayTopVenues.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                separatorBuilder: (_, __) => const SizedBox(width: 14),
                 itemBuilder: (context, index) {
                   return _AnimatedGroundCard(
                     index: index,
                     child: SizedBox(
-                      width: 260,
+                      width: 295,
                       child: VenueCard(
                         venue: displayTopVenues[index],
                         showAmenities: false,
@@ -489,51 +577,20 @@ class _GroundListScreenState extends State<GroundListScreen> {
       builder: (context, state) {
         final count = (state is GroundLoaded) ? state.venues.length : 0;
 
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(AppSizes.sm),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(AppSizes.radiusSm),
-                    ),
-                    child: const HugeIcon(
-                      icon: HugeIcons.strokeRoundedCompass,
-                      color: AppColors.primaryDarkGreen,
-                      size: AppSizes.iconMd,
-                    ),
-                  ),
-                  const SizedBox(width: AppSizes.md),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const AppText(
-                        text: "Nearby Venues",
-                        size: 18,
-                        weight: FontWeight.w700,
-                      ),
-                      if (count > 0) ...[
-                        const SizedBox(height: 2),
-                        AppText(
-                          text: "$count venue${count == 1 ? '' : 's'} found",
-                          size: 12,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withValues(alpha: 0.5),
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
+        return _buildSectionHeader(
+          title: "Nearby Venues",
+          subtitle: count > 0 ? "$count venue${count == 1 ? '' : 's'} found" : null,
+          icon: HugeIcons.strokeRoundedCompass,
+          iconColor: AppColors.primaryDarkGreen,
+          bgColor: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
+          onViewAll: () {
+            HapticFeedback.lightImpact();
+            Navigator.pushNamed(
+              context,
+              AppRoutes.categoryGrounds,
+              arguments: 'Nearby Venues',
+            );
+          },
         ).animate().fadeIn(delay: 500.ms, duration: 400.ms);
       },
     );
@@ -557,7 +614,9 @@ class _GroundListScreenState extends State<GroundListScreen> {
 
         if (state is GroundLoaded) {
           if (state.venues.isEmpty) {
-            return _buildEmptyState();
+            return SliverToBoxAdapter(
+              child: _buildEmptyState(),
+            );
           }
 
           return SliverPadding(
@@ -584,8 +643,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
         }
 
         if (state is GroundError) {
-          return SliverFillRemaining(
-            hasScrollBody: false,
+          return SliverToBoxAdapter(
             child: _buildErrorState(state.message),
           );
         }
@@ -694,7 +752,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
                                 padding: const EdgeInsets.all(4),
                                 decoration: BoxDecoration(
                                   gradient: isSelected
-                                      ? LinearGradient(
+                                      ? const LinearGradient(
                                           colors: [
                                             AppColors.primaryDarkGreen,
                                             AppColors.primaryLightGreen,
@@ -817,47 +875,44 @@ class _GroundListScreenState extends State<GroundListScreen> {
 
   // ─── EMPTY STATE ─────────────────────────────────────────────
   Widget _buildEmptyState() {
-    return SliverFillRemaining(
-      hasScrollBody: false,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryDarkGreen.withValues(alpha: 0.08),
-                  shape: BoxShape.circle,
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppColors.primaryDarkGreen.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: const HugeIcon(
+                icon: HugeIcons.strokeRoundedSearch01,
+                size: 48,
+                color: AppColors.primaryDarkGreen,
+              ),
+            ).animate().scale(
+                  delay: 200.ms,
+                  duration: 500.ms,
+                  curve: Curves.easeOutBack,
                 ),
-                child: const HugeIcon(
-                  icon: HugeIcons.strokeRoundedSearch01,
-                  size: 48,
-                  color: AppColors.primaryDarkGreen,
-                ),
-              ).animate().scale(
-                    delay: 200.ms,
-                    duration: 500.ms,
-                    curve: Curves.easeOutBack,
-                  ),
-              const SizedBox(height: 20),
-              AppText(
-                text: "No venues found",
-                size: 18,
-                weight: FontWeight.w700,
-              ).animate().fadeIn(delay: 400.ms, duration: 400.ms),
-              const SizedBox(height: 8),
-              AppText(
-                text: "Try changing your sport or location",
-                size: 13,
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.5),
-              ).animate().fadeIn(delay: 500.ms, duration: 400.ms),
-            ],
-          ),
+            const SizedBox(height: 20),
+            const AppText(
+              text: "No venues found",
+              size: 18,
+              weight: FontWeight.w700,
+            ).animate().fadeIn(delay: 400.ms, duration: 400.ms),
+            const SizedBox(height: 8),
+            AppText(
+              text: "Try changing your sport or location",
+              size: 13,
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.5),
+            ).animate().fadeIn(delay: 500.ms, duration: 400.ms),
+          ],
         ),
       ),
     );
@@ -884,7 +939,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            AppText(
+            const AppText(
               text: "Something went wrong",
               size: 18,
               weight: FontWeight.w700,

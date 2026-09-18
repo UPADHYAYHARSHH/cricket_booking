@@ -13,6 +13,7 @@ import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import 'package:turfpro/user_booking/data/models/ground_model.dart';
 import 'package:turfpro/user_booking/presentation/widgets/ground_image_carousel.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:turfpro/user_booking/presentation/widgets/slot_selection_widgets.dart';
 
 class GroundCard extends StatefulWidget {
   final GroundModel ground;
@@ -310,30 +311,62 @@ class _GroundCardState extends State<GroundCard>
 
           const SizedBox(height: 6),
 
-          // Categories
-          if (widget.ground.categories.isNotEmpty)
-            Wrap(
-              spacing: 4,
-              runSpacing: 4,
-              children: widget.ground.categories.take(2).map((category) {
-                return Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryDarkGreen.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  child: AppText(
-                    text: category,
-                    textStyle: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primaryDarkGreen,
+          // Categories / Sports
+          if (widget.ground.categories.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            SizedBox(
+              height: 28,
+              child: Row(
+                children: [
+                  ...widget.ground.categories.take(4).map((category) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.primaryDarkGreen.withValues(alpha: 0.08),
+                          border: Border.all(
+                            color: AppColors.primaryDarkGreen.withValues(alpha: 0.35),
+                            width: 1.0,
+                          ),
+                        ),
+                        child: ClipOval(
+                          child: SlotSelectionWidgets.buildSportIcon(
+                            category,
+                            size: 28,
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                  if (widget.ground.categories.length > 4)
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
+                        border: Border.all(
+                          color: AppColors.primaryDarkGreen.withValues(alpha: 0.35),
+                          width: 1.0,
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        "+${widget.ground.categories.length - 4}",
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primaryDarkGreen,
+                        ),
+                      ),
                     ),
-                  ),
-                );
-              }).toList(),
+                ],
+              ),
             ),
+          ],
 
           const SizedBox(height: 6),
 

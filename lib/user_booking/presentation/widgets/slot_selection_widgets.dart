@@ -21,6 +21,11 @@ import 'package:turfpro/user_booking/data/models/review_model.dart';
 import 'package:turfpro/user_booking/presentation/widgets/review_widgets.dart';
 import 'package:turfpro/utils/toast_util.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:turfpro/user_booking/data/models/sport_model.dart';
+import 'package:turfpro/user_booking/presentation/blocs/sport/sport_cubit.dart';
+import 'package:turfpro/user_booking/presentation/blocs/sport/sport_state.dart';
+import 'package:turfpro/user_booking/di/get_it/get_it.dart';
 import 'ground_image_carousel.dart';
 
 class SlotSelectionWidgets {
@@ -207,17 +212,12 @@ class SlotSelectionWidgets {
                           shape: BoxShape.circle,
                         ),
                         child: ClipOval(
-                          child: Image.asset(
-                            getSportImage(sport),
-                            width: 24,
-                            height: 24,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Icon(
-                                Icons.sports,
-                                size: 18,
-                                color: isSel
-                                    ? Colors.white
-                                    : AppColors.primaryDarkGreen),
+                          child: buildSportIcon(
+                            sport,
+                            size: 24,
+                            fallbackColor: isSel
+                                ? Colors.white
+                                : AppColors.primaryDarkGreen,
                           ),
                         ),
                       ),
@@ -400,15 +400,12 @@ class SlotSelectionWidgets {
                             shape: BoxShape.circle,
                           ),
                           child: ClipOval(
-                            child: Image.asset(
-                              getSportImage(state.selectedSport ?? ''),
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Icon(Icons.stadium_outlined,
-                                      size: 16,
-                                      color: isSelected
-                                          ? AppColors.primaryDarkGreen
-                                          : Colors.grey),
+                            child: buildSportIcon(
+                              state.selectedSport ?? '',
+                              size: 20,
+                              fallbackColor: isSelected
+                                  ? AppColors.primaryDarkGreen
+                                  : Colors.grey,
                             ),
                           ),
                         ),
@@ -510,8 +507,17 @@ class SlotSelectionWidgets {
                 ),
                 child: Row(
                   children: [
-                    Icon(getSportIcon(state.selectedSport!),
-                        size: 16, color: _getSportColor(state.selectedSport!)),
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: ClipOval(
+                        child: buildSportIcon(
+                          state.selectedSport!,
+                          size: 16,
+                          fallbackColor: _getSportColor(state.selectedSport!),
+                        ),
+                      ),
+                    ),
                     const AppSizedBox(width: 8),
                     AppText(
                       text: state.selectedSport!,
@@ -940,112 +946,474 @@ class SlotSelectionWidgets {
     }).toList();
   }
 
-  static IconData _getAmenityIconData(String label) {
-    switch (label.toLowerCase()) {
-      case 'wifi':
-        return Icons.wifi;
-      case 'parking':
-        return Icons.local_parking;
-      case 'water':
-      case 'drinking water':
-        return Icons.water_drop;
-      case 'washroom':
-      case 'toilet':
-        return Icons.wc;
-      case 'changing room':
-        return Icons.door_front_door;
-      case 'cafeteria':
-      case 'canteen':
-        return Icons.restaurant;
-      case 'first aid':
-        return Icons.medical_services;
-      case 'cctv':
-        return Icons.videocam;
-      default:
-        return Icons.check_circle_outline;
+  static const List<Map<String, dynamic>> _venueAmenityDefinitions = [
+    {
+      'id': 'parking',
+      'label': 'Parking',
+      'icon': HugeIcons.strokeRoundedCarParking01,
+      'materialIcon': Icons.local_parking,
+      'aliases': ['parking', 'car parking', 'parking charge'],
+    },
+    {
+      'id': 'washrooms',
+      'label': 'Washrooms',
+      'icon': HugeIcons.strokeRoundedToilet01,
+      'materialIcon': Icons.wc,
+      'aliases': ['washroom', 'washrooms', 'toilet', 'restroom'],
+    },
+    {
+      'id': 'changing_rooms',
+      'label': 'Changing Rooms',
+      'icon': HugeIcons.strokeRoundedLocker01,
+      'materialIcon': Icons.door_front_door,
+      'aliases': ['changing room', 'changing rooms', 'changing_room', 'changing_rooms', 'locker', 'lockers'],
+    },
+    {
+      'id': 'drinking_water',
+      'label': 'Drinking Water',
+      'icon': HugeIcons.strokeRoundedDroplet,
+      'materialIcon': Icons.water_drop,
+      'aliases': ['drinking water', 'drinking_water', 'water'],
+    },
+    {
+      'id': 'waiting_area',
+      'label': 'Waiting / Seating Area',
+      'icon': HugeIcons.strokeRoundedSofa01,
+      'materialIcon': Icons.chair,
+      'aliases': ['waiting area', 'waiting_area', 'waiting / seating area', 'seating area'],
+    },
+    {
+      'id': 'cafeteria',
+      'label': 'Cafeteria / Canteen',
+      'icon': HugeIcons.strokeRoundedCafe,
+      'materialIcon': Icons.restaurant,
+      'aliases': ['cafeteria', 'canteen', 'cafeteria / canteen', 'restaurant'],
+    },
+    {
+      'id': 'vending_machine',
+      'label': 'Vending Machine',
+      'icon': HugeIcons.strokeRoundedSoftDrink01,
+      'materialIcon': Icons.fastfood,
+      'aliases': ['vending machine', 'vending_machine'],
+    },
+    {
+      'id': 'water_dispenser',
+      'label': 'Water Dispenser',
+      'icon': HugeIcons.strokeRoundedWaterPump,
+      'materialIcon': Icons.water_drop,
+      'aliases': ['water dispenser', 'water_dispenser'],
+    },
+    {
+      'id': 'cctv',
+      'label': 'CCTV Surveillance',
+      'icon': HugeIcons.strokeRoundedCctvCamera,
+      'materialIcon': Icons.videocam,
+      'aliases': ['cctv', 'cctv surveillance', 'camera'],
+    },
+    {
+      'id': 'first_aid',
+      'label': 'First Aid Kit',
+      'icon': HugeIcons.strokeRoundedFirstAidKit,
+      'materialIcon': Icons.medical_services,
+      'aliases': ['first aid', 'first_aid', 'first aid kit'],
+    },
+    {
+      'id': 'fire_safety',
+      'label': 'Fire Safety Equipment',
+      'icon': HugeIcons.strokeRoundedFireExtinguisher,
+      'materialIcon': Icons.fire_extinguisher,
+      'aliases': ['fire safety', 'fire_safety', 'fire safety equipment'],
+    },
+    {
+      'id': 'security_guard',
+      'label': 'Security Guard',
+      'icon': HugeIcons.strokeRoundedUserShield01,
+      'materialIcon': Icons.security,
+      'aliases': ['security guard', 'security_guard', 'security'],
+    },
+    {
+      'id': 'bat_rental',
+      'label': 'Bat Rental',
+      'icon': HugeIcons.strokeRoundedCricketBat,
+      'materialIcon': Icons.sports_cricket,
+      'aliases': ['bat rental', 'bat_rental', 'cricket bat'],
+    },
+    {
+      'id': 'ball_provided',
+      'label': 'Ball Provided',
+      'icon': HugeIcons.strokeRoundedBaseball,
+      'materialIcon': Icons.sports_cricket,
+      'aliases': ['ball provided', 'ball_provided', 'ball'],
+    },
+    {
+      'id': 'batting_pads',
+      'label': 'Batting Pads',
+      'icon': HugeIcons.strokeRoundedShield01,
+      'materialIcon': Icons.sports_cricket,
+      'aliases': ['batting pads', 'batting_pads', 'pads'],
+    },
+    {
+      'id': 'helmet',
+      'label': 'Helmet Rental',
+      'icon': HugeIcons.strokeRoundedCricketHelmet,
+      'materialIcon': Icons.sports_cricket,
+      'aliases': ['helmet', 'helmet rental', 'helmet_rental'],
+    },
+    {
+      'id': 'stumps_permanent',
+      'label': 'Permanent Stumps',
+      'icon': HugeIcons.strokeRoundedUtilityPole,
+      'materialIcon': Icons.sports_cricket,
+      'aliases': ['stumps', 'stumps_permanent', 'permanent stumps', 'cemented stumps'],
+    },
+    {
+      'id': 'football_rental',
+      'label': 'Football Rental',
+      'icon': HugeIcons.strokeRoundedFootball,
+      'materialIcon': Icons.sports_soccer,
+      'aliases': ['football rental', 'football_rental', 'football'],
+    },
+    {
+      'id': 'goal_nets',
+      'label': 'Goal Nets',
+      'icon': HugeIcons.strokeRoundedFootballPitch,
+      'materialIcon': Icons.sports_soccer,
+      'aliases': ['goal nets', 'goal_nets', 'net'],
+    },
+    {
+      'id': 'bibs',
+      'label': 'Bibs / Jerseys',
+      'icon': HugeIcons.strokeRoundedTShirt,
+      'materialIcon': Icons.checkroom,
+      'aliases': ['bibs', 'bibs / jerseys', 'jerseys', 'bibs_jerseys'],
+    },
+    {
+      'id': 'wifi',
+      'label': 'WiFi',
+      'icon': HugeIcons.strokeRoundedWifi01,
+      'materialIcon': Icons.wifi,
+      'aliases': ['wifi', 'wi-fi'],
+    },
+    {
+      'id': 'live_scoring',
+      'label': 'Live Scoring Support',
+      'icon': HugeIcons.strokeRoundedAnalyticsUp,
+      'materialIcon': Icons.scoreboard,
+      'aliases': ['live scoring', 'live_scoring', 'live scoring support'],
+    },
+    {
+      'id': 'coaching',
+      'label': 'Coaching Available',
+      'icon': HugeIcons.strokeRoundedWhistle,
+      'materialIcon': Icons.sports,
+      'aliases': ['coaching', 'coaching available'],
+    },
+    {
+      'id': 'video_recording',
+      'label': 'Video Recording',
+      'icon': HugeIcons.strokeRoundedCameraVideo,
+      'materialIcon': Icons.videocam,
+      'aliases': ['video recording', 'video_recording'],
+    },
+    {
+      'id': 'score_display',
+      'label': 'LED Score Display',
+      'icon': HugeIcons.strokeRoundedModernTv,
+      'materialIcon': Icons.scoreboard,
+      'aliases': ['score display', 'score_display', 'led score display'],
+    },
+    {
+      'id': 'floodlights',
+      'label': 'Floodlights (LED)',
+      'icon': HugeIcons.strokeRoundedSpotlight,
+      'materialIcon': Icons.light_mode,
+      'aliases': ['floodlight', 'floodlights', 'floodlights (led)', 'floodlights_(led)', 'led floodlights'],
+    },
+  ];
+
+  static Map<String, dynamic>? _matchAmenity(String input) {
+    final clean = input.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    if (clean.isEmpty) return null;
+
+    for (final def in _venueAmenityDefinitions) {
+      final id = (def['id'] as String).toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+      if (clean == id) return def;
+
+      final label = (def['label'] as String).toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+      if (clean == label) return def;
+
+      final aliases = def['aliases'] as List<String>?;
+      if (aliases != null) {
+        for (final alias in aliases) {
+          final cleanAlias = alias.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+          if (clean == cleanAlias) return def;
+        }
+      }
     }
+    return null;
+  }
+
+  static String formatAmenityName(String raw) {
+    final match = _matchAmenity(raw);
+    if (match != null) {
+      return match['label'] as String;
+    }
+    return raw.replaceAll('_', ' ').split(' ').map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '').join(' ');
+  }
+
+  static IconData _getAmenityIconData(String label) {
+    final match = _matchAmenity(label);
+    if (match != null && match['materialIcon'] != null) {
+      return match['materialIcon'] as IconData;
+    }
+    return Icons.check_circle_outline;
   }
 
   static dynamic getAmenityHugeIcon(String label) {
-    switch (label.toLowerCase()) {
-      case 'wifi':
-        return HugeIcons.strokeRoundedWifi01;
-      case 'parking':
-        return HugeIcons.strokeRoundedCarParking01;
-      case 'water':
-      case 'drinking water':
-        return HugeIcons.strokeRoundedDroplet;
-      case 'washroom':
-      case 'toilet':
-        return HugeIcons.strokeRoundedToilet01;
-      case 'changing room':
-        return HugeIcons.strokeRoundedDoor01;
-      case 'cafeteria':
-      case 'canteen':
-        return HugeIcons.strokeRoundedRestaurant01;
-      case 'first aid':
-        return HugeIcons.strokeRoundedFirstAidKit;
-      case 'cctv':
-        return HugeIcons.strokeRoundedCctvCamera;
-      default:
-        return HugeIcons.strokeRoundedCheckList;
+    final match = _matchAmenity(label);
+    if (match != null && match['icon'] != null) {
+      return match['icon'];
     }
+    return HugeIcons.strokeRoundedCheckList;
+  }
+
+  static SportModel? findSportModel(List<SportModel> sports, String sportName) {
+    if (sports.isEmpty || sportName.trim().isEmpty) return null;
+    final clean = sportName.trim().toLowerCase();
+    final normalized = clean.replaceAll(RegExp(r'[^a-z0-9]'), '');
+
+    // 1. Exact match by slug or name
+    for (final s in sports) {
+      if (s.slug.toLowerCase() == clean || s.name.toLowerCase() == clean) {
+        return s;
+      }
+    }
+
+    // 2. Normalized match (alphanumeric only)
+    for (final s in sports) {
+      final sSlugNorm =
+          s.slug.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+      final sNameNorm =
+          s.name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+      if (sSlugNorm == normalized || sNameNorm == normalized) {
+        return s;
+      }
+    }
+
+    // 3. Typo/alias tolerance (pickle/pickel, futsal/football/soccer, etc.)
+    bool matchesSpecial(String a, String b) {
+      final normA = a.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+      final normB = b.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+      if ((normA.contains('pickle') || normA.contains('pickel')) &&
+          (normB.contains('pickle') || normB.contains('pickel'))) {
+        return true;
+      }
+      if ((normA.contains('cricket') || normA.contains('cric')) &&
+          (normB.contains('cricket') || normB.contains('cric'))) {
+        return true;
+      }
+      if ((normA.contains('foot') ||
+              normA.contains('soccer') ||
+              normA.contains('futsal')) &&
+          (normB.contains('foot') ||
+              normB.contains('soccer') ||
+              normB.contains('futsal'))) {
+        return true;
+      }
+      if (normA.contains('badminton') && normB.contains('badminton')) {
+        return true;
+      }
+      if (normA.contains('volley') && normB.contains('volley')) {
+        return true;
+      }
+      if ((normA.contains('tennis') ||
+              normA.contains('padel') ||
+              normA.contains('squash')) &&
+          (normB.contains('tennis') ||
+              normB.contains('padel') ||
+              normB.contains('squash'))) {
+        return true;
+      }
+      if (normA.contains('basket') && normB.contains('basket')) {
+        return true;
+      }
+      return false;
+    }
+
+    for (final s in sports) {
+      if (matchesSpecial(s.slug, clean) || matchesSpecial(s.name, clean)) {
+        return s;
+      }
+    }
+
+    // 4. Substring containment
+    for (final s in sports) {
+      final sSlugNorm =
+          s.slug.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+      final sNameNorm =
+          s.name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+      if (sSlugNorm.isNotEmpty &&
+          (normalized.contains(sSlugNorm) || sSlugNorm.contains(normalized))) {
+        return s;
+      }
+      if (sNameNorm.isNotEmpty &&
+          (normalized.contains(sNameNorm) || sNameNorm.contains(normalized))) {
+        return s;
+      }
+    }
+
+    return null;
   }
 
   static Color _getSportColor(String sport) {
-    switch (sport.toLowerCase()) {
-      case 'cricket':
-        return const Color(0xFF2E7D32); // Dark Green
-      case 'football':
-        return const Color(0xFF1B5E20); // Even Darker Green
-      case 'badminton':
-        return const Color(0xFF1976D2); // Blue
-      case 'tennis':
-        return const Color(0xFFC0CA33); // Lime
-      case 'basketball':
-        return const Color(0xFFE65100); // Orange
-      default:
-        return AppColors.primaryDarkGreen;
+    final s = sport.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    if (s.contains('cricket') || s.contains('cric')) {
+      return AppColors.primaryDarkGreen;
+    } else if (s.contains('foot') ||
+        s.contains('soccer') ||
+        s.contains('futsal')) {
+      return const Color(0xFF1E88E5);
+    } else if (s.contains('badminton')) {
+      return const Color(0xFF8E24AA);
+    } else if (s.contains('tennis') ||
+        s.contains('padel') ||
+        s.contains('squash')) {
+      return const Color(0xFF00897B);
+    } else if (s.contains('volley')) {
+      return const Color(0xFFFB8C00);
+    } else if (s.contains('pickle') || s.contains('pickel')) {
+      return const Color(0xFF43A047);
+    } else if (s.contains('basket')) {
+      return const Color(0xFFE65100);
     }
+    return AppColors.primaryDarkGreen;
+  }
+
+  static Widget buildSportIcon(
+    String sportName, {
+    double size = 24,
+    Color? fallbackColor,
+    BoxFit fit = BoxFit.cover,
+  }) {
+    if (sportName.trim().isEmpty) {
+      return Icon(
+        Icons.sports,
+        size: size * 0.7,
+        color: fallbackColor ?? AppColors.primaryDarkGreen,
+      );
+    }
+
+    return BlocBuilder<SportCubit, SportState>(
+      builder: (context, sportState) {
+        List<SportModel> sports =
+            sportState is SportLoaded ? sportState.sports : <SportModel>[];
+
+        if (sports.isEmpty) {
+          try {
+            final cubit = getIt<SportCubit>();
+            if (cubit.state is SportLoaded) {
+              sports = (cubit.state as SportLoaded).sports;
+            } else if (cubit.state is! SportLoading) {
+              cubit.fetchSports();
+            }
+          } catch (_) {}
+        }
+
+        final sportData = findSportModel(sports, sportName);
+
+        if (sportData != null && sportData.iconUrl.isNotEmpty) {
+          return CachedNetworkImage(
+            imageUrl: sportData.iconUrl,
+            width: size,
+            height: size,
+            fit: fit,
+            placeholder: (_, __) => SizedBox(width: size, height: size),
+            errorWidget: (_, __, ___) =>
+                _fallbackSportIcon(sportName, size, fallbackColor, fit),
+          );
+        } else if (sportData != null && sportData.localAsset.isNotEmpty) {
+          return Image.asset(
+            sportData.localAsset,
+            width: size,
+            height: size,
+            fit: fit,
+            errorBuilder: (_, __, ___) =>
+                _fallbackSportIcon(sportName, size, fallbackColor, fit),
+          );
+        }
+
+        return _fallbackSportIcon(sportName, size, fallbackColor, fit);
+      },
+    );
+  }
+
+  static Widget _fallbackSportIcon(
+    String sportName,
+    double size,
+    Color? fallbackColor,
+    BoxFit fit,
+  ) {
+    return Image.asset(
+      getSportImage(sportName),
+      width: size,
+      height: size,
+      fit: fit,
+      errorBuilder: (context, error, stackTrace) => Icon(
+        getSportIcon(sportName),
+        size: size * 0.7,
+        color: fallbackColor ?? AppColors.primaryDarkGreen,
+      ),
+    );
   }
 
   static String getSportImage(String sport) {
-    switch (sport.toLowerCase()) {
-      case 'cricket':
-      case 'box_cricket':
-        return 'assets/images/sports/sport6.png';
-      case 'football':
-        return 'assets/images/sports/sport1.png';
-      case 'volleyball':
-        return 'assets/images/sports/sport3.png';
-      case 'pickleball':
-        return 'assets/images/sports/sport4.png';
-      case 'badminton':
-        return 'assets/images/sports/sport5.png';
-      case 'tennis':
-        return 'assets/images/sports/sport2.png';
-      default:
-        return 'assets/images/sports/sport6.png';
+    final s = sport.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    if (s.contains('pickle') || s.contains('pickel')) {
+      return 'assets/images/sports/sport4.png';
+    } else if (s.contains('cricket') || s.contains('cric')) {
+      return 'assets/images/sports/sport6.png';
+    } else if (s.contains('foot') ||
+        s.contains('soccer') ||
+        s.contains('futsal')) {
+      return 'assets/images/sports/sport1.png';
+    } else if (s.contains('volley')) {
+      return 'assets/images/sports/sport3.png';
+    } else if (s.contains('badminton')) {
+      return 'assets/images/sports/sport5.png';
+    } else if (s.contains('tennis') ||
+        s.contains('padel') ||
+        s.contains('squash') ||
+        s.contains('tabletennis') ||
+        s.contains('tt')) {
+      return 'assets/images/sports/sport2.png';
+    } else if (s.contains('basket')) {
+      return 'assets/images/sports/sport1.png';
     }
+    return 'assets/images/sports/sport6.png';
   }
 
   static IconData getSportIcon(String sport) {
-    switch (sport.toLowerCase()) {
-      case 'cricket':
-        return Icons.sports_cricket;
-      case 'football':
-        return Icons.sports_soccer;
-      case 'badminton':
-        return Icons.sports_tennis;
-      case 'tennis':
-        return Icons.sports_tennis;
-      case 'volleyball':
-        return Icons.sports_volleyball;
-      case 'basketball':
-        return Icons.sports_basketball;
-      default:
-        return Icons.sports_score;
+    final s = sport.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    if (s.contains('pickle') || s.contains('pickel')) {
+      return Icons.sports_tennis;
+    } else if (s.contains('cricket') || s.contains('cric')) {
+      return Icons.sports_cricket;
+    } else if (s.contains('foot') ||
+        s.contains('soccer') ||
+        s.contains('futsal')) {
+      return Icons.sports_soccer;
+    } else if (s.contains('badminton')) {
+      return Icons.sports_tennis;
+    } else if (s.contains('tennis') ||
+        s.contains('padel') ||
+        s.contains('squash')) {
+      return Icons.sports_tennis;
+    } else if (s.contains('volley')) {
+      return Icons.sports_volleyball;
+    } else if (s.contains('basket')) {
+      return Icons.sports_basketball;
     }
+    return Icons.sports;
   }
 
   // â”€â”€ Turf Image Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -2284,6 +2652,8 @@ class SlotSelectionWidgets {
       return const SizedBox.shrink();
     }
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final displayAmenities = amenities.take(10).toList();
     final hasMore = amenities.length > 10;
 
@@ -2333,12 +2703,15 @@ class SlotSelectionWidgets {
             itemCount: displayAmenities.length,
             itemBuilder: (context, index) {
               final amenity = displayAmenities[index];
-              // Convert "car parking" to "Car Parking"
-              final formattedAmenity = amenity.split(' ').map((word) => word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1)}' : '').join(' ');
+              final formattedAmenity = formatAmenityName(amenity);
               return Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                  color: isDark ? const Color(0xFF252525) : Colors.white,
+                  border: Border.all(
+                    color: isDark
+                        ? const Color(0xFF383838)
+                        : Colors.grey.withValues(alpha: 0.2),
+                  ),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
@@ -2356,10 +2729,10 @@ class SlotSelectionWidgets {
                         text: formattedAmenity,
                         align: TextAlign.center,
                         maxLines: 2,
-                        textStyle: const TextStyle(
+                        textStyle: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+                          color: isDark ? Colors.grey[300] : Colors.black87,
                           height: 1.1,
                         ),
                       ),
@@ -2409,10 +2782,15 @@ class SlotSelectionWidgets {
 
   static void _showAmenitiesBottomSheet(
       BuildContext context, List<String> amenities) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final bg = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final cardBg = isDark ? const Color(0xFF2A2A2A) : const Color(0xFFEEF2FF);
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: bg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -2434,7 +2812,7 @@ class SlotSelectionWidgets {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close),
+                    icon: Icon(Icons.close, color: isDark ? Colors.white : Colors.black87),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -2458,7 +2836,7 @@ class SlotSelectionWidgets {
                         width: 64,
                         height: 64,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFEEF2FF),
+                          color: cardBg,
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Center(
@@ -2472,15 +2850,12 @@ class SlotSelectionWidgets {
                       const SizedBox(height: 8),
                       Expanded(
                         child: AppText(
-                          text: amenity.toUpperCase(),
+                          text: formatAmenityName(amenity),
                           align: TextAlign.center,
                           textStyle: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.8),
+                            color: theme.colorScheme.onSurface.withOpacity(0.8),
                           ),
                         ),
                       ),

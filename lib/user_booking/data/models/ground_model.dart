@@ -92,7 +92,13 @@ class GroundModel {
       amenities: () {
         final list = <String>[];
         if (json['amenities'] is List) {
-           list.addAll((json['amenities'] as List).map((a) => a.toString()));
+          list.addAll((json['amenities'] as List).map((a) => a.toString()));
+        }
+        final loc = json['locations'];
+        if (loc is Map && loc['amenities'] is List) {
+          list.addAll((loc['amenities'] as List).map((a) => a.toString()));
+        } else if (loc is List && loc.isNotEmpty && loc.first is Map && loc.first['amenities'] is List) {
+          list.addAll((loc.first['amenities'] as List).map((a) => a.toString()));
         }
         if (json['has_parking'] == true) list.add('Parking');
         if (json['has_washroom'] == true) list.add('Washroom');
