@@ -368,7 +368,7 @@ class SlotSelectionWidgets {
                 return GestureDetector(
                   onTap: isAvailable ? () => onTurfChanged(turf) : null,
                   child: Container(
-                    width: 150,
+                    width: 190,
                     margin: const EdgeInsets.only(right: 8),
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -431,6 +431,7 @@ class SlotSelectionWidgets {
                                       : TextDecoration.lineThrough,
                                 ),
                                 maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                               AppText(
                                 text: turf.categories.isNotEmpty
@@ -443,6 +444,8 @@ class SlotSelectionWidgets {
                                       .onSurface
                                       .withOpacity(0.6),
                                 ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),

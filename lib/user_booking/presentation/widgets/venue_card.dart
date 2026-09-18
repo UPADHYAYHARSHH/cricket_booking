@@ -375,7 +375,7 @@ class _VenueCardState extends State<VenueCard>
                       final sportSlug = widget.venue.availableSports[index];
                       SportModel? sportData;
                       try {
-                        sportData = sports.firstWhere((s) => s.slug == sportSlug || s.name == sportSlug);
+                        sportData = sports.firstWhere((s) => s.slug.toLowerCase() == sportSlug.toLowerCase() || s.name.toLowerCase() == sportSlug.toLowerCase());
                       } catch (_) {}
                       return Container(
                         padding: const EdgeInsets.all(2),

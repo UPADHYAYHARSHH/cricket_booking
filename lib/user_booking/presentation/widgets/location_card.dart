@@ -304,7 +304,7 @@ class LocationCard extends StatelessWidget {
                       final sportSlug = location.sports[index];
                       SportModel? sportData;
                       try {
-                        sportData = sports.firstWhere((s) => s.slug == sportSlug);
+                        sportData = sports.firstWhere((s) => s.slug.toLowerCase() == sportSlug.toLowerCase() || s.name.toLowerCase() == sportSlug.toLowerCase());
                       } catch (_) {}
                       return Container(
                         padding: const EdgeInsets.all(2),

@@ -82,25 +82,16 @@ class UserRepositoryImpl implements UserRepository {
         'p_gender': gender,
         'p_dob': dob?.toIso8601String() ?? '',
         'p_username': username ?? '',
+        if (photoUrl != null) 'p_photo_url': photoUrl,
       });
 
-      // Since the RPC does not take a photo_url parameter, we update it directly.
-      // This should work now that AuthRepositoryImpl syncs the Supabase session.
-      if (photoUrl != null) {
-        try {
-          await supabase.from('users').update({'photo_url': photoUrl}).eq('id', user.uid);
-          debugPrint("[USER_REPO] Successfully updated photo_url via direct update.");
-        } catch (updateError) {
-          debugPrint("[USER_REPO] Direct update for photo_url failed: $updateError");
-        }
-      }
       return;
     } catch (rpcError) {
       debugPrint("[USER_REPO] RPC upsert_user_profile failed: $rpcError");
       // If the RPC function doesn't exist, throw a clear actionable error
       throw Exception(
-        "The upsert_user_profile database function is missing or not deployed. "
-        "Please run the SQL in supabase/upsert_user_function.sql in your Supabase SQL Editor.",
+        "The updated upsert_user_profile database function is missing. "
+        "Please run the SQL in supabase/update_upsert_profile_rpc.sql in your Supabase SQL Editor to support photo updates.",
       );
     }
   }

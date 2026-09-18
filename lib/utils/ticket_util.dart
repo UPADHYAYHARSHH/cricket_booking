@@ -358,50 +358,7 @@ class TicketUtil {
                             ],
                           ),
                         ),
-                        if (amenities != null && amenities.isNotEmpty) ...[
-                          pw.SizedBox(height: 24),
-                          pw.Container(
-                            width: double.infinity,
-                            child: pw.Column(
-                              crossAxisAlignment: pw.CrossAxisAlignment.start,
-                              children: [
-                                pw.Text(
-                                  'AMENITIES',
-                                  style: pw.TextStyle(
-                                      color: _kGrey,
-                                      fontSize: 8,
-                                      fontWeight: pw.FontWeight.bold,
-                                      letterSpacing: 1),
-                                ),
-                                pw.SizedBox(height: 8),
-                                pw.Wrap(
-                                  spacing: 12,
-                                  runSpacing: 8,
-                                  children: amenities.take(6).map((amenity) {
-                                    return pw.Container(
-                                      padding: const pw.EdgeInsets.symmetric(
-                                          horizontal: 8, vertical: 4),
-                                      decoration: pw.BoxDecoration(
-                                        color: _kBg,
-                                        borderRadius:
-                                            pw.BorderRadius.circular(4),
-                                        border: pw.Border.all(
-                                            color: _kBorder, width: 0.5),
-                                      ),
-                                      child: pw.Text(
-                                        amenity,
-                                        style: pw.TextStyle(
-                                            color: _kGreen,
-                                            fontSize: 8,
-                                            fontWeight: pw.FontWeight.bold),
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+
                         pw.SizedBox(height: 24),
                         pw.Container(
                           width: double.infinity,
@@ -513,28 +470,30 @@ class TicketUtil {
 
   static pw.Widget _pdfInfoBlock(String label, String value,
       {bool isBold = false, bool alignRight = false}) {
-    return pw.Column(
-      crossAxisAlignment:
-          alignRight ? pw.CrossAxisAlignment.end : pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text(
-          label,
-          style: pw.TextStyle(
-              color: _kGrey,
-              fontSize: 8,
-              fontWeight: pw.FontWeight.bold,
-              letterSpacing: 1),
-        ),
-        pw.SizedBox(height: 4),
-        pw.Text(
-          value,
-          style: pw.TextStyle(
-            color: _kDark,
-            fontSize: isBold ? 14 : 12,
-            fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
+    return pw.Expanded(
+      child: pw.Column(
+        crossAxisAlignment:
+            alignRight ? pw.CrossAxisAlignment.end : pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            label,
+            style: pw.TextStyle(
+                color: _kGrey,
+                fontSize: 8,
+                fontWeight: pw.FontWeight.bold,
+                letterSpacing: 1),
           ),
-        ),
-      ],
+          pw.SizedBox(height: 4),
+          pw.Text(
+            value,
+            style: pw.TextStyle(
+              color: _kDark,
+              fontSize: isBold ? 14 : 12,
+              fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

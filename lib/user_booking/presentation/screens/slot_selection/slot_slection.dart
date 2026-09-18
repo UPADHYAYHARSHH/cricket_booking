@@ -379,20 +379,6 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                             ),
                           ),
 
-                          // Amenities
-                          if (state.selectedTurf?.amenities.isNotEmpty == true || displayVenue?.amenities.isNotEmpty == true)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                              child: SlotSelectionWidgets.buildPremiumCard(
-                                context: context,
-                                child: SlotSelectionWidgets.buildAmenitiesSection(
-                                    context,
-                                    state.selectedTurf?.amenities.isNotEmpty == true
-                                        ? state.selectedTurf?.amenities
-                                        : displayVenue?.amenities),
-                              ),
-                            ),
-
                           // Description
                           Builder(
                             builder: (context) {

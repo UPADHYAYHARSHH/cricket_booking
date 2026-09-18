@@ -50,6 +50,8 @@ class RemoteConfigService {
         _readFromFirebase(remoteConfig);
         _maintenanceController.add(isMaintenanceMode);
         _configUpdateController.add(null);
+      }, onError: (error) {
+        debugPrint('⚠️ FIREBASE REMOTE CONFIG STREAM ERROR (Handled): $error');
       });
 
       _maintenanceController.add(isMaintenanceMode);

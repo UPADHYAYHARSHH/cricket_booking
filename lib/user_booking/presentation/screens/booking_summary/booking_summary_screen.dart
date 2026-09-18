@@ -382,7 +382,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
                                 final sports = sportState is SportLoaded ? sportState.sports : <SportModel>[];
                                 SportModel? sportData;
                                 try {
-                                  sportData = sports.firstWhere((s) => s.slug == sport || s.name == sport);
+                                  sportData = sports.firstWhere((s) => s.slug.toLowerCase() == sport.toLowerCase() || s.name.toLowerCase() == sport.toLowerCase());
                                 } catch (_) {}
 
                                 if (sportData != null && sportData.iconUrl.isNotEmpty) {
