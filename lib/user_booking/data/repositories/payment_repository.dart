@@ -887,6 +887,24 @@ class PaymentRepository {
       }
       final combinedPeriod = "$cleanPeriodLabel|${slotStartTimes.join(',')}";
 
+      // Idempotency check: if a booking for this orderId already exists, return it
+      if (orderId != null && orderId.isNotEmpty) {
+        try {
+          final existing = await _supabase
+              .from('bookings')
+              .select('*')
+              .eq('razorpay_order_id', orderId)
+              .maybeSingle();
+          if (existing != null) {
+            debugPrint(
+                'PaymentRepository: Booking already exists for orderId: $orderId. Returning existing record.');
+            return existing;
+          }
+        } catch (e) {
+          debugPrint('PaymentRepository: Idempotency check error (ignoring): $e');
+        }
+      }
+
       debugPrint('PaymentRepository: Inserting booking via RPC');
       final Map<String, dynamic> rpcParams = {
         'p_user_id': user.uid,

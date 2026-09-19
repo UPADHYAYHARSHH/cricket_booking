@@ -189,10 +189,14 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
       _pendingSummaryData = summaryData;
 
       if (!fromRetry) {
-        final now = DateTime.now();
-        _pendingDate = DateTime(now.year, now.month, activeDate.date);
-        if (_pendingDate!.isBefore(DateTime(now.year, now.month, now.day))) {
-          _pendingDate = DateTime(now.year, now.month + 1, activeDate.date);
+        if (activeDate is DateItem) {
+          _pendingDate = activeDate.fullDate;
+        } else {
+          final now = DateTime.now();
+          _pendingDate = DateTime(now.year, now.month, activeDate.date);
+          if (_pendingDate!.isBefore(DateTime(now.year, now.month, now.day))) {
+            _pendingDate = DateTime(now.year, now.month + 1, activeDate.date);
+          }
         }
       }
 
@@ -266,6 +270,16 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
       _pendingAppliedWallet = appliedWallet;
 
       // Note: Wallet deduction and Loyalty points are now processed in _handlePaymentSuccess
+
+      // If 100% covered by wallet/loyalty points, bypass Cashfree payment gateway
+      if (totalPrice <= 0) {
+        if (mounted) {
+          Navigator.pop(context); // Pop the loading dialog
+        }
+        final walletOrderId = "WALLET_${DateTime.now().millisecondsSinceEpoch}";
+        _handlePaymentSuccess(walletOrderId);
+        return;
+      }
 
       // Call backend to create Cashfree order and fetch session ID
       // We do NOT send returnUrl for Web anymore because we want to enforce the modal drop-in
@@ -545,30 +559,34 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
     final theme = Theme.of(context);
     final cubit = context.read<SlotSelectionCubit>();
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: AppText(
-          text: cubit.state.selectedTurf?.name ?? "Select Slots",
-          textStyle: const TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
+    return PopScope(
+      canPop: !_isAwaitingPaymentReturn && !_isBookingInProgress,
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        appBar: AppBar(
+          title: AppText(
+            text: cubit.state.selectedTurf?.name ?? "Select Slots",
+            textStyle: const TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
           ),
-        ),
-        centerTitle: true,
-        leading: IconButton(
-          icon: const HugeIcon(
-            icon: HugeIcons.strokeRoundedArrowLeft01,
-            size: 20,
-            color: Colors.white,
+          centerTitle: true,
+          leading: IconButton(
+            icon: const HugeIcon(
+              icon: HugeIcons.strokeRoundedArrowLeft01,
+              size: 20,
+              color: Colors.white,
+            ),
+            onPressed: (_isAwaitingPaymentReturn || _isBookingInProgress)
+                ? null
+                : () => Navigator.pop(context),
           ),
-          onPressed: () => Navigator.pop(context),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          flexibleSpace: const DiscoverAppBarBackground(),
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        flexibleSpace: const DiscoverAppBarBackground(),
-      ),
       body: BlocBuilder<SlotSelectionCubit, SlotSelectionState>(
         builder: (context, state) {
           final currentTurf = state.selectedTurf;
@@ -785,6 +803,7 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
           ],
         );
         },
+      ),
       ),
     );
   }

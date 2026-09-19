@@ -62,6 +62,8 @@ class _BookingProcessingScreenState extends State<BookingProcessingScreen>
   bool _hasError = false;
   String _errorMessage = "";
   int _confirmedDisplayId = 0;
+  bool _walletDeducted = false;
+  bool _loyaltyProcessed = false;
 
   @override
   void initState() {
@@ -90,7 +92,13 @@ class _BookingProcessingScreenState extends State<BookingProcessingScreen>
       });
       await Future.delayed(const Duration(milliseconds: 500));
 
-      final isValid = await _paymentRepo.verifyPayment(orderId: widget.orderId);
+      final bool isValid;
+      if (widget.orderId.startsWith('WALLET_') || widget.totalAmount <= 0) {
+        isValid = true;
+      } else {
+        isValid = await _paymentRepo.verifyPayment(orderId: widget.orderId);
+      }
+
       if (!isValid) {
         throw Exception("Payment verification failed with the payment gateway.");
       }
@@ -128,8 +136,10 @@ class _BookingProcessingScreenState extends State<BookingProcessingScreen>
         _currentStep = 2;
       });
 
-      // Wallet deduction if used
-      if (FeatureConfig.isWalletEnabled && widget.appliedWallet > 0) {
+      // Wallet deduction if used (guarded against double-debit on retry)
+      if (FeatureConfig.isWalletEnabled &&
+          widget.appliedWallet > 0 &&
+          !_walletDeducted) {
         try {
           final walletRepo = getIt<WalletRepository>();
           final currentBalance = await walletRepo.getBalance();
@@ -140,13 +150,14 @@ class _BookingProcessingScreenState extends State<BookingProcessingScreen>
             type: 'debit',
             description: 'Used for booking @ ${widget.ground.name}',
           );
+          _walletDeducted = true;
         } catch (e) {
           debugPrint("Wallet processing error: $e");
         }
       }
 
-      // Loyalty points redemption & earning
-      if (FeatureConfig.isLoyaltyEnabled) {
+      // Loyalty points redemption & earning (guarded against double-processing on retry)
+      if (FeatureConfig.isLoyaltyEnabled && !_loyaltyProcessed) {
         try {
           if (widget.appliedPoints > 0) {
             await _loyaltyRepo.redeemPoints(widget.appliedPoints);
@@ -155,6 +166,7 @@ class _BookingProcessingScreenState extends State<BookingProcessingScreen>
           if (pointsEarned > 0) {
             await _loyaltyRepo.earnPoints(pointsEarned);
           }
+          _loyaltyProcessed = true;
         } catch (e) {
           debugPrint("Loyalty processing error: $e");
         }
