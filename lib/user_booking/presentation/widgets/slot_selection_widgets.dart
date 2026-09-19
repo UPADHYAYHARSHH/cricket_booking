@@ -3257,29 +3257,29 @@ class _ReviewSectionWidgetState extends State<_ReviewSectionWidget> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              AppText(
-                text: "Reviews",
+              const AppText(
+                text: "REVIEWS",
                 textStyle: TextStyle(
-                  fontSize: 18,
+                  fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: Theme.of(context).colorScheme.onSurface,
+                  letterSpacing: 1.2,
                 ),
               ),
               Row(
                 children: [
                   const Icon(Icons.star,
-                      color: AppColors.goldenYellow, size: 20),
-                  const SizedBox(width: 6),
+                      color: AppColors.goldenYellow, size: 16),
+                  const SizedBox(width: 4),
                   AppText(
                     text: averageRating.toStringAsFixed(1),
                     textStyle: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 16),
+                        fontWeight: FontWeight.bold, fontSize: 13),
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 3),
                   AppText(
                     text: "(${widget.reviews.length})",
                     textStyle: TextStyle(
-                        fontSize: 14,
+                        fontSize: 12,
                         color: Theme.of(context)
                             .colorScheme
                             .onSurface

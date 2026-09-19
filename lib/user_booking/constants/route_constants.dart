@@ -24,4 +24,6 @@ class AppRoutes {
   static const scan = "/scan";
   static const bookingSummary = "/bookingSummary";
   static const reviewsScreen = "/reviewsScreen";
+  static const notificationSettings = "/notificationSettings";
+  static const avatarGenerator = "/avatarGenerator";
 }

@@ -21,6 +21,7 @@ class VenueCard extends StatefulWidget {
   final String? preferredSport;
   final bool showAmenities;
   final bool isGrid;
+  final bool isCompact;
 
   const VenueCard({
     super.key,
@@ -28,6 +29,7 @@ class VenueCard extends StatefulWidget {
     this.preferredSport,
     this.showAmenities = true,
     this.isGrid = false,
+    this.isCompact = false,
   });
 
   @override
@@ -125,7 +127,11 @@ class _VenueCardState extends State<VenueCard>
         GroundImageCarousel(
           images: widget.venue.images,
           fallbackImageUrl: widget.venue.imageUrl,
-          height: widget.isGrid ? 110 : 160,
+          height: widget.isGrid
+              ? 110
+              : widget.isCompact
+                  ? 120
+                  : 160,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
         ),
 
@@ -134,7 +140,7 @@ class _VenueCardState extends State<VenueCard>
           bottom: 0,
           left: 0,
           right: 0,
-          height: 60,
+          height: widget.isCompact ? 42 : 60,
           child: DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: const BorderRadius.vertical(
@@ -159,21 +165,21 @@ class _VenueCardState extends State<VenueCard>
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(4),
+                  padding: const EdgeInsets.all(3),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(5),
                   ),
-                  child: const HugeIcon(
+                  child: HugeIcon(
                     icon: HugeIcons.strokeRoundedLocation01,
-                    size: 12,
+                    size: widget.isCompact ? 10 : 12,
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 4),
                 AppText(
                   text: widget.venue.city,
-                  size: 14,
+                  size: widget.isCompact ? 12 : 14,
                   weight: FontWeight.w700,
                   color: Colors.white,
                 ),
@@ -183,8 +189,8 @@ class _VenueCardState extends State<VenueCard>
 
         // Favorite Button
         Positioned(
-          top: 10,
-          right: 10,
+          top: widget.isCompact ? 8 : 10,
+          right: widget.isCompact ? 8 : 10,
           child: BlocBuilder<SavedGroundCubit, SavedGroundState>(
             builder: (context, state) {
               final isSaved = state.favoriteIds.contains(widget.venue.locationId);
@@ -205,7 +211,7 @@ class _VenueCardState extends State<VenueCard>
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.all(7),
+                  padding: EdgeInsets.all(widget.isCompact ? 5 : 7),
                   decoration: BoxDecoration(
                     color: isSaved
                         ? AppColors.error
@@ -217,15 +223,15 @@ class _VenueCardState extends State<VenueCard>
                     ),
                   ),
                   child: isSaved
-                      ? const Icon(
+                      ? Icon(
                           Icons.favorite,
                           color: Colors.white,
-                          size: 15,
+                          size: widget.isCompact ? 13 : 15,
                         )
                       : HugeIcon(
                           icon: HugeIcons.strokeRoundedFavourite,
                           color: Colors.white.withValues(alpha: 0.8),
-                          size: 15,
+                          size: widget.isCompact ? 13 : 15,
                         ),
                 ),
               );
@@ -235,13 +241,16 @@ class _VenueCardState extends State<VenueCard>
 
         // Rating Badge
         Positioned(
-          top: 10,
-          left: 10,
+          top: widget.isCompact ? 8 : 10,
+          left: widget.isCompact ? 8 : 10,
           child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+              padding: EdgeInsets.symmetric(
+                horizontal: widget.isCompact ? 5 : 7,
+                vertical: widget.isCompact ? 3 : 4,
+              ),
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.55),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(widget.isCompact ? 6 : 8),
                 border: Border.all(
                   color: Colors.white.withValues(alpha: 0.15),
                 ),
@@ -249,16 +258,16 @@ class _VenueCardState extends State<VenueCard>
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.star_rounded,
-                    size: 14,
+                    size: widget.isCompact ? 12 : 14,
                     color: AppColors.goldenYellow,
                   ),
-                  const SizedBox(width: 3),
+                  const SizedBox(width: 2),
                   Text(
                     "${widget.venue.rating.toStringAsFixed(1)} (${widget.venue.totalReviews})",
-                    style: const TextStyle(
-                      fontSize: 11,
+                    style: TextStyle(
+                      fontSize: widget.isCompact ? 10 : 11,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
                     ),
@@ -275,14 +284,20 @@ class _VenueCardState extends State<VenueCard>
     final now = DateTime.now();
     final isWeekend = now.weekday == DateTime.saturday || now.weekday == DateTime.sunday;
 
+    final double sportIconSize = widget.isCompact ? 25 : 28;
+
     return Padding(
-      padding: const EdgeInsets.all(12),
+      padding: widget.isCompact
+          ? const EdgeInsets.fromLTRB(10, 8, 10, 8)
+          : const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Name
           AppText(
             text: widget.venue.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             textStyle: AppTextTheme.black16.copyWith(
               fontWeight: FontWeight.w700,
               fontSize: 14,
@@ -292,15 +307,19 @@ class _VenueCardState extends State<VenueCard>
             ),
           ),
 
-          const SizedBox(height: 6),
+          SizedBox(height: widget.isCompact ? 4 : 6),
 
           // Address
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              HugeIcon(
-                icon: HugeIcons.strokeRoundedLocation01,
-                size: 14,
-                color: onSurface.withValues(alpha: 0.5),
+              Padding(
+                padding: const EdgeInsets.only(top: 1.5),
+                child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedLocation01,
+                  size: widget.isCompact ? 13 : 14,
+                  color: onSurface.withValues(alpha: 0.5),
+                ),
               ),
               const SizedBox(width: 4),
               Expanded(
@@ -308,18 +327,19 @@ class _VenueCardState extends State<VenueCard>
                   text: widget.venue.address.isNotEmpty
                       ? widget.venue.address
                       : "Location not available",
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   textStyle: TextStyle(
-                    fontSize: 12,
+                    fontSize: widget.isCompact ? 11.5 : 12,
                     color: onSurface.withValues(alpha: 0.5),
+                    height: 1.25,
                   ),
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 3),
+          SizedBox(height: widget.isCompact ? 2 : 3),
 
           // Distance from user
           BlocBuilder<LocationCubit, LocationState>(
@@ -336,9 +356,9 @@ class _VenueCardState extends State<VenueCard>
                 );
                 return Row(
                   children: [
-                    const HugeIcon(
+                    HugeIcon(
                       icon: HugeIcons.strokeRoundedNavigation01,
-                      size: 11,
+                      size: widget.isCompact ? 10 : 11,
                       color: AppColors.primaryDarkGreen,
                     ),
                     const SizedBox(width: 3),
@@ -356,29 +376,29 @@ class _VenueCardState extends State<VenueCard>
 
           // Sports row
           if (widget.venue.availableSports.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            SizedBox(height: widget.isCompact ? 5 : 8),
             SizedBox(
-              height: 28,
+              height: sportIconSize,
               child: Row(
                 children: [
                   ...widget.venue.availableSports.take(4).map((sportSlug) {
                     return Padding(
-                      padding: const EdgeInsets.only(right: 6),
+                      padding: const EdgeInsets.only(right: 5),
                       child: Container(
-                        width: 28,
-                        height: 28,
+                        width: sportIconSize,
+                        height: sportIconSize,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: AppColors.primaryDarkGreen.withValues(alpha: 0.08),
                           border: Border.all(
                             color: AppColors.primaryDarkGreen.withValues(alpha: 0.35),
-                            width: 1.0,
+                            width: 0.8,
                           ),
                         ),
                         child: ClipOval(
                           child: SlotSelectionWidgets.buildSportIcon(
                             sportSlug,
-                            size: 28,
+                            size: sportIconSize,
                           ),
                         ),
                       ),
@@ -386,21 +406,21 @@ class _VenueCardState extends State<VenueCard>
                   }),
                   if (widget.venue.availableSports.length > 4)
                     Container(
-                      width: 28,
-                      height: 28,
+                      width: sportIconSize,
+                      height: sportIconSize,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
                         border: Border.all(
                           color: AppColors.primaryDarkGreen.withValues(alpha: 0.35),
-                          width: 1.0,
+                          width: 0.8,
                         ),
                       ),
                       alignment: Alignment.center,
                       child: Text(
                         "+${widget.venue.availableSports.length - 4}",
-                        style: const TextStyle(
-                          fontSize: 10,
+                        style: TextStyle(
+                          fontSize: widget.isCompact ? 9.5 : 10,
                           fontWeight: FontWeight.w700,
                           color: AppColors.primaryDarkGreen,
                         ),
@@ -411,7 +431,7 @@ class _VenueCardState extends State<VenueCard>
             ),
           ],
 
-          const SizedBox(height: 8),
+          SizedBox(height: widget.isCompact ? 5 : 8),
 
           // Price row
           Row(

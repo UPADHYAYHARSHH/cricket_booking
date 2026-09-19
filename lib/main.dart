@@ -34,6 +34,8 @@ import 'package:turfpro/user_booking/presentation/screens/booking_summary/bookin
 import 'package:turfpro/user_booking/presentation/blocs/notification/notification_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/location_list/location_list_cubit.dart';
 import 'package:turfpro/user_booking/presentation/screens/reviews/reviews_screen.dart';
+import 'package:turfpro/user_booking/presentation/screens/profile_screen/notification_settings_screen.dart';
+import 'package:turfpro/user_booking/presentation/screens/profile_screen/player_avatar_screen.dart';
 import 'package:turfpro/user_booking/constants/route_constants.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -287,6 +289,10 @@ void main() async {
                   const CategoryGroundsScreen(),
               AppRoutes.reviewsScreen: (context) => const ReviewsScreen(),
               AppRoutes.notification: (context) => const NotificationScreen(),
+              AppRoutes.notificationSettings: (context) =>
+                  const NotificationSettingsScreen(),
+              AppRoutes.avatarGenerator: (context) =>
+                  const PlayerAvatarScreen(),
               AppRoutes.bookingSummary: (context) =>
                   const BookingSummaryScreen(),
             },

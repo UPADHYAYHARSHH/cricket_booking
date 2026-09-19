@@ -8,9 +8,29 @@ import 'package:timezone/timezone.dart' as tz;
 
 class NotificationService {
   static const String _fcmTokenKey = 'fcm_token';
+  static const String _notificationsEnabledKey = 'notifications_enabled';
   static final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
   static bool _isInitialized = false;
+
+  static Future<bool> areNotificationsEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_notificationsEnabledKey) ?? true;
+  }
+
+  static Future<void> setNotificationsEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_notificationsEnabledKey, enabled);
+
+    if (enabled) {
+      await updateFcmToken();
+    } else {
+      if (!kIsWeb) {
+        await _localNotifications.cancelAll();
+      }
+      await clearFcmToken();
+    }
+  }
 
   static Future<void> initialize() async {
     if (_isInitialized) {
@@ -144,7 +164,11 @@ class NotificationService {
 
   static final Map<String, DateTime> _recentNotificationKeys = {};
 
-  static void _handleForegroundMessage(RemoteMessage message) {
+  static void _handleForegroundMessage(RemoteMessage message) async {
+    if (!await areNotificationsEnabled()) {
+      debugPrint('Foreground message received, but notifications are disabled by user. Suppressing.');
+      return;
+    }
     debugPrint('Foreground message: ${message.messageId} data: ${message.data}');
 
     final notification = message.notification;
@@ -237,6 +261,10 @@ class NotificationService {
     required DateTime bookingStartTime,
   }) async {
     if (kIsWeb) return;
+    if (!await areNotificationsEnabled()) {
+      debugPrint("DEBUG: [NotificationService] Notifications are disabled, skipping reminder scheduling.");
+      return;
+    }
 
     final now = DateTime.now();
     if (bookingStartTime.isBefore(now)) {
@@ -324,6 +352,11 @@ class NotificationService {
 
   static Future<void> updateFcmToken() async {
     try {
+      if (!await areNotificationsEnabled()) {
+        debugPrint("DEBUG: [NotificationService] Notifications disabled by user, skipping token registration");
+        return;
+      }
+
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
 

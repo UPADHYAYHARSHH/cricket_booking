@@ -9,8 +9,11 @@ class LiveActivityService {
   final LiveActivities _liveActivitiesPlugin = LiveActivities();
   bool _isInitialized = false;
 
+  bool get isSupported =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+
   Future<void> init() async {
-    if (kIsWeb) return;
+    if (!isSupported) return;
     if (_isInitialized) return;
 
     try {
@@ -27,13 +30,14 @@ class LiveActivityService {
     required String groundName,
     required DateTime startTime,
   }) async {
-    if (kIsWeb) return null;
-    
-    // Check if live activities are supported (iOS 16.1+)
-    final areActivitiesEnabled = await _liveActivitiesPlugin.areActivitiesEnabled();
-    if (!areActivitiesEnabled) return null;
+    if (!isSupported) return null;
 
     try {
+      // Check if live activities are supported (iOS 16.1+)
+      final areActivitiesEnabled =
+          await _liveActivitiesPlugin.areActivitiesEnabled();
+      if (!areActivitiesEnabled) return null;
+
       final activityId = "booking_${DateTime.now().millisecondsSinceEpoch}";
       final resultId = await _liveActivitiesPlugin.createActivity(
         activityId,
@@ -48,7 +52,7 @@ class LiveActivityService {
   }
 
   Future<void> endBookingActivity(String activityId) async {
-    if (kIsWeb) return;
+    if (!isSupported) return;
     try {
       await _liveActivitiesPlugin.endActivity(activityId);
     } catch (e) {

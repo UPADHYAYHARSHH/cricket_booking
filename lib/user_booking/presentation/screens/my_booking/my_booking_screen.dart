@@ -1060,8 +1060,57 @@ class _BookingCardState extends State<_BookingCard> {
 
       void onPaidSuccessfully(String id) async {
         isPolling = false;
+        if (mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (dialogCtx) => PopScope(
+              canPop: false,
+              child: AlertDialog(
+                backgroundColor: Theme.of(context).cardColor,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18)),
+                content: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator(
+                        color: AppColors.primaryDarkGreen,
+                        strokeWidth: 3,
+                      ),
+                      const SizedBox(height: 18),
+                      Text(
+                        "Confirming Booking...",
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        "Verifying transaction & preparing match pass",
+                        style: TextStyle(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.6),
+                          fontSize: 12,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+
         try {
-          final summaryData = BookingSummaryData.fromBookingModel(widget.booking);
+          final summaryData =
+              BookingSummaryData.fromBookingModel(widget.booking);
           await paymentRepo.confirmApprovedBookingPayment(
             bookingId: widget.booking.id,
             paymentId: id,
@@ -1072,6 +1121,7 @@ class _BookingCardState extends State<_BookingCard> {
             summaryData: summaryData,
           );
           if (!mounted) return;
+          Navigator.pop(context); // Dismiss loading dialog
           context.read<BookingCubit>().getBookings();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -1082,6 +1132,9 @@ class _BookingCardState extends State<_BookingCard> {
           _viewTicket(context);
         } catch (e) {
           if (mounted) {
+            try {
+              Navigator.pop(context); // Dismiss loading dialog
+            } catch (_) {}
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                   content: Text("Confirmation error: $e"),
@@ -1559,7 +1612,10 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
   Future<void> _generateAndDownload() async {
     final timeStr = _bookedSlots.isNotEmpty
         ? _bookedSlots.map((s) => "${s.startTime} - ${s.endTime}").join(', ')
-        : widget.ticket.period.split('|').first;
+        : BookingTimeUtil.formatBookingTime(
+            period: widget.ticket.period,
+            slotTime: widget.ticket.date,
+          );
 
     await TicketUtil.downloadTicket(
       context,
@@ -1572,7 +1628,7 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
       displayId: widget.ticket.displayId,
       totalPrice: widget.ticket.price,
       sportName: widget.ticket.sportName,
-      selectedPeriod: widget.ticket.period.split('|').first,
+      selectedPeriod: timeStr,
       groundId: widget.ticket.groundId,
       ownerId: widget.ticket.ownerId,
       platformFee: widget.ticket.platformFee,

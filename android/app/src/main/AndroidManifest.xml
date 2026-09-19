@@ -52,6 +52,13 @@
                 <data android:scheme="https" android:host="box-cricket-df427.page.link" />
             </intent-filter>
         </activity>
+        
+        <!-- UCropActivity required for image_cropper plugin -->
+        <activity
+            android:name="com.yalantis.ucrop.UCropActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

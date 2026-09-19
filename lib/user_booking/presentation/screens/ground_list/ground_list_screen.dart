@@ -483,7 +483,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
     );
   }
 
-  // ─── TOP VENUES (Horizontal - 5 items, Prominent Size) ────────
+  // ─── TOP VENUES (Horizontal - 5 items, Compact Size) ──────────
   Widget _buildTopVenuesSection(BuildContext context, bool isDark) {
     return BlocBuilder<GroundCubit, GroundState>(
       builder: (context, state) {
@@ -499,14 +499,14 @@ class _GroundListScreenState extends State<GroundListScreen> {
                 onViewAll: null,
               ),
               SizedBox(
-                height: 330,
+                height: 260,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: 3,
-                  separatorBuilder: (_, __) => const SizedBox(width: 14),
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
                   itemBuilder: (context, index) => SizedBox(
-                    width: 295,
+                    width: 250,
                     child: _buildSkeletonCard(),
                   ),
                 ),
@@ -544,21 +544,22 @@ class _GroundListScreenState extends State<GroundListScreen> {
               },
             ),
             SizedBox(
-              height: 330,
+              height: 260,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: displayTopVenues.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 14),
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
                 itemBuilder: (context, index) {
                   return _AnimatedGroundCard(
                     index: index,
                     child: SizedBox(
-                      width: 295,
+                      width: 250,
                       child: VenueCard(
                         venue: displayTopVenues[index],
                         showAmenities: false,
                         isGrid: false,
+                        isCompact: true,
                       ),
                     ),
                   );

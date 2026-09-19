@@ -6,7 +6,6 @@ import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import 'package:turfpro/user_booking/data/repositories/payment_repository.dart';
 import 'package:turfpro/user_booking/domain/models/slot_models.dart';
 import 'package:flutter/material.dart';
-import 'package:turfpro/user_booking/presentation/screens/my_booking/my_booking_screen.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:turfpro/user_booking/di/get_it/get_it.dart';
@@ -15,17 +14,10 @@ import 'package:turfpro/user_booking/presentation/widgets/slot_selection_widgets
 import 'package:turfpro/user_booking/presentation/blocs/slot_selection/slot_selection_cubit.dart';
 import 'package:turfpro/user_booking/domain/models/booking_arguments.dart';
 import 'package:turfpro/user_booking/presentation/blocs/slot_selection/slot_selection_state.dart';
-import 'package:turfpro/user_booking/domain/repositories/loyalty_repository.dart';
-import 'package:turfpro/user_booking/domain/repositories/wallet_repository.dart';
 import 'package:turfpro/user_booking/domain/repositories/slot_repository.dart';
-import 'package:turfpro/common/config/feature_config.dart';
-
 import 'package:turfpro/common/services/cashfree_service.dart';
-import 'package:turfpro/common/services/notification_service.dart';
-import 'package:turfpro/common/services/live_activity_service.dart';
-import 'package:intl/intl.dart';
-import 'package:turfpro/common/services/remote_config_service.dart';
 import 'package:turfpro/user_booking/domain/models/booking_summary_data.dart';
+import 'package:turfpro/user_booking/presentation/screens/payment_status/booking_processing_screen.dart';
 
 class TimeSlotSelectionScreen extends StatefulWidget {
   const TimeSlotSelectionScreen({super.key});
@@ -37,7 +29,6 @@ class TimeSlotSelectionScreen extends StatefulWidget {
 
 class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
   final _paymentRepo = getIt<PaymentRepository>();
-  final _loyaltyRepo = getIt<LoyaltyRepository>();
 
   double? _pendingAmount;
   List<TimeSlot>? _pendingSlots;
@@ -47,6 +38,7 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
   BookingSummaryData? _pendingSummaryData;
   bool _isBookingInProgress = false;
   bool _isPaymentHandled = false;
+  bool _isAwaitingPaymentReturn = false;
 
   @override
   void initState() {
@@ -63,182 +55,83 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
     super.dispose();
   }
 
-  void _handlePaymentSuccess(String orderId) async {
+  void _handlePaymentSuccess(String orderId) {
     if (_isPaymentHandled) return;
     _isPaymentHandled = true;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-          child: CircularProgressIndicator(color: AppColors.primaryDarkGreen)),
-    );
 
-    try {
-      // In a real app, verify payment on the backend here
-      final isValid = await _paymentRepo.verifyPayment(orderId: orderId);
+    final cubit = context.read<SlotSelectionCubit>();
+    final ground = cubit.state.selectedTurf;
 
-      final cubit = context.read<SlotSelectionCubit>();
-      final ground = cubit.state.selectedTurf;
+    if (mounted) {
+      setState(() {
+        _isAwaitingPaymentReturn = false;
+      });
+    }
 
-      if (isValid && ground != null && _pendingDate != null) {
-        final slotTimesPeriod =
-            (_pendingSlots != null && _pendingSlots!.isNotEmpty)
-                ? _pendingSlots!
-                    .map((s) => "${s.startTime} - ${s.endTime}")
-                    .join(', ')
-                : cubit.state.selectedPeriod;
-
-        // Save booking using bypass for now until backend is ready
-        final bookingData = await _paymentRepo.saveDirectBooking(
-          groundId: ground.id,
-          date: _pendingDate!,
-          amount: (_pendingAmount!).toInt(),
-          sportName: cubit.state.selectedSport,
-          period: cubit.state.selectedPeriod,
-          slotStartTimes: _pendingSlots?.map((s) => s.startTime).toList() ?? [],
-          orderId: orderId,
-          summaryData: _pendingSummaryData,
-        );
-
-        final int displayId = bookingData['display_id'] ?? 0;
-        if (!mounted) return;
-        Navigator.pop(context); // pop loading
-
-        // Deduct from wallet if used
-        if (FeatureConfig.isWalletEnabled && _pendingAppliedWallet > 0) {
-          final walletRepo = getIt<WalletRepository>();
-          final currentBalance = await walletRepo.getBalance();
-          await walletRepo
-              .updateBalance(currentBalance - _pendingAppliedWallet);
-          await walletRepo.addTransaction(
-            amount: _pendingAppliedWallet,
-            type: 'debit',
-            description: 'Used for booking @ ${ground.name}',
-          );
-        }
-
-        if (FeatureConfig.isLoyaltyEnabled) {
-          if (_pendingAppliedPoints > 0)
-            await _loyaltyRepo.redeemPoints(_pendingAppliedPoints);
-          final pointsEarned = ((_pendingAmount ?? 0) / 10).floor();
-          if (pointsEarned > 0) await _loyaltyRepo.earnPoints(pointsEarned);
-        }
-
-        // Trigger Notification and Live Activity
-        try {
-          if (_pendingSlots != null &&
-              _pendingSlots!.isNotEmpty &&
-              _pendingDate != null) {
-            final rawStartTime =
-                _pendingSlots!.first.startTime.trim().toUpperCase();
-            DateTime startTimeParsed;
-            try {
-              startTimeParsed = DateFormat("h:mm a").parse(rawStartTime);
-            } catch (_) {
-              try {
-                startTimeParsed = DateFormat("hh:mm a").parse(rawStartTime);
-              } catch (_) {
-                try {
-                  startTimeParsed = DateFormat("HH:mm").parse(rawStartTime);
-                } catch (_) {
-                  startTimeParsed = DateFormat("HH:mm:ss").parse(rawStartTime);
+    if (ground != null && _pendingDate != null && _pendingAmount != null) {
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (context, anim, secAnim) => BookingProcessingScreen(
+            orderId: orderId,
+            ground: ground,
+            selectedDate: _pendingDate!,
+            totalAmount: _pendingAmount!,
+            selectedSport: cubit.state.selectedSport ?? "Sport",
+            selectedPeriod: cubit.state.selectedPeriod,
+            selectedSlots: _pendingSlots ?? [],
+            summaryData: _pendingSummaryData,
+            appliedWallet: _pendingAppliedWallet,
+            appliedPoints: _pendingAppliedPoints,
+            onRetry: () {
+              if (_pendingAmount != null &&
+                  _pendingSlots != null &&
+                  _pendingSlots!.isNotEmpty &&
+                  _pendingDate != null) {
+                final activeDate = cubit.state.dates.isNotEmpty
+                    ? cubit.state.dates.firstWhere((d) => d.isSelected,
+                        orElse: () => cubit.state.dates.first)
+                    : null;
+                if (activeDate != null) {
+                  _onConfirmBooking(
+                    _pendingAmount!,
+                    activeDate,
+                    _pendingSlots!,
+                    fromRetry: true,
+                    appliedPoints: _pendingAppliedPoints,
+                    appliedWallet: _pendingAppliedWallet,
+                    summaryData: _pendingSummaryData,
+                  );
                 }
               }
-            }
-
-            final bookingStartDateTime = DateTime(
-              _pendingDate!.year,
-              _pendingDate!.month,
-              _pendingDate!.day,
-              startTimeParsed.hour,
-              startTimeParsed.minute,
-            );
-
-            final notifId = (displayId > 0)
-                ? displayId
-                : ((bookingData['id']?.toString().hashCode ??
-                        bookingStartDateTime.millisecondsSinceEpoch) &
-                    0x7FFFFFFF);
-
-            NotificationService.scheduleBookingReminder(
-              id: notifId,
-              title: "Upcoming Booking!",
-              body: "Your game at ${ground.name} starts in 30 minutes.",
-              bookingStartTime: bookingStartDateTime,
-            );
-
-            LiveActivityService().startBookingActivity(
-              groundName: ground.name,
-              startTime: bookingStartDateTime,
-            );
-          }
-        } catch (e) {
-          debugPrint("Error scheduling notification/live activity: $e");
-        }
-
-        if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ViewTicketScreen(
-              isFromBookingFlow: true,
-              ticket: TicketModel(
-                bookingId: bookingData['id'] ?? orderId,
-                groundId: ground.id,
-                displayId: displayId,
-                venueName: ground.name,
-                locationName: ground.locationName,
-                pitchName: "Main Pitch",
-                date: _pendingDate!,
-                time: slotTimesPeriod,
-                bookedBy: "User",
-                location: ground.address.isNotEmpty
-                    ? ground.address
-                    : (ground.city.isNotEmpty ? ground.city : "Location"),
-                latitude: ground.latitude,
-                longitude: ground.longitude,
-                price: _pendingAmount!,
-                imageUrl: ground.imageUrl,
-                images: ground.images,
-                isPaid: true,
-                sportName: cubit.state.selectedSport ?? "Sport",
-                period: "${cubit.state.selectedPeriod}|${_pendingSlots?.map((s) => s.startTime).join(',') ?? ''}",
-                ownerId: ground.ownerId,
-                platformFee: RemoteConfigService().platformFee,
-                amenities: ground.amenities,
-                createdAt: DateTime.tryParse(bookingData['created_at']?.toString() ?? '')?.toLocal() ?? DateTime.now(),
-                status: 'paid',
-                summaryData: _pendingSummaryData,
-              ),
-            ),
+            },
           ),
-        );
-      } else {
-        if (!mounted) return;
-        Navigator.pop(context);
-        Navigator.pushNamed(
-          context,
-          AppRoutes.paymentFailedScreen,
-          arguments: BookingFailureArguments(
-            errorMessage: 'Payment verification failed or was cancelled.',
-            groundId: ground?.id,
-          ),
-        );
-      }
-    } catch (_) {
-      if (!mounted) return;
-      Navigator.pop(context);
+          transitionsBuilder: (context, anim, secAnim, child) =>
+              FadeTransition(opacity: anim, child: child),
+          transitionDuration: const Duration(milliseconds: 250),
+        ),
+      );
+    } else {
       Navigator.pushNamed(
         context,
         AppRoutes.paymentFailedScreen,
         arguments: BookingFailureArguments(
-          errorMessage: 'An unexpected error occurred during payment.',
+          errorMessage: 'Payment verification failed or session expired.',
+          groundId: ground?.id,
         ),
       );
     }
   }
 
   void _handlePaymentError(dynamic error, String orderId) {
+    if (mounted) {
+      setState(() {
+        _isAwaitingPaymentReturn = false;
+        _isBookingInProgress = false;
+        _isPaymentHandled = false;
+      });
+    }
+
     String message =
         'Your payment could not be processed. If any amount was deducted, it will be automatically refunded within 5-7 business days.';
     try {
@@ -420,6 +313,12 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
           _handlePaymentError(error, id);
         },
       );
+
+      if (mounted) {
+        setState(() {
+          _isAwaitingPaymentReturn = true;
+        });
+      }
 
       // Call Cashfree Service with actual backend session
       CashfreeService().doPayment(
@@ -687,7 +586,9 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
                   orElse: () => state.dates.first)
               : null;
 
-          return Column(
+          return Stack(
+            children: [
+              Column(
             children: [
               Expanded(
                 child: SingleChildScrollView(
@@ -818,12 +719,71 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
                     }
                   } catch (e, st) {
                     debugPrint("Error pushing BookingSummaryScreen: $e\n$st");
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(SnackBar(content: Text("Error: $e")));
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(SnackBar(content: Text("Error: $e")));
+                    }
                   }
                 }),
-            ],
-          );
+              ],
+            ),
+            if (_isAwaitingPaymentReturn)
+              Positioned.fill(
+                child: Container(
+                  color: theme.scaffoldBackgroundColor,
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 68,
+                          height: 68,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryDarkGreen
+                                .withValues(alpha: 0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Center(
+                            child: SizedBox(
+                              width: 32,
+                              height: 32,
+                              child: CircularProgressIndicator(
+                                color: AppColors.primaryDarkGreen,
+                                strokeWidth: 3,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          "Processing Payment...",
+                          style: TextStyle(
+                            color: theme.colorScheme.onSurface,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 17,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Padding(
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 32),
+                          child: Text(
+                            "Please wait while we receive confirmation from your bank",
+                            style: TextStyle(
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.6),
+                              fontSize: 12.5,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
         },
       ),
     );

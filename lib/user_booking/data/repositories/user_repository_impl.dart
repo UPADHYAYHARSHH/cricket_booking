@@ -23,6 +23,7 @@ abstract class UserRepository {
   Future<Map<String, double>?> getUserLocation();
   Future<void> updateUserLocation(double lat, double lng);
   
+  Future<void> updateNotificationSetting(bool enabled);
   Future<void> deleteUserAccount();
 }
 
@@ -318,7 +319,7 @@ class UserRepositoryImpl implements UserRepository {
 
   @override
   Future<List<Map<String, dynamic>>> searchUsersByUsername(String query) async {
-    print(
+    debugPrint(
         "[DEBUG] UserRepository: Executing Supabase search for username: '%$query%'");
     final response = await supabase
         .from('users')
@@ -326,6 +327,25 @@ class UserRepositoryImpl implements UserRepository {
         .ilike('username', '%$query%')
         .limit(20);
     return List<Map<String, dynamic>>.from(response);
+  }
+
+  @override
+  Future<void> updateNotificationSetting(bool enabled) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('notifications_enabled', enabled);
+
+    try {
+      await supabase.from('users').update({
+        'is_notification_enabled': enabled,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', user.uid);
+      debugPrint("[USER_REPO] Updated is_notification_enabled to $enabled in database");
+    } catch (e) {
+      debugPrint("[USER_REPO] Error updating is_notification_enabled in DB: $e");
+    }
   }
 
   @override
@@ -344,7 +364,7 @@ class UserRepositoryImpl implements UserRepository {
         await supabase
             .rpc('delete_user_and_data', params: {'user_id_text': uid});
       } catch (e) {
-        print('Supabase RPC delete error: $e');
+        debugPrint('Supabase RPC delete error: $e');
         throw Exception('Database deletion failed: $e');
       }
 

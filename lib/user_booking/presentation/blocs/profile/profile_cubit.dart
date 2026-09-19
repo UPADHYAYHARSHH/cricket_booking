@@ -1,4 +1,6 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:turfpro/common/services/notification_service.dart';
 import 'package:turfpro/user_booking/data/repositories/user_repository_impl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
@@ -10,6 +12,7 @@ class ProfileState {
   final bool isSuccess;
   final String? error;
   final String? name;
+  final String? email;
   final String? gender;
   final DateTime? dob;
   final String? photoUrl;
@@ -18,12 +21,14 @@ class ProfileState {
   final String? lastCheckedUsername;
   final double walletBalance;
   final bool isDeleted;
+  final bool isNotificationEnabled;
 
   ProfileState({
     this.isLoading = false,
     this.isSuccess = false,
     this.error,
     this.name,
+    this.email,
     this.gender,
     this.dob,
     this.photoUrl,
@@ -32,6 +37,7 @@ class ProfileState {
     this.lastCheckedUsername,
     this.walletBalance = 0.0,
     this.isDeleted = false,
+    this.isNotificationEnabled = true,
   });
 
   ProfileState copyWith({
@@ -39,6 +45,7 @@ class ProfileState {
     bool? isSuccess,
     String? error,
     String? name,
+    String? email,
     String? gender,
     DateTime? dob,
     String? photoUrl,
@@ -47,12 +54,14 @@ class ProfileState {
     String? lastCheckedUsername,
     double? walletBalance,
     bool? isDeleted,
+    bool? isNotificationEnabled,
   }) {
     return ProfileState(
       isLoading: isLoading ?? this.isLoading,
       isSuccess: isSuccess ?? this.isSuccess,
       error: error,
       name: name ?? this.name,
+      email: email ?? this.email,
       gender: gender ?? this.gender,
       dob: dob ?? this.dob,
       photoUrl: photoUrl ?? this.photoUrl,
@@ -61,6 +70,8 @@ class ProfileState {
       lastCheckedUsername: lastCheckedUsername ?? this.lastCheckedUsername,
       walletBalance: walletBalance ?? this.walletBalance,
       isDeleted: isDeleted ?? this.isDeleted,
+      isNotificationEnabled:
+          isNotificationEnabled ?? this.isNotificationEnabled,
     );
   }
 }
@@ -103,22 +114,51 @@ class ProfileCubit extends Cubit<ProfileState> {
         final walletBalance = await walletRepository.getBalance();
         if (isClosed) return;
 
+        bool notifEnabled = true;
+        if (data['is_notification_enabled'] != null) {
+          notifEnabled = data['is_notification_enabled'] == true;
+        } else {
+          notifEnabled = await NotificationService.areNotificationsEnabled();
+        }
+        await NotificationService.setNotificationsEnabled(notifEnabled);
+
         emit(state.copyWith(
           isLoading: false,
           name: data['name'],
+          email: data['email'] ?? FirebaseAuth.instance.currentUser?.email,
           gender: data['gender'],
           dob: data['dob'] != null ? DateTime.parse(data['dob']) : null,
           photoUrl: data['photo_url'],
           username: username,
           walletBalance: walletBalance,
+          isNotificationEnabled: notifEnabled,
         ));
       } else {
-        emit(state.copyWith(isLoading: false));
+        final notifEnabled = await NotificationService.areNotificationsEnabled();
+        emit(state.copyWith(
+          isLoading: false,
+          email: FirebaseAuth.instance.currentUser?.email,
+          isNotificationEnabled: notifEnabled,
+        ));
       }
     } catch (e) {
       debugPrint("[PROFILE_CUBIT] Error in loadProfile: $e");
       if (isClosed) return;
       emit(state.copyWith(isLoading: false, error: e.toString()));
+    }
+  }
+
+  Future<void> toggleNotificationSetting(bool enabled) async {
+    final previous = state.isNotificationEnabled;
+    emit(state.copyWith(isNotificationEnabled: enabled));
+    try {
+      await NotificationService.setNotificationsEnabled(enabled);
+      await userRepository.updateNotificationSetting(enabled);
+    } catch (e) {
+      debugPrint("[PROFILE_CUBIT] Error toggling notification setting: $e");
+      emit(state.copyWith(
+          isNotificationEnabled: previous,
+          error: "Failed to update notification setting"));
     }
   }
 
