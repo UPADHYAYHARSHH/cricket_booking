@@ -19,16 +19,32 @@ class NotificationService {
   }
 
   static Future<void> setNotificationsEnabled(bool enabled) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_notificationsEnabledKey, enabled);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_notificationsEnabledKey, enabled);
+    } catch (e) {
+      debugPrint("DEBUG: [NotificationService] Failed to set prefs: $e");
+    }
 
     if (enabled) {
-      await updateFcmToken();
+      try {
+        await updateFcmToken();
+      } catch (e) {
+        debugPrint("DEBUG: [NotificationService] Failed to update token on enable: $e");
+      }
     } else {
       if (!kIsWeb) {
-        await _localNotifications.cancelAll();
+        try {
+          await _localNotifications.cancelAll();
+        } catch (e) {
+          debugPrint("DEBUG: [NotificationService] Failed to cancel local notifications: $e");
+        }
       }
-      await clearFcmToken();
+      try {
+        await clearFcmToken();
+      } catch (e) {
+        debugPrint("DEBUG: [NotificationService] Failed to clear token on disable: $e");
+      }
     }
   }
 
@@ -424,13 +440,12 @@ class NotificationService {
     try {
       final user = FirebaseAuth.instance.currentUser;
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString(_fcmTokenKey);
 
-      if (user != null && token != null) {
+      if (user != null) {
         await Supabase.instance.client
             .from('fcm_tokens')
             .delete()
-            .match({'user_id': user.uid, 'token': token});
+            .eq('user_id', user.uid);
       }
 
       await prefs.remove(_fcmTokenKey);

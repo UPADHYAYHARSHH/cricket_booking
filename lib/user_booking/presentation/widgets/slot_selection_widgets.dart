@@ -2729,6 +2729,7 @@ class SlotSelectionWidgets {
                         text: formattedAmenity,
                         align: TextAlign.center,
                         maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         textStyle: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.w600,
@@ -2795,76 +2796,93 @@ class SlotSelectionWidgets {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return SafeArea(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const AppText(
-                    text: "All Amenities",
-                    textStyle: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.close, color: isDark ? Colors.white : Colors.black87),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 0.85,
-                ),
-                itemCount: amenities.length,
-                itemBuilder: (context, index) {
-                  final amenity = amenities[index];
-                  return Column(
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          color: cardBg,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Center(
-                          child: HugeIcon(
-                            icon: getAmenityHugeIcon(amenity),
-                            color: AppColors.primaryDarkGreen,
-                            size: 28,
-                          ),
+                      const AppText(
+                        text: "All Amenities",
+                        textStyle: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Expanded(
-                        child: AppText(
-                          text: formatAmenityName(amenity),
-                          align: TextAlign.center,
-                          textStyle: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: theme.colorScheme.onSurface.withOpacity(0.8),
-                          ),
-                        ),
+                      IconButton(
+                        icon: Icon(Icons.close, color: isDark ? Colors.white : Colors.black87),
+                        onPressed: () => Navigator.pop(context),
                       ),
                     ],
-                  );
-                },
+                  ),
+                  const SizedBox(height: 16),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      child: GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 14,
+                          childAspectRatio: 0.68,
+                        ),
+                        itemCount: amenities.length,
+                        itemBuilder: (context, index) {
+                          final amenity = amenities[index];
+                          return Column(
+                            children: [
+                              Container(
+                                width: 56,
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  color: cardBg,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Center(
+                                  child: HugeIcon(
+                                    icon: getAmenityHugeIcon(amenity),
+                                    color: AppColors.primaryDarkGreen,
+                                    size: 26,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                                  child: AppText(
+                                    text: formatAmenityName(amenity),
+                                    align: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    textStyle: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
+                                      height: 1.15,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
               ),
-              const SizedBox(height: 16),
-            ],
+            ),
           ),
         );
       },

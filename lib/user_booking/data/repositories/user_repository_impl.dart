@@ -334,8 +334,12 @@ class UserRepositoryImpl implements UserRepository {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('notifications_enabled', enabled);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('notifications_enabled', enabled);
+    } catch (e) {
+      debugPrint("[USER_REPO] Error updating SharedPreferences for notifications: $e");
+    }
 
     try {
       await supabase.from('users').update({
@@ -344,7 +348,7 @@ class UserRepositoryImpl implements UserRepository {
       }).eq('id', user.uid);
       debugPrint("[USER_REPO] Updated is_notification_enabled to $enabled in database");
     } catch (e) {
-      debugPrint("[USER_REPO] Error updating is_notification_enabled in DB: $e");
+      debugPrint("[USER_REPO] Note: is_notification_enabled column in 'users' table not yet present or updated: $e");
     }
   }
 
