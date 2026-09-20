@@ -440,22 +440,22 @@ class ProfileScreen extends StatelessWidget {
             }
           },
         ),
-        _MenuItem(
-          icon: HugeIcons.strokeRoundedCricketBat,
-          label: "Generate 3D Avatar",
-          subtitle: "Batsman, Bowler & All-Rounder",
-          iconBg: Colors.indigo.withValues(alpha: isDark ? 0.2 : 0.1),
-          iconColor:
-              isDark ? Colors.indigoAccent : Colors.indigo.shade700,
-          isLogout: false,
-          onTap: () async {
-            HapticFeedback.lightImpact();
-            await Navigator.pushNamed(context, AppRoutes.avatarGenerator);
-            if (context.mounted) {
-              context.read<ProfileCubit>().loadProfile();
-            }
-          },
-        ),
+        // _MenuItem(
+        //   icon: HugeIcons.strokeRoundedCricketBat,
+        //   label: "Generate 3D Avatar",
+        //   subtitle: "Batsman, Bowler & All-Rounder",
+        //   iconBg: Colors.indigo.withValues(alpha: isDark ? 0.2 : 0.1),
+        //   iconColor:
+        //       isDark ? Colors.indigoAccent : Colors.indigo.shade700,
+        //   isLogout: false,
+        //   onTap: () async {
+        //     HapticFeedback.lightImpact();
+        //     await Navigator.pushNamed(context, AppRoutes.avatarGenerator);
+        //     if (context.mounted) {
+        //       context.read<ProfileCubit>().loadProfile();
+        //     }
+        //   },
+        // ),
         if (FeatureConfig.isLoyaltyEnabled)
           _MenuItem(
             icon: HugeIcons.strokeRoundedStar,
