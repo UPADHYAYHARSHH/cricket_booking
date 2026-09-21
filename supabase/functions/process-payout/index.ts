@@ -94,25 +94,75 @@ serve(async (req) => {
       const clientId = Deno.env.get('CASHFREE_PAYOUT_CLIENT_ID') || Deno.env.get('CASHFREE_CLIENT_ID');
       const clientSecret = Deno.env.get('CASHFREE_PAYOUT_CLIENT_SECRET') || Deno.env.get('CASHFREE_CLIENT_SECRET');
       const env = Deno.env.get('CASHFREE_ENVIRONMENT') || 'SANDBOX';
-      
+
       if (!clientId || !clientSecret) throw new Error('Cashfree credentials missing');
 
+      // 1. Resolve the owner's payout destination from owner_details.kyc_config.
+      // The owner app forces bank details before a withdrawal can be requested,
+      // but older rows may lack them -> fail loudly instead of paying nowhere.
+      const { data: ownerRow } = await supabase
+        .from('owner_details')
+        .select('kyc_config, owner_name, business_name, phone, email')
+        .eq('id', withdrawal.owner_id)
+        .maybeSingle();
+      const kyc = (ownerRow?.kyc_config && typeof ownerRow.kyc_config === 'object')
+        ? ownerRow.kyc_config
+        : {};
+      const accountNumber = String(kyc.account_number ?? kyc.acc_number ?? '').trim();
+      const ifsc = String(kyc.ifsc_code ?? kyc.ifsc ?? '').trim().toUpperCase();
+      const accountName = String(kyc.account_name ?? ownerRow?.owner_name ?? ownerRow?.business_name ?? 'Turf Owner').trim();
+      if (!accountNumber || !ifsc) {
+        await supabase.from('withdrawals').update({ status: 'pending', failure_reason: 'Owner payout details missing' }).eq('id', withdrawal_id);
+        return new Response(JSON.stringify({ error: 'Owner payout details missing. Ask the owner to add a bank account in Payouts first.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
       const bearerToken = await getCashfreeToken(clientId, clientSecret, env);
-      
-      const endpoint = env === 'PRODUCTION' ? 'https://payout-api.cashfree.com/payout/v1/requestTransfer' : 'https://payout-gamma.cashfree.com/payout/v1/requestTransfer';
+      const payoutBase = env === 'PRODUCTION' ? 'https://payout-api.cashfree.com' : 'https://payout-gamma.cashfree.com';
+
+      // 2. Ensure a Cashfree beneficiary exists for this owner (create once, reuse).
+      let beneId = String(kyc.cashfree_bene_id ?? '').trim();
+      if (!beneId) {
+        beneId = ('T' + String(withdrawal.owner_id).replace(/[^A-Za-z0-9]/g, '')).substring(0, 30);
+        const addBeneRes = await fetch(payoutBase + '/payout/v1/addBeneficiary', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + bearerToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            beneId: beneId,
+            name: accountName.substring(0, 100),
+            email: String(ownerRow?.email ?? 'owner@turfpro.in'),
+            phone: String(ownerRow?.phone ?? '9999999999'),
+            bankAccount: accountNumber,
+            ifsc: ifsc,
+          })
+        });
+        const addBeneData = await addBeneRes.json().catch(() => ({}));
+        const beneOk = addBeneRes.ok && (addBeneData.status === 'SUCCESS' || addBeneData.status === 'PENDING');
+        const beneExists = JSON.stringify(addBeneData).toLowerCase().includes('already exist');
+        if (!beneOk && !beneExists) {
+          await supabase.from('withdrawals').update({ status: 'pending', failure_reason: 'Beneficiary setup failed: ' + (addBeneData.message || addBeneRes.status) }).eq('id', withdrawal_id);
+          return new Response(JSON.stringify({ error: 'Beneficiary setup failed: ' + (addBeneData.message || addBeneRes.status) }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+        // Persist beneId so next payout skips creation.
+        await supabase.from('owner_details').update({
+          kyc_config: { ...kyc, cashfree_bene_id: beneId },
+        }).eq('id', withdrawal.owner_id);
+      }
       const transferId = 'TR_' + withdrawal_id.replace(/-/g, '').substring(0, 20);
-      
-      const payoutResponse = await fetch(endpoint, {
+
+      const payoutResponse = await fetch(payoutBase + '/payout/v1/requestTransfer', {
         method: 'POST',
         headers: {
           'Authorization': 'Bearer ' + bearerToken,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          beneId: "test_bene_1",
-          amount: withdrawal.amount,
+          beneId: beneId,
+          amount: String(withdrawal.amount),
           transferId: transferId,
-          transferMode: "upi",
+          transferMode: "bank",
           remarks: "TurfPro Owner Withdrawal"
         })
       });
@@ -120,9 +170,9 @@ serve(async (req) => {
       const payoutData = await payoutResponse.json();
 
       if (payoutData.status === 'SUCCESS' || payoutData.status === 'PENDING') {
-        await supabase.from('withdrawals').update({ status: 'success', cashfree_transfer_id: transferId }).eq('id', withdrawal_id);
-        const { data: ownerWallet } = await supabase.from('owner_wallets').select('withdrawn_amount').eq('owner_id', withdrawal.owner_id).single();
-        await supabase.from('owner_wallets').update({ withdrawn_amount: (ownerWallet?.withdrawn_amount || 0) + withdrawal.amount }).eq('owner_id', withdrawal.owner_id);
+        // NOTE: withdrawn_amount was already moved at request time
+        // (request_withdrawal RPC), so do NOT increment it again here.
+        await supabase.from('withdrawals').update({ status: 'success', cashfree_transfer_id: transferId, failure_reason: null }).eq('id', withdrawal_id);
         return new Response(JSON.stringify({ success: true, message: 'Payout successful', transferId }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       } else {
         const { data: ownerWallet } = await supabase.from('owner_wallets').select('available_balance').eq('owner_id', withdrawal.owner_id).single();
