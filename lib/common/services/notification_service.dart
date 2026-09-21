@@ -272,7 +272,29 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    await _localNotifications.show(id, title, body, details, payload: payload);
+    try {
+      await _localNotifications.show(id, title, body, details, payload: payload);
+    } catch (e) {
+      debugPrint('Booking App - Error showing local notification with custom sound: $e. Falling back to default sound.');
+      try {
+        final fallbackDetails = NotificationDetails(
+          android: AndroidNotificationDetails(
+            'user_notifications_fallback',
+            'User Notifications',
+            channelDescription: 'General notifications channel',
+            importance: Importance.high,
+            priority: Priority.high,
+            playSound: true,
+            tag: tag,
+            onlyAlertOnce: true,
+          ),
+          iOS: const DarwinNotificationDetails(),
+        );
+        await _localNotifications.show(id, title, body, fallbackDetails, payload: payload);
+      } catch (inner) {
+        debugPrint('Booking App - Fallback notification display also failed: $inner');
+      }
+    }
   }
 
   static Future<void> scheduleBookingReminder({

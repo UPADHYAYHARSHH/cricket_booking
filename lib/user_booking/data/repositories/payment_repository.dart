@@ -972,7 +972,7 @@ class PaymentRepository {
             'user_id': ownerId,
             'title': 'New Booking',
             'message': 'You have a new booking at $groundName.',
-            'type': 'booking',
+            'type': 'booking_confirmed',
             'data': {'booking_id': bookingId},
             'is_read': false,
             'created_at': DateTime.now().toUtc().toIso8601String(),
