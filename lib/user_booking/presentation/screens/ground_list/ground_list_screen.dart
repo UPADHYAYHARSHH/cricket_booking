@@ -409,9 +409,10 @@ class _GroundListScreenState extends State<GroundListScreen> {
     required Color iconColor,
     required Color bgColor,
     VoidCallback? onViewAll,
+    double topPadding = 20,
   }) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+      padding: EdgeInsets.fromLTRB(16, topPadding, 16, 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -497,6 +498,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
                 iconColor: AppColors.accentOrange,
                 bgColor: AppColors.accentOrange.withValues(alpha: 0.1),
                 onViewAll: null,
+                topPadding: 8,
               ),
               SizedBox(
                 height: 260,
@@ -534,6 +536,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
               icon: HugeIcons.strokeRoundedStar,
               iconColor: AppColors.accentOrange,
               bgColor: AppColors.accentOrange.withValues(alpha: 0.1),
+              topPadding: 8,
               onViewAll: () {
                 HapticFeedback.lightImpact();
                 Navigator.pushNamed(
@@ -709,12 +712,12 @@ class _GroundListScreenState extends State<GroundListScreen> {
                   ),
                 ),
                 SizedBox(
-                  height: 100,
+                  height: 84,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: sportCategories.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    separatorBuilder: (_, __) => const SizedBox(width: 10),
                     itemBuilder: (context, index) {
                       final sport = sportCategories[index];
                       final isSelected = currentSportId == sport['id'];
@@ -748,9 +751,9 @@ class _GroundListScreenState extends State<GroundListScreen> {
                               AnimatedContainer(
                                 duration: const Duration(milliseconds: 300),
                                 curve: Curves.easeOutCubic,
-                                width: 64,
-                                height: 64,
-                                padding: const EdgeInsets.all(4),
+                                width: 48,
+                                height: 48,
+                                padding: const EdgeInsets.all(3),
                                 decoration: BoxDecoration(
                                   gradient: isSelected
                                       ? const LinearGradient(
@@ -791,16 +794,16 @@ class _GroundListScreenState extends State<GroundListScreen> {
                                     ? ClipOval(
                                         child: CachedNetworkImage(
                                           imageUrl: sport['icon_url'],
-                                          width: 40,
-                                          height: 40,
+                                          width: 30,
+                                          height: 30,
                                           fit: BoxFit.cover,
                                           placeholder: (_, __) => const SizedBox(
-                                            width: 40,
-                                            height: 40,
+                                            width: 30,
+                                            height: 30,
                                           ),
                                           errorWidget: (_, __, ___) => Icon(
                                             Icons.sports,
-                                            size: 28,
+                                            size: 20,
                                             color: isSelected
                                                 ? Colors.white
                                                 : AppColors.primaryDarkGreen,
@@ -811,12 +814,12 @@ class _GroundListScreenState extends State<GroundListScreen> {
                                         ? ClipOval(
                                             child: Image.asset(
                                               sport['local_asset'],
-                                              width: 40,
-                                              height: 40,
+                                              width: 30,
+                                              height: 30,
                                               fit: BoxFit.cover,
                                               errorBuilder: (_, __, ___) => Icon(
                                                 Icons.sports,
-                                                size: 28,
+                                                size: 20,
                                                 color: isSelected
                                                     ? Colors.white
                                                     : AppColors.primaryDarkGreen,
@@ -824,20 +827,20 @@ class _GroundListScreenState extends State<GroundListScreen> {
                                             ),
                                           )
                                         : Padding(
-                                            padding: const EdgeInsets.all(8.0),
+                                            padding: const EdgeInsets.all(6.0),
                                             child: HugeIcon(
                                               icon: sport['icon'] ?? HugeIcons.strokeRoundedDashboardSquare01,
                                           color: isSelected
                                               ? Colors.white
                                               : AppColors.primaryDarkGreen,
-                                          size: 28,
+                                          size: 20,
                                         ),
                                       ),
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 6),
                               AppText(
                                 text: sport['name'],
-                                size: 12,
+                                size: 11,
                                 weight:
                                     isSelected ? FontWeight.w700 : FontWeight.w500,
                                 color: isSelected
