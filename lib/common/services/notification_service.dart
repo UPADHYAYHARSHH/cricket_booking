@@ -145,6 +145,7 @@ class NotificationService {
           description: 'General notifications for users',
           importance: Importance.high,
           playSound: true,
+          sound: RawResourceAndroidNotificationSound('general_notification_sound'),
         ),
       );
       await androidPlugin.createNotificationChannel(
@@ -164,6 +165,7 @@ class NotificationService {
           description: 'Notifications for upcoming bookings',
           importance: Importance.max,
           playSound: true,
+          sound: RawResourceAndroidNotificationSound('general_notification_sound'),
         ),
       );
       await androidPlugin.createNotificationChannel(
@@ -173,6 +175,7 @@ class NotificationService {
           description: 'Notifications for venue owners',
           importance: Importance.high,
           playSound: true,
+          sound: RawResourceAndroidNotificationSound('general_notification_sound'),
         ),
       );
     }
@@ -254,13 +257,15 @@ class NotificationService {
             channelDescription: 'General notifications for users',
             importance: Importance.high,
             priority: Priority.high,
+            sound: const RawResourceAndroidNotificationSound('general_notification_sound'),
+            playSound: true,
             tag: tag,
             onlyAlertOnce: true,
           );
 
     final DarwinNotificationDetails iosDetails = isBookingSound
-        ? const DarwinNotificationDetails(sound: 'booking_confirmed.mp3')
-        : const DarwinNotificationDetails();
+        ? const DarwinNotificationDetails(sound: 'booking_confirmation_ios.mp3')
+        : const DarwinNotificationDetails(sound: 'general_notification_sound_ios.mp3');
 
     final details = NotificationDetails(
       android: androidDetails,
