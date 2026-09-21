@@ -39,6 +39,27 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
   bool _isBookingInProgress = false;
   bool _isPaymentHandled = false;
   bool _isAwaitingPaymentReturn = false;
+  bool _loaderVisible = false;
+  bool _pollingActive = false;
+
+  void _showLoader() {
+    if (_loaderVisible || !mounted) return;
+    _loaderVisible = true;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+          child: CircularProgressIndicator(color: AppColors.accentOrange)),
+    );
+  }
+
+  void _dismissLoader() {
+    if (!_loaderVisible) return;
+    _loaderVisible = false;
+    try {
+      Navigator.of(context, rootNavigator: true).pop();
+    } catch (_) {}
+  }
 
   @override
   void initState() {
@@ -52,12 +73,14 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
 
   @override
   void dispose() {
+    _pollingActive = false;
     super.dispose();
   }
 
   void _handlePaymentSuccess(String orderId) {
     if (_isPaymentHandled) return;
     _isPaymentHandled = true;
+    _pollingActive = false;
 
     final cubit = context.read<SlotSelectionCubit>();
     final ground = cubit.state.selectedTurf;
@@ -65,8 +88,10 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
     if (mounted) {
       setState(() {
         _isAwaitingPaymentReturn = false;
+        _isBookingInProgress = false;
       });
     }
+    _dismissLoader();
 
     if (ground != null && _pendingDate != null && _pendingAmount != null) {
       Navigator.pushReplacement(
@@ -124,6 +149,8 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
   }
 
   void _handlePaymentError(dynamic error, String orderId) {
+    _pollingActive = false;
+    _dismissLoader();
     if (mounted) {
       setState(() {
         _isAwaitingPaymentReturn = false;
@@ -176,12 +203,7 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
       _isBookingInProgress = true;
     });
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-          child: CircularProgressIndicator(color: AppColors.accentOrange)),
-    );
+    _showLoader();
 
     try {
       _pendingAmount = totalPrice;
@@ -224,8 +246,8 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
       }
 
       if (alreadyBookedSlots.isNotEmpty) {
+        _dismissLoader();
         if (mounted) {
-          Navigator.pop(context); // Pop the progress indicator
           showDialog(
             context: context,
             builder: (context) => AlertDialog(
@@ -273,9 +295,7 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
 
       // If 100% covered by wallet/loyalty points, bypass Cashfree payment gateway
       if (totalPrice <= 0) {
-        if (mounted) {
-          Navigator.pop(context); // Pop the loading dialog
-        }
+        _dismissLoader();
         final walletOrderId = "WALLET_${DateTime.now().millisecondsSinceEpoch}";
         _handlePaymentSuccess(walletOrderId);
         return;
@@ -291,26 +311,39 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
       final String sessionId = orderResponse['payment_session_id'] ??
           orderResponse['paymentSessionId'];
 
-      if (!mounted) return;
-      Navigator.pop(context); // Pop the loading dialog
+      if (!mounted) {
+        _dismissLoader();
+        return;
+      }
+      _dismissLoader();
 
       // Setup Polling as a fallback (Very useful for Web where callbacks might drop)
-      bool isPolling = true;
+      _pollingActive = true;
       int pollCount = 0;
       void startPolling() async {
-        while (isPolling && pollCount < 60) {
+        while (_pollingActive && pollCount < 60) {
           // Poll for up to 5 minutes (60 * 5s)
           await Future.delayed(const Duration(seconds: 5));
-          if (!mounted || !isPolling) break;
+          if (!mounted || !_pollingActive) break;
           pollCount++;
           try {
             final isValid = await _paymentRepo.verifyPayment(orderId: orderId);
-            if (isValid && isPolling && mounted) {
-              isPolling = false;
+            if (isValid && _pollingActive && mounted) {
+              _pollingActive = false;
               _handlePaymentSuccess(orderId);
               break;
             }
           } catch (_) {}
+        }
+        // Polling exhausted with no confirmation (user abandoned payment):
+        // release the full-screen "Processing Payment..." overlay so the
+        // user is not stuck with back-button blocked.
+        if (mounted && !_isPaymentHandled && _pollingActive) {
+          _pollingActive = false;
+          setState(() {
+            _isAwaitingPaymentReturn = false;
+            _isBookingInProgress = false;
+          });
         }
       }
 
@@ -319,11 +352,11 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
       // Ensure polling stops if we get the callback directly or user leaves
       CashfreeService().setCheckoutCallbacks(
         onSuccess: (id) {
-          isPolling = false;
+          _pollingActive = false;
           _handlePaymentSuccess(id);
         },
         onError: (error, id) {
-          isPolling = false;
+          _pollingActive = false;
           _handlePaymentError(error, id);
         },
       );
@@ -343,10 +376,8 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
       // Note: The rest of the booking save logic and navigation to ViewTicketScreen
       // has been moved to _handlePaymentSuccess() at the top of this file!
     } catch (e) {
+      _dismissLoader();
       if (mounted) {
-        try {
-          Navigator.pop(context);
-        } catch (_) {}
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Booking Error: $e'), backgroundColor: Colors.red));
       }
@@ -377,12 +408,7 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
       _isBookingInProgress = true;
     });
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-          child: CircularProgressIndicator(color: AppColors.accentOrange)),
-    );
+    _showLoader();
 
     try {
       final now = DateTime.now();
@@ -415,8 +441,8 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
       }
 
       if (alreadyBookedSlots.isNotEmpty) {
+        _dismissLoader();
         if (mounted) {
-          Navigator.pop(context); // Pop loading
           showDialog(
             context: context,
             builder: (context) => AlertDialog(
@@ -469,8 +495,11 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
         summaryData: summaryData,
       );
 
-      if (!mounted) return;
-      Navigator.pop(context); // Pop loading
+      if (!mounted) {
+        _dismissLoader();
+        return;
+      }
+      _dismissLoader();
 
       // 3. Show dialog confirming request sent
       await showDialog(
@@ -537,10 +566,8 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
         ),
       );
     } catch (e) {
+      _dismissLoader();
       if (mounted) {
-        try {
-          Navigator.pop(context);
-        } catch (_) {}
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error requesting booking: $e'), backgroundColor: Colors.red),
         );

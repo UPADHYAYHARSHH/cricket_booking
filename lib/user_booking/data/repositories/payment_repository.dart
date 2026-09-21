@@ -320,6 +320,12 @@ class PaymentRepository {
     final double earlyOwnerEarnings = (earlyBaseAmount - earlyCommissionDeduction).clamp(0.0, earlyBaseAmount);
 
     dynamic response;
+    // request_booking RPC already inserts the owner 'booking_request'
+    // notification server-side (atomic). Client must NOT insert a second one:
+    // the old 4-sec dedup guard queried notifications via anon client, but RLS
+    // (notifications_select_own needs auth.email()) returns 0 rows for
+    // Firebase-Auth users, so the guard never fired -> owner got 2x pushes.
+    bool serverInsertedRequestNotif = false;
     try {
       response = await _supabase.rpc('request_booking', params: {
         'p_user_id': user.uid,
@@ -336,6 +342,7 @@ class PaymentRepository {
         'p_player_name': user.displayName ?? 'Player',
         'p_player_phone': user.phoneNumber ?? '',
       });
+      serverInsertedRequestNotif = true;
     } catch (e) {
       debugPrint('request_booking RPC not found, trying save_booking with status requested: $e');
       try {
@@ -418,7 +425,10 @@ class PaymentRepository {
       } catch (_) {}
     }
 
-    // Notify owner of new booking request (1. User request booking -> owner gets notification)
+    // Notify owner of new booking request ONLY if the server RPC did not
+    // already do it (fallback paths: save_booking / direct insert).
+    // When request_booking RPC succeeded, its INSERT is the single source.
+    if (!serverInsertedRequestNotif) {
     try {
       final groundRes = await _supabase
           .from('grounds')
@@ -435,42 +445,25 @@ class PaymentRepository {
       }
 
       if (ownerId != null && ownerId.isNotEmpty) {
-        // Prevent duplicate notification if database RPC already inserted one
-        final recentNotifs = await _supabase
-            .from('notifications')
-            .select('id, created_at')
-            .match({'user_id': ownerId, 'type': 'booking_request'})
-            .order('created_at', ascending: false)
-            .limit(1);
-
-        String? notifId;
-        bool alreadyExists = false;
-        if (recentNotifs.isNotEmpty) {
-          final lastCreated = DateTime.tryParse(recentNotifs.first['created_at']?.toString() ?? '');
-          if (lastCreated != null && DateTime.now().difference(lastCreated).inSeconds < 4) {
-            alreadyExists = true;
-            notifId = recentNotifs.first['id']?.toString();
-          }
-        }
-
-        if (!alreadyExists) {
-          final notifInsert = await _supabase.from('notifications').insert({
-            'user_id': ownerId,
-            'title': 'New Booking Request! ⚡',
-            'message':
-                '$playerName requested a slot at $targetGroundName. You have 45 minutes to confirm.',
-            'type': 'booking_request',
-            'data': {
-              'booking_id': bookingId,
-              'ground_id': groundId,
-              'amount': effectiveAmount,
-              'action': 'owner_approval_required',
-            },
-            'is_read': false,
-            'created_at': DateTime.now().toUtc().toIso8601String(),
-          }).select('id').maybeSingle();
-          notifId = notifInsert?['id']?.toString();
-        }
+        // Fallback path only (server RPC unavailable): insert directly.
+        // No recents-check here: RLS hides other rows from anon client,
+        // so the check always looked empty and caused duplicates.
+        final notifInsert = await _supabase.from('notifications').insert({
+          'user_id': ownerId,
+          'title': 'New Booking Request! ⚡',
+          'message':
+              '$playerName requested a slot at $targetGroundName. You have 45 minutes to confirm.',
+          'type': 'booking_request',
+          'data': {
+            'booking_id': bookingId,
+            'ground_id': groundId,
+            'amount': effectiveAmount,
+            'action': 'owner_approval_required',
+          },
+          'is_read': false,
+          'created_at': DateTime.now().toUtc().toIso8601String(),
+        }).select('id').maybeSingle();
+        final notifId = notifInsert?['id']?.toString();
 
         if (notifId != null) {
           _invokePushNotification(notifId);
@@ -478,6 +471,7 @@ class PaymentRepository {
       }
     } catch (notifErr) {
       debugPrint('Error sending owner request notification: $notifErr');
+    }
     }
 
     // Sync: Update slots table to mark as held/requested
@@ -518,6 +512,19 @@ class PaymentRepository {
     List<String>? slotStartTimes,
     BookingSummaryData? summaryData,
   }) async {
+    // Idempotency: if this booking is already paid (retry / double callback),
+    // return it WITHOUT inserting a second owner notification.
+    try {
+      final existing = await _supabase
+          .from('bookings')
+          .select('id, status')
+          .eq('id', bookingId)
+          .maybeSingle();
+      if (existing != null && existing['status'] == 'paid') {
+        debugPrint('confirmApprovedBookingPayment: booking $bookingId already paid, skipping duplicate notification');
+        return Map<String, dynamic>.from(existing);
+      }
+    } catch (_) {}
     final Map<String, dynamic> updateData = {
       'status': 'paid',
       'razorpay_payment_id': paymentId,

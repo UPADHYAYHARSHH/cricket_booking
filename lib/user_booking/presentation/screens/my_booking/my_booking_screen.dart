@@ -199,6 +199,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
           children: [
             _tabItem("Upcoming", 0),
             _tabItem("Completed", 1),
+            _tabItem("Requested", 2),
           ],
         ),
       ),
@@ -263,8 +264,9 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
               });
             },
             children: [
-              _buildSingleTabBookingList(state.bookings, isUpcoming: true),
-              _buildSingleTabBookingList(state.bookings, isUpcoming: false),
+              _buildSingleTabBookingList(state.bookings, 0),
+              _buildSingleTabBookingList(state.bookings, 1),
+              _buildSingleTabBookingList(state.bookings, 2),
             ],
           );
         }
@@ -274,9 +276,12 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     );
   }
 
-  Widget _buildSingleTabBookingList(List<BookingModel> allBookings, {required bool isUpcoming}) {
+  // tabIndex: 0 = Upcoming, 1 = Completed, 2 = Requested
+  Widget _buildSingleTabBookingList(List<BookingModel> allBookings, int tabIndex) {
     final theme = Theme.of(context);
     final now = DateTime.now();
+    final isRequestedTab = tabIndex == 2;
+    final isCompletedTab = tabIndex == 1;
 
     final bookings = allBookings.where((b) {
       final localDate = b.slotTime.toLocal();
@@ -302,29 +307,45 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       }
 
       final status = b.status.toLowerCase();
-      if (isUpcoming) {
-        if (status == 'expired' || status == 'declined' || status == 'cancelled') {
-          return false;
-        }
-        if (status == 'requested' || status == 'approved') {
-          return true;
-        }
-        return endTime.isAfter(now);
-      } else {
-        if (status == 'expired' || status == 'declined' || status == 'cancelled') {
-          return true;
-        }
-        if (status == 'requested' || status == 'approved') {
-          return false;
-        }
-        return endTime.isBefore(now);
+      // Requested tab holds owner-pending requests AND owner-approved
+      // bookings still awaiting user payment.
+      if (status == 'requested' || status == 'approved') {
+        return isRequestedTab;
       }
+      if (isRequestedTab) return false;
+      // Expired/declined/cancelled never live in Requested (handled above).
+      if (status == 'expired' || status == 'declined' || status == 'cancelled') {
+        return isCompletedTab;
+      }
+      return isCompletedTab ? endTime.isBefore(now) : endTime.isAfter(now);
     }).toList();
 
-    if (isUpcoming) {
-      bookings.sort((a, b) => a.slotTime.compareTo(b.slotTime));
+    int approvedFirst(BookingModel a, BookingModel b) {
+      final aApproved = a.status.toLowerCase() == 'approved' ? 0 : 1;
+      final bApproved = b.status.toLowerCase() == 'approved' ? 0 : 1;
+      if (aApproved != bApproved) return aApproved.compareTo(bApproved);
+      return 0;
+    }
+
+    if (isRequestedTab) {
+      // Pay-now (approved) first, then newest requests first.
+      bookings.sort((a, b) {
+        final order = approvedFirst(a, b);
+        return order != 0
+            ? order
+            : (b.createdAt ?? b.slotTime)
+                .compareTo(a.createdAt ?? a.slotTime);
+      });
+    } else if (isCompletedTab) {
+      bookings.sort((a, b) {
+        final order = approvedFirst(a, b);
+        return order != 0 ? order : b.slotTime.compareTo(a.slotTime);
+      });
     } else {
-      bookings.sort((a, b) => b.slotTime.compareTo(a.slotTime));
+      bookings.sort((a, b) {
+        final order = approvedFirst(a, b);
+        return order != 0 ? order : a.slotTime.compareTo(b.slotTime);
+      });
     }
 
     if (bookings.isEmpty) {
@@ -353,7 +374,9 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
             ),
             const AppSizedBox(height: 24),
             AppText(
-              text: isUpcoming ? "No upcoming bookings" : "No completed bookings",
+              text: isRequestedTab
+                  ? "No requested bookings"
+                  : (isCompletedTab ? "No completed bookings" : "No upcoming bookings"),
               textStyle: AppTextTheme.black18.copyWith(
                 fontWeight: FontWeight.w600,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
@@ -361,9 +384,11 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
             ),
             const AppSizedBox(height: 8),
             AppText(
-              text: isUpcoming
-                  ? "Your upcoming matches will appear here"
-                  : "Matches you have played will appear here",
+              text: isRequestedTab
+                  ? "Booking requests awaiting owner approval will appear here"
+                  : (isCompletedTab
+                      ? "Matches you have played will appear here"
+                      : "Your upcoming matches will appear here"),
               textStyle: AppTextTheme.grey13.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
               ),
@@ -569,7 +594,7 @@ class _BookingCardState extends State<_BookingCard> {
         borderRadius: BorderRadius.circular(18),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: () => _viewTicket(context),
+          onTap: () => _handleCardTap(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1325,27 +1350,32 @@ class _BookingCardState extends State<_BookingCard> {
       }
     }
     final isPast = endTime.isBefore(now);
+    final isPaidBooking = _isPaidBooking;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
       child: Row(children: [
         Expanded(
           child: ElevatedButton(
-            onPressed: () => _viewTicket(context),
+            onPressed: () =>
+                isPaidBooking ? _viewTicket(context) : _rebook(context),
             style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  AppColors.primaryDarkGreen.withValues(alpha: 0.1),
-              foregroundColor: AppColors.primaryDarkGreen,
-              elevation: 0,
+              backgroundColor: isPaidBooking
+                  ? AppColors.primaryDarkGreen.withValues(alpha: 0.1)
+                  : AppColors.primaryDarkGreen,
+              foregroundColor:
+                  isPaidBooking ? AppColors.primaryDarkGreen : Colors.white,
+              elevation: isPaidBooking ? 0 : 2,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10)),
               padding: const EdgeInsets.symmetric(vertical: 12),
             ),
-            child: const Text("View Ticket",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            child: Text(isPaidBooking ? "View Ticket" : "Rebook",
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
           ),
         ),
-        if (isPast) ...[
+        if (isPast && isPaidBooking) ...[
           const SizedBox(width: 8),
           if (!_hasRated && !_isLoadingRating) ...[
             Expanded(
@@ -1419,6 +1449,37 @@ class _BookingCardState extends State<_BookingCard> {
         context.read<BookingCubit>().getBookings();
       }
     }
+  }
+
+  // Booking details (ticket) open only for paid bookings.
+  bool get _isPaidBooking {
+    final s = widget.booking.status.toLowerCase();
+    return s == 'paid' || s == 'confirmed';
+  }
+
+  void _handleCardTap(BuildContext context) {
+    if (_isPaidBooking) {
+      _viewTicket(context);
+      return;
+    }
+    final status = widget.booking.status.toLowerCase();
+    String message;
+    if (status == 'requested') {
+      message = 'Booking request is awaiting owner approval.';
+    } else if (status == 'approved') {
+      message = 'Please complete payment to view your ticket.';
+    } else if (status == 'expired') {
+      message = 'This booking request has expired.';
+    } else if (status == 'declined') {
+      message = 'This booking request was declined by the owner.';
+    } else if (status == 'cancelled') {
+      message = 'This booking was cancelled.';
+    } else {
+      message = 'Ticket is available once payment is completed.';
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   void _viewTicket(BuildContext context) {
