@@ -22,6 +22,7 @@ class ProfileState {
   final double walletBalance;
   final bool isDeleted;
   final bool isNotificationEnabled;
+  final bool isNotificationLoaded;
 
   ProfileState({
     this.isLoading = false,
@@ -38,6 +39,7 @@ class ProfileState {
     this.walletBalance = 0.0,
     this.isDeleted = false,
     this.isNotificationEnabled = true,
+    this.isNotificationLoaded = false,
   });
 
   ProfileState copyWith({
@@ -55,6 +57,7 @@ class ProfileState {
     double? walletBalance,
     bool? isDeleted,
     bool? isNotificationEnabled,
+    bool? isNotificationLoaded,
   }) {
     return ProfileState(
       isLoading: isLoading ?? this.isLoading,
@@ -72,6 +75,8 @@ class ProfileState {
       isDeleted: isDeleted ?? this.isDeleted,
       isNotificationEnabled:
           isNotificationEnabled ?? this.isNotificationEnabled,
+      isNotificationLoaded:
+          isNotificationLoaded ?? this.isNotificationLoaded,
     );
   }
 }
@@ -87,6 +92,18 @@ class ProfileCubit extends Cubit<ProfileState> {
 
   Future<void> loadProfile() async {
     emit(state.copyWith(isLoading: true, error: null));
+    // 1. Emit LOCAL (SharedPrefs) value immediately so the switch never
+    // flashes default-true while Supabase RPC is in flight.
+    try {
+      final localEnabled = await NotificationService.areNotificationsEnabled();
+      if (isClosed) return;
+      emit(state.copyWith(
+        isNotificationEnabled: localEnabled,
+        isNotificationLoaded: true,
+      ));
+    } catch (_) {
+      if (!isClosed) emit(state.copyWith(isNotificationLoaded: true));
+    }
     try {
       debugPrint("[PROFILE_CUBIT] Loading profile...");
       final data = await userRepository.fetchUserProfile();
@@ -114,13 +131,18 @@ class ProfileCubit extends Cubit<ProfileState> {
         final walletBalance = await walletRepository.getBalance();
         if (isClosed) return;
 
-        bool notifEnabled = true;
-        if (data['is_notification_enabled'] != null) {
-          notifEnabled = data['is_notification_enabled'] == true;
-        } else {
-          notifEnabled = await NotificationService.areNotificationsEnabled();
+        // Local prefs is source of truth for the switch UI. Stale DB TRUE
+        // (when RPC not run / RLS blocked write) must NOT re-enable the UI.
+        // If DB differs, push local value TO db in background instead.
+        final localNotif = await NotificationService.areNotificationsEnabled();
+        final dbNotifRaw = data['is_notification_enabled'];
+        if (dbNotifRaw != null && (dbNotifRaw == true) != localNotif) {
+          try {
+            await userRepository.updateNotificationSetting(localNotif);
+          } catch (_) {
+            // Best-effort: UI already correct (local), DB retries next open.
+          }
         }
-        await NotificationService.setNotificationsEnabled(notifEnabled);
 
         emit(state.copyWith(
           isLoading: false,
@@ -131,7 +153,8 @@ class ProfileCubit extends Cubit<ProfileState> {
           photoUrl: data['photo_url'],
           username: username,
           walletBalance: walletBalance,
-          isNotificationEnabled: notifEnabled,
+          isNotificationEnabled: localNotif,
+          isNotificationLoaded: true,
         ));
       } else {
         final notifEnabled = await NotificationService.areNotificationsEnabled();
@@ -139,26 +162,41 @@ class ProfileCubit extends Cubit<ProfileState> {
           isLoading: false,
           email: FirebaseAuth.instance.currentUser?.email,
           isNotificationEnabled: notifEnabled,
+          isNotificationLoaded: true,
         ));
       }
     } catch (e) {
       debugPrint("[PROFILE_CUBIT] Error in loadProfile: $e");
       if (isClosed) return;
-      emit(state.copyWith(isLoading: false, error: e.toString()));
+      emit(state.copyWith(isLoading: false, error: e.toString(), isNotificationLoaded: true));
     }
   }
 
   Future<void> toggleNotificationSetting(bool enabled) async {
-    final previous = state.isNotificationEnabled;
-    emit(state.copyWith(isNotificationEnabled: enabled));
+    // On-tap does: 1) flip UI immediately, 2) local prefs + delete/recreate
+    // FCM token (this is what actually stops shutter pushes), 3) best-effort
+    // DB sync for server-side enforcement. DB failure must NOT revert UI
+    // because local-off already works (you confirmed no notification appears).
+    emit(state.copyWith(isNotificationEnabled: enabled, isNotificationLoaded: true));
     try {
       await NotificationService.setNotificationsEnabled(enabled);
+    } catch (e) {
+      debugPrint("[PROFILE_CUBIT] Error in setNotificationsEnabled: $e");
+      emit(state.copyWith(
+          isNotificationEnabled: !enabled,
+          error: "Failed to update notification setting"));
+      return;
+    }
+    try {
       await userRepository.updateNotificationSetting(enabled);
     } catch (e) {
-      debugPrint("[PROFILE_CUBIT] Error toggling notification setting: $e");
+      // Keep switch as user set it (local-off already stops pushes).
+      // Surface REAL error so we can see why DB stays TRUE.
+      debugPrint("[PROFILE_CUBIT] DB sync failed (run update_notification_setting_rpc.sql v2): $e");
       emit(state.copyWith(
-          isNotificationEnabled: previous,
-          error: "Failed to update notification setting"));
+          isNotificationEnabled: enabled,
+          isNotificationLoaded: true,
+          error: "Saved locally, DB sync failed: $e"));
     }
   }
 

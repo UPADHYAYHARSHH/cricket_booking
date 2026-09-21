@@ -341,14 +341,56 @@ class UserRepositoryImpl implements UserRepository {
       debugPrint("[USER_REPO] Error updating SharedPreferences for notifications: $e");
     }
 
+    // Direct update is blocked by RLS (users policy needs auth.email(),
+    // but app signs in with Firebase Auth so anon client has no Supabase session).
+    // Try direct first, fall back to SECURITY DEFINER RPC like upsertUser does.
+    // NOTE: direct update may "succeed" with 0 rows when RLS filters everything,
+    // so always try RPC too unless direct provably updated the row.
     try {
-      await supabase.from('users').update({
+      final directRes = await supabase.from('users').update({
         'is_notification_enabled': enabled,
         'updated_at': DateTime.now().toIso8601String(),
-      }).eq('id', user.uid);
-      debugPrint("[USER_REPO] Updated is_notification_enabled to $enabled in database");
-    } catch (e) {
-      debugPrint("[USER_REPO] Note: is_notification_enabled column in 'users' table not yet present or updated: $e");
+      }).eq('id', user.uid).select('id');
+      if (directRes is List && directRes.isNotEmpty) {
+        debugPrint("[USER_REPO] Updated is_notification_enabled to $enabled in database (direct)");
+        return;
+      }
+      debugPrint("[USER_REPO] Direct update affected 0 rows (RLS likely), trying RPC for uid=${user.uid} email=${user.email}");
+    } catch (directError) {
+      debugPrint("[USER_REPO] Direct notification update failed (RLS expected): $directError, trying RPC");
+    }
+
+    try {
+      // Try v2 (p_id, p_enabled, p_email) first; fall back to v1 (p_id, p_enabled)
+      // if the server still has the old function cached (PGRST202).
+      dynamic rpcRes;
+      try {
+        rpcRes = await supabase.rpc('update_notification_setting', params: {
+          'p_id': user.uid,
+          'p_enabled': enabled,
+          'p_email': user.email ?? '',
+        });
+      } catch (e) {
+        final msg = '$e';
+        if (msg.contains('PGRST202') || msg.contains('schema cache')) {
+          debugPrint("[USER_REPO] v2 RPC not found, falling back to v1 (run v2 SQL to upgrade)");
+          rpcRes = await supabase.rpc('update_notification_setting', params: {
+            'p_id': user.uid,
+            'p_enabled': enabled,
+          });
+        } else {
+          rethrow;
+        }
+      }
+      debugPrint("[USER_REPO] RPC update_notification_setting returned=$rpcRes for uid=${user.uid} email=${user.email}");
+      final count = rpcRes is int ? rpcRes : int.tryParse('$rpcRes') ?? -1;
+      if (count == 0) {
+        throw Exception("RPC updated 0 rows for uid=${user.uid} email=${user.email}. Row id/email mismatch.");
+      }
+      debugPrint("[USER_REPO] Updated is_notification_enabled to $enabled via RPC");
+    } catch (rpcError) {
+      debugPrint("[USER_REPO] RPC update_notification_setting failed: $rpcError. Run supabase/update_notification_setting_rpc.sql v2 in SQL Editor.");
+      throw Exception("DB sync failed: $rpcError");
     }
   }
 

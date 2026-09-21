@@ -41,6 +41,27 @@ serve(async (req) => {
       });
     }
 
+    // 1b. Respect user opt-out switch (booking_app ProfileCubit toggle).
+    // Without this, background/killed-app FCM is rendered by the OS shutter
+    // even when the user disabled notifications, because client Dart code never runs.
+    try {
+      final { data: userRow } = await supabase
+        .from("users")
+        .select("is_notification_enabled")
+        .eq("id", notification.user_id)
+        .maybeSingle();
+      if (userRow && (userRow as any).is_notification_enabled === false) {
+        console.log(`User ${notification.user_id} disabled notifications. Skipping push.`);
+        return new Response(JSON.stringify({ success: true, skipped: true, reason: "notifications_disabled" }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    } catch (e) {
+      // Fail-open if column/table missing so pushes don't break.
+      console.log(`is_notification_enabled check skipped: ${e}`);
+    }
+
     // Deduplication check: if notification was already sent within the last 60 seconds, skip
     const notifData = (notification.data && typeof notification.data === "object") ? notification.data : {};
     const lastSentAt = notifData.fcm_pushed_at ? new Date(notifData.fcm_pushed_at).getTime() : 0;

@@ -28,6 +28,9 @@ class NotificationService {
 
     if (enabled) {
       try {
+        if (!kIsWeb) {
+          await FirebaseMessaging.instance.setAutoInitEnabled(true);
+        }
         await updateFcmToken();
       } catch (e) {
         debugPrint("DEBUG: [NotificationService] Failed to update token on enable: $e");
@@ -45,6 +48,17 @@ class NotificationService {
       } catch (e) {
         debugPrint("DEBUG: [NotificationService] Failed to clear token on disable: $e");
       }
+      // Stop FCM delivery to system tray (shutter) while disabled.
+      // Without this, background/killed-app pushes are rendered by the OS
+      // and never hit _handleForegroundMessage, so the flag alone can't stop them.
+      try {
+        if (!kIsWeb) {
+          await FirebaseMessaging.instance.setAutoInitEnabled(false);
+          await FirebaseMessaging.instance.deleteToken();
+        }
+      } catch (e) {
+        debugPrint("DEBUG: [NotificationService] Failed to delete FCM token on disable: $e");
+      }
     }
   }
 
@@ -54,6 +68,39 @@ class NotificationService {
       return;
     }
     _isInitialized = true;
+    // Respect saved switch BEFORE any FCM work. Otherwise a disabled user
+    // re-registers a token on every cold start and keeps getting shutter pushes.
+    final bool enabled = await areNotificationsEnabled();
+    if (!kIsWeb) {
+      await FirebaseMessaging.instance.setAutoInitEnabled(enabled);
+    }
+    if (!enabled) {
+      // Still init local channels/listeners so re-enable works, but do NOT
+      // request OS permission or register a token while disabled.
+      if (!kIsWeb) {
+        await _initializeLocalNotifications();
+      }
+      FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+        if (!await areNotificationsEnabled()) {
+          debugPrint("DEBUG: [NotificationService] Token refresh ignored, notifications disabled");
+          return;
+        }
+        await _updateTokenInSupabase(newToken);
+      });
+      if (!kIsWeb) {
+        FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+      }
+      FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageTap);
+      final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+      if (initialMessage != null) {
+        _handleMessageTap(initialMessage);
+      }
+      // Ensure no stale server token can still trigger shutter pushes.
+      try {
+        await clearFcmToken();
+      } catch (_) {}
+      return;
+    }
     // 1. Request permissions
     await _requestPermissions();
 
@@ -67,6 +114,10 @@ class NotificationService {
 
     // 4. Listen for token refresh
     FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+      if (!await areNotificationsEnabled()) {
+        debugPrint("DEBUG: [NotificationService] Token refresh ignored, notifications disabled");
+        return;
+      }
       await _updateTokenInSupabase(newToken);
     });
 

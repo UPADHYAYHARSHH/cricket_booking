@@ -41,6 +41,7 @@ class _NotificationSettingsView extends StatelessWidget {
       },
       builder: (context, state) {
         final isEnabled = state.isNotificationEnabled;
+        final isLoaded = state.isNotificationLoaded;
 
         return Scaffold(
           backgroundColor: theme.scaffoldBackgroundColor,
@@ -152,12 +153,14 @@ class _NotificationSettingsView extends StatelessWidget {
                       Switch.adaptive(
                         value: isEnabled,
                         activeTrackColor: AppColors.primaryDarkGreen,
-                        onChanged: (val) {
-                          HapticFeedback.lightImpact();
-                          context
-                              .read<ProfileCubit>()
-                              .toggleNotificationSetting(val);
-                        },
+                        onChanged: !isLoaded
+                            ? null
+                            : (val) {
+                                HapticFeedback.lightImpact();
+                                context
+                                    .read<ProfileCubit>()
+                                    .toggleNotificationSetting(val);
+                              },
                       ),
                     ],
                   ),
