@@ -70,6 +70,11 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyCfTWHfFfld_yo-ng4hVk4SOw2Tzj4HIgU"/>
             
+        <!-- Default Notification Channel for Firebase Cloud Messaging -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="booking_confirmed_channel" />
+            
         <!-- Scheduled Notifications Receivers -->
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">

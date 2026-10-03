@@ -167,13 +167,13 @@ class BookingPriceSummaryCard extends StatelessWidget {
                 ),
               ],
 
-              // 5. Wallet Balance (if applied)
+              // 5. Playora Coins (if applied)
               if (summaryData.walletDiscount > 0) ...[
                 const SizedBox(height: 12),
                 _buildSummaryInvoiceRow(
-                  label: "TurfPro Wallet",
+                  label: "Playora Coins",
                   value: "-₹${summaryData.walletDiscount.toStringAsFixed(0)}",
-                  valueColor: Colors.blue,
+                  valueColor: const Color(0xFFD97706),
                   colorScheme: colorScheme,
                 ),
               ],

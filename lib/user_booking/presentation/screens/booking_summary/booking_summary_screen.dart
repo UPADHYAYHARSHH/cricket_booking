@@ -33,12 +33,33 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
   bool _initialized = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        if (FeatureConfig.isWalletEnabled) {
+          context.read<SlotSelectionCubit>().loadWalletBalance();
+        }
+        if (FeatureConfig.isLoyaltyEnabled) {
+          context.read<SlotSelectionCubit>().loadLoyaltyPoints();
+        }
+      }
+    });
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
       _initialized = true;
       _checkApprovalRequirement();
       RemoteConfigService().fetchAndActivate();
+      if (FeatureConfig.isWalletEnabled) {
+        context.read<SlotSelectionCubit>().loadWalletBalance();
+      }
+      if (FeatureConfig.isLoyaltyEnabled) {
+        context.read<SlotSelectionCubit>().loadLoyaltyPoints();
+      }
     }
   }
 
@@ -113,15 +134,21 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
               }
             }
 
-            // Wallet Balance Logic
+            // Wallet / Playora Coins Logic (Capped at configured % of user's available coins)
             double walletDiscount = 0.0;
+            final double maxCoinCapPercent = remoteConfig.maxCoinRedemptionPercent > 0
+                ? remoteConfig.maxCoinRedemptionPercent
+                : 40.0;
+            final double maxAllowedCoins = (state.walletBalance * (maxCoinCapPercent / 100.0)).clamp(0.0, state.walletBalance);
+
             if (FeatureConfig.isWalletEnabled &&
                 state.useWallet &&
                 state.walletBalance > 0) {
-              double remainingAfterLoyalty = basePrice - pointsDiscount;
-              walletDiscount = state.walletBalance > remainingAfterLoyalty
+              double remainingAfterLoyalty = (basePrice - pointsDiscount).clamp(0.0, basePrice);
+              double maxApplicable = remainingAfterLoyalty < maxAllowedCoins
                   ? remainingAfterLoyalty
-                  : state.walletBalance;
+                  : maxAllowedCoins;
+              walletDiscount = maxApplicable.floorToDouble();
             }
 
             final double totalDiscount = pointsDiscount + walletDiscount;
@@ -219,6 +246,8 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
                         basePrice: basePrice,
                         pointsDiscount: pointsDiscount,
                         walletDiscount: walletDiscount,
+                        maxAllowedCoins: maxAllowedCoins,
+                        maxCoinCapPercent: maxCoinCapPercent,
                         isDark: isDark,
                         colorScheme: colorScheme,
                       ),
@@ -735,6 +764,8 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
     required double basePrice,
     required double pointsDiscount,
     required double walletDiscount,
+    required double maxAllowedCoins,
+    required double maxCoinCapPercent,
     required bool isDark,
     required ColorScheme colorScheme,
   }) {
@@ -853,7 +884,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
           const SizedBox(height: 12),
         ],
 
-        // Wallet Balance Card
+        // Playora Coins Card
         if (FeatureConfig.isWalletEnabled) ...[
           Container(
             padding: const EdgeInsets.all(14),
@@ -862,14 +893,14 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: state.useWallet
-                    ? Colors.blue
+                    ? const Color(0xFFF59E0B)
                     : (isDark ? Colors.white.withValues(alpha: 0.08) : AppColors.borderLight),
                 width: state.useWallet ? 1.5 : 1,
               ),
               boxShadow: [
                 BoxShadow(
                   color: state.useWallet
-                      ? Colors.blue.withValues(alpha: 0.1)
+                      ? const Color(0xFFF59E0B).withValues(alpha: 0.12)
                       : Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
                   blurRadius: 8,
                 ),
@@ -880,10 +911,10 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.15),
+                    color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.blue, size: 24),
+                  child: const Icon(Icons.monetization_on_rounded, color: Color(0xFFF59E0B), size: 24),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -893,7 +924,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
                       Row(
                         children: [
                           Text(
-                            "TurfPro Wallet",
+                            "Playora Coins",
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -905,7 +936,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: Colors.blue.withValues(alpha: 0.1),
+                                color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
@@ -913,7 +944,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
                                 style: const TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.blue,
+                                  color: Color(0xFFD97706),
                                 ),
                               ),
                             ),
@@ -923,8 +954,10 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
                       const SizedBox(height: 2),
                       Text(
                         state.walletBalance > 0
-                            ? "Available balance: ₹${state.walletBalance.toStringAsFixed(0)}"
-                            : "No balance in wallet",
+                            ? (maxAllowedCoins > 0 && maxAllowedCoins < state.walletBalance
+                                ? "Available: ${state.walletBalance.toStringAsFixed(0)} Coins • Use up to ${maxCoinCapPercent.toStringAsFixed(0)}% (${maxAllowedCoins.toStringAsFixed(0)} Coins)"
+                                : "Available: ${state.walletBalance.toStringAsFixed(0)} Coins (1 Coin = ₹1)")
+                            : "No Playora Coins available",
                         style: TextStyle(
                           fontSize: 11,
                           color: colorScheme.onSurface.withValues(alpha: 0.55),
@@ -935,7 +968,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
                 ),
                 Switch.adaptive(
                   value: state.useWallet,
-                  activeTrackColor: Colors.blue,
+                  activeTrackColor: const Color(0xFFF59E0B),
                   onChanged: state.walletBalance > 0
                       ? (_) {
                           HapticFeedback.selectionClick();

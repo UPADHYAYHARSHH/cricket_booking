@@ -15,6 +15,8 @@ import 'package:turfpro/user_booking/di/get_it/get_it.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import '../support/help_support_screen.dart';
+import '../cancellation/user_cancellation_history_screen.dart';
+import '../cancellation/wallet_coin_history_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -319,82 +321,103 @@ class ProfileScreen extends StatelessWidget {
   Widget _buildWalletCard(BuildContext context, ProfileState state) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [const Color(0xFF1E3A8A), const Color(0xFF1E40AF)]
-              : [const Color(0xFF2563EB), const Color(0xFF1D4ED8)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return GestureDetector(
+      onTap: () async {
+        HapticFeedback.lightImpact();
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const WalletCoinHistoryScreen(),
+          ),
+        );
+        if (context.mounted) {
+          context.read<ProfileCubit>().loadProfile();
+        }
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDark
+                ? [const Color(0xFF1E3A8A), const Color(0xFF1E40AF)]
+                : [const Color(0xFF2563EB), const Color(0xFF1D4ED8)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: (isDark ? Colors.black : Colors.blue).withValues(alpha: 0.2),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: (isDark ? Colors.black : Colors.blue).withValues(alpha: 0.2),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.account_balance_wallet_rounded,
-              color: Colors.white,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Wallet Balance",
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  "₹${state.walletBalance.toStringAsFixed(2)}",
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Text(
-              "Active",
-              style: TextStyle(
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.account_balance_wallet_rounded,
                 color: Colors.white,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
+                size: 24,
               ),
             ),
-          ),
-        ],
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Playora Coins Wallet",
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    "${state.walletBalance.toStringAsFixed(0)} Coins",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "View",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(width: 2),
+                  Icon(Icons.arrow_forward_ios_rounded, size: 9, color: Colors.white),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -455,7 +478,46 @@ class ProfileScreen extends StatelessWidget {
         //       context.read<ProfileCubit>().loadProfile();
         //     }
         //   },
-        // ),
+        _MenuItem(
+          icon: HugeIcons.strokeRoundedCoins01,
+          label: "Playora Coins & Wallet",
+          subtitle: "Balance, coin history & rules",
+          iconBg: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.1),
+          iconColor: isDark ? Colors.amberAccent : Colors.amber.shade800,
+          isLogout: false,
+          onTap: () async {
+            HapticFeedback.lightImpact();
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const WalletCoinHistoryScreen(),
+              ),
+            );
+            if (context.mounted) {
+              context.read<ProfileCubit>().loadProfile();
+            }
+          },
+        ),
+        _MenuItem(
+          icon: HugeIcons.strokeRoundedCalendarRemove01,
+          label: "Cancellation History & Policy",
+          subtitle: "Past cancellations & refund tiers",
+          iconBg: Colors.red.withValues(alpha: isDark ? 0.15 : 0.1),
+          iconColor: isDark ? Colors.redAccent : Colors.red.shade700,
+          isLogout: false,
+          onTap: () async {
+            HapticFeedback.lightImpact();
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const UserCancellationHistoryScreen(),
+              ),
+            );
+            if (context.mounted) {
+              context.read<ProfileCubit>().loadProfile();
+            }
+          },
+        ),
         if (FeatureConfig.isLoyaltyEnabled)
           _MenuItem(
             icon: HugeIcons.strokeRoundedStar,

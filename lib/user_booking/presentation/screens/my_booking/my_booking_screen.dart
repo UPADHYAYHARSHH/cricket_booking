@@ -35,6 +35,8 @@ import 'package:turfpro/user_booking/domain/models/slot_models.dart';
 import 'package:turfpro/user_booking/data/repositories/payment_repository.dart';
 import 'package:turfpro/common/services/cashfree_service.dart';
 import '../support/help_support_screen.dart';
+import '../../widgets/cancellation_preview_dialog.dart';
+import '../cancellation/user_cancellation_history_screen.dart';
 
 class MyBookingsScreen extends StatefulWidget {
   const MyBookingsScreen({super.key});
@@ -149,24 +151,50 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                     ),
                   ],
                 ),
-                IconButton(
-                  icon: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.18),
-                      shape: BoxShape.circle,
+                Row(
+                  children: [
+                    IconButton(
+                      icon: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.18),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.history_toggle_off_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                      tooltip: "Cancellations & Policy",
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const UserCancellationHistoryScreen(),
+                        ),
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.help_outline_rounded,
-                      color: Colors.white,
-                      size: 20,
+                    const SizedBox(width: 4),
+                    IconButton(
+                      icon: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.18),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.help_outline_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                      tooltip: "Help & Support",
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const HelpSupportScreen()),
+                      ),
                     ),
-                  ),
-                  tooltip: "Help & Support",
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const HelpSupportScreen()),
-                  ),
+                  ],
                 ),
               ],
             ),
@@ -1375,6 +1403,24 @@ class _BookingCardState extends State<_BookingCard> {
                     const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
           ),
         ),
+        if (!isPast && isPaidBooking) ...[
+          const SizedBox(width: 8),
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () => _openCancellationDialog(context),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.red.shade700,
+                side: BorderSide(color: Colors.red.shade300),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: const Text("Cancel Booking",
+                  style:
+                      TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            ),
+          ),
+        ],
         if (isPast && isPaidBooking) ...[
           const SizedBox(width: 8),
           if (!_hasRated && !_isLoadingRating) ...[
@@ -1414,6 +1460,13 @@ class _BookingCardState extends State<_BookingCard> {
         ],
       ]),
     );
+  }
+
+  void _openCancellationDialog(BuildContext context) async {
+    final result = await CancellationPreviewDialog.show(context, widget.booking);
+    if (result == true && mounted) {
+      context.read<BookingCubit>().getBookings();
+    }
   }
 
   void _showRatingSheet(BuildContext context) async {

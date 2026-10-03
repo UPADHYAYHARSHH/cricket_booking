@@ -229,6 +229,16 @@ class NotificationService {
           sound: RawResourceAndroidNotificationSound('general_notification_sound'),
         ),
       );
+      await androidPlugin.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'new_booking_channel',
+          'New Booking Alert',
+          description: 'Plays sound when a new booking is made',
+          importance: Importance.max,
+          playSound: true,
+          sound: RawResourceAndroidNotificationSound('booking_confirmed'),
+        ),
+      );
     }
   }
 

@@ -124,10 +124,29 @@ class PaymentRepository {
     final combinedPeriod =
         "$cleanPeriodLabel|${slotStartTimes?.join(',') ?? ''}";
 
+    DateTime finalSlotDateTime = slotTime;
+    if (slotStartTimes != null && slotStartTimes.isNotEmpty) {
+      String firstSlot = slotStartTimes.first.trim();
+      if (firstSlot.contains('-')) {
+        firstSlot = firstSlot.split('-').first.trim();
+      }
+      final timeParts = firstSlot.split(':');
+      if (timeParts.length >= 2) {
+        int h = int.tryParse(timeParts[0]) ?? 0;
+        final mPart = timeParts[1].trim().split(' ');
+        final m = int.tryParse(mPart[0]) ?? 0;
+        final amPm = mPart.length > 1 ? mPart[1].toUpperCase() : '';
+        if (amPm == 'PM' && h != 12) h += 12;
+        if (amPm == 'AM' && h == 12) h = 0;
+        finalSlotDateTime =
+            DateTime(slotTime.year, slotTime.month, slotTime.day, h, m);
+      }
+    }
+
     final response = await _supabase.rpc('save_booking', params: {
       'p_user_id': user.uid,
       'p_ground_id': groundId,
-      'p_slot_time': slotTime.toUtc().toIso8601String(),
+      'p_slot_time': finalSlotDateTime.toUtc().toIso8601String(),
       'p_amount': amount,
       'p_status': 'paid',
       'p_sport_name': sportName,
@@ -912,11 +931,30 @@ class PaymentRepository {
         }
       }
 
+      DateTime finalSlotDateTime = date;
+      if (slotStartTimes.isNotEmpty) {
+        String firstSlot = slotStartTimes.first.trim();
+        if (firstSlot.contains('-')) {
+          firstSlot = firstSlot.split('-').first.trim();
+        }
+        final timeParts = firstSlot.split(':');
+        if (timeParts.length >= 2) {
+          int h = int.tryParse(timeParts[0]) ?? 0;
+          final mPart = timeParts[1].trim().split(' ');
+          final m = int.tryParse(mPart[0]) ?? 0;
+          final amPm = mPart.length > 1 ? mPart[1].toUpperCase() : '';
+          if (amPm == 'PM' && h != 12) h += 12;
+          if (amPm == 'AM' && h == 12) h = 0;
+          finalSlotDateTime =
+              DateTime(date.year, date.month, date.day, h, m);
+        }
+      }
+
       debugPrint('PaymentRepository: Inserting booking via RPC');
       final Map<String, dynamic> rpcParams = {
         'p_user_id': user.uid,
         'p_ground_id': groundId,
-        'p_slot_time': date.toUtc().toIso8601String(),
+        'p_slot_time': finalSlotDateTime.toUtc().toIso8601String(),
         'p_amount': amount,
         'p_status': 'paid',
         'p_sport_name': sportName,
@@ -1008,6 +1046,380 @@ class PaymentRepository {
       }
       rethrow;
     }
+  }
+
+  /// Combines the date with the first slot start time from period (e.g. "Evening|09:00 PM")
+  static DateTime resolveActualSlotStartTime(DateTime baseDate, String? period) {
+    if (period != null && period.contains('|')) {
+      final parts = period.split('|');
+      if (parts.length > 1) {
+        final times = parts[1]
+            .split(',')
+            .map((s) => s.trim())
+            .where((s) => s.isNotEmpty)
+            .toList();
+        if (times.isNotEmpty) {
+          String firstTime = times.first;
+          if (firstTime.contains('-')) {
+            firstTime = firstTime.split('-').first.trim();
+          }
+          final timeParts = firstTime.split(':');
+          if (timeParts.length >= 2) {
+            int h = int.tryParse(timeParts[0]) ?? 0;
+            final mPart = timeParts[1].trim().split(' ');
+            final m = int.tryParse(mPart[0]) ?? 0;
+            final amPm = mPart.length > 1 ? mPart[1].toUpperCase() : '';
+            if (amPm == 'PM' && h != 12) h += 12;
+            if (amPm == 'AM' && h == 12) h = 0;
+            final d = baseDate.toLocal();
+            return DateTime(d.year, d.month, d.day, h, m);
+          }
+        }
+      }
+    }
+    return baseDate;
+  }
+
+  /// Cancels an upcoming paid/confirmed booking and issues Playora Coins to wallet.
+  Future<Map<String, dynamic>> cancelBookingByUser({
+    required String bookingId,
+    String reason = 'Changed my plans',
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw Exception('You must be logged in to cancel a booking.');
+    }
+
+    try {
+      debugPrint('[PaymentRepository] Calling cancel_booking_by_user RPC for booking $bookingId...');
+      final rpcRes = await _supabase.rpc('cancel_booking_by_user', params: {
+        'p_booking_id': bookingId,
+        'p_user_id': user.uid,
+        'p_reason': reason,
+      });
+
+      if (rpcRes != null) {
+        final Map<String, dynamic> resultMap = rpcRes is String
+            ? jsonDecode(rpcRes)
+            : Map<String, dynamic>.from(rpcRes as Map);
+        if (resultMap['success'] == true) {
+          debugPrint('[PaymentRepository] cancel_booking_by_user RPC succeeded: $resultMap');
+          return resultMap;
+        } else if (resultMap['error'] != null) {
+          final errStr = resultMap['error'].toString().toLowerCase();
+          // If the DB rejected because slot_time stored the creation time instead of actual slot time,
+          // don't throw yet! Allow fallback to verify the actual slot time from period!
+          if (!errStr.contains('after slot start time')) {
+            throw Exception(resultMap['error']);
+          }
+          debugPrint('[PaymentRepository] RPC rejected for slot start time, verifying via period in fallback...');
+        }
+      }
+    } catch (e) {
+      debugPrint('[PaymentRepository] cancel_booking_by_user RPC error / checking fallback: $e');
+      final errStr = e.toString().toLowerCase();
+      if (errStr.contains('already cancelled') ||
+          errStr.contains('unauthorized')) {
+        rethrow;
+      }
+    }
+
+    // Direct fallback implementation if RPC was not deployed yet in DB
+    try {
+      debugPrint('[PaymentRepository] Executing direct cancellation fallback for $bookingId...');
+      final fetched = await _supabase
+          .from('bookings')
+          .select('*, grounds(name, owner_id)')
+          .eq('id', bookingId)
+          .maybeSingle();
+      if (fetched == null) throw Exception('Booking not found');
+
+      final bookingData = Map<String, dynamic>.from(fetched);
+      if (bookingData['user_id'] != user.uid) {
+        throw Exception('Unauthorized: You can only cancel your own booking');
+      }
+      final currentStatus = (bookingData['status'] ?? '').toString().toLowerCase();
+      if (currentStatus == 'cancelled') {
+        throw Exception('Booking is already cancelled');
+      }
+
+      final rawSlotTime = bookingData['slot_time'] != null
+          ? DateTime.tryParse(bookingData['slot_time'].toString())
+          : null;
+      final periodStr = bookingData['period']?.toString() ?? '';
+      final actualSlotTime = resolveActualSlotStartTime(rawSlotTime ?? DateTime.now(), periodStr);
+
+      if (actualSlotTime.isBefore(DateTime.now())) {
+        throw Exception('Cannot cancel booking after slot start time');
+      }
+
+      final amount =
+          double.tryParse(bookingData['amount']?.toString() ?? '0') ?? 0.0;
+      final platformFee =
+          double.tryParse(bookingData['platform_fee']?.toString() ?? '0') ?? 0.0;
+      final baseAmount =
+          double.tryParse(bookingData['base_amount']?.toString() ?? '0') ??
+              (amount - platformFee);
+      final eligibleAmount = baseAmount > 0 ? baseAmount : amount;
+
+      // Compute quote dynamically using RemoteConfigService with actualSlotTime
+      final quote = RemoteConfigService().getCancellationQuote(
+        slotTime: actualSlotTime,
+        eligibleAmount: eligibleAmount,
+      );
+
+      final coinsToIssue = quote.coinsToReceive;
+      final ownerComp =
+          (eligibleAmount - coinsToIssue).clamp(0.0, eligibleAmount);
+      final nowUtc = DateTime.now().toUtc();
+
+      // 1. Update booking record
+      try {
+        await _supabase.from('bookings').update({
+          'status': 'cancelled',
+          'cancelled_at': nowUtc.toIso8601String(),
+          'cancellation_reason': reason,
+          'cancelled_by': 'user',
+          'cancellation_coins_issued': coinsToIssue,
+          'owner_compensation': ownerComp,
+        }).eq('id', bookingId);
+      } catch (colErr) {
+        debugPrint('[PaymentRepository] Full booking cancellation update failed (missing columns?): $colErr');
+        // Gracefully update just status so booking is cancelled even if migration hasn't been run
+        try {
+          await _supabase.from('bookings').update({
+            'status': 'cancelled',
+          }).eq('id', bookingId);
+          debugPrint('[PaymentRepository] Successfully updated booking status to cancelled via fallback');
+        } catch (minErr) {
+          debugPrint('[PaymentRepository] Failed to update booking status: $minErr');
+          rethrow;
+        }
+      }
+
+      // 2. Free the reserved slots
+      final groundId = bookingData['ground_id']?.toString() ?? '';
+      if (groundId.isNotEmpty && rawSlotTime != null && periodStr.contains('|')) {
+        final parts = periodStr.split('|');
+        if (parts.length > 1) {
+          final slotDate = rawSlotTime.toLocal();
+          final dateStr =
+              "${slotDate.year}-${slotDate.month.toString().padLeft(2, '0')}-${slotDate.day.toString().padLeft(2, '0')}";
+          final startTimes = parts[1]
+              .split(',')
+              .map((s) => s.trim())
+              .where((s) => s.isNotEmpty)
+              .toList();
+          final slotPrice = startTimes.isNotEmpty
+              ? (eligibleAmount / startTimes.length).toInt()
+              : eligibleAmount.toInt();
+
+          for (final st in startTimes) {
+            try {
+              await _supabase.rpc('upsert_slot', params: {
+                'p_ground_id': groundId,
+                'p_date': dateStr,
+                'p_start_time': st,
+                'p_status': 'available',
+                'p_price': slotPrice,
+              });
+            } catch (_) {
+              try {
+                await _supabase
+                    .from('slots')
+                    .update({'status': 'available'})
+                    .eq('ground_id', groundId)
+                    .eq('date', dateStr)
+                    .eq('start_time', st);
+              } catch (_) {}
+            }
+          }
+        }
+      }
+
+      // 3. Credit wallet balance
+      if (coinsToIssue > 0) {
+        try {
+          final walletRow = await _supabase
+              .from('wallets')
+              .select('balance')
+              .eq('user_id', user.uid)
+              .maybeSingle();
+          final currentBal =
+              (walletRow?['balance'] as num?)?.toDouble() ?? 0.0;
+          final newBal = currentBal + coinsToIssue;
+          await _supabase.from('wallets').upsert({
+            'user_id': user.uid,
+            'balance': newBal,
+            'updated_at': nowUtc.toIso8601String(),
+          }, onConflict: 'user_id');
+
+          try {
+            await _supabase.from('wallet_transactions').insert({
+              'user_id': user.uid,
+              'amount': coinsToIssue,
+              'type': 'cancellation_credit',
+              'description':
+                  'Booking cancelled (${quote.refundPercent.toInt()}% refund)',
+              'reference_id': bookingId,
+              'created_at': nowUtc.toIso8601String(),
+            });
+          } catch (_) {
+            // Fallback for tables without reference_id or with type IN ('credit', 'debit')
+            try {
+              await _supabase.from('wallet_transactions').insert({
+                'user_id': user.uid,
+                'amount': coinsToIssue,
+                'type': 'credit',
+                'description':
+                    'Booking cancelled (${quote.refundPercent.toInt()}% refund)',
+                'created_at': nowUtc.toIso8601String(),
+              });
+            } catch (innerErr) {
+              debugPrint('Error inserting wallet transaction: $innerErr');
+            }
+          }
+        } catch (wErr) {
+          debugPrint('Error updating wallet: $wErr');
+        }
+      }
+
+      // 4. Send Notifications
+      try {
+        final groundName = (bookingData['grounds'] is Map &&
+                bookingData['grounds']['name'] != null)
+            ? bookingData['grounds']['name'].toString()
+            : 'the venue';
+        final ownerId = (bookingData['grounds'] is Map &&
+                bookingData['grounds']['owner_id'] != null)
+            ? bookingData['grounds']['owner_id'].toString()
+            : null;
+
+        if (ownerId != null && ownerId.isNotEmpty) {
+          await _supabase.from('notifications').insert({
+            'user_id': ownerId,
+            'title': 'Slot Re-opened (Booking Cancelled)',
+            'message':
+                'Booking #${bookingData['display_id'] ?? ''} for $groundName was cancelled by player. The slot is now available.',
+            'type': 'booking_cancelled',
+            'data': {
+              'booking_id': bookingId,
+              'ground_name': groundName,
+              'reason': reason,
+            },
+            'is_read': false,
+            'created_at': nowUtc.toIso8601String(),
+          });
+        }
+
+        await _supabase.from('notifications').insert({
+          'user_id': user.uid,
+          'title': 'Booking Cancelled',
+          'message':
+              'Your booking for $groundName was cancelled. ₹${coinsToIssue.toStringAsFixed(0)} Playora Coins added to your wallet.',
+          'type': 'cancellation_coins_credited',
+          'data': {
+            'booking_id': bookingId,
+            'coins_issued': coinsToIssue,
+          },
+          'is_read': false,
+          'created_at': nowUtc.toIso8601String(),
+        });
+      } catch (nErr) {
+        debugPrint('Error inserting cancellation notifications: $nErr');
+      }
+
+      // Record in cancellation_history
+      try {
+        final groundName = (bookingData['grounds'] is Map &&
+                bookingData['grounds']['name'] != null)
+            ? bookingData['grounds']['name'].toString()
+            : (bookingData['ground_name']?.toString() ?? 'Venue');
+        await _supabase.from('cancellation_history').insert({
+          'booking_id': bookingId,
+          'user_id': user.uid,
+          'ground_id': bookingData['ground_id'],
+          'ground_name': groundName,
+          'sport_name': bookingData['sport_name'] ?? bookingData['sport'],
+          'slot_time': bookingData['slot_time'],
+          'cancelled_by': 'user',
+          'cancellation_reason': reason,
+          'refund_percent': quote.refundPercent,
+          'coins_issued': coinsToIssue,
+          'owner_compensation': ownerComp,
+          'total_booking_amount': amount,
+          'cancelled_at': nowUtc.toIso8601String(),
+        });
+      } catch (histErr) {
+        debugPrint('Error recording cancellation history in fallback: $histErr');
+      }
+
+      return {
+        'success': true,
+        'booking_id': bookingId,
+        'status': 'cancelled',
+        'refund_percent': quote.refundPercent,
+        'coins_issued': coinsToIssue,
+        'owner_compensation': ownerComp,
+      };
+    } catch (fallbackErr) {
+      debugPrint('Cancellation direct fallback error: $fallbackErr');
+      rethrow;
+    }
+  }
+
+  /// Fetches cancellation history for the current user.
+  /// Queries cancellation_history first, and supplements/falls back to bookings with status = 'cancelled'.
+  Future<List<Map<String, dynamic>>> getCancellationHistory() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return [];
+
+    try {
+      final res = await _supabase
+          .from('cancellation_history')
+          .select('*')
+          .eq('user_id', user.uid)
+          .order('cancelled_at', ascending: false);
+      if (res.isNotEmpty) {
+        return List<Map<String, dynamic>>.from(res);
+      }
+    } catch (e) {
+      debugPrint('[PaymentRepository] cancellation_history select error: $e');
+    }
+
+    // Fallback: Query bookings table directly for cancelled bookings
+    try {
+      final bRes = await _supabase
+          .from('bookings')
+          .select('*, grounds(name, address)')
+          .eq('user_id', user.uid)
+          .eq('status', 'cancelled')
+          .order('cancelled_at', ascending: false);
+
+      if (bRes.isNotEmpty) {
+        return List<Map<String, dynamic>>.from(bRes.map((b) {
+          final m = Map<String, dynamic>.from(b as Map);
+          return {
+            'booking_id': m['id']?.toString() ?? '',
+            'user_id': m['user_id']?.toString() ?? '',
+            'ground_id': m['ground_id']?.toString(),
+            'ground_name': (m['grounds'] is Map ? m['grounds']['name'] : null) ?? m['ground_name'] ?? 'Box Cricket',
+            'sport_name': m['sport_name'] ?? m['sport'] ?? 'Box Cricket',
+            'slot_time': m['slot_time'],
+            'cancelled_by': m['cancelled_by'] ?? 'user',
+            'cancellation_reason': m['cancellation_reason'] ?? 'Cancelled',
+            'refund_percent': m['refund_percent'] ?? 0,
+            'coins_issued': (m['cancellation_coins_issued'] as num?)?.toDouble() ?? 0.0,
+            'total_booking_amount': (m['amount'] as num?)?.toDouble() ?? 0.0,
+            'cancelled_at': m['cancelled_at'] ?? m['created_at'],
+          };
+        }));
+      }
+    } catch (e) {
+      debugPrint('[PaymentRepository] fallback cancelled bookings fetch error: $e');
+    }
+
+    return [];
   }
 }
 

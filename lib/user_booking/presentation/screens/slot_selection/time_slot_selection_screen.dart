@@ -1,5 +1,6 @@
 import 'package:hugeicons/hugeicons.dart';
 import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/common/config/feature_config.dart';
 import 'package:turfpro/common/widgets/discover_app_bar.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
@@ -727,6 +728,12 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
                     return;
                   }
                   try {
+                    if (FeatureConfig.isWalletEnabled) {
+                      context.read<SlotSelectionCubit>().loadWalletBalance();
+                    }
+                    if (FeatureConfig.isLoyaltyEnabled) {
+                      context.read<SlotSelectionCubit>().loadLoyaltyPoints();
+                    }
                     final result = await Navigator.pushNamed(
                         context, AppRoutes.bookingSummary,
                         arguments: BookingSummaryArguments(

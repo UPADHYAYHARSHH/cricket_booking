@@ -51,6 +51,38 @@ class BookingModel {
     this.notes,
   });
 
+  /// Resolves the actual slot start time combining the date from slotTime
+  /// and the first slot start time from period (e.g. "Evening|09:00 PM").
+  DateTime get actualSlotStartTime {
+    if (period != null && period!.contains('|')) {
+      final parts = period!.split('|');
+      if (parts.length > 1) {
+        final times = parts[1]
+            .split(',')
+            .map((s) => s.trim())
+            .where((s) => s.isNotEmpty)
+            .toList();
+        if (times.isNotEmpty) {
+          String firstTime = times.first;
+          if (firstTime.contains('-')) {
+            firstTime = firstTime.split('-').first.trim();
+          }
+          final timeParts = firstTime.split(':');
+          if (timeParts.length >= 2) {
+            int h = int.tryParse(timeParts[0]) ?? 0;
+            final mPart = timeParts[1].trim().split(' ');
+            final m = int.tryParse(mPart[0]) ?? 0;
+            final amPm = mPart.length > 1 ? mPart[1].toUpperCase() : '';
+            if (amPm == 'PM' && h != 12) h += 12;
+            if (amPm == 'AM' && h == 12) h = 0;
+            return DateTime(slotTime.year, slotTime.month, slotTime.day, h, m);
+          }
+        }
+      }
+    }
+    return slotTime;
+  }
+
   factory BookingModel.fromJson(Map<String, dynamic> json) {
     return BookingModel(
       id: json['id']?.toString() ?? '',

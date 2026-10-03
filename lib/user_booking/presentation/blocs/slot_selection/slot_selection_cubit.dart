@@ -143,6 +143,12 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
   }
 
   Future<void> initFacility(GroundModel initialGround, {String? explicitPreferredSport}) async {
+    if (FeatureConfig.isWalletEnabled) {
+      loadWalletBalance();
+    }
+    if (FeatureConfig.isLoyaltyEnabled) {
+      loadLoyaltyPoints();
+    }
     final todayDates = _generateDates(initialGround);
     emit(state.copyWith(
       isLoading: true,
