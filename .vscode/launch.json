@@ -1,24 +1,50 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "TurfPro (Debug)",
-            "request": "launch",
-            "type": "dart",
-            "toolArgs": [
-                "--dart-define=SUPABASE_URL=https://qcybnzopffyzmpiaxwbc.supabase.co",
-                "--dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjeWJuem9wZmZ5em1waWF4d2JjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxMDYyNzMsImV4cCI6MjA4OTY4MjI3M30.cRnvZzQhbwI26PhRkdjnptVa5yiWo6oBIGZlZU7JEgg"
-            ]
-        },
-        {
-            "name": "TurfPro (Release)",
-            "request": "launch",
-            "type": "dart",
-            "flutterMode": "release",
-            "toolArgs": [
-                "--dart-define=SUPABASE_URL=https://qcybnzopffyzmpiaxwbc.supabase.co",
-                "--dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjeWJuem9wZmZ5em1waWF4d2JjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxMDYyNzMsImV4cCI6MjA4OTY4MjI3M30.cRnvZzQhbwI26PhRkdjnptVa5yiWo6oBIGZlZU7JEgg"
-            ]
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug SST",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/sst",
+      "runtimeArgs": ["dev", "--increase-timeout"],
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"],
+      // sourceMapRenames helps with the loading spinner when debugging and viewing local variables
+      "sourceMapRenames": false,
+      "env": {
+        "AWS_PROFILE": "flo-ct-flo360"
+      }
+    },
+    {
+      "name": "Debug Tests - Unit",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/sst",
+      "runtimeArgs": ["bind", "yarn", "\"jest\"", "\"--watch\"", "\"--config\"", "\"./jest.unit.config.cjs\"", "\"${input:scopeTestsFileName}\""],
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"],
+      "env": {
+        "AWS_PROFILE": "flo-ct-flo360"
+      },
+    },
+    {
+      "name": "Debug Tests - E2E",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/sst",
+      "runtimeArgs": ["bind", "yarn", "\"vitest\"", "\"--config\"", "\"./vitest.e2e.config.ts\"", "\"${input:scopeTestsFileName}\""],
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"],
+      "env": {
+        "AWS_PROFILE": "flo-ct-flo360"
+      },
+    },
+  ],
+  "inputs": [
+    {
+      "id": "scopeTestsFileName",
+      "type": "promptString",
+      "description": "Partial file name to scope test debugging to. ex. arena. Leave blank to run all tests.",
+    }
+  ]
 }
