@@ -114,7 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
                           image: const DecorationImage(
-                            image: AssetImage("assets/images/login_bg.jpg"),
+                            image: AssetImage("assets/images/login_bg.png"),
                             fit: BoxFit.cover,
                           ),
                         ),
