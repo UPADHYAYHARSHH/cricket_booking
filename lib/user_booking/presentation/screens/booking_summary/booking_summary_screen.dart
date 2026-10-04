@@ -134,14 +134,20 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
               }
             }
 
-            // Wallet / Playora Coins Logic (Capped at configured % of user's available coins)
+            // Wallet / Playora Coins Logic (Capped at configured % of user's available coins, unless < 20 coins)
             double walletDiscount = 0.0;
             final double maxCoinCapPercent = remoteConfig.maxCoinRedemptionPercent > 0
                 ? remoteConfig.maxCoinRedemptionPercent
                 : 40.0;
-            final double coinsBasedOnBalance = state.walletBalance * (maxCoinCapPercent / 100.0);
-            final double coinsBasedOnPrice = basePrice * (maxCoinCapPercent / 100.0);
-            final double maxAllowedCoins = (coinsBasedOnBalance < coinsBasedOnPrice ? coinsBasedOnBalance : coinsBasedOnPrice).clamp(0.0, state.walletBalance);
+            final double maxAllowedCoins;
+            if (state.walletBalance < 20) {
+              // If coins are less than 20, user can redeem whole coins without 40% rule
+              maxAllowedCoins = state.walletBalance;
+            } else {
+              final double coinsBasedOnBalance = state.walletBalance * (maxCoinCapPercent / 100.0);
+              final double coinsBasedOnPrice = basePrice * (maxCoinCapPercent / 100.0);
+              maxAllowedCoins = (coinsBasedOnBalance < coinsBasedOnPrice ? coinsBasedOnBalance : coinsBasedOnPrice).clamp(0.0, state.walletBalance);
+            }
 
             if (FeatureConfig.isWalletEnabled &&
                 state.useWallet &&
@@ -956,9 +962,11 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
                       const SizedBox(height: 2),
                       Text(
                         state.walletBalance > 0
-                            ? (maxAllowedCoins > 0 && maxAllowedCoins < state.walletBalance
-                                ? "Available: ${state.walletBalance.toStringAsFixed(0)} Coins • Use up to ${maxCoinCapPercent.toStringAsFixed(0)}% (${maxAllowedCoins.toStringAsFixed(0)} Coins)"
-                                : "Available: ${state.walletBalance.toStringAsFixed(0)} Coins (1 Coin = ₹1)")
+                            ? (state.walletBalance < 20
+                                ? "Available: ${state.walletBalance.toStringAsFixed(0)} Coins • Redeem all coins (1 Coin = ₹1)"
+                                : (maxAllowedCoins > 0 && maxAllowedCoins < state.walletBalance
+                                    ? "Available: ${state.walletBalance.toStringAsFixed(0)} Coins • Use up to ${maxCoinCapPercent.toStringAsFixed(0)}% (${maxAllowedCoins.toStringAsFixed(0)} Coins)"
+                                    : "Available: ${state.walletBalance.toStringAsFixed(0)} Coins (1 Coin = ₹1)"))
                             : "No Playora Coins available",
                         style: TextStyle(
                           fontSize: 11,

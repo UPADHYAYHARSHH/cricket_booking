@@ -566,7 +566,7 @@ class _UserCancellationHistoryScreenState
           _buildInstructionBullet(
             icon: Icons.percent_rounded,
             title: 'Max Redemption (${maxRedeem.toStringAsFixed(0)}%)',
-            content: 'You can redeem Playora Coins up to ${maxRedeem.toStringAsFixed(0)}% of your available coins on any booking.',
+            content: 'You can redeem 100% of your Playora Coins if your balance is under 20, or up to ${maxRedeem.toStringAsFixed(0)}% of your available coins on any booking.',
           ),
           _buildInstructionBullet(
             icon: Icons.lock_clock_outlined,

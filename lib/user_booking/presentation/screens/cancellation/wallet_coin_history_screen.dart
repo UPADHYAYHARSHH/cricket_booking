@@ -380,7 +380,7 @@ class _WalletCoinHistoryScreenState extends State<WalletCoinHistoryScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '• 100% closed-loop platform currency.\n• Redeem up to ${maxRedeem.toStringAsFixed(0)}% of your coins per booking.\n• Valid for $expiry days from credit date.',
+                  '• 100% closed-loop platform currency.\n• Redeem whole coins if balance < 20, or up to ${maxRedeem.toStringAsFixed(0)}% per booking.\n• Valid for $expiry days from credit date.',
                   style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600, height: 1.4),
                 ),
               ],

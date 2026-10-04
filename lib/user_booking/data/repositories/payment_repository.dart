@@ -1285,6 +1285,42 @@ class PaymentRepository {
         }
       }
 
+      // 3b. Deduct difference from owner_wallets in database
+      final ownerIdForWallet = (bookingData['grounds'] is Map &&
+              bookingData['grounds']['owner_id'] != null)
+          ? bookingData['grounds']['owner_id'].toString()
+          : null;
+      final previousEarnings =
+          (bookingData['owner_earnings'] as num?)?.toDouble() ??
+          (bookingData['base_amount'] as num?)?.toDouble() ??
+          amount;
+      if (ownerIdForWallet != null && ownerIdForWallet.isNotEmpty && previousEarnings > ownerComp) {
+        try {
+          final diff = previousEarnings - ownerComp;
+          final existingOwnerWallet = await _supabase
+              .from('owner_wallets')
+              .select()
+              .eq('owner_id', ownerIdForWallet)
+              .maybeSingle();
+
+          if (existingOwnerWallet != null) {
+            final curTotal = (existingOwnerWallet['total_earnings'] as num?)?.toDouble() ?? 0.0;
+            final curAvail = (existingOwnerWallet['available_balance'] as num?)?.toDouble() ?? 0.0;
+
+            final newTotal = (curTotal - diff).clamp(0.0, double.infinity);
+            final newAvail = (curAvail - diff).clamp(0.0, double.infinity);
+
+            await _supabase.from('owner_wallets').update({
+              'total_earnings': newTotal,
+              'available_balance': newAvail,
+              'updated_at': nowUtc.toIso8601String(),
+            }).eq('owner_id', ownerIdForWallet);
+          }
+        } catch (owErr) {
+          debugPrint('Error deducting from owner_wallets in fallback: $owErr');
+        }
+      }
+
       // 4. Send Notifications
       try {
         final groundName = (bookingData['grounds'] is Map &&
