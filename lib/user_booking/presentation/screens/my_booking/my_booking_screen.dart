@@ -427,7 +427,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     }
 
     return RefreshIndicator(
-      onRefresh: () => context.read<BookingCubit>().getBookings(forceLoading: true),
+      onRefresh: () => context.read<BookingCubit>().getBookings(forceLoading: false),
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: bookings.length,

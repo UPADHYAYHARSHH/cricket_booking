@@ -196,14 +196,14 @@ class _WalletCoinHistoryScreenState extends State<WalletCoinHistoryScreen> {
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFFD97706), Color(0xFFF59E0B), Color(0xFFFBBF24)],
+          colors: [AppColors.primaryLightGreen, AppColors.primaryDarkGreen],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFD97706).withValues(alpha: 0.35),
+            color: AppColors.primaryDarkGreen.withValues(alpha: 0.35),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -329,7 +329,6 @@ class _WalletCoinHistoryScreenState extends State<WalletCoinHistoryScreen> {
                         color: Colors.white,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        decoration: TextDecoration.underline,
                       ),
                     ),
                     Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Colors.white),

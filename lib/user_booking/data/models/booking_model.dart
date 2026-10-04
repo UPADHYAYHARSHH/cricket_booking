@@ -99,7 +99,7 @@ class BookingModel {
       period: json['period'],
       ground: json['grounds'] != null ? GroundModel.fromJson(json['grounds']) : null,
       checkedIn: json['checked_in'] == true,
-      checkedInAt: json['checked_in_at'] != null ? DateTime.tryParse(json['checked_in_at'])?.toLocal() : null,
+      checkedInAt: _parseUtcToLocal(json['checked_in_at']),
       platformFee: (json['platform_fee'] as num?)?.toDouble() ?? 0.0,
       commissionRate: (json['commission_rate'] as num?)?.toDouble() ?? 0.0,
       commissionIsPercentage: json['commission_is_percentage'] ?? true,

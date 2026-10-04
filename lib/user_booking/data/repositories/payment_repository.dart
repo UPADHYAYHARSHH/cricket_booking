@@ -1182,6 +1182,7 @@ class PaymentRepository {
           'cancelled_by': 'user',
           'cancellation_coins_issued': coinsToIssue,
           'owner_compensation': ownerComp,
+          'owner_earnings': ownerComp,
         }).eq('id', bookingId);
       } catch (colErr) {
         debugPrint('[PaymentRepository] Full booking cancellation update failed (missing columns?): $colErr');

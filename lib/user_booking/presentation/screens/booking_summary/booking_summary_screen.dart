@@ -139,7 +139,9 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
             final double maxCoinCapPercent = remoteConfig.maxCoinRedemptionPercent > 0
                 ? remoteConfig.maxCoinRedemptionPercent
                 : 40.0;
-            final double maxAllowedCoins = (state.walletBalance * (maxCoinCapPercent / 100.0)).clamp(0.0, state.walletBalance);
+            final double coinsBasedOnBalance = state.walletBalance * (maxCoinCapPercent / 100.0);
+            final double coinsBasedOnPrice = basePrice * (maxCoinCapPercent / 100.0);
+            final double maxAllowedCoins = (coinsBasedOnBalance < coinsBasedOnPrice ? coinsBasedOnBalance : coinsBasedOnPrice).clamp(0.0, state.walletBalance);
 
             if (FeatureConfig.isWalletEnabled &&
                 state.useWallet &&
