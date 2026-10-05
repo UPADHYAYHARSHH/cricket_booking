@@ -312,14 +312,15 @@ class _CancellationPreviewDialogState extends State<CancellationPreviewDialog> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            Text(
-                              'Valid for ${quote.coinExpiryDays} days',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.5),
+                            if (quote.coinsExpiryEnabled)
+                              Text(
+                                'Valid for ${quote.coinExpiryDays} days',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.5),
+                                ),
                               ),
-                            ),
                           ],
                         ),
                         Row(

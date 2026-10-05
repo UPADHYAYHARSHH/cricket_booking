@@ -116,7 +116,7 @@ class _WalletCoinHistoryScreenState extends State<WalletCoinHistoryScreen> {
                   const SizedBox(height: 16),
 
                   // Info Explainer Card
-                  _buildCoinRulesBanner(expiry, maxRedeem),
+                  _buildCoinRulesBanner(cfg.coinsExpiryEnabled, expiry, maxRedeem),
 
                   const SizedBox(height: 20),
 
@@ -342,7 +342,11 @@ class _WalletCoinHistoryScreenState extends State<WalletCoinHistoryScreen> {
     );
   }
 
-  Widget _buildCoinRulesBanner(int expiry, double maxRedeem) {
+  Widget _buildCoinRulesBanner(bool expiryEnabled, int expiry, double maxRedeem) {
+    final String expiryText = expiryEnabled
+        ? '\n• Valid for $expiry days from credit date.'
+        : '';
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -380,7 +384,7 @@ class _WalletCoinHistoryScreenState extends State<WalletCoinHistoryScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '• 100% closed-loop platform currency.\n• Redeem whole coins if balance < 20, or up to ${maxRedeem.toStringAsFixed(0)}% per booking.\n• Valid for $expiry days from credit date.',
+                  '• 100% closed-loop platform currency.\n• Redeem whole coins if balance < 20, or up to ${maxRedeem.toStringAsFixed(0)}% per booking.$expiryText',
                   style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600, height: 1.4),
                 ),
               ],

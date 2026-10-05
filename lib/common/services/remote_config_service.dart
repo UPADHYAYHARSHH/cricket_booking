@@ -35,6 +35,7 @@ class RemoteConfigService {
   double _cancellationTier3Percent = 50.0;
   double _cancellationTier4Percent = 25.0;
   int _coinExpiryDays = 60;
+  bool _coinsExpiryEnabled = true;
   double _maxCoinRedemptionPercent = 40.0;
 
   final StreamController<bool> _maintenanceController = StreamController<bool>.broadcast();
@@ -197,6 +198,11 @@ class RemoteConfigService {
       final exp = int.tryParse(remoteConfig.getString('coin_expiry_days'));
       if (exp != null) _coinExpiryDays = exp;
 
+      final expEnabledStr = remoteConfig.getString('coins_expiry_enabled');
+      if (expEnabledStr.isNotEmpty) {
+        _coinsExpiryEnabled = expEnabledStr.toLowerCase() == 'true' || expEnabledStr == '1';
+      }
+
       final maxRedeem = double.tryParse(remoteConfig.getString('max_coin_redemption_percent'));
       if (maxRedeem != null) _maxCoinRedemptionPercent = maxRedeem;
 
@@ -302,6 +308,9 @@ class RemoteConfigService {
             final parsedExp = int.tryParse(val);
             if (parsedExp != null) _coinExpiryDays = parsedExp;
             break;
+          case 'coins_expiry_enabled':
+            if (val.isNotEmpty) _coinsExpiryEnabled = val == 'true' || val == '1';
+            break;
           case 'max_coin_redemption_percent':
             final parsedMaxRedeem = double.tryParse(val);
             if (parsedMaxRedeem != null) _maxCoinRedemptionPercent = parsedMaxRedeem;
@@ -365,6 +374,7 @@ class RemoteConfigService {
   double get cancellationTier3Percent => _cancellationTier3Percent;
   double get cancellationTier4Percent => _cancellationTier4Percent;
   int get coinExpiryDays => _coinExpiryDays;
+  bool get coinsExpiryEnabled => _coinsExpiryEnabled;
   double get maxCoinRedemptionPercent => _maxCoinRedemptionPercent;
 
   /// Dynamic live quote calculation based on the admin's configured policy
@@ -405,6 +415,7 @@ class RemoteConfigService {
       eligibleAmount: eligibleAmount,
       coinsToReceive: coinsToReceive,
       coinExpiryDays: _coinExpiryDays,
+      coinsExpiryEnabled: _coinsExpiryEnabled,
     );
   }
 
@@ -452,6 +463,7 @@ class CancellationQuote {
   final double eligibleAmount;
   final double coinsToReceive;
   final int coinExpiryDays;
+  final bool coinsExpiryEnabled;
 
   const CancellationQuote({
     required this.hoursRemaining,
@@ -460,5 +472,6 @@ class CancellationQuote {
     required this.eligibleAmount,
     required this.coinsToReceive,
     required this.coinExpiryDays,
+    required this.coinsExpiryEnabled,
   });
 }

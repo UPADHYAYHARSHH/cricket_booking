@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:turfpro/common/services/remote_config_service.dart';
 
 abstract class WalletRepository {
   Future<double> getBalance();
@@ -42,13 +43,32 @@ class WalletRepositoryImpl implements WalletRepository {
 
     // 2. Fetch cancellation coins from cancellation_history as resilient fallback
     double cancellationCoins = 0.0;
+    final rc = RemoteConfigService();
+    final expiryEnabled = rc.coinsExpiryEnabled;
+    final expiryDays = rc.coinExpiryDays;
+
     try {
       final cancelHist = await _supabase
           .from('cancellation_history')
-          .select('coins_issued')
+          .select('coins_issued, cancelled_at, created_at')
           .eq('user_id', user.uid);
       for (final row in cancelHist) {
-        cancellationCoins += (row['coins_issued'] as num?)?.toDouble() ?? 0.0;
+        final amount = (row['coins_issued'] as num?)?.toDouble() ?? 0.0;
+        
+        bool isExpired = false;
+        if (expiryEnabled && amount > 0) {
+          final dateStr = row['cancelled_at']?.toString() ?? row['created_at']?.toString();
+          if (dateStr != null) {
+            final date = DateTime.tryParse(dateStr);
+            if (date != null && DateTime.now().difference(date).inDays > expiryDays) {
+              isExpired = true;
+            }
+          }
+        }
+        
+        if (!isExpired) {
+          cancellationCoins += amount;
+        }
       }
     } catch (_) {}
 
@@ -68,11 +88,18 @@ class WalletRepositoryImpl implements WalletRepository {
     final netCancelCoins =
         (cancellationCoins - debits).clamp(0.0, double.infinity);
 
-    // If dbBalance is positive and matches or exceeds netCancelCoins, use dbBalance.
-    // If dbBalance is null or 0 (e.g. RLS blocked or wallets not synced), use netCancelCoins.
-    final effectiveBal = (dbBalance != null && dbBalance > 0)
-        ? (dbBalance > netCancelCoins ? dbBalance : netCancelCoins)
-        : netCancelCoins;
+    // If expiry is enabled, netCancelCoins is the source of truth for expired state.
+    // Otherwise, we fallback to dbBalance if it's higher.
+    final effectiveBal = expiryEnabled 
+        ? netCancelCoins 
+        : ((dbBalance != null && dbBalance > 0)
+            ? (dbBalance > netCancelCoins ? dbBalance : netCancelCoins)
+            : netCancelCoins);
+
+    // Sync the correct balance back to the wallet table if it differs
+    if (effectiveBal != dbBalance) {
+      updateBalance(effectiveBal);
+    }
 
     return effectiveBal;
   }
