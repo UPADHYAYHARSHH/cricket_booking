@@ -312,15 +312,16 @@ class _CancellationPreviewDialogState extends State<CancellationPreviewDialog> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            if (quote.coinsExpiryEnabled)
-                              Text(
-                                'Valid for ${quote.coinExpiryDays} days',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: theme.colorScheme.onSurface
-                                      .withValues(alpha: 0.5),
-                                ),
+                            Text(
+                              quote.coinsExpiryEnabled
+                                  ? 'Valid for ${quote.coinExpiryDays} days'
+                                  : 'No expiration • Lifetime validity',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.5),
                               ),
+                            ),
                           ],
                         ),
                         Row(

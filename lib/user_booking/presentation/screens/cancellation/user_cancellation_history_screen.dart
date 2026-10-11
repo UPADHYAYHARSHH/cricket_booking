@@ -559,9 +559,13 @@ class _UserCancellationHistoryScreenState
             content: 'Recovered coins are instantly credited to your wallet and can be used on any future booking on the platform.',
           ),
           _buildInstructionBullet(
-            icon: Icons.timer_outlined,
-            title: 'Coin Validity ($expiry Days)',
-            content: 'Playora Coins expire after $expiry days from the issue date. Be sure to redeem them on your upcoming games!',
+            icon: Icons.all_inclusive_rounded,
+            title: cfg.coinsExpiryEnabled
+                ? 'Coin Validity ($expiry Days)'
+                : 'No Expiration (Lifetime Validity)',
+            content: cfg.coinsExpiryEnabled
+                ? 'Playora Coins expire after $expiry days from the issue date. Be sure to redeem them on your upcoming games!'
+                : 'Playora Coins never expire! You can keep them in your wallet and use them anytime for any future booking.',
           ),
           _buildInstructionBullet(
             icon: Icons.percent_rounded,

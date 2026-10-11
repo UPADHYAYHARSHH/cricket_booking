@@ -345,7 +345,7 @@ class _WalletCoinHistoryScreenState extends State<WalletCoinHistoryScreen> {
   Widget _buildCoinRulesBanner(bool expiryEnabled, int expiry, double maxRedeem) {
     final String expiryText = expiryEnabled
         ? '\n• Valid for $expiry days from credit date.'
-        : '';
+        : '\n• No expiration: Lifetime validity — use anytime.';
 
     return Container(
       padding: const EdgeInsets.all(14),
