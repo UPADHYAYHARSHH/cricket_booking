@@ -94,6 +94,109 @@ class PaymentRepository {
     }
   }
 
+  /// Dispatches save_booking RPC dynamically supporting Cashfree, Razorpay,
+  /// or generic payment gateways, seamlessly falling back if Postgres hasn't applied
+  /// the latest function signature yet.
+  Future<dynamic> _invokeDynamicSaveBooking({
+    required String userId,
+    required String groundId,
+    required DateTime slotDateTime,
+    required int amount,
+    required String status,
+    String? sportName,
+    String? period,
+    String? orderId,
+    String? paymentId,
+    String? signature,
+    String paymentGateway = 'cashfree',
+  }) async {
+    final slotIso = slotDateTime.toUtc().toIso8601String();
+
+    // 1. Dynamic parameters supporting generic keys and specific gateway keys
+    final dynamicParams = <String, dynamic>{
+      'p_user_id': userId,
+      'p_ground_id': groundId,
+      'p_slot_time': slotIso,
+      'p_amount': amount,
+      'p_status': status,
+      if (sportName != null) 'p_sport_name': sportName,
+      if (period != null) 'p_period': period,
+      'p_payment_gateway': paymentGateway,
+      // Generic gateway keys
+      if (orderId != null) 'p_order_id': orderId,
+      if (paymentId != null) 'p_payment_id': paymentId,
+      if (signature != null) 'p_signature': signature,
+      // Dynamic gateway-specific keys (e.g. p_cashfree_order_id)
+      if (orderId != null) 'p_${paymentGateway}_order_id': orderId,
+      if (paymentId != null) 'p_${paymentGateway}_payment_id': paymentId,
+      if (signature != null) 'p_${paymentGateway}_signature': signature,
+      // Legacy compatibility keys
+      if (orderId != null) 'p_razorpay_order_id': orderId,
+      if (paymentId != null) 'p_razorpay_payment_id': paymentId,
+      if (signature != null) 'p_razorpay_signature': signature,
+    };
+
+    // 2. Pure legacy parameters fallback in case the database RPC only has old parameters
+    final legacyParams = <String, dynamic>{
+      'p_user_id': userId,
+      'p_ground_id': groundId,
+      'p_slot_time': slotIso,
+      'p_amount': amount,
+      'p_status': status,
+      if (sportName != null) 'p_sport_name': sportName,
+      if (period != null) 'p_period': period,
+      if (orderId != null) 'p_razorpay_order_id': orderId,
+      if (paymentId != null) 'p_razorpay_payment_id': paymentId,
+      if (signature != null) 'p_razorpay_signature': signature,
+    };
+
+    dynamic response;
+    try {
+      debugPrint('PaymentRepository: Invoking save_booking RPC with dynamic parameters (gateway: $paymentGateway)');
+      response = await _supabase.rpc('save_booking', params: dynamicParams);
+    } catch (e) {
+      final errStr = e.toString().toLowerCase();
+      if (errStr.contains('could not find the function') ||
+          errStr.contains('pgrst202') ||
+          errStr.contains('parameter')) {
+        debugPrint('PaymentRepository: Dynamic RPC not recognized by Postgres schema cache, falling back to legacy signature: $e');
+        response = await _supabase.rpc('save_booking', params: legacyParams);
+      } else {
+        rethrow;
+      }
+    }
+
+    // Persist dynamic gateway info (Cashfree / custom gateway) to bookings table
+    try {
+      String? bookingId;
+      if (response is Map) {
+        bookingId = response['id']?.toString();
+      } else if (response is String) {
+        try {
+          final decoded = jsonDecode(response);
+          if (decoded is Map) bookingId = decoded['id']?.toString();
+        } catch (_) {}
+      }
+
+      if (bookingId != null && bookingId.isNotEmpty) {
+        final updateMap = <String, dynamic>{
+          'payment_gateway': paymentGateway,
+        };
+        if (orderId != null) {
+          updateMap['${paymentGateway}_order_id'] = orderId;
+        }
+        if (paymentId != null) {
+          updateMap['${paymentGateway}_payment_id'] = paymentId;
+        }
+        await _supabase.from('bookings').update(updateMap).eq('id', bookingId);
+      }
+    } catch (e) {
+      debugPrint('Optional dynamic gateway field sync to bookings table: $e');
+    }
+
+    return response;
+  }
+
   /// SAVE BOOKING TO DATABASE
   Future<Map<String, dynamic>> saveBooking({
     required String groundId,
@@ -102,6 +205,7 @@ class PaymentRepository {
     required String orderId,
     required String paymentId,
     required String signature,
+    String paymentGateway = 'cashfree',
     String? sportName,
     String? period,
     List<String>? slotStartTimes,
@@ -143,18 +247,20 @@ class PaymentRepository {
       }
     }
 
-    final response = await _supabase.rpc('save_booking', params: {
-      'p_user_id': user.uid,
-      'p_ground_id': groundId,
-      'p_slot_time': finalSlotDateTime.toUtc().toIso8601String(),
-      'p_amount': amount,
-      'p_status': 'paid',
-      'p_sport_name': sportName,
-      'p_period': combinedPeriod,
-      'p_razorpay_order_id': orderId,
-      'p_razorpay_payment_id': paymentId,
-      'p_razorpay_signature': signature,
-    });
+    // Support dynamic payment gateway mapping (Cashfree / Generic Gateway)
+    final response = await _invokeDynamicSaveBooking(
+      userId: user.uid,
+      groundId: groundId,
+      slotDateTime: finalSlotDateTime,
+      amount: amount,
+      status: 'paid',
+      sportName: sportName,
+      period: combinedPeriod,
+      orderId: orderId,
+      paymentId: paymentId,
+      signature: signature,
+      paymentGateway: paymentGateway,
+    );
     debugPrint('PaymentRepository: saveBooking completed');
 
     // Sync: Update slots table to mark as booked
@@ -365,18 +471,19 @@ class PaymentRepository {
     } catch (e) {
       debugPrint('request_booking RPC not found, trying save_booking with status requested: $e');
       try {
-        response = await _supabase.rpc('save_booking', params: {
-          'p_user_id': user.uid,
-          'p_ground_id': groundId,
-          'p_slot_time': effectiveSlotTime.toUtc().toIso8601String(),
-          'p_amount': effectiveAmount,
-          'p_status': 'requested',
-          'p_sport_name': effectiveSport,
-          'p_period': combinedPeriod,
-          'p_razorpay_order_id': 'REQUESTED',
-          'p_razorpay_payment_id': 'PENDING',
-          'p_razorpay_signature': '',
-        });
+        response = await _invokeDynamicSaveBooking(
+          userId: user.uid,
+          groundId: groundId,
+          slotDateTime: effectiveSlotTime,
+          amount: effectiveAmount,
+          status: 'requested',
+          sportName: effectiveSport,
+          period: combinedPeriod,
+          orderId: 'REQUESTED',
+          paymentId: 'PENDING',
+          signature: '',
+          paymentGateway: 'requested',
+        );
       } catch (saveErr) {
         debugPrint('Fallback to direct insert for requestBooking: $saveErr');
         final notesData = summaryData != null
@@ -546,10 +653,13 @@ class PaymentRepository {
     } catch (_) {}
     final Map<String, dynamic> updateData = {
       'status': 'paid',
-      'razorpay_payment_id': paymentId,
+      'payment_gateway': 'cashfree',
+      'cashfree_payment_id': paymentId,
+      'razorpay_payment_id': paymentId, // legacy fallback for RPC compatibility
     };
     if (orderId != null && orderId.isNotEmpty) {
-      updateData['razorpay_order_id'] = orderId;
+      updateData['cashfree_order_id'] = orderId;
+      updateData['razorpay_order_id'] = orderId; // legacy fallback for RPC compatibility
     }
     if (signature.isNotEmpty) {
       updateData['razorpay_signature'] = signature;
@@ -892,10 +1002,13 @@ class PaymentRepository {
     String? sportName,
     String? period,
     String? orderId,
+    String? paymentId,
+    String? signature,
+    String paymentGateway = 'cashfree',
     BookingSummaryData? summaryData,
   }) async {
     debugPrint(
-        'PaymentRepository: saveDirectBooking called - Ground: $groundId, Date: $date, Amount: $amount');
+        'PaymentRepository: saveDirectBooking called - Ground: $groundId, Date: $date, Amount: $amount, Gateway: $paymentGateway');
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       debugPrint('PaymentRepository: Error - User not authenticated');
@@ -919,7 +1032,7 @@ class PaymentRepository {
           final existing = await _supabase
               .from('bookings')
               .select('*')
-              .eq('razorpay_order_id', orderId)
+              .or('cashfree_order_id.eq.$orderId,razorpay_order_id.eq.$orderId')
               .maybeSingle();
           if (existing != null) {
             debugPrint(
@@ -950,25 +1063,21 @@ class PaymentRepository {
         }
       }
 
-      debugPrint('PaymentRepository: Inserting booking via RPC');
-      final Map<String, dynamic> rpcParams = {
-        'p_user_id': user.uid,
-        'p_ground_id': groundId,
-        'p_slot_time': finalSlotDateTime.toUtc().toIso8601String(),
-        'p_amount': amount,
-        'p_status': 'paid',
-        'p_sport_name': sportName,
-        'p_period': combinedPeriod,
-      };
-
-      if (orderId != null) {
-        rpcParams['p_razorpay_order_id'] = orderId;
-      }
-
-      debugPrint('PaymentRepository: Inserting booking via RPC with params: $rpcParams');
-      final bookingResponse =
-          await _supabase.rpc('save_booking', params: rpcParams);
-      debugPrint('PaymentRepository: Booking record created successfully. Response: $bookingResponse');
+      debugPrint('PaymentRepository: Inserting booking via dynamic RPC');
+      final bookingResponse = await _invokeDynamicSaveBooking(
+        userId: user.uid,
+        groundId: groundId,
+        slotDateTime: finalSlotDateTime,
+        amount: amount,
+        status: 'paid',
+        sportName: sportName,
+        period: combinedPeriod,
+        orderId: orderId,
+        paymentId: paymentId,
+        signature: signature,
+        paymentGateway: paymentGateway,
+      );
+      debugPrint('PaymentRepository: Booking record created successfully via dynamic RPC: $bookingResponse');
 
       await _updateBookingFinancialSnapshot(bookingResponse, amount.toDouble(),
           summaryData: summaryData);

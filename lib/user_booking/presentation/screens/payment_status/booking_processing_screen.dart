@@ -125,6 +125,7 @@ class _BookingProcessingScreenState extends State<BookingProcessingScreen>
         slotStartTimes:
             widget.selectedSlots.map((s) => s.startTime).toList(),
         orderId: widget.orderId,
+        paymentGateway: widget.orderId.startsWith('WALLET_') ? 'wallet' : 'cashfree',
         summaryData: widget.summaryData,
       );
 
