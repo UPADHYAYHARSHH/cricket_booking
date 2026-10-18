@@ -1274,12 +1274,15 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
     required ColorScheme colorScheme,
     bool isApprovalRequired = false,
   }) {
+    final Color savingsColor =
+        isDark ? AppColors.primaryLightGreen : AppColors.primaryDarkGreen;
+
     return Container(
       padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 14,
-        bottom: MediaQuery.of(context).padding.bottom + 12,
+        left: 16,
+        right: 16,
+        top: 12,
+        bottom: MediaQuery.of(context).padding.bottom + 10,
       ),
       decoration: BoxDecoration(
         color: colorScheme.surface,
@@ -1300,80 +1303,90 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
         children: [
           // Total Amount Info
           Expanded(
-            flex: 2,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      isApprovalRequired ? "ESTIMATED TOTAL" : "TOTAL TO PAY",
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                        color: colorScheme.onSurface.withValues(alpha: 0.5),
-                      ),
-                    ),
-                    if (totalDiscount > 0) ...[
-                      const SizedBox(width: 4),
-                      Text(
-                        "• Save ₹${totalDiscount.toStringAsFixed(0)}",
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primaryDarkGreen,
-                        ),
-                      ),
-                    ],
-                  ],
+                Text(
+                  isApprovalRequired ? "ESTIMATED TOTAL" : "TOTAL TO PAY",
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                    color: colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  "₹${grandTotal.toStringAsFixed(0)}",
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primaryDarkGreen,
-                  ),
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 6,
+                  runSpacing: 2,
+                  children: [
+                    Text(
+                      "₹${grandTotal.toStringAsFixed(0)}",
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? AppColors.primaryLightGreen : AppColors.primaryDarkGreen,
+                        height: 1.1,
+                      ),
+                    ),
+                    if (totalDiscount > 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: savingsColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          "Save ₹${totalDiscount.toStringAsFixed(0)}",
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.bold,
+                            color: savingsColor,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),
           ),
 
+          const SizedBox(width: 12),
+
           // CTA Button (Request Booking or Proceed to Pay)
-          Expanded(
-            flex: 3,
-            child: ElevatedButton(
-              onPressed: onConfirm,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isApprovalRequired ? Colors.amber.shade700 : AppColors.primaryDarkGreen,
-                foregroundColor: Colors.white,
-                elevation: 4,
-                shadowColor: (isApprovalRequired ? Colors.amber.shade700 : AppColors.primaryDarkGreen).withValues(alpha: 0.4),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+          ElevatedButton(
+            onPressed: onConfirm,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isApprovalRequired ? Colors.amber.shade700 : AppColors.primaryDarkGreen,
+              foregroundColor: Colors.white,
+              elevation: 4,
+              shadowColor: (isApprovalRequired ? Colors.amber.shade700 : AppColors.primaryDarkGreen).withValues(alpha: 0.4),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  isApprovalRequired ? "Request Booking" : "Proceed to Pay",
+                  style: const TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    isApprovalRequired ? "Request Booking" : "Proceed to Pay",
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Icon(
-                    isApprovalRequired ? Icons.send_rounded : Icons.arrow_forward_rounded,
-                    size: 18,
-                  ),
-                ],
-              ),
+                const SizedBox(width: 6),
+                Icon(
+                  isApprovalRequired ? Icons.send_rounded : Icons.arrow_forward_rounded,
+                  size: 18,
+                ),
+              ],
             ),
           ),
         ],
