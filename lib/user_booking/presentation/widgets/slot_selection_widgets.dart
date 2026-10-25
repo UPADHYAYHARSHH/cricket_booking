@@ -2022,48 +2022,69 @@ class SlotSelectionWidgets {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Period label
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: periodColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: periodColor.withValues(alpha: 0.2),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(periodIcon, size: 14, color: periodColor),
-                            const SizedBox(width: 6),
-                            Text(
-                              period.toUpperCase(),
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: periodColor,
-                                letterSpacing: 1.2,
+                      // Period label & rate
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: periodColor.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: periodColor.withValues(alpha: 0.2),
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(periodIcon, size: 14, color: periodColor),
+                                const SizedBox(width: 6),
+                                Text(
+                                  period.toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: periodColor,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: periodColor.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    "${periodSlots.length}",
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      color: periodColor,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (periodSlots.isNotEmpty && periodSlots.first.value.price > 0)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: periodColor.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(10),
+                                color: periodColor.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
-                                "${periodSlots.length}",
+                                "₹${periodSlots.first.value.price.toInt()} / hr",
                                 style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
                                   color: periodColor,
                                 ),
                               ),
                             ),
-                          ],
-                        ),
+                        ],
                       ),
                       const SizedBox(height: 16),
                       // Slots grid

@@ -221,17 +221,22 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
         selectSport(preferredSport);
       }
 
-      // Explicitly select the initial ground if it matches the preferred sport, 
+      final matchingGround = facilityGrounds.firstWhere(
+        (g) => g.id == initialGround.id,
+        orElse: () => initialGround,
+      );
+
+      // Explicitly select the ground if it matches the preferred sport, 
       // or find the first turf that does match the preferred sport.
-      if (preferredSport != null && !initialGround.categories.contains(preferredSport)) {
+      if (preferredSport != null && !matchingGround.categories.contains(preferredSport)) {
         final matchingTurfs = facilityGrounds.where((g) => g.categories.contains(preferredSport)).toList();
         if (matchingTurfs.isNotEmpty) {
           selectTurf(matchingTurfs.first);
         } else {
-          selectTurf(initialGround);
+          selectTurf(matchingGround);
         }
       } else {
-        selectTurf(initialGround);
+        selectTurf(matchingGround);
       }
     } catch (e) {
       emit(state.copyWith(
@@ -548,10 +553,14 @@ class SlotSelectionCubit extends Cubit<SlotSelectionState> {
           }
         }
 
+        final slotPrice = state.selectedTurf != null
+            ? state.selectedTurf!.getPriceForSlot(currentSlotTime)
+            : price;
+
         generated.add(TimeSlot(
           startTime: startStr,
           endTime: endStr,
-          price: price,
+          price: slotPrice,
           status: isPast ? SlotStatus.booked : SlotStatus.available,
         ));
         

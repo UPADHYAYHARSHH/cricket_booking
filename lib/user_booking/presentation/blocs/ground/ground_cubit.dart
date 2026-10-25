@@ -91,37 +91,11 @@ class GroundCubit extends Cubit<GroundState> {
       }
     }
 
-    // Create new GroundModel instances with displayName set
+    // Create new GroundModel instances with displayName set while preserving all prices
     return grounds.map((g) {
       final displayName = numberedNames[g.id];
       if (displayName != null) {
-        return GroundModel(
-          id: g.id,
-          name: g.name,
-          displayName: displayName,
-          address: g.address,
-          latitude: g.latitude,
-          longitude: g.longitude,
-          pricePerHour: g.pricePerHour,
-          weekendPrice: g.weekendPrice,
-          imageUrl: g.imageUrl,
-          rating: g.rating,
-          openingTime: g.openingTime,
-          closingTime: g.closingTime,
-          slotDuration: g.slotDuration,
-          city: g.city,
-          totalReviews: g.totalReviews,
-          description: g.description,
-          locationDescription: g.locationDescription,
-          privacyPolicy: g.privacyPolicy,
-          amenities: g.amenities,
-          images: g.images,
-          categories: g.categories,
-          ownerId: g.ownerId,
-          locationId: g.locationId,
-          isAvailable: g.isAvailable,
-          operatingDays: g.operatingDays,
-        );
+        return g.copyWith(displayName: displayName);
       }
       return g;
     }).toList();

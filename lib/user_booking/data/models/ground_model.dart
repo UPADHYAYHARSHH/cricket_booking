@@ -26,6 +26,14 @@ class GroundModel {
   final String ownerId;
   final String locationId;
   final bool isAvailable;
+  final int? morningPrice;
+  final int? afternoonPrice;
+  final int? eveningPrice;
+  final int? nightPrice;
+  final int? weekendMorningPrice;
+  final int? weekendAfternoonPrice;
+  final int? weekendEveningPrice;
+  final int? weekendNightPrice;
   final List<int> operatingDays;
 
   GroundModel({
@@ -45,6 +53,14 @@ class GroundModel {
     required this.city,
     required this.totalReviews,
     this.weekendPrice = 0,
+    this.morningPrice,
+    this.afternoonPrice,
+    this.eveningPrice,
+    this.nightPrice,
+    this.weekendMorningPrice,
+    this.weekendAfternoonPrice,
+    this.weekendEveningPrice,
+    this.weekendNightPrice,
     this.description = '',
     this.locationDescription = '',
     this.privacyPolicy = '',
@@ -73,6 +89,14 @@ class GroundModel {
           : (double.tryParse(json['longitude']?.toString() ?? '') ?? 0.0),
       pricePerHour: json['price_per_hour'] ?? 0,
       weekendPrice: json['weekend_price'] ?? 0,
+      morningPrice: (json['morning_price'] as num?)?.toInt(),
+      afternoonPrice: (json['afternoon_price'] as num?)?.toInt(),
+      eveningPrice: (json['evening_price'] as num?)?.toInt(),
+      nightPrice: (json['night_price'] as num?)?.toInt(),
+      weekendMorningPrice: (json['weekend_morning_price'] as num?)?.toInt(),
+      weekendAfternoonPrice: (json['weekend_afternoon_price'] as num?)?.toInt(),
+      weekendEveningPrice: (json['weekend_evening_price'] as num?)?.toInt(),
+      weekendNightPrice: (json['weekend_night_price'] as num?)?.toInt(),
       imageUrl: json['imageUrl'] ?? '',
       rating: (json['locations'] is Map && json['locations']['rating'] != null)
           ? (json['locations']['rating'] as num).toDouble()
@@ -154,6 +178,10 @@ class GroundModel {
       'longitude': longitude,
       'price_per_hour': pricePerHour,
       'weekend_price': weekendPrice,
+      'morning_price': morningPrice,
+      'afternoon_price': afternoonPrice,
+      'evening_price': eveningPrice,
+      'night_price': nightPrice,
       'imageUrl': imageUrl,
       'rating': rating,
       'opening_time': openingTime,
@@ -168,6 +196,10 @@ class GroundModel {
       'images': images,
       'categories': categories,
       'owner_id': ownerId,
+      'weekend_morning_price': weekendMorningPrice,
+      'weekend_afternoon_price': weekendAfternoonPrice,
+      'weekend_evening_price': weekendEveningPrice,
+      'weekend_night_price': weekendNightPrice,
       'location_id': locationId,
       'is_available': isAvailable,
       'operating_days': operatingDays,
@@ -181,4 +213,117 @@ class GroundModel {
 
   @override
   int get hashCode => id.hashCode;
+
+  /// Returns the price for a specific slot date and time, taking into account
+  /// time-of-day rates (morning, afternoon, evening, night) and weekday/weekend base rates.
+  double getPriceForSlot(DateTime slotTime) {
+    final hour = slotTime.hour;
+    final isWeekend = slotTime.weekday == DateTime.saturday || slotTime.weekday == DateTime.sunday;
+
+    int? customPrice;
+    if (isWeekend) {
+      if (hour >= 6 && hour < 12) {
+        customPrice = weekendMorningPrice;
+      } else if (hour >= 12 && hour < 16) {
+        customPrice = weekendAfternoonPrice;
+      } else if (hour >= 16 && hour < 20) {
+        customPrice = weekendEveningPrice;
+      } else {
+        customPrice = weekendNightPrice;
+      }
+    } else {
+      if (hour >= 6 && hour < 12) {
+        customPrice = morningPrice;
+      } else if (hour >= 12 && hour < 16) {
+        customPrice = afternoonPrice;
+      } else if (hour >= 16 && hour < 20) {
+        customPrice = eveningPrice;
+      } else {
+        customPrice = nightPrice;
+      }
+    }
+
+    if (customPrice != null && customPrice > 0) {
+      return customPrice.toDouble();
+    }
+
+    if (isWeekend && weekendPrice > 0) {
+      return weekendPrice.toDouble();
+    }
+    return pricePerHour.toDouble();
+  }
+
+  GroundModel copyWith({
+    String? id,
+    String? name,
+    String? locationName,
+    String? displayName,
+    String? address,
+    double? latitude,
+    double? longitude,
+    int? pricePerHour,
+    int? weekendPrice,
+    int? morningPrice,
+    int? afternoonPrice,
+    int? eveningPrice,
+    int? nightPrice,
+    int? weekendMorningPrice,
+    int? weekendAfternoonPrice,
+    int? weekendEveningPrice,
+    int? weekendNightPrice,
+    String? imageUrl,
+    double? rating,
+    String? openingTime,
+    String? closingTime,
+    String? slotDuration,
+    String? city,
+    int? totalReviews,
+    String? description,
+    String? locationDescription,
+    String? privacyPolicy,
+    List<String>? amenities,
+    List<String>? images,
+    List<String>? categories,
+    String? ownerId,
+    String? locationId,
+    bool? isAvailable,
+    List<int>? operatingDays,
+  }) {
+    return GroundModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      locationName: locationName ?? this.locationName,
+      displayName: displayName ?? this.displayName,
+      address: address ?? this.address,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      pricePerHour: pricePerHour ?? this.pricePerHour,
+      weekendPrice: weekendPrice ?? this.weekendPrice,
+      morningPrice: morningPrice ?? this.morningPrice,
+      afternoonPrice: afternoonPrice ?? this.afternoonPrice,
+      eveningPrice: eveningPrice ?? this.eveningPrice,
+      nightPrice: nightPrice ?? this.nightPrice,
+      weekendMorningPrice: weekendMorningPrice ?? this.weekendMorningPrice,
+      weekendAfternoonPrice: weekendAfternoonPrice ?? this.weekendAfternoonPrice,
+      weekendEveningPrice: weekendEveningPrice ?? this.weekendEveningPrice,
+      weekendNightPrice: weekendNightPrice ?? this.weekendNightPrice,
+      imageUrl: imageUrl ?? this.imageUrl,
+      rating: rating ?? this.rating,
+      openingTime: openingTime ?? this.openingTime,
+      closingTime: closingTime ?? this.closingTime,
+      slotDuration: slotDuration ?? this.slotDuration,
+      city: city ?? this.city,
+      totalReviews: totalReviews ?? this.totalReviews,
+      description: description ?? this.description,
+      locationDescription: locationDescription ?? this.locationDescription,
+      privacyPolicy: privacyPolicy ?? this.privacyPolicy,
+      amenities: amenities ?? this.amenities,
+      images: images ?? this.images,
+      categories: categories ?? this.categories,
+      ownerId: ownerId ?? this.ownerId,
+      locationId: locationId ?? this.locationId,
+      isAvailable: isAvailable ?? this.isAvailable,
+      operatingDays: operatingDays ?? this.operatingDays,
+    );
+  }
 }

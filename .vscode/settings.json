@@ -19,5 +19,6 @@
     "type": "shell",
     "command": "npm run lint",
     "runOn": "folderOpen"
-  }
+  },
+  "dart.flutterSdkPath": "E:\\Downloads\\new_sdk\\3.19.6\\flutter"
 }

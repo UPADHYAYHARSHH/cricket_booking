@@ -80,6 +80,14 @@ class GroundRepositoryImpl implements GroundRepository {
               : (double.tryParse(e['longitude']?.toString() ?? '') ?? 0.0),
           pricePerHour: e['price_per_hour'] ?? 0,
           weekendPrice: e['weekend_price'] ?? 0,
+          morningPrice: (e['morning_price'] as num?)?.toInt(),
+          afternoonPrice: (e['afternoon_price'] as num?)?.toInt(),
+          eveningPrice: (e['evening_price'] as num?)?.toInt(),
+          nightPrice: (e['night_price'] as num?)?.toInt(),
+          weekendMorningPrice: (e['weekend_morning_price'] as num?)?.toInt(),
+          weekendAfternoonPrice: (e['weekend_afternoon_price'] as num?)?.toInt(),
+          weekendEveningPrice: (e['weekend_evening_price'] as num?)?.toInt(),
+          weekendNightPrice: (e['weekend_night_price'] as num?)?.toInt(),
           rating: (e['locations'] is Map && e['locations']['rating'] != null)
               ? (double.tryParse(e['locations']['rating'].toString()) ?? 0.0)
               : (double.tryParse(e['rating']?.toString() ?? '') ?? 0.0),
@@ -246,6 +254,14 @@ class GroundRepositoryImpl implements GroundRepository {
               : (double.tryParse(e['longitude']?.toString() ?? '') ?? 0.0),
           pricePerHour: e['price_per_hour'] ?? 0,
           weekendPrice: e['weekend_price'] ?? 0,
+          morningPrice: (e['morning_price'] as num?)?.toInt(),
+          afternoonPrice: (e['afternoon_price'] as num?)?.toInt(),
+          eveningPrice: (e['evening_price'] as num?)?.toInt(),
+          nightPrice: (e['night_price'] as num?)?.toInt(),
+          weekendMorningPrice: (e['weekend_morning_price'] as num?)?.toInt(),
+          weekendAfternoonPrice: (e['weekend_afternoon_price'] as num?)?.toInt(),
+          weekendEveningPrice: (e['weekend_evening_price'] as num?)?.toInt(),
+          weekendNightPrice: (e['weekend_night_price'] as num?)?.toInt(),
           rating: (e['locations'] is Map && e['locations']['rating'] != null)
               ? (double.tryParse(e['locations']['rating'].toString()) ?? 0.0)
               : (double.tryParse(e['rating']?.toString() ?? '') ?? 0.0),
@@ -392,6 +408,14 @@ class GroundRepositoryImpl implements GroundRepository {
           : (double.tryParse(e['longitude']?.toString() ?? '') ?? 0.0),
       pricePerHour: e['price_per_hour'] ?? 0,
       weekendPrice: e['weekend_price'] ?? 0,
+      morningPrice: (e['morning_price'] as num?)?.toInt(),
+      afternoonPrice: (e['afternoon_price'] as num?)?.toInt(),
+      eveningPrice: (e['evening_price'] as num?)?.toInt(),
+      nightPrice: (e['night_price'] as num?)?.toInt(),
+      weekendMorningPrice: (e['weekend_morning_price'] as num?)?.toInt(),
+      weekendAfternoonPrice: (e['weekend_afternoon_price'] as num?)?.toInt(),
+      weekendEveningPrice: (e['weekend_evening_price'] as num?)?.toInt(),
+      weekendNightPrice: (e['weekend_night_price'] as num?)?.toInt(),
       rating: (e['locations'] is Map && e['locations']['rating'] != null)
           ? (double.tryParse(e['locations']['rating'].toString()) ?? 0.0)
           : (double.tryParse(e['rating']?.toString() ?? '') ?? 0.0),
