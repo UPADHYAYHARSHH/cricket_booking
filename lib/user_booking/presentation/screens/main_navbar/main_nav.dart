@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:turfpro/common/services/notification_service.dart';
 import 'package:turfpro/common/constants/colors.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import 'package:turfpro/user_booking/presentation/screens/ground_list/ground_list_screen.dart';
@@ -91,6 +92,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
         });
       }
       _checkLocation(context.read<LocationCubit>().state);
+      NotificationService.requestPermissions();
     });
   }
 

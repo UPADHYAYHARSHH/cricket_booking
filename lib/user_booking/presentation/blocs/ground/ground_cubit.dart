@@ -1,11 +1,12 @@
 import 'dart:math';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../domain/models/filter_criteria.dart';
 import '../../../domain/repositories/ground_repository.dart';
 import '../../../data/models/ground_model.dart';
 import '../../../data/models/venue_model.dart';
 import '../../../data/services/analytics_service.dart';
-import 'package:turfpro/user_booking/domain/models/filter_criteria.dart';
+import '../../../data/services/slot_availability_service.dart';
 import 'ground_state.dart';
 
 class GroundCubit extends Cubit<GroundState> {
@@ -144,8 +145,21 @@ class GroundCubit extends Cubit<GroundState> {
         }).toList();
       }
 
-      // 3. Filter by Available Now
-      if (criteria.isAvailableNow) {
+      // 3. Filter by Slot Availability / Available Now
+      if (criteria.isSlotFilterActive &&
+          criteria.slotDate != null &&
+          criteria.slotStartTime != null &&
+          criteria.slotEndTime != null) {
+        filteredList = filteredList.where((g) {
+          return SlotAvailabilityService.isGroundAvailable(
+            ground: g,
+            date: criteria.slotDate!,
+            startTime: criteria.slotStartTime!,
+            endTime: criteria.slotEndTime!,
+            unavailableGroundIds: criteria.unavailableGroundIds,
+          );
+        }).toList();
+      } else if (criteria.isAvailableNow) {
         filteredList = filteredList
             .where((g) => _isAvailableNow(g.openingTime, g.closingTime))
             .toList();
@@ -182,7 +196,6 @@ class GroundCubit extends Cubit<GroundState> {
           filteredList.sort((a, b) => b.pricePerHour.compareTo(a.pricePerHour));
           break;
         case SortBy.none:
-        default:
           // Maintain distance sort if no other sort is selected
           filteredList.sort((a, b) {
             if (userLat != null && userLng != null) {

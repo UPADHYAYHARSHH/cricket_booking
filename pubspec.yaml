@@ -86,6 +86,7 @@ dependencies:
   timezone: ^0.10.1
   live_activities: ^2.4.2
   flutter_timezone: ^5.1.0
+  video_player: ^2.9.2
 flutter_launcher_icons:
   android: true
   ios: true
@@ -97,6 +98,7 @@ dev_dependencies:
   hive_generator: ^2.0.1
   build_runner: ^2.4.13
   flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.3
 
 
 
@@ -128,6 +130,9 @@ flutter:
     - assets/images/
     - assets/app_logo.png
     - assets/images/sports/
+    - assets/videos/
+    - assets/splash/
+    - assets/sfx/
     # An image asset can refer to one or more resolution-specific "variants", see
     # https://flutter.dev/assets-and-images/#resolution-aware.
 

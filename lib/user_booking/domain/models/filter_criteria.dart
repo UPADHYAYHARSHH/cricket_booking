@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 enum SortBy { priceLowToHigh, priceHighToLow, none }
 
 class FilterCriteria {
@@ -10,6 +12,13 @@ class FilterCriteria {
   final bool isTopRated;
   final String? sportId;
 
+  // Future Slot Availability
+  final bool isSlotFilterActive;
+  final DateTime? slotDate;
+  final TimeOfDay? slotStartTime;
+  final TimeOfDay? slotEndTime;
+  final Set<String> unavailableGroundIds;
+
   FilterCriteria({
     this.sortBy = SortBy.none,
     this.minPrice = 0,
@@ -19,6 +28,11 @@ class FilterCriteria {
     this.isNearMe = false,
     this.isTopRated = false,
     this.sportId = 'all',
+    this.isSlotFilterActive = false,
+    this.slotDate,
+    this.slotStartTime,
+    this.slotEndTime,
+    this.unavailableGroundIds = const {},
   });
 
   FilterCriteria copyWith({
@@ -30,6 +44,12 @@ class FilterCriteria {
     bool? isNearMe,
     bool? isTopRated,
     String? sportId,
+    bool? isSlotFilterActive,
+    DateTime? slotDate,
+    TimeOfDay? slotStartTime,
+    TimeOfDay? slotEndTime,
+    Set<String>? unavailableGroundIds,
+    bool clearSlotFilter = false,
   }) {
     return FilterCriteria(
       sortBy: sortBy ?? this.sortBy,
@@ -40,6 +60,11 @@ class FilterCriteria {
       isNearMe: isNearMe ?? this.isNearMe,
       isTopRated: isTopRated ?? this.isTopRated,
       sportId: sportId ?? this.sportId,
+      isSlotFilterActive: clearSlotFilter ? false : (isSlotFilterActive ?? this.isSlotFilterActive),
+      slotDate: clearSlotFilter ? null : (slotDate ?? this.slotDate),
+      slotStartTime: clearSlotFilter ? null : (slotStartTime ?? this.slotStartTime),
+      slotEndTime: clearSlotFilter ? null : (slotEndTime ?? this.slotEndTime),
+      unavailableGroundIds: clearSlotFilter ? const {} : (unavailableGroundIds ?? this.unavailableGroundIds),
     );
   }
 
@@ -51,5 +76,6 @@ class FilterCriteria {
       !isAvailableNow &&
       !isNearMe &&
       !isTopRated &&
-      (sportId == null || sportId == 'all');
+      (sportId == null || sportId == 'all') &&
+      !isSlotFilterActive;
 }

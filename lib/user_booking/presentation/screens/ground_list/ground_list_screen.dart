@@ -2,6 +2,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:turfpro/common/constants/colors.dart';
 import 'package:turfpro/common/constants/size_constants.dart';
 import 'package:turfpro/user_booking/presentation/screens/ground_list/widgets/city_search_bottomsheet.dart';
+import 'package:turfpro/user_booking/presentation/screens/ground_list/widgets/filter_bottom_sheet.dart';
+import 'package:turfpro/user_booking/domain/models/filter_criteria.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -339,65 +342,219 @@ class _GroundListScreenState extends State<GroundListScreen> {
     );
   }
 
-  // ─── SEARCH BAR ──────────────────────────────────────────────
+  // ─── SEARCH BAR & FILTER ─────────────────────────────────────
   Widget _buildSearchBar(BuildContext context, bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 12),
-      child: GestureDetector(
-        onTap: () {
-          HapticFeedback.lightImpact();
-          Navigator.pushNamed(context, AppRoutes.search);
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.06)
-                : Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.08)
-                  : AppColors.borderLight,
-              width: 1,
+    return BlocBuilder<GroundCubit, GroundState>(
+      builder: (context, state) {
+        final criteria =
+            (state is GroundLoaded) ? state.criteria : FilterCriteria();
+        final hasActiveFilters = !criteria.isDefault;
+
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        Navigator.pushNamed(context, AppRoutes.search);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.06)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.08)
+                                : AppColors.borderLight,
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black
+                                  .withValues(alpha: isDark ? 0.1 : 0.04),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(5),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryDarkGreen
+                                    .withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(7),
+                              ),
+                              child: const HugeIcon(
+                                icon: HugeIcons.strokeRoundedSearch01,
+                                size: 15,
+                                color: AppColors.primaryDarkGreen,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            AppText(
+                              text: "Search grounds, sports...",
+                              textStyle: TextStyle(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.4),
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => FilterBottomSheet(
+                          initialCriteria: criteria,
+                          onApply: (newCriteria) {
+                            final loc = context.read<LocationCubit>().state;
+                            context.read<GroundCubit>().applyFilters(
+                                  newCriteria,
+                                  userLat: loc.hasGpsLocation
+                                      ? loc.latitude
+                                      : null,
+                                  userLng: loc.hasGpsLocation
+                                      ? loc.longitude
+                                      : null,
+                                );
+                          },
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.06)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: hasActiveFilters
+                              ? AppColors.primaryDarkGreen
+                              : (isDark
+                                  ? Colors.white.withValues(alpha: 0.08)
+                                  : AppColors.borderLight),
+                          width: hasActiveFilters ? 1.5 : 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black
+                                .withValues(alpha: isDark ? 0.1 : 0.04),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          HugeIcon(
+                            icon: HugeIcons.strokeRoundedFilterVertical,
+                            size: 19,
+                            color: hasActiveFilters
+                                ? AppColors.primaryDarkGreen
+                                : (isDark ? Colors.white70 : Colors.black87),
+                          ),
+                          if (hasActiveFilters)
+                            Positioned(
+                              top: -2,
+                              right: -2,
+                              child: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.error,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
+            if (criteria.isSlotFilterActive &&
+                criteria.slotDate != null &&
+                criteria.slotStartTime != null &&
+                criteria.slotEndTime != null)
               Container(
-                padding: const EdgeInsets.all(5),
+                margin: const EdgeInsets.only(top: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(7),
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
                 ),
-                child: const HugeIcon(
-                  icon: HugeIcons.strokeRoundedSearch01,
-                  size: 15,
-                  color: AppColors.primaryDarkGreen,
+                child: Row(
+                  children: [
+                    const HugeIcon(
+                      icon: HugeIcons.strokeRoundedCalendar03,
+                      size: 14,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        "Slot: ${DateFormat('d MMM').format(criteria.slotDate!)} (${criteria.slotStartTime!.format(context)} - ${criteria.slotEndTime!.format(context)})",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        final loc = context.read<LocationCubit>().state;
+                        context.read<GroundCubit>().applyFilters(
+                              criteria.copyWith(clearSlotFilter: true),
+                              userLat: loc.hasGpsLocation
+                                  ? loc.latitude
+                                  : null,
+                              userLng: loc.hasGpsLocation
+                                  ? loc.longitude
+                                  : null,
+                            );
+                      },
+                      child: const Icon(
+                        Icons.close_rounded,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 10),
-              AppText(
-                text: "Search grounds, sports...",
-                textStyle: TextStyle(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.4),
-                  fontSize: 13,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+          ],
+        );
+      },
     ).animate().fadeIn(delay: 200.ms, duration: 400.ms);
   }
 

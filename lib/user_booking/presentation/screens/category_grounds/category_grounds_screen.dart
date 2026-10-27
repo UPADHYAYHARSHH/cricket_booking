@@ -17,6 +17,8 @@ import 'package:turfpro/common/widgets/discover_app_bar.dart';
 import 'package:turfpro/user_booking/domain/models/filter_criteria.dart';
 import 'package:turfpro/user_booking/presentation/screens/ground_list/widgets/filter_bottom_sheet.dart';
 import 'package:turfpro/user_booking/data/models/ground_model.dart';
+import 'package:turfpro/user_booking/data/services/slot_availability_service.dart';
+import 'package:intl/intl.dart';
 
 class CategoryGroundsScreen extends StatefulWidget {
   const CategoryGroundsScreen({super.key});
@@ -122,7 +124,20 @@ class _CategoryGroundsScreenState extends State<CategoryGroundsScreen> {
       }).toList();
     }
 
-    if (_criteria.isAvailableNow) {
+    if (_criteria.isSlotFilterActive &&
+        _criteria.slotDate != null &&
+        _criteria.slotStartTime != null &&
+        _criteria.slotEndTime != null) {
+      filtered = filtered.where((v) {
+        return SlotAvailabilityService.isVenueAvailable(
+          venue: v,
+          date: _criteria.slotDate!,
+          startTime: _criteria.slotStartTime!,
+          endTime: _criteria.slotEndTime!,
+          unavailableGroundIds: _criteria.unavailableGroundIds,
+        );
+      }).toList();
+    } else if (_criteria.isAvailableNow) {
       filtered = filtered.where((v) => _isAvailableNow(v.pitches.first.openingTime, v.pitches.first.closingTime)).toList();
     }
 
@@ -333,29 +348,80 @@ class _CategoryGroundsScreenState extends State<CategoryGroundsScreen> {
               );
             }
 
-            return RefreshIndicator(
-              onRefresh: () async {
-                await context.read<GroundCubit>().getGrounds(
-                  city: locationState.city,
-                  userLat: locationState.latitude,
-                  userLng: locationState.longitude,
-                );
-              },
-              child: ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: filteredVenues.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: VenueCard(
-                      venue: filteredVenues[index], 
-                      showAmenities: true, 
-                      isGrid: false,
-                      preferredSport: isGeneralVenues ? null : category,
+            return Column(
+              children: [
+                if (_criteria.isSlotFilterActive &&
+                    _criteria.slotDate != null &&
+                    _criteria.slotStartTime != null &&
+                    _criteria.slotEndTime != null)
+                  Container(
+                    margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryDarkGreen.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                          color: AppColors.primaryDarkGreen.withOpacity(0.25)),
                     ),
-                  );
-                },
-              ),
+                    child: Row(
+                      children: [
+                        const HugeIcon(
+                            icon: HugeIcons.strokeRoundedCalendar03,
+                            size: 16,
+                            color: AppColors.primaryDarkGreen),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            "Slot: ${DateFormat('d MMM').format(_criteria.slotDate!)} (${_criteria.slotStartTime!.format(context)} - ${_criteria.slotEndTime!.format(context)})",
+                            style: const TextStyle(
+                                color: AppColors.primaryDarkGreen,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _criteria =
+                                  _criteria.copyWith(clearSlotFilter: true);
+                            });
+                          },
+                          child: const Icon(Icons.close_rounded,
+                              size: 18, color: AppColors.primaryDarkGreen),
+                        ),
+                      ],
+                    ),
+                  ),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: () async {
+                      await context.read<GroundCubit>().getGrounds(
+                            city: locationState.city,
+                            userLat: locationState.latitude,
+                            userLng: locationState.longitude,
+                          );
+                    },
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: filteredVenues.length,
+                      itemBuilder: (context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: VenueCard(
+                            venue: filteredVenues[index],
+                            showAmenities: true,
+                            isGrid: false,
+                            preferredSport:
+                                isGeneralVenues ? null : category,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
             );
           }
 

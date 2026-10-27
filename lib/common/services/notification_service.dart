@@ -62,7 +62,7 @@ class NotificationService {
     }
   }
 
-  static Future<void> initialize() async {
+  static Future<void> initialize({bool requestPermission = false}) async {
     if (_isInitialized) {
       await updateFcmToken();
       return;
@@ -102,7 +102,9 @@ class NotificationService {
       return;
     }
     // 1. Request permissions
-    await _requestPermissions();
+    if (requestPermission) {
+      await requestPermissions();
+    }
 
     // 2. Initialize local notifications (mobile only)
     if (!kIsWeb) {
@@ -143,7 +145,9 @@ class NotificationService {
     }
   }
 
-  static Future<void> _requestPermissions() async {
+  static Future<void> requestPermissions() async {
+    final bool enabled = await areNotificationsEnabled();
+    if (!enabled) return;
     NotificationSettings settings = await FirebaseMessaging.instance.requestPermission(
       alert: true,
       badge: true,
