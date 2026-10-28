@@ -135,6 +135,7 @@ class _CategoryGroundsScreenState extends State<CategoryGroundsScreen> {
           startTime: _criteria.slotStartTime!,
           endTime: _criteria.slotEndTime!,
           unavailableGroundIds: _criteria.unavailableGroundIds,
+          sportCategory: _criteria.sportId,
         );
       }).toList();
     } else if (_criteria.isAvailableNow) {

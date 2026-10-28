@@ -6,6 +6,11 @@ import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import 'package:turfpro/user_booking/domain/models/filter_criteria.dart';
 import 'package:turfpro/user_booking/data/services/slot_availability_service.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:turfpro/user_booking/presentation/blocs/sport/sport_cubit.dart';
+import 'package:turfpro/user_booking/presentation/blocs/sport/sport_state.dart';
 
 class FilterBottomSheet extends StatefulWidget {
   final FilterCriteria initialCriteria;
@@ -35,6 +40,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
   late DateTime _slotDate;
   late TimeOfDay _slotStartTime;
   late TimeOfDay _slotEndTime;
+  late String _selectedSport;
   bool _isLoadingAvailability = false;
 
   late AnimationController _animCtrl;
@@ -48,7 +54,13 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
     if (_isNearMe) count++;
     if (_isTopRated) count++;
     if (_isSlotFilterActive) count++;
+    if (_selectedSport != 'all' && !_isSlotFilterActive) count++;
     return count;
+  }
+
+  String get _selectedSportName {
+    if (_selectedSport == 'all' || _selectedSport.isEmpty) return 'All Sports';
+    return _selectedSport[0].toUpperCase() + _selectedSport.substring(1);
   }
 
   @override
@@ -69,6 +81,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
         const TimeOfDay(hour: 18, minute: 0); // 6:00 PM
     _slotEndTime = widget.initialCriteria.slotEndTime ??
         const TimeOfDay(hour: 20, minute: 0); // 8:00 PM
+    _selectedSport = widget.initialCriteria.sportId ?? 'all';
 
     _animCtrl = AnimationController(
       vsync: this,
@@ -399,6 +412,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
                             }
                           }
 
+                          if (!mounted) return;
+
                           widget.onApply(FilterCriteria(
                             sortBy: _sortBy,
                             minPrice: _minPrice,
@@ -406,6 +421,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
                             isAvailableNow: _isAvailableNow,
                             isNearMe: _isNearMe,
                             isTopRated: _isTopRated,
+                            sportId: _selectedSport,
                             isSlotFilterActive: _isSlotFilterActive,
                             slotDate: _isSlotFilterActive ? _slotDate : null,
                             slotStartTime:
@@ -601,7 +617,53 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 1. DATE SELECTOR
+                  // 1. SPORT SELECTOR
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.sports_soccer_outlined,
+                            size: 16,
+                            color: AppColors.primaryDarkGreen,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            "Select Sport",
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: isDark ? Colors.grey[300] : Colors.grey[800],
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_selectedSport != 'all')
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryDarkGreen.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            _selectedSportName,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primaryDarkGreen,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  _buildSportSelector(isDark),
+
+                  const SizedBox(height: 20),
+
+                  // 2. DATE SELECTOR
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -657,7 +719,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
 
                   const SizedBox(height: 20),
 
-                  // 2. TIME RANGE SELECTOR
+                  // 3. TIME RANGE SELECTOR
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -838,6 +900,162 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
     );
   }
 
+  Widget _buildSportSelector(bool isDark) {
+    return BlocBuilder<SportCubit, SportState>(
+      builder: (context, sportState) {
+        final List<({String id, String name, String? iconUrl, String? localAsset, IconData? icon})> sportsList = [
+          (
+            id: 'all',
+            name: 'All Sports',
+            iconUrl: null,
+            localAsset: null,
+            icon: Icons.grid_view_rounded,
+          ),
+        ];
+
+        if (sportState is SportLoaded && sportState.sports.isNotEmpty) {
+          for (final s in sportState.sports) {
+            sportsList.add((
+              id: s.name.toLowerCase(),
+              name: s.name,
+              iconUrl: s.iconUrl.isNotEmpty ? s.iconUrl : null,
+              localAsset: s.localAsset.isNotEmpty ? s.localAsset : null,
+              icon: _getSportFallbackIcon(s.name),
+            ));
+          }
+        } else {
+          const fallbackNames = [
+            'Cricket',
+            'Box Cricket',
+            'Football',
+            'Badminton',
+            'Pickleball',
+            'Tennis',
+            'Volleyball',
+          ];
+          for (final name in fallbackNames) {
+            sportsList.add((
+              id: name.toLowerCase(),
+              name: name,
+              iconUrl: null,
+              localAsset: null,
+              icon: _getSportFallbackIcon(name),
+            ));
+          }
+        }
+
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          child: Row(
+            children: sportsList.map((sport) {
+              final isSelected = _selectedSport.toLowerCase() == sport.id.toLowerCase() ||
+                  (_selectedSport == 'all' && sport.id == 'all');
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    setState(() {
+                      _selectedSport = sport.id;
+                    });
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppColors.primaryDarkGreen
+                          : (isDark ? const Color(0xFF2C2C2C) : const Color(0xFFF0F2F1)),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected
+                            ? AppColors.primaryDarkGreen
+                            : (isDark ? Colors.grey[800]! : Colors.grey[300]!),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (sport.iconUrl != null && sport.iconUrl!.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: ClipOval(
+                              child: CachedNetworkImage(
+                                imageUrl: sport.iconUrl!,
+                                width: 16,
+                                height: 16,
+                                fit: BoxFit.cover,
+                                errorWidget: (_, __, ___) => Icon(
+                                  sport.icon ?? Icons.sports,
+                                  size: 14,
+                                  color: isSelected ? Colors.white : AppColors.primaryDarkGreen,
+                                ),
+                              ),
+                            ),
+                          )
+                        else if (sport.localAsset != null && sport.localAsset!.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: ClipOval(
+                              child: Image.asset(
+                                sport.localAsset!,
+                                width: 16,
+                                height: 16,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Icon(
+                                  sport.icon ?? Icons.sports,
+                                  size: 14,
+                                  color: isSelected ? Colors.white : AppColors.primaryDarkGreen,
+                                ),
+                              ),
+                            ),
+                          )
+                        else if (sport.icon != null)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: Icon(
+                              sport.icon,
+                              size: 14,
+                              color: isSelected
+                                  ? Colors.white
+                                  : (isDark ? Colors.grey[400] : Colors.grey[700]),
+                            ),
+                          ),
+                        Text(
+                          sport.name,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                            color: isSelected
+                                ? Colors.white
+                                : (isDark ? Colors.grey[300] : Colors.grey[800]),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        );
+      },
+    );
+  }
+
+  IconData _getSportFallbackIcon(String name) {
+    final lower = name.toLowerCase();
+    if (lower.contains('cricket')) return Icons.sports_cricket;
+    if (lower.contains('football') || lower.contains('soccer')) return Icons.sports_soccer;
+    if (lower.contains('tennis')) return Icons.sports_tennis;
+    if (lower.contains('badminton')) return Icons.sports_tennis;
+    if (lower.contains('basket')) return Icons.sports_basketball;
+    if (lower.contains('volley')) return Icons.sports_volleyball;
+    if (lower.contains('golf')) return Icons.sports_golf;
+    return Icons.sports;
+  }
+
   Widget _buildQuickTimeChip({
     required String label,
     required TimeOfDay start,
@@ -931,7 +1149,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
                     color: isDark ? Colors.white : Colors.black87,
                   ),
                 ),
-                Icon(
+                const Icon(
                   Icons.access_time_rounded,
                   size: 16,
                   color: AppColors.primaryDarkGreen,
@@ -1053,6 +1271,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
       _isNearMe = false;
       _isTopRated = false;
       _isSlotFilterActive = false;
+      _selectedSport = 'all';
       _slotDate = DateTime.now().add(const Duration(days: 2));
       _slotStartTime = const TimeOfDay(hour: 18, minute: 0);
       _slotEndTime = const TimeOfDay(hour: 20, minute: 0);

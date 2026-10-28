@@ -207,14 +207,27 @@ class SlotAvailabilityService {
     }
   }
 
-  /// Checks if a single ground is available for the given slot on that date.
+  /// Checks if a single ground is available for the given slot on that date,
+  /// optionally matching a requested sport category.
   static bool isGroundAvailable({
     required GroundModel ground,
     required DateTime date,
     required TimeOfDay startTime,
     required TimeOfDay endTime,
     required Set<String> unavailableGroundIds,
+    String? sportCategory,
   }) {
+    if (sportCategory != null &&
+        sportCategory != 'all' &&
+        sportCategory.trim().isNotEmpty) {
+      final target = sportCategory.trim().toLowerCase();
+      final matches = ground.categories.any((c) {
+        final cat = c.toLowerCase();
+        return cat == target || cat.contains(target) || target.contains(cat);
+      });
+      if (!matches) return false;
+    }
+
     if (unavailableGroundIds.contains(ground.id)) {
       return false;
     }
@@ -226,13 +239,15 @@ class SlotAvailabilityService {
     );
   }
 
-  /// Checks if a venue is available (i.e. at least one of its pitches is available).
+  /// Checks if a venue is available (i.e. at least one of its pitches is available),
+  /// optionally matching a requested sport category.
   static bool isVenueAvailable({
     required VenueModel venue,
     required DateTime date,
     required TimeOfDay startTime,
     required TimeOfDay endTime,
     required Set<String> unavailableGroundIds,
+    String? sportCategory,
   }) {
     return venue.pitches.any((pitch) => isGroundAvailable(
           ground: pitch,
@@ -240,6 +255,7 @@ class SlotAvailabilityService {
           startTime: startTime,
           endTime: endTime,
           unavailableGroundIds: unavailableGroundIds,
+          sportCategory: sportCategory,
         ));
   }
 }

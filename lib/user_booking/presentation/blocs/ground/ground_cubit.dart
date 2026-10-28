@@ -157,6 +157,7 @@ class GroundCubit extends Cubit<GroundState> {
             startTime: criteria.slotStartTime!,
             endTime: criteria.slotEndTime!,
             unavailableGroundIds: criteria.unavailableGroundIds,
+            sportCategory: criteria.sportId,
           );
         }).toList();
       } else if (criteria.isAvailableNow) {
@@ -183,7 +184,11 @@ class GroundCubit extends Cubit<GroundState> {
       if (criteria.sportId != null && criteria.sportId != 'all') {
         filteredList = filteredList.where((g) {
           return g.categories
-              .any((c) => c.toLowerCase() == criteria.sportId!.toLowerCase());
+              .any((c) {
+                final cat = c.toLowerCase();
+                final target = criteria.sportId!.toLowerCase();
+                return cat == target || cat.contains(target) || target.contains(cat);
+              });
         }).toList();
       }
 
