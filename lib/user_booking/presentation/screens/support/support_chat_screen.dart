@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../common/constants/colors.dart';
+import 'package:turfpro/common/constants/app_constants.dart';
 import '../../blocs/support/support_cubit.dart';
 import '../../blocs/support/support_state.dart';
 import 'package:turfpro/user_booking/data/models/support_message_model.dart';
@@ -115,7 +116,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "TurfPro Assistant",
+                  AppConstants.supportAssistantName,
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
@@ -156,7 +157,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
             ),
             tooltip: "Chat on WhatsApp",
             onPressed: () => _launchUrl(
-              "https://wa.me/919876543210?text=Hi%20TurfPro%20Support,%20I%20need%20help",
+              "https://wa.me/919876543210?text=Hi%20${Uri.encodeComponent(AppConstants.supportName)},%20I%20need%20help",
             ),
           ),
         ],

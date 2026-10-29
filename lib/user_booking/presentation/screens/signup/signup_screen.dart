@@ -1,4 +1,5 @@
 import 'package:turfpro/user_booking/presentation/blocs/auth/auth_cubit.dart';
+import 'package:turfpro/common/constants/app_constants.dart';
 import 'package:turfpro/user_booking/presentation/blocs/auth/auth_state.dart';
 import 'package:turfpro/utils/toast_util.dart';
 import 'package:flutter/material.dart';
@@ -99,14 +100,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     child: Column(
                       children: [
                         const AppSizedBox(height: 30),
-                        const AppText(
+                        AppText(
                           text: "Create Account",
                           size: 26,
                           weight: FontWeight.w700,
                         ),
                         const AppSizedBox(height: 6),
-                        const AppText(
-                          text: "Join TurfPro to start booking",
+                        AppText(
+                          text: "Join ${AppConstants.appName} to start booking",
                           size: 14,
                           color: Colors.grey,
                         ),

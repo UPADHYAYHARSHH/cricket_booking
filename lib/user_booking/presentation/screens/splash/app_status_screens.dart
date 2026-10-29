@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/common/constants/app_constants.dart';
 
 class ForceUpdateDialog extends StatelessWidget {
   final String updateUrl;
@@ -13,8 +14,8 @@ class ForceUpdateDialog extends StatelessWidget {
       child: AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text("New Version Available"),
-        content: const Text(
-          "A new version of TurfPro is available with important updates and improvements. Please update to continue using the app.",
+        content: Text(
+          "A new version of ${AppConstants.appName} is available with important updates and improvements. Please update to continue using the app.",
         ),
         actions: [
           TextButton(

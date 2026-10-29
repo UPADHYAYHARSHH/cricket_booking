@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/common/constants/app_constants.dart';
 import 'package:turfpro/common/services/remote_config_service.dart';
 import 'package:turfpro/user_booking/di/get_it/get_it.dart';
 import 'package:turfpro/user_booking/domain/repositories/wallet_repository.dart';
@@ -80,8 +81,8 @@ class _WalletCoinHistoryScreenState extends State<WalletCoinHistoryScreen> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Playora Coins Wallet',
+        title: Text(
+          '${AppConstants.coinName} Wallet',
           style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
         ),
         actions: [
@@ -124,7 +125,7 @@ class _WalletCoinHistoryScreenState extends State<WalletCoinHistoryScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'Coin History',
                         style: TextStyle(
                           fontSize: 16,
@@ -230,8 +231,8 @@ class _WalletCoinHistoryScreenState extends State<WalletCoinHistoryScreen> {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  const Text(
-                    'Playora Coins',
+                  Text(
+                    AppConstants.coinName,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 15,
@@ -374,8 +375,8 @@ class _WalletCoinHistoryScreenState extends State<WalletCoinHistoryScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'How Playora Coins Work',
+                Text(
+                  'How ${AppConstants.coinName} Work',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,

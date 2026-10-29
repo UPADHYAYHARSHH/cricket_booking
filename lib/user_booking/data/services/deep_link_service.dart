@@ -67,7 +67,7 @@ class DeepLinkService {
   void _processLink(Uri uri) {
     debugPrint('Processing Deep Link: $uri');
     
-    // Example URL: https://turfpro-web.vercel.app/ground?id=123
+    // Example URL: https://slottix-web.vercel.app/ground?id=123
     if (uri.path.contains('/ground')) {
       final id = uri.queryParameters['id'];
       if (id != null) {

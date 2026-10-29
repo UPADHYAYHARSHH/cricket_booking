@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/common/constants/app_constants.dart';
 import 'package:turfpro/user_booking/presentation/blocs/auth/auth_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/auth/auth_state.dart';
 import 'package:flutter/material.dart';
@@ -373,8 +374,8 @@ class ProfileScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Playora Coins Wallet",
+                  Text(
+                    "${AppConstants.coinName} Wallet",
                     style: TextStyle(
                       color: Colors.white70,
                       fontSize: 12.5,
@@ -480,7 +481,7 @@ class ProfileScreen extends StatelessWidget {
         //   },
         _MenuItem(
           icon: HugeIcons.strokeRoundedCoins01,
-          label: "Playora Coins & Wallet",
+          label: "${AppConstants.coinName} & Wallet",
           subtitle: "Balance, coin history & rules",
           iconBg: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.1),
           iconColor: isDark ? Colors.amberAccent : Colors.amber.shade800,
@@ -668,7 +669,7 @@ class ProfileScreen extends StatelessWidget {
   Widget _buildAppVersion(BuildContext context) {
     return Center(
       child: Text(
-        "TurfPro • Version 1.0.0",
+        "${AppConstants.appName} • Version 1.0.0",
         style: TextStyle(
           fontSize: 12,
           color: Theme.of(context)

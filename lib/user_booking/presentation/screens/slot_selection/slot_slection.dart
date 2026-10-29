@@ -1,4 +1,5 @@
 import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/common/constants/app_constants.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
 import 'package:turfpro/user_booking/constants/widgets/app_text.dart';
 import 'package:turfpro/user_booking/data/repositories/payment_repository.dart';
@@ -177,7 +178,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
 
   void _shareGround() {
     if (_ground == null) return;
-    final String shareText = 'Check out ${_ground!.name} on TurfPro!\n'
+    final String shareText = 'Check out ${_ground!.name} on ${AppConstants.appName}!\n'
         'Location: ${_ground!.address}\n'
         'Book your slots now for only ₹${_ground!.pricePerHour}/hr!';
     Share.share(shareText);

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../common/constants/colors.dart';
+import 'package:turfpro/common/constants/app_constants.dart';
 import '../../blocs/support/support_cubit.dart';
 import '../../blocs/support/support_state.dart';
 import 'support_chat_screen.dart';
@@ -71,7 +72,7 @@ class HelpSupportScreen extends StatelessWidget {
                   ),
                   tooltip: "WhatsApp Support",
                   onPressed: () => _launchUrl(
-                    "https://wa.me/919876543210?text=Hi%20TurfPro%20Support,%20I%20need%20help",
+                    "https://wa.me/919876543210?text=Hi%20${Uri.encodeComponent(AppConstants.supportName)},%20I%20need%20help",
                   ),
                 ),
               ],
@@ -238,7 +239,7 @@ class HelpSupportScreen extends StatelessWidget {
                       title: "Chat with Us on WhatsApp",
                       subtitle: "Available 7 days a week • 8:00 AM - 11:00 PM",
                       onTap: () => _launchUrl(
-                        "https://wa.me/919876543210?text=Hi%20TurfPro%20Support,%20I%20need%20help",
+                        "https://wa.me/919876543210?text=Hi%20${Uri.encodeComponent(AppConstants.supportName)},%20I%20need%20help",
                       ),
                       isDark: isDark,
                     ),

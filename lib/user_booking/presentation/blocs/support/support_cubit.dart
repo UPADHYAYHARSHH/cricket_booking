@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:turfpro/common/constants/app_constants.dart';
 import 'package:turfpro/user_booking/data/models/support_message_model.dart';
 import 'package:turfpro/user_booking/data/repositories/support_repository.dart';
 import 'support_state.dart';
@@ -16,7 +17,7 @@ class SupportCubit extends Cubit<SupportState> {
     Map<String, dynamic>? recentBooking = initialBooking ?? await _supportRepository.fetchLatestBooking();
 
     String initialGreeting =
-        "Hi there! 👋 I'm your TurfPro Assistant. How can I help you today?";
+        "Hi there! 👋 I'm your ${AppConstants.supportAssistantName}. How can I help you today?";
     List<String> initialQuickReplies = [
       "Why is my booking pending?",
       "Refund Status",

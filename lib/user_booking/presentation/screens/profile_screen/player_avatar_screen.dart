@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/common/constants/app_constants.dart';
 import '../../../di/get_it/get_it.dart';
 import '../../blocs/profile/profile_cubit.dart';
 
@@ -72,7 +73,7 @@ class OutfitStyle {
     required this.shirtColors,
     required this.collarColor,
     required this.stripeColor,
-    this.brandText = "TurfPro",
+    this.brandText = AppConstants.appName,
   });
 }
 
@@ -89,7 +90,7 @@ const List<OutfitStyle> kOutfitStyles = [
     shirtColors: [Color(0xFF0F9D58), Color(0xFF0B8043)],
     collarColor: Color(0xFFFFD700),
     stripeColor: Color(0xFFFFD700),
-    brandText: "TURF PRO",
+    brandText: AppConstants.appNameUpper,
   ),
   OutfitStyle(
     name: "India Sky Blue",
@@ -1770,7 +1771,7 @@ class _SnapchatFullBodyAvatarPainter extends CustomPainter {
       collarPaint,
     );
 
-    // 4. BRAND TEXT / CREST ("Calvin Klein" or "TURF PRO")
+    // 4. BRAND TEXT / CREST ("Calvin Klein" or "SLOTTIX")
     final brandPainter = TextPainter(
       text: TextSpan(
         text: outfit.brandText,

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:turfpro/common/constants/app_constants.dart';
 import '../models/support_message_model.dart';
 
 class SupportRepository {
@@ -106,7 +107,7 @@ class SupportRepository {
         SupportAction(
           type: "whatsapp_support",
           label: "Chat on WhatsApp",
-          url: "https://wa.me/919876543210?text=Hi%20TurfPro%20Support",
+          url: "https://wa.me/919876543210?text=Hi%20${Uri.encodeComponent(AppConstants.supportName)}",
         )
       ],
     );

@@ -62,6 +62,7 @@ import 'package:turfpro/user_booking/presentation/blocs/sport/sport_cubit.dart';
 import 'package:turfpro/user_booking/presentation/screens/scanning/scanning_screen.dart';
 import 'package:turfpro/user_booking/presentation/blocs/booking/booking_cubit.dart';
 import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/common/constants/app_constants.dart';
 import 'package:turfpro/user_booking/data/services/deep_link_service.dart';
 import 'package:turfpro/user_booking/data/services/shorebird_service.dart';
 import 'package:turfpro/utils/app_scroll_behavior.dart';
@@ -216,6 +217,7 @@ void main() async {
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, state) {
           return MaterialApp(
+            title: AppConstants.appName,
             debugShowCheckedModeBanner: false,
             scrollBehavior: const AppScrollBehavior(),
             themeMode: ThemeMode.light,

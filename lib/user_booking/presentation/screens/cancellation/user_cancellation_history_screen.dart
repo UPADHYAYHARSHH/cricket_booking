@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/common/constants/app_constants.dart';
 import 'package:turfpro/common/services/remote_config_service.dart';
 import 'package:turfpro/user_booking/data/repositories/payment_repository.dart';
 import 'package:turfpro/user_booking/di/get_it/get_it.dart';
@@ -97,7 +98,7 @@ class _UserCancellationHistoryScreenState
         ),
         actions: [
           IconButton(
-            tooltip: 'View Playora Coins',
+            tooltip: 'View ${AppConstants.coinName}',
             icon: const Icon(Icons.monetization_on_rounded, color: Colors.amberAccent),
             onPressed: () {
               Navigator.push(
@@ -390,7 +391,7 @@ class _UserCancellationHistoryScreenState
                         children: [
                           Text(
                             coins > 0
-                                ? '+${coins.toStringAsFixed(0)} Playora Coins'
+                                ? '+${coins.toStringAsFixed(0)} ${AppConstants.coinName}'
                                 : 'No Coins Issued',
                             style: TextStyle(
                               fontSize: 13,
@@ -489,7 +490,7 @@ class _UserCancellationHistoryScreenState
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'Cancel risk-free with automated Playora Coin recovery. Instant wallet credits with no waiting for bank processing.',
+                  'Cancel risk-free with automated ${AppConstants.appName} Coin recovery. Instant wallet credits with no waiting for bank processing.',
                   style: TextStyle(color: Colors.white70, fontSize: 12.5, height: 1.4),
                 ),
               ],
@@ -508,7 +509,7 @@ class _UserCancellationHistoryScreenState
           _buildTierCard(
             title: 'Early Cancellation (> ${t1h.toStringAsFixed(0)}h before slot)',
             percent: '${t1p.toStringAsFixed(0)}%',
-            description: 'Full venue amount credited to your wallet in Playora Coins.',
+            description: 'Full venue amount credited to your wallet in ${AppConstants.coinName}.',
             badgeColor: Colors.green.shade700,
             bgColor: Colors.green.shade50,
           ),
@@ -518,7 +519,7 @@ class _UserCancellationHistoryScreenState
           _buildTierCard(
             title: 'Standard (${t2h.toStringAsFixed(0)}h – ${t1h.toStringAsFixed(0)}h before slot)',
             percent: '${t2p.toStringAsFixed(0)}%',
-            description: 'Generous recovery in Playora Coins. Released slot is re-listed.',
+            description: 'Generous recovery in ${AppConstants.coinName}. Released slot is re-listed.',
             badgeColor: Colors.teal.shade700,
             bgColor: Colors.teal.shade50,
           ),
@@ -528,7 +529,7 @@ class _UserCancellationHistoryScreenState
           _buildTierCard(
             title: 'Short Notice (${t3h.toStringAsFixed(0)}h – ${t2h.toStringAsFixed(0)}h before slot)',
             percent: '${t3p.toStringAsFixed(0)}%',
-            description: 'Partial recovery in Playora Coins to support venue availability.',
+            description: 'Partial recovery in ${AppConstants.coinName} to support venue availability.',
             badgeColor: Colors.amber.shade800,
             bgColor: Colors.amber.shade50,
           ),
@@ -555,7 +556,7 @@ class _UserCancellationHistoryScreenState
 
           _buildInstructionBullet(
             icon: Icons.monetization_on_outlined,
-            title: 'Playora Coins (1 Coin = ₹1)',
+            title: '${AppConstants.coinName} (1 Coin = ₹1)',
             content: 'Recovered coins are instantly credited to your wallet and can be used on any future booking on the platform.',
           ),
           _buildInstructionBullet(
@@ -564,13 +565,13 @@ class _UserCancellationHistoryScreenState
                 ? 'Coin Validity ($expiry Days)'
                 : 'No Expiration (Lifetime Validity)',
             content: cfg.coinsExpiryEnabled
-                ? 'Playora Coins expire after $expiry days from the issue date. Be sure to redeem them on your upcoming games!'
-                : 'Playora Coins never expire! You can keep them in your wallet and use them anytime for any future booking.',
+                ? '${AppConstants.coinName} expire after $expiry days from the issue date. Be sure to redeem them on your upcoming games!'
+                : '${AppConstants.coinName} never expire! You can keep them in your wallet and use them anytime for any future booking.',
           ),
           _buildInstructionBullet(
             icon: Icons.percent_rounded,
             title: 'Max Redemption (${maxRedeem.toStringAsFixed(0)}%)',
-            content: 'You can redeem 100% of your Playora Coins if your balance is under 20, or up to ${maxRedeem.toStringAsFixed(0)}% of your available coins on any booking.',
+            content: 'You can redeem 100% of your ${AppConstants.coinName} if your balance is under 20, or up to ${maxRedeem.toStringAsFixed(0)}% of your available coins on any booking.',
           ),
           _buildInstructionBullet(
             icon: Icons.lock_clock_outlined,

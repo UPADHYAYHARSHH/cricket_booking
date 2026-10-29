@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:turfpro/common/services/remote_config_service.dart';
+import 'package:turfpro/common/constants/app_constants.dart';
 import 'package:turfpro/common/utils/booking_time_util.dart';
 import 'package:turfpro/user_booking/domain/models/slot_models.dart';
 import 'package:turfpro/user_booking/domain/models/booking_summary_data.dart';
@@ -1189,7 +1190,7 @@ class PaymentRepository {
     return baseDate;
   }
 
-  /// Cancels an upcoming paid/confirmed booking and issues Playora Coins to wallet.
+  /// Cancels an upcoming paid/confirmed booking and issues Slottix Coins to wallet.
   Future<Map<String, dynamic>> cancelBookingByUser({
     required String bookingId,
     String reason = 'Changed my plans',
@@ -1462,7 +1463,7 @@ class PaymentRepository {
           'user_id': user.uid,
           'title': 'Booking Cancelled',
           'message':
-              'Your booking for $groundName was cancelled. ₹${coinsToIssue.toStringAsFixed(0)} Playora Coins added to your wallet.',
+              'Your booking for $groundName was cancelled. ₹${coinsToIssue.toStringAsFixed(0)} ${AppConstants.coinName} added to your wallet.',
           'type': 'cancellation_coins_credited',
           'data': {
             'booking_id': bookingId,

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart';
 import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/common/constants/app_constants.dart';
 import 'package:turfpro/common/widgets/discover_app_bar.dart';
 import 'package:turfpro/common/config/feature_config.dart';
 import 'package:turfpro/common/services/remote_config_service.dart';
@@ -134,7 +135,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
               }
             }
 
-            // Wallet / Playora Coins Logic (Capped at configured % of user's available coins, unless < 20 coins)
+            // Wallet / Slottix Coins Logic (Capped at configured % of user's available coins, unless < 20 coins)
             double walletDiscount = 0.0;
             final double maxCoinCapPercent = remoteConfig.maxCoinRedemptionPercent > 0
                 ? remoteConfig.maxCoinRedemptionPercent
@@ -836,7 +837,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
                       Row(
                         children: [
                           Text(
-                            "TurfPro Rewards",
+                            AppConstants.rewardsName,
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -892,7 +893,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
           const SizedBox(height: 12),
         ],
 
-        // Playora Coins Card
+        // Slottix Coins Card
         if (FeatureConfig.isWalletEnabled) ...[
           Container(
             padding: const EdgeInsets.all(14),
@@ -932,7 +933,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
                       Row(
                         children: [
                           Text(
-                            "Playora Coins",
+                            AppConstants.coinName,
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -967,7 +968,7 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
                                 : (maxAllowedCoins > 0 && maxAllowedCoins < state.walletBalance
                                     ? "Available: ${state.walletBalance.toStringAsFixed(0)} Coins • Use up to ${maxCoinCapPercent.toStringAsFixed(0)}% (${maxAllowedCoins.toStringAsFixed(0)} Coins)"
                                     : "Available: ${state.walletBalance.toStringAsFixed(0)} Coins (1 Coin = ₹1)"))
-                            : "No Playora Coins available",
+                            : "No ${AppConstants.coinName} available",
                         style: TextStyle(
                           fontSize: 11,
                           color: colorScheme.onSurface.withValues(alpha: 0.55),

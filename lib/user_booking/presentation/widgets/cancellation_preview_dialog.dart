@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/common/constants/app_constants.dart';
 import '../../../../common/services/remote_config_service.dart';
 import '../../../../common/services/audio_service.dart';
 import '../../data/models/booking_model.dart';
@@ -488,7 +489,7 @@ class _CancellationPreviewDialogState extends State<CancellationPreviewDialog> {
               Expanded(
                 child: Text(
                   coinsToReceive > 0
-                      ? 'Booking cancelled! ${coinsToReceive.toStringAsFixed(0)} Playora Coins added to your wallet.'
+                      ? 'Booking cancelled! ${coinsToReceive.toStringAsFixed(0)} ${AppConstants.coinName} added to your wallet.'
                       : 'Booking has been cancelled.',
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),

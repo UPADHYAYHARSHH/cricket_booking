@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:turfpro/common/constants/colors.dart';
+import 'package:turfpro/common/constants/app_constants.dart';
 import 'package:turfpro/user_booking/domain/models/booking_summary_data.dart';
 
 class BookingPriceSummaryCard extends StatelessWidget {
@@ -160,18 +161,18 @@ class BookingPriceSummaryCard extends StatelessWidget {
               if (summaryData.pointsDiscount > 0) ...[
                 const SizedBox(height: 12),
                 _buildSummaryInvoiceRow(
-                  label: "TurfPro Rewards",
+                  label: AppConstants.rewardsName,
                   value: "-₹${summaryData.pointsDiscount.toStringAsFixed(0)}",
                   valueColor: AppColors.primaryDarkGreen,
                   colorScheme: colorScheme,
                 ),
               ],
 
-              // 5. Playora Coins (if applied)
+              // 5. Slottix Coins (if applied)
               if (summaryData.walletDiscount > 0) ...[
                 const SizedBox(height: 12),
                 _buildSummaryInvoiceRow(
-                  label: "Playora Coins",
+                  label: AppConstants.coinName,
                   value: "-₹${summaryData.walletDiscount.toStringAsFixed(0)}",
                   valueColor: const Color(0xFFD97706),
                   colorScheme: colorScheme,
