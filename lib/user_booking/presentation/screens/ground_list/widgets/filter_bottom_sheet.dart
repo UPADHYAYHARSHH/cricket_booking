@@ -15,11 +15,13 @@ import 'package:turfpro/user_booking/presentation/blocs/sport/sport_state.dart';
 class FilterBottomSheet extends StatefulWidget {
   final FilterCriteria initialCriteria;
   final Function(FilterCriteria) onApply;
+  final bool showFutureSlotFilter;
 
   const FilterBottomSheet({
     super.key,
     required this.initialCriteria,
     required this.onApply,
+    this.showFutureSlotFilter = true,
   });
 
   @override
@@ -53,8 +55,10 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
     if (_isAvailableNow) count++;
     if (_isNearMe) count++;
     if (_isTopRated) count++;
-    if (_isSlotFilterActive) count++;
-    if (_selectedSport != 'all' && !_isSlotFilterActive) count++;
+    if (widget.showFutureSlotFilter) {
+      if (_isSlotFilterActive) count++;
+      if (_selectedSport != 'all' && !_isSlotFilterActive) count++;
+    }
     return count;
   }
 
@@ -74,14 +78,14 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
     _isTopRated = widget.initialCriteria.isTopRated;
 
     // Initialize Slot Filter
-    _isSlotFilterActive = widget.initialCriteria.isSlotFilterActive;
+    _isSlotFilterActive = widget.showFutureSlotFilter && widget.initialCriteria.isSlotFilterActive;
     _slotDate = widget.initialCriteria.slotDate ??
         DateTime.now().add(const Duration(days: 2));
     _slotStartTime = widget.initialCriteria.slotStartTime ??
         const TimeOfDay(hour: 18, minute: 0); // 6:00 PM
     _slotEndTime = widget.initialCriteria.slotEndTime ??
         const TimeOfDay(hour: 20, minute: 0); // 8:00 PM
-    _selectedSport = widget.initialCriteria.sportId ?? 'all';
+    _selectedSport = widget.showFutureSlotFilter ? (widget.initialCriteria.sportId ?? 'all') : 'all';
 
     _animCtrl = AnimationController(
       vsync: this,
@@ -207,13 +211,15 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // ── Slot Availability (Future Check) ──
-                    _buildSectionHeader(
-                        "Slot Availability",
-                        HugeIcons.strokeRoundedCalendar03,
-                        isDark),
-                    const AppSizedBox(height: 14),
-                    _buildSlotAvailabilitySection(isDark, cardBg, subtleText),
-                    const AppSizedBox(height: 28),
+                    if (widget.showFutureSlotFilter) ...[
+                      _buildSectionHeader(
+                          "Slot Availability",
+                          HugeIcons.strokeRoundedCalendar03,
+                          isDark),
+                      const AppSizedBox(height: 14),
+                      _buildSlotAvailabilitySection(isDark, cardBg, subtleText),
+                      const AppSizedBox(height: 28),
+                    ],
 
                     // ── Quick Filters ──
                     _buildSectionHeader("Quick Filters",
@@ -393,7 +399,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
                       ? null
                       : () async {
                           Set<String> unavailableGroundIds = {};
-                          if (_isSlotFilterActive) {
+                          if (widget.showFutureSlotFilter && _isSlotFilterActive) {
                             setState(() => _isLoadingAvailability = true);
                             try {
                               unavailableGroundIds =
@@ -421,13 +427,13 @@ class _FilterBottomSheetState extends State<FilterBottomSheet>
                             isAvailableNow: _isAvailableNow,
                             isNearMe: _isNearMe,
                             isTopRated: _isTopRated,
-                            sportId: _selectedSport,
-                            isSlotFilterActive: _isSlotFilterActive,
-                            slotDate: _isSlotFilterActive ? _slotDate : null,
+                            sportId: widget.showFutureSlotFilter ? _selectedSport : (widget.initialCriteria.sportId ?? 'all'),
+                            isSlotFilterActive: widget.showFutureSlotFilter ? _isSlotFilterActive : false,
+                            slotDate: widget.showFutureSlotFilter && _isSlotFilterActive ? _slotDate : null,
                             slotStartTime:
-                                _isSlotFilterActive ? _slotStartTime : null,
+                                widget.showFutureSlotFilter && _isSlotFilterActive ? _slotStartTime : null,
                             slotEndTime:
-                                _isSlotFilterActive ? _slotEndTime : null,
+                                widget.showFutureSlotFilter && _isSlotFilterActive ? _slotEndTime : null,
                             unavailableGroundIds: unavailableGroundIds,
                           ));
                           Navigator.pop(context);

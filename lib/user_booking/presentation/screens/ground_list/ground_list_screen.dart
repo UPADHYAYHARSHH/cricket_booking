@@ -426,6 +426,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
                         backgroundColor: Colors.transparent,
                         builder: (_) => FilterBottomSheet(
                           initialCriteria: criteria,
+                          showFutureSlotFilter: false,
                           onApply: (newCriteria) {
                             final loc = context.read<LocationCubit>().state;
                             context.read<GroundCubit>().applyFilters(
