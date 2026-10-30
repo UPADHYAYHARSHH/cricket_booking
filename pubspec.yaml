@@ -90,7 +90,17 @@ dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
+  adaptive_icon_background: "#023C22"
+  adaptive_icon_foreground: "assets/app_logo.png"
+  adaptive_icon_inset: 0
+  min_sdk_android: 21
+  remove_alpha_ios: true
   image_path: "assets/app_logo.png"
+  web:
+    generate: true
+    image_path: "assets/app_logo.png"
+    background_color: "#023C22"
+    theme_color: "#023C22"
 
 dev_dependencies:
   flutter_test:
