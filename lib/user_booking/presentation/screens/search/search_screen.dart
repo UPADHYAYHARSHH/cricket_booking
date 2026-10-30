@@ -2,7 +2,6 @@ import 'package:turfpro/user_booking/constants/widgets/app_sizedBox.dart';
 import 'package:turfpro/user_booking/presentation/blocs/ground/ground_cubit.dart';
 import 'package:turfpro/user_booking/presentation/blocs/ground/ground_state.dart';
 import 'package:turfpro/user_booking/presentation/blocs/location/location_cubit.dart';
-import 'package:turfpro/user_booking/presentation/widgets/ground_card.dart';
 import 'package:turfpro/user_booking/presentation/widgets/venue_card.dart';
 import 'package:turfpro/user_booking/presentation/screens/ground_list/widgets/ground_skeleton.dart';
 import 'package:flutter/material.dart';
@@ -94,6 +93,19 @@ class _SearchScreenState extends State<SearchScreen> {
                 prefixIconConstraints: const BoxConstraints(
                   minWidth: 38,
                 ),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(
+                          Icons.clear_rounded,
+                          size: 18,
+                          color: AppColors.textSecondaryLight,
+                        ),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {});
+                        },
+                      )
+                    : null,
                 isDense: true,
                 filled: true,
                 fillColor: Colors.white,
@@ -124,35 +136,43 @@ class _SearchScreenState extends State<SearchScreen> {
 
         if (state is GroundLoaded) {
           final query = _searchController.text.trim().toLowerCase();
-          
-          if (query.isEmpty) {
-            return _buildEmptyState(context, "Search for your favorite turfs");
-          }
+          final allVenuesList =
+              state.allVenues.isNotEmpty ? state.allVenues : state.venues;
 
-          final filteredVenues = state.allVenues.where((venue) {
-            final name = venue.name.toLowerCase();
-            final address = venue.address.toLowerCase();
-            // Since VenueModel doesn't directly expose locationName, we check the first ground's locationName if available
-            final locationName = venue.pitches.isNotEmpty 
-                ? venue.pitches.first.locationName.toLowerCase() 
-                : '';
+          final displayVenues = query.isEmpty
+              ? allVenuesList
+              : allVenuesList.where((venue) {
+                  final name = venue.name.toLowerCase();
+                  final address = venue.address.toLowerCase();
+                  final city = venue.city.toLowerCase();
+                  final sports = venue.availableSports
+                      .map((s) => s.toLowerCase())
+                      .toList();
+                  final locationName = venue.pitches.isNotEmpty
+                      ? venue.pitches.first.locationName.toLowerCase()
+                      : '';
 
-            return name.contains(query) || 
-                   address.contains(query) || 
-                   locationName.contains(query);
-          }).toList();
+                  return name.contains(query) ||
+                      address.contains(query) ||
+                      city.contains(query) ||
+                      locationName.contains(query) ||
+                      sports.any((s) => s.contains(query));
+                }).toList();
 
-          if (filteredVenues.isEmpty) {
-            return _buildNoResultsState(context, "No venues found");
+          if (displayVenues.isEmpty) {
+            return _buildNoResultsState(
+              context,
+              query.isEmpty ? "No turfs available" : "No turfs found",
+            );
           }
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: filteredVenues.length,
+            itemCount: displayVenues.length,
             itemBuilder: (context, index) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16),
-                child: VenueCard(venue: filteredVenues[index]),
+                child: VenueCard(venue: displayVenues[index]),
               );
             },
           );
@@ -164,32 +184,6 @@ class _SearchScreenState extends State<SearchScreen> {
 
         return const SizedBox();
       },
-    );
-  }
-
-  Widget _buildEmptyState(BuildContext context, String message) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedSearch01,
-            size: 64,
-            color:
-                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
-          ),
-          const AppSizedBox(height: 16),
-          AppText(
-            text: message,
-            textStyle: TextStyle(
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.4),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
