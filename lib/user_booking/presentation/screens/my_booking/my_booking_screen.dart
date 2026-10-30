@@ -1328,6 +1328,51 @@ class _BookingCardState extends State<_BookingCard> {
       );
     }
 
+    // Cancelled status -> "View Details" and "Rebook" buttons
+    if (status == 'cancelled') {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+        child: Row(
+          children: [
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () => _viewTicket(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor:
+                      AppColors.primaryDarkGreen.withValues(alpha: 0.1),
+                  foregroundColor: AppColors.primaryDarkGreen,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: const Text("View Details",
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () => _rebook(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryDarkGreen,
+                  foregroundColor: Colors.white,
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: const Text("Rebook",
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     // 3. Expired or declined
     if (status == 'expired' || status == 'declined') {
       return Padding(
@@ -1511,7 +1556,8 @@ class _BookingCardState extends State<_BookingCard> {
   }
 
   void _handleCardTap(BuildContext context) {
-    if (_isPaidBooking) {
+    final s = widget.booking.status.toLowerCase();
+    if (_isPaidBooking || s == 'cancelled') {
       _viewTicket(context);
       return;
     }
@@ -1773,11 +1819,26 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
 
     final rawStatus = (widget.ticket.status ?? (widget.ticket.isPaid ? 'confirmed' : 'pending')).toLowerCase();
     final isConfirmed = rawStatus == 'confirmed' || rawStatus == 'paid';
-    final statusDisplay = isConfirmed
-        ? 'Confirmed'
-        : (rawStatus.isNotEmpty ? '${rawStatus[0].toUpperCase()}${rawStatus.substring(1)}' : 'Pending');
-    final badgeColor = isConfirmed ? const Color(0xFF2E7D32) : const Color(0xFFEF6C00);
-    final badgeBg = isConfirmed ? const Color(0xFFE8F5E9) : const Color(0xFFFFF3E0);
+    final isCancelled = rawStatus == 'cancelled';
+    final String statusDisplay;
+    final Color badgeColor;
+    final Color badgeBg;
+    if (isCancelled) {
+      statusDisplay = 'Cancelled';
+      badgeColor = const Color(0xFFD32F2F);
+      badgeBg = const Color(0xFFFFEBEE);
+    } else if (isConfirmed) {
+      statusDisplay = 'Confirmed';
+      badgeColor = const Color(0xFF2E7D32);
+      badgeBg = const Color(0xFFE8F5E9);
+    } else {
+      statusDisplay = rawStatus.isNotEmpty
+          ? '${rawStatus[0].toUpperCase()}${rawStatus.substring(1)}'
+          : 'Pending';
+      badgeColor = const Color(0xFFEF6C00);
+      badgeBg = const Color(0xFFFFF3E0);
+    }
+
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -1907,7 +1968,50 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
                       ),
                     ),
                   ],
-                  if (widget.ticket.isPaid) ...[
+                  if (isCancelled) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFEBEE),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFFFCDD2)),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.cancel_outlined,
+                              color: Color(0xFFD32F2F), size: 24),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  "Booking Cancelled",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: Color(0xFFD32F2F),
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  "This booking has been cancelled and the slot has been released. The QR code below is invalid for entry.",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.red.shade900,
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ] else if (widget.ticket.isPaid) ...[
                     _CheckInBanner(
                       isCheckedIn: widget.ticket.isCheckedIn,
                       checkedInAt: widget.ticket.checkedInAt != null
@@ -2004,10 +2108,15 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
                             ),
                             const SizedBox(height: 12),
                             AppText(
-                              text: "Scan at entrance",
+                              text: isCancelled
+                                  ? "Booking Cancelled (Invalid for Entry)"
+                                  : "Scan at entrance",
                               textStyle: TextStyle(
                                   fontSize: 12,
-                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
+                                  color: isCancelled
+                                      ? const Color(0xFFD32F2F)
+                                      : theme.colorScheme.onSurface
+                                          .withValues(alpha: 0.4)),
                             ),
                           ],
                         ),
@@ -2040,6 +2149,8 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
   }
 
   Widget _buildActionButtons(BuildContext context) {
+    final isCancelled =
+        (widget.ticket.status ?? '').toLowerCase() == 'cancelled';
     return Column(
       children: [
         SizedBox(
@@ -2056,7 +2167,9 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
                   )
                 : const Icon(Icons.download_rounded, color: Colors.white),
             label: Text(
-              _isSaving ? "Generating PDF..." : "Download Ticket",
+              _isSaving
+                  ? "Generating PDF..."
+                  : (isCancelled ? "Download Receipt" : "Download Ticket"),
               style: const TextStyle(
                   color: Colors.white, fontWeight: FontWeight.bold),
             ),
@@ -2067,6 +2180,33 @@ class _ViewTicketScreenState extends State<ViewTicketScreen> {
             ),
           ),
         ),
+        if (isCancelled) ...[
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  AppRoutes.nav,
+                  (route) => false,
+                );
+              },
+              icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+              label: const Text(
+                "Book Another Slot",
+                style:
+                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryDarkGreen,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+        ],
         if (widget.isFromBookingFlow) ...[
           const SizedBox(height: 12),
           SizedBox(
