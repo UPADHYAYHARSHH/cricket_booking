@@ -10,7 +10,7 @@ plugins {
 }
 
 android {
-    namespace = "com.boxcricket.booking"
+    namespace = "com.slottix.booking"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
