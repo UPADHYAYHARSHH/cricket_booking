@@ -45,6 +45,7 @@ app.*.map.json
 /android/.kotlin/
 
 # Environment variables
-.env
 build.ps1.gitignore
 branch_structure.json
+config.bat
+node_modules
