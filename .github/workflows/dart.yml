@@ -4,7 +4,7 @@ name: Build Slottix Android AAB
 on:
   workflow_dispatch:
   push:
-    branches: ["cancel-flow"]
+    branches: ["main"]
 
 jobs:
   build:
