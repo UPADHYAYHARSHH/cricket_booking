@@ -76,7 +76,7 @@
 				<key>CFBundleURLSchemes</key>
 				<array>
 					<string>io.supabase.turfpro</string>
-					<string>com.example.boxCricketNew</string>
+					<string>com.slottix.booking</string>
 				</array>
 			</dict>
 		</array>

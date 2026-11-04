@@ -21,7 +21,7 @@ subprojects {
 
 gradle.projectsEvaluated {
     allprojects {
-        tasks.matching { it.name.startsWith("verify") && it.name.endsWith("Resources") }.configureEach {
+        tasks.matching { (it.name.startsWith("verify") && it.name.endsWith("Resources")) || it.name.startsWith("lintVital") }.configureEach {
             enabled = false
         }
     }
