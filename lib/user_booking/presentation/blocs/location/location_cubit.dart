@@ -53,10 +53,18 @@ class LocationState {
 
 class LocationCubit extends Cubit<LocationState> {
   final UserRepository repo;
+  Future<void>? _inFlightLoadCity;
   // Timer? _locationTimer;
 
   LocationCubit(this.repo) : super(LocationState()) {
     // _startPeriodicUpdate();
+  }
+
+  void reset() {
+    _inFlightLoadCity = null;
+    if (!isClosed) {
+      emit(LocationState());
+    }
   }
 
   // void _startPeriodicUpdate() {
@@ -90,7 +98,8 @@ class LocationCubit extends Cubit<LocationState> {
         if (!kIsWeb) {
           try {
             debugPrint("[LOCATION_CUBIT] Geocoding cityName: $cityName");
-            List<Location> locations = await locationFromAddress(cityName);
+            List<Location> locations = await locationFromAddress(cityName)
+                .timeout(const Duration(seconds: 5));
             if (locations.isNotEmpty) {
               finalLat = locations.first.latitude;
               finalLng = locations.first.longitude;
@@ -121,8 +130,21 @@ class LocationCubit extends Cubit<LocationState> {
   }
 
   /// INITIALIZE CITY FROM DATABASE OR CURRENT POSITION
-  Future<void> loadCity({bool forceRefresh = false}) async {
-    if (state.city == null) {
+  Future<void> loadCity({bool forceRefresh = false}) {
+    if (_inFlightLoadCity != null) {
+      debugPrint("[LOCATION_CUBIT] loadCity already in progress, awaiting result.");
+      return _inFlightLoadCity!;
+    }
+    final future = _performLoadCity(forceRefresh: forceRefresh);
+    _inFlightLoadCity = future.whenComplete(() {
+      _inFlightLoadCity = null;
+    });
+    return _inFlightLoadCity!;
+  }
+
+  Future<void> _performLoadCity({bool forceRefresh = false}) async {
+
+    if (state.city == null && !isClosed) {
       emit(state.copyWith(isLoading: true));
     }
 
@@ -139,8 +161,9 @@ class LocationCubit extends Cubit<LocationState> {
         // Set initial state from stored city and stored location
         if (!kIsWeb) {
           try {
-            List<Location> locations = await locationFromAddress(storedCity);
-            if (locations.isNotEmpty) {
+            List<Location> locations = await locationFromAddress(storedCity)
+                .timeout(const Duration(seconds: 5));
+            if (locations.isNotEmpty && !isClosed) {
               emit(state.copyWith(
                 city: storedCity,
                 latitude: locations.first.latitude,
@@ -151,7 +174,7 @@ class LocationCubit extends Cubit<LocationState> {
                 errorMessage: null,
                 hasGpsLocation: storedLocation != null, // Allow distance display from stored coordinates if available
               ));
-            } else {
+            } else if (!isClosed) {
               emit(state.copyWith(
                 city: storedCity,
                 gpsLatitude: storedLocation?['latitude'],
@@ -161,15 +184,17 @@ class LocationCubit extends Cubit<LocationState> {
               ));
             }
           } catch (_) {
-            emit(state.copyWith(
-              city: storedCity,
-              gpsLatitude: storedLocation?['latitude'],
-              gpsLongitude: storedLocation?['longitude'],
-              isLoading: false,
-              hasGpsLocation: storedLocation != null,
-            ));
+            if (!isClosed) {
+              emit(state.copyWith(
+                city: storedCity,
+                gpsLatitude: storedLocation?['latitude'],
+                gpsLongitude: storedLocation?['longitude'],
+                isLoading: false,
+                hasGpsLocation: storedLocation != null,
+              ));
+            }
           }
-        } else {
+        } else if (!isClosed) {
           emit(state.copyWith(
             city: storedCity,
             gpsLatitude: storedLocation?['latitude'],
@@ -188,20 +213,25 @@ class LocationCubit extends Cubit<LocationState> {
       final userLoc = await getCurrentLocation();
 
       // Only update city name if it's not "Unknown" AND we don't already have a valid city set
-      final bool shouldUpdateCity = userLoc.city != "Unknown" && (state.city == null || state.city == "Select Location");
+      final bool hasValidGpsCity =
+          userLoc.city != "Unknown" && userLoc.city.trim().isNotEmpty;
+      final bool shouldUpdateCity = hasValidGpsCity &&
+          (state.city == null || state.city == "Select Location");
 
-      emit(state.copyWith(
-        city: shouldUpdateCity ? userLoc.city : state.city,
-        latitude: shouldUpdateCity ? userLoc.latitude : state.latitude, // Keep geocoded lat if we don't update city
-        longitude: shouldUpdateCity ? userLoc.longitude : state.longitude, // Keep geocoded lng if we don't update city
-        gpsLatitude: userLoc.latitude, // Always update GPS lat for distance calculation
-        gpsLongitude: userLoc.longitude, // Always update GPS lng for distance calculation
-        isLoading: false,
-        errorMessage: null,
-        hasGpsLocation: true, // Successfully fetched GPS
-      ));
+      if (!isClosed) {
+        emit(state.copyWith(
+          city: shouldUpdateCity ? userLoc.city : (state.city ?? "Select Location"),
+          latitude: shouldUpdateCity ? userLoc.latitude : (state.latitude ?? userLoc.latitude), // Keep geocoded lat if we don't update city
+          longitude: shouldUpdateCity ? userLoc.longitude : (state.longitude ?? userLoc.longitude), // Keep geocoded lng if we don't update city
+          gpsLatitude: userLoc.latitude, // Always update GPS lat for distance calculation
+          gpsLongitude: userLoc.longitude, // Always update GPS lng for distance calculation
+          isLoading: false,
+          errorMessage: null,
+          hasGpsLocation: true, // Successfully fetched GPS
+        ));
+      }
 
-      if (shouldUpdateCity && userLoc.city != "Unknown") {
+      if (shouldUpdateCity && hasValidGpsCity) {
         await repo.updateUserCity(userLoc.city);
       }
       
@@ -218,15 +248,19 @@ class LocationCubit extends Cubit<LocationState> {
         errorMsg = 'Enable location from settings.';
       } else if (e.toString().contains('SERVICE_DISABLED')) {
         errorMsg = 'Turn on GPS.';
+      } else if (e.toString().contains('LOCATION_TIMEOUT')) {
+        errorMsg = 'Unable to detect location.';
       }
 
-      // If we already have a city (from stored or previous), keep it but set GPS to false
-      emit(state.copyWith(
-        isLoading: false,
-        errorMessage: errorMsg,
-        city: state.city ?? "Select Location",
-        // Keep the gpsLatitude and gpsLongitude that were potentially loaded from stored location in step 1!
-      ));
+      // If we already have a city (from stored or previous), keep it but stop loading
+      if (!isClosed) {
+        emit(state.copyWith(
+          isLoading: false,
+          errorMessage: errorMsg,
+          city: state.city ?? "Select Location",
+          // Keep the gpsLatitude and gpsLongitude that were potentially loaded from stored location in step 1!
+        ));
+      }
     }
   }
 }

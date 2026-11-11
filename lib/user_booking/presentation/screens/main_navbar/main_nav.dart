@@ -16,6 +16,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/saved_ground/saved_ground_cubit.dart';
 import '../../blocs/location/location_cubit.dart';
 import '../../blocs/notification/notification_cubit.dart';
+import '../../blocs/ground/ground_cubit.dart';
+import '../../blocs/location_list/location_list_cubit.dart';
+import '../../blocs/sport/sport_cubit.dart';
+import '../../blocs/sport/sport_state.dart';
 import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/auth/auth_state.dart';
 import '../../../constants/route_constants.dart';
@@ -71,10 +75,15 @@ class _MainNavScreenState extends State<MainNavScreen> {
       context.read<SavedGroundCubit>().loadFavorites(user.uid);
     }
 
-    final locationCubit = context.read<LocationCubit>();
-    if (locationCubit.state.city == null ||
-        locationCubit.state.city == "Select Location") {
-      locationCubit.loadCity();
+    // Refresh notification, sport, and location list cubits after login/launch
+    context.read<NotificationCubit>().fetchNotifications();
+    final sportCubit = context.read<SportCubit>();
+    if (sportCubit.state is! SportLoaded) {
+      sportCubit.fetchSports();
+    }
+    final locationListCubit = context.read<LocationListCubit>();
+    if (locationListCubit.state is! LocationListLoaded) {
+      locationListCubit.fetchLocations();
     }
 
     _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
@@ -91,9 +100,24 @@ class _MainNavScreenState extends State<MainNavScreen> {
           currentIndex = args;
         });
       }
-      _checkLocation(context.read<LocationCubit>().state);
-      NotificationService.requestPermissions();
+      _initLocationAndNotifications();
     });
+  }
+
+  Future<void> _initLocationAndNotifications() async {
+    if (!mounted) return;
+    final locationCubit = context.read<LocationCubit>();
+    if (locationCubit.state.city == null ||
+        locationCubit.state.city == "Select Location") {
+      await locationCubit.loadCity();
+    }
+
+    if (!mounted) return;
+    _checkLocation(locationCubit.state);
+
+    // Request notification permissions sequentially after location resolves
+    // so Android never drops concurrent runtime permission dialogs.
+    await NotificationService.requestPermissions();
   }
 
   @override
@@ -122,6 +146,8 @@ class _MainNavScreenState extends State<MainNavScreen> {
               if (state is AuthProfileIncomplete) {
                 Navigator.pushReplacementNamed(context, AppRoutes.completeProfile);
               } else if (state is AuthInitial || state is AuthError) {
+                context.read<GroundCubit>().reset();
+                context.read<LocationCubit>().reset();
                 // Not authenticated or error, redirect to login
                 Navigator.pushReplacementNamed(context, AppRoutes.login);
               }

@@ -14,12 +14,23 @@ import 'package:turfpro/user_booking/presentation/blocs/auth/auth_state.dart';
 class AuthCubit extends Cubit<AuthState> {
   final AuthRepository repository;
   StreamSubscription<fb.User?>? _authSubscription;
+  bool _isManualAuthInProgress = false;
+  Future<void>? _profileCheckFuture;
 
   AuthCubit(this.repository) : super(AuthInitial()) {
     _authSubscription = fb.FirebaseAuth.instance.authStateChanges().listen((user) async {
       debugPrint("DEBUG: [AuthCubit] Firebase Auth state change. User: ${user?.uid}");
-      
+
+      if (_isManualAuthInProgress) {
+        debugPrint("DEBUG: [AuthCubit] Skipping authStateChanges during manual auth.");
+        return;
+      }
+
       if (user != null) {
+        if (user.email != null && user.email!.isNotEmpty && !user.emailVerified) {
+          debugPrint("DEBUG: [AuthCubit] Email user not verified yet - skipping profile check.");
+          return;
+        }
         debugPrint("DEBUG: [AuthCubit] User verified - emitting AuthVerified and checking profile");
         emit(AuthVerified());
         await _checkProfileAndEmit();
@@ -40,6 +51,7 @@ class AuthCubit extends Cubit<AuthState> {
     required String email,
     required String password,
   }) async {
+    _isManualAuthInProgress = true;
     emit(AuthLoading());
 
     try {
@@ -70,6 +82,8 @@ class AuthCubit extends Cubit<AuthState> {
       emit(AuthError(errorMessage));
     } catch (e) {
       emit(AuthError(e.toString()));
+    } finally {
+      _isManualAuthInProgress = false;
     }
   }
 
@@ -77,6 +91,7 @@ class AuthCubit extends Cubit<AuthState> {
     required String email,
     required String password,
   }) async {
+    _isManualAuthInProgress = true;
     emit(AuthLoading());
 
     try {
@@ -95,6 +110,8 @@ class AuthCubit extends Cubit<AuthState> {
       emit(AuthError(errorMessage));
     } catch (e) {
       emit(AuthError(e.toString()));
+    } finally {
+      _isManualAuthInProgress = false;
     }
   }
 
@@ -122,7 +139,18 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  Future<void> _checkProfileAndEmit() async {
+  Future<void> _checkProfileAndEmit() {
+    if (_profileCheckFuture != null) {
+      return _profileCheckFuture!;
+    }
+    final future = _performProfileCheck();
+    _profileCheckFuture = future.whenComplete(() {
+      _profileCheckFuture = null;
+    });
+    return _profileCheckFuture!;
+  }
+
+  Future<void> _performProfileCheck() async {
     final user = fb.FirebaseAuth.instance.currentUser;
     if (user != null) {
       debugPrint("DEBUG: [AuthCubit] Checking profile for Firebase user: ${user.uid}");
@@ -130,7 +158,8 @@ class AuthCubit extends Cubit<AuthState> {
       try {
         // Fetch user data via RPC to bypass RLS issues completely
         final userData = await sb.Supabase.instance.client
-            .rpc('get_user_profile', params: {'p_id': user.uid});
+            .rpc('get_user_profile', params: {'p_id': user.uid})
+            .timeout(const Duration(seconds: 10));
             
         if (userData == null) {
           debugPrint("DEBUG: [AuthCubit] No record found for ID: ${user.uid}. Redirecting to complete profile.");
@@ -209,6 +238,14 @@ class AuthCubit extends Cubit<AuthState> {
 
   Future<void> logout() async {
     await NotificationService.clearFcmToken();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('user_city');
+      await prefs.remove('user_lat');
+      await prefs.remove('user_lng');
+    } catch (e) {
+      debugPrint("DEBUG: [AuthCubit] Error clearing cached location prefs on logout: $e");
+    }
     await repository.logout();
     emit(AuthInitial());
   }

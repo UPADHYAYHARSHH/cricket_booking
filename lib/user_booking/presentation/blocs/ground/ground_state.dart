@@ -1,4 +1,4 @@
-﻿import 'package:turfpro/user_booking/data/models/ground_model.dart';
+import 'package:turfpro/user_booking/data/models/ground_model.dart';
 import 'package:turfpro/user_booking/data/models/venue_model.dart';
 import 'package:turfpro/user_booking/domain/models/filter_criteria.dart';
 
@@ -14,8 +14,16 @@ class GroundLoaded extends GroundState {
   final List<VenueModel> venues;
   final List<VenueModel> allVenues;
   final FilterCriteria criteria;
+  final String? loadedCity;
 
-  GroundLoaded(this.grounds, this.allGrounds, {required this.criteria, this.venues = const [], this.allVenues = const []});
+  GroundLoaded(
+    this.grounds,
+    this.allGrounds, {
+    required this.criteria,
+    this.venues = const [],
+    this.allVenues = const [],
+    this.loadedCity,
+  });
 }
 
 class GroundError extends GroundState {

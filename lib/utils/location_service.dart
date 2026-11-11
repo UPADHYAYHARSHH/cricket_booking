@@ -1,7 +1,8 @@
+import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:location/location.dart' as loc;
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 
 class UserLocation {
   final String city;
@@ -40,14 +41,38 @@ Future<UserLocation> getCurrentLocation() async {
   if (!serviceEnabled) {
     // Attempt to request service natively
     final location = loc.Location();
-    serviceEnabled = await location.requestService();
+    serviceEnabled = await location.requestService().timeout(
+      const Duration(seconds: 10),
+      onTimeout: () => false,
+    );
     if (!serviceEnabled) {
       return Future.error('SERVICE_DISABLED');
     }
   }
 
-  // 5. Fetch device's absolute coordinates.
-  final position = await Geolocator.getCurrentPosition();
+  // 5. Fetch device's absolute coordinates with timeout & last-known fallback.
+  Position? position;
+  try {
+    position = await Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.medium,
+        timeLimit: Duration(seconds: 8),
+      ),
+    );
+  } catch (e) {
+    debugPrint("getCurrentPosition failed/timed out: $e");
+    if (!kIsWeb) {
+      try {
+        position = await Geolocator.getLastKnownPosition();
+      } catch (lastKnownError) {
+        debugPrint("getLastKnownPosition failed: $lastKnownError");
+      }
+    }
+  }
+
+  if (position == null) {
+    return Future.error('LOCATION_TIMEOUT');
+  }
 
   String city = "Unknown";
 
@@ -57,17 +82,25 @@ Future<UserLocation> getCurrentLocation() async {
       final placemarks = await placemarkFromCoordinates(
         position.latitude,
         position.longitude,
-      );
+      ).timeout(const Duration(seconds: 5));
 
       if (placemarks.isNotEmpty) {
         final place = placemarks.first;
-        city = place.locality ??
-            place.subAdministrativeArea ??
-            place.administrativeArea ??
-            "Unknown";
+        final candidates = [
+          place.locality,
+          place.subAdministrativeArea,
+          place.administrativeArea,
+        ];
+        final resolved = candidates.firstWhere(
+          (c) => c != null && c.trim().isNotEmpty,
+          orElse: () => null,
+        );
+        if (resolved != null) {
+          city = resolved.trim();
+        }
       }
     } catch (e) {
-      print("Reverse geocoding failed: $e");
+      debugPrint("Reverse geocoding failed: $e");
     }
   }
 

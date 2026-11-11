@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:turfpro/common/constants/colors.dart';
 import 'package:turfpro/common/constants/size_constants.dart';
@@ -36,11 +37,34 @@ class GroundListScreen extends StatefulWidget {
 class _GroundListScreenState extends State<GroundListScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  Timer? _fallbackLoadTimer;
 
   @override
   void initState() {
     super.initState();
     _checkInitialLoad();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _checkInitialLoad();
+    });
+    _fallbackLoadTimer = Timer(const Duration(seconds: 4), () {
+      if (!mounted) return;
+      final groundCubit = context.read<GroundCubit>();
+      final locationCubit = context.read<LocationCubit>();
+      if (groundCubit.state is GroundInitial) {
+        final city = locationCubit.state.city;
+        final safeCity =
+            (city != null && city != "Fetching...") ? city : null;
+        groundCubit.getGrounds(
+          city: safeCity,
+          userLat: locationCubit.state.hasGpsLocation
+              ? locationCubit.state.latitude
+              : null,
+          userLng: locationCubit.state.hasGpsLocation
+              ? locationCubit.state.longitude
+              : null,
+        );
+      }
+    });
   }
 
   void _checkInitialLoad() {
@@ -65,6 +89,7 @@ class _GroundListScreenState extends State<GroundListScreen> {
 
   @override
   void dispose() {
+    _fallbackLoadTimer?.cancel();
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -87,17 +112,17 @@ class _GroundListScreenState extends State<GroundListScreen> {
           final groundCubit = context.read<GroundCubit>();
 
           final currentState = groundCubit.state;
+          final String? targetCity = (state.city == "Select Location")
+              ? null
+              : () {
+                  final trimmed =
+                      state.city!.split(',').first.trim().toLowerCase();
+                  return trimmed.isNotEmpty ? trimmed : null;
+                }();
+
           bool shouldFetch = true;
           if (currentState is GroundLoaded) {
-            final cityName = state.city!.split(',').first.trim().toLowerCase();
-            if (currentState.allGrounds.isNotEmpty) {
-              final firstGroundCity =
-                  currentState.allGrounds.first.city.toLowerCase();
-              if (firstGroundCity.contains(cityName) ||
-                  cityName.contains(firstGroundCity)) {
-                shouldFetch = false;
-              }
-            }
+            shouldFetch = currentState.loadedCity != targetCity;
           }
 
           if (shouldFetch) {
@@ -1114,6 +1139,40 @@ class _GroundListScreenState extends State<GroundListScreen> {
                   .colorScheme
                   .onSurface
                   .withValues(alpha: 0.5),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: () {
+                final locationState = context.read<LocationCubit>().state;
+                context.read<GroundCubit>().getGrounds(
+                      city: (locationState.city != null &&
+                              locationState.city != "Fetching...")
+                          ? locationState.city
+                          : null,
+                      userLat: locationState.hasGpsLocation
+                          ? locationState.latitude
+                          : null,
+                      userLng: locationState.hasGpsLocation
+                          ? locationState.longitude
+                          : null,
+                    );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryDarkGreen,
+                foregroundColor: AppColors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const AppText(
+                text: "Retry",
+                size: 14,
+                weight: FontWeight.w600,
+                color: AppColors.white,
+              ),
             ),
           ],
         ),

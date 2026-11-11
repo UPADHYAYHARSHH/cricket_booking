@@ -40,7 +40,7 @@ android {
         applicationId = "com.slottix.booking"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
+        versionCode = 5
         versionName = flutter.versionName
     }
 

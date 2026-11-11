@@ -15,17 +15,29 @@ class GroundCubit extends Cubit<GroundState> {
 
   GroundCubit(this.repository, this.analytics) : super(GroundInitial());
 
+  int _requestSeq = 0;
+
+  void reset() {
+    _requestSeq++;
+    if (!isClosed) {
+      emit(GroundInitial());
+    }
+  }
+
   Future<void> getGrounds(
       {String? city, double? userLat, double? userLng}) async {
+    final int requestId = ++_requestSeq;
     emit(GroundLoading());
 
     try {
-      var grounds = await repository.fetchGrounds();
+      var grounds = await repository.fetchGrounds().timeout(const Duration(seconds: 15));
       print("🚀 GroundCubit: Fetched ${grounds.length} grounds from DB.");
 
       // Filter by city if selected
+      String? normalizedCity;
       if (city != null && city != "Select Location" && city != "Fetching...") {
         final cityName = city.split(',').first.trim().toLowerCase();
+        normalizedCity = cityName.isNotEmpty ? cityName : null;
         print("🌍 GroundCubit: Filtering by city -> '$cityName'");
         grounds = grounds
             .where((g) =>
@@ -59,11 +71,14 @@ class GroundCubit extends Cubit<GroundState> {
 
       analytics.logGroundView(groundId: 'all', groundName: 'Fetch List');
 
+      if (requestId != _requestSeq || isClosed) return;
       final venues = _groupGroundsIntoVenues(grounds);
-      emit(GroundLoaded(grounds, grounds,
+      emit(GroundLoaded(grounds, grounds, loadedCity: normalizedCity,
           criteria: criteria, venues: venues, allVenues: venues));
     } catch (e) {
-      emit(GroundError(e.toString()));
+      if (requestId == _requestSeq && !isClosed) {
+        emit(GroundError(e.toString()));
+      }
     }
   }
 
@@ -219,7 +234,7 @@ class GroundCubit extends Cubit<GroundState> {
       }
 
       final venues = _groupGroundsIntoVenues(filteredList);
-      emit(GroundLoaded(filteredList, currentState.allGrounds,
+      emit(GroundLoaded(filteredList, currentState.allGrounds, loadedCity: currentState.loadedCity,
           criteria: criteria,
           venues: venues,
           allVenues: currentState.allVenues));
@@ -231,7 +246,7 @@ class GroundCubit extends Cubit<GroundState> {
     final currentState = state;
     if (currentState is GroundLoaded) {
       if (query.isEmpty) {
-        emit(GroundLoaded(currentState.allGrounds, currentState.allGrounds,
+        emit(GroundLoaded(currentState.allGrounds, currentState.allGrounds, venues: currentState.allVenues, allVenues: currentState.allVenues, loadedCity: currentState.loadedCity,
             criteria: currentState.criteria));
         return;
       }
@@ -248,7 +263,7 @@ class GroundCubit extends Cubit<GroundState> {
       }).toList();
 
       final venues = _groupGroundsIntoVenues(filteredList);
-      emit(GroundLoaded(filteredList, currentState.allGrounds,
+      emit(GroundLoaded(filteredList, currentState.allGrounds, loadedCity: currentState.loadedCity,
           criteria: currentState.criteria,
           venues: venues,
           allVenues: currentState.allVenues));

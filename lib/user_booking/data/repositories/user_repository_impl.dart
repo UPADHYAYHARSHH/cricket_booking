@@ -182,7 +182,7 @@ class UserRepositoryImpl implements UserRepository {
     try {
       final prefs = await SharedPreferences.getInstance();
       final cachedCity = prefs.getString('user_city');
-      if (cachedCity != null && cachedCity.isNotEmpty) {
+      if (cachedCity != null && cachedCity.isNotEmpty && cachedCity != 'Select Location') {
         return cachedCity;
       }
     } catch (e) {
@@ -193,26 +193,46 @@ class UserRepositoryImpl implements UserRepository {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return null;
 
+    String? dbCity;
     try {
       final data = await supabase
           .from('users')
           .select('city')
           .eq('id', user.uid)
-          .maybeSingle();
-      
-      final dbCity = data?['city'];
-      
-      // Cache it locally for next time
-      if (dbCity != null) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('user_city', dbCity);
-      }
-      
-      return dbCity;
+          .maybeSingle()
+          .timeout(const Duration(seconds: 5));
+      dbCity = data?['city'] as String?;
     } catch (e) {
       debugPrint("[USER_REPO] Supabase city fetch error: $e");
-      return null; // Return null safely instead of throwing
     }
+
+    if (dbCity == null || dbCity.trim().isEmpty || dbCity == 'Select Location') {
+      try {
+        final profile = await supabase
+            .rpc('get_user_profile', params: {'p_id': user.uid})
+            .timeout(const Duration(seconds: 5));
+        if (profile is Map) {
+          final rpcCity = profile['city'] as String?;
+          if (rpcCity != null && rpcCity.trim().isNotEmpty && rpcCity != 'Select Location') {
+            dbCity = rpcCity.trim();
+          }
+        }
+      } catch (e) {
+        debugPrint("[USER_REPO] Supabase RPC city fetch error: $e");
+      }
+    }
+
+    if (dbCity != null && dbCity.trim().isNotEmpty && dbCity != 'Select Location') {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user_city', dbCity.trim());
+      } catch (e) {
+        debugPrint("[USER_REPO] Local cache write error: $e");
+      }
+      return dbCity.trim();
+    }
+
+    return null;
   }
 
   /// SAVE OR UPDATE CITY IN SUPABASE USERS TABLE (AND LOCAL CACHE)
@@ -262,7 +282,8 @@ class UserRepositoryImpl implements UserRepository {
 
     try {
       final data = await supabase
-          .rpc('get_user_location', params: {'p_id': user.uid});
+          .rpc('get_user_location', params: {'p_id': user.uid})
+          .timeout(const Duration(seconds: 5));
       
       final dbLat = data?['latitude'] is num ? (data['latitude'] as num).toDouble() : null;
       final dbLng = data?['longitude'] is num ? (data['longitude'] as num).toDouble() : null;
