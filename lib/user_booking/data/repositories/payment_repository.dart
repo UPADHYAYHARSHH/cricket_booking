@@ -666,12 +666,42 @@ class PaymentRepository {
       updateData['razorpay_signature'] = signature;
     }
 
-    final updateRes = await _supabase
-        .from('bookings')
-        .update(updateData)
-        .eq('id', bookingId)
-        .select('*, grounds(name, owner_id)')
-        .single();
+    Map<String, dynamic> updateRes;
+    try {
+      updateRes = await _supabase
+          .from('bookings')
+          .update(updateData)
+          .eq('id', bookingId)
+          .select('*, grounds(name, owner_id)')
+          .single();
+    } on PostgrestException catch (e) {
+      if (e.code == 'PGRST204' ||
+          e.message.contains('column') ||
+          e.message.contains('schema cache')) {
+        debugPrint(
+            'confirmApprovedBookingPayment: Missing dynamic columns in bookings table, falling back to legacy columns: $e');
+        final Map<String, dynamic> fallbackUpdateData = {
+          'status': 'paid',
+        };
+        if (paymentId.isNotEmpty) {
+          fallbackUpdateData['razorpay_payment_id'] = paymentId;
+        }
+        if (orderId != null && orderId.isNotEmpty) {
+          fallbackUpdateData['razorpay_order_id'] = orderId;
+        }
+        if (signature.isNotEmpty) {
+          fallbackUpdateData['razorpay_signature'] = signature;
+        }
+        updateRes = await _supabase
+            .from('bookings')
+            .update(fallbackUpdateData)
+            .eq('id', bookingId)
+            .select('*, grounds(name, owner_id)')
+            .single();
+      } else {
+        rethrow;
+      }
+    }
 
     final effectiveGroundId =
         groundId ?? updateRes['ground_id']?.toString() ?? '';
@@ -1041,7 +1071,17 @@ class PaymentRepository {
             return existing;
           }
         } catch (e) {
-          debugPrint('PaymentRepository: Idempotency check error (ignoring): $e');
+          debugPrint('PaymentRepository: Idempotency check error (trying razorpay_order_id fallback): $e');
+          try {
+            final fallbackExisting = await _supabase
+                .from('bookings')
+                .select('*')
+                .eq('razorpay_order_id', orderId)
+                .maybeSingle();
+            if (fallbackExisting != null) {
+              return fallbackExisting;
+            }
+          } catch (_) {}
         }
       }
 

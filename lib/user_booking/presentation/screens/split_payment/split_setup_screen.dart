@@ -462,28 +462,31 @@ class _SplitSetupScreenState extends State<SplitSetupScreen> {
                         itemCount: searchState.users.length,
                         itemBuilder: (context, index) {
                           final user = searchState.users[index];
-                          return ListTile(
-                            leading: CircleAvatar(
-                              radius: 15,
-                              backgroundImage: user['photo_url'] != null
-                                  ? NetworkImage(user['photo_url'])
-                                  : null,
-                              child: user['photo_url'] == null
-                                  ? const Icon(Icons.person, size: 15)
-                                  : null,
+                          return Material(
+                            color: Colors.transparent,
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                radius: 15,
+                                backgroundImage: user['photo_url'] != null
+                                    ? NetworkImage(user['photo_url'])
+                                    : null,
+                                child: user['photo_url'] == null
+                                    ? const Icon(Icons.person, size: 15)
+                                    : null,
+                              ),
+                              title: AppText(
+                                  text: user['name'] ?? '',
+                                  textStyle: const TextStyle(fontSize: 14)),
+                              subtitle: AppText(
+                                  text: "@${user['username']}",
+                                  textStyle: const TextStyle(fontSize: 12)),
+                              onTap: () {
+                                context.read<SplitPaymentCubit>().addLinkedMember(
+                                    user['name'] ?? user['username'], user['id']);
+                                _memberController.clear();
+                                setState(() => _showUserSearch = false);
+                              },
                             ),
-                            title: AppText(
-                                text: user['name'] ?? '',
-                                textStyle: const TextStyle(fontSize: 14)),
-                            subtitle: AppText(
-                                text: "@${user['username']}",
-                                textStyle: const TextStyle(fontSize: 12)),
-                            onTap: () {
-                              context.read<SplitPaymentCubit>().addLinkedMember(
-                                  user['name'] ?? user['username'], user['id']);
-                              _memberController.clear();
-                              setState(() => _showUserSearch = false);
-                            },
                           );
                         },
                       );

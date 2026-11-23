@@ -571,36 +571,39 @@ class HelpSupportScreen extends StatelessWidget {
           color: isDark ? AppColors.borderDark : AppColors.borderLight,
         ),
       ),
-      child: ListTile(
-        onTap: () => _openChat(context, query: query),
-        leading: Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            color: AppColors.primaryLightGreen.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(10),
+      child: Material(
+        color: Colors.transparent,
+        child: ListTile(
+          onTap: () => _openChat(context, query: query),
+          leading: Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: AppColors.primaryLightGreen.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: AppColors.primaryDarkGreen, size: 20),
           ),
-          child: Icon(icon, color: AppColors.primaryDarkGreen, size: 20),
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+          title: Text(
+            title,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+            ),
           ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(
-            fontSize: 11,
+          subtitle: Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 11,
+              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+            ),
+          ),
+          trailing: Icon(
+            Icons.arrow_forward_ios_rounded,
+            size: 13,
             color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
           ),
-        ),
-        trailing: Icon(
-          Icons.arrow_forward_ios_rounded,
-          size: 13,
-          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
         ),
       ),
     );
@@ -622,36 +625,39 @@ class HelpSupportScreen extends StatelessWidget {
           color: isDark ? AppColors.borderDark : AppColors.borderLight,
         ),
       ),
-      child: ListTile(
-        onTap: onTap,
-        leading: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: iconColor.withValues(alpha: 0.12),
-            shape: BoxShape.circle,
+      child: Material(
+        color: Colors.transparent,
+        child: ListTile(
+          onTap: onTap,
+          leading: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: iconColor, size: 20),
           ),
-          child: Icon(icon, color: iconColor, size: 20),
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+          title: Text(
+            title,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+            ),
           ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(
-            fontSize: 11,
-            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+          subtitle: Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 11,
+              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+            ),
           ),
-        ),
-        trailing: const Icon(
-          Icons.open_in_new_rounded,
-          size: 16,
-          color: AppColors.primaryDarkGreen,
+          trailing: const Icon(
+            Icons.open_in_new_rounded,
+            size: 16,
+            color: AppColors.primaryDarkGreen,
+          ),
         ),
       ),
     );

@@ -180,83 +180,85 @@ class _CitySearchBottomSheetState extends State<CitySearchBottomSheet> {
     return PopScope(
         canPop: !widget.isMandatory,
         child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-            ),
-            child: Container(
-              decoration: BoxDecoration(
+            filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Material(
                 color: Theme.of(context).cardColor.withOpacity(0.85),
                 borderRadius:
                     const BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              height: 500,
-              child: Column(
-                children: [
-                  const AppSizedBox(height: 10),
+                clipBehavior: Clip.antiAlias,
+                child: SizedBox(
+                  height: 500,
+                  child: Column(
+                    children: [
+                      const AppSizedBox(height: 10),
 
-                  /// Drag Handle
-                  Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).dividerColor.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-
-                  const AppSizedBox(height: 16),
-
-                  /// Search Field
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: TextField(
-                      controller: controller,
-                      onChanged: onSearch,
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface),
-                      decoration: InputDecoration(
-                        hintText: "Search city...",
-                        hintStyle: TextStyle(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.4),
-                        ),
-                        // prefixIcon: HugeIcon(
-                        //   icon: HugeIcons.strokeRoundedSearch01,
-                        //   size: 10,
-                        //   color: Theme.of(context)
-                        //       .colorScheme
-                        //       .onSurface
-                        //       .withOpacity(0.4),
-                        // ),
-                        filled: true,
-                        fillColor: Theme.of(context).scaffoldBackgroundColor,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                          borderSide: BorderSide.none,
+                      /// Drag Handle
+                      Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color:
+                              Theme.of(context).dividerColor.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                    ),
+
+                      const AppSizedBox(height: 16),
+
+                      /// Search Field
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: TextField(
+                          controller: controller,
+                          onChanged: onSearch,
+                          style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface),
+                          decoration: InputDecoration(
+                            hintText: "Search city...",
+                            hintStyle: TextStyle(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.4),
+                            ),
+                            // prefixIcon: HugeIcon(
+                            //   icon: HugeIcons.strokeRoundedSearch01,
+                            //   size: 10,
+                            //   color: Theme.of(context)
+                            //       .colorScheme
+                            //       .onSurface
+                            //       .withOpacity(0.4),
+                            // ),
+                            filled: true,
+                            fillColor:
+                                Theme.of(context).scaffoldBackgroundColor,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const AppSizedBox(height: 16),
+
+                      /// Content
+                      Expanded(
+                        child: isLoading
+                            ? const Center(child: CircularProgressIndicator())
+                            : (controller.text.isEmpty
+                                ? _buildHistory()
+                                : _buildResults()),
+                      )
+                    ],
                   ),
-
-                  const AppSizedBox(height: 16),
-
-                  /// Content
-                  Expanded(
-                    child: isLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : (controller.text.isEmpty
-                            ? _buildHistory()
-                            : _buildResults()),
-                  )
-                ],
+                ),
               ),
-            ),
-          ),
-        ));
+            )));
   }
 
   Widget _buildHistory() {
